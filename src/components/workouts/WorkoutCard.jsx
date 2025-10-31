@@ -1,5 +1,7 @@
 import React from "react";
 import { motion } from "framer-motion";
+import { useNavigate } from "react-router-dom";
+import { createPageUrl } from "@/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -20,6 +22,12 @@ const difficultyColors = {
 };
 
 export default function WorkoutCard({ workout }) {
+  const navigate = useNavigate();
+
+  const handleViewDetails = () => {
+    navigate(createPageUrl("WorkoutDetail") + `?id=${workout.id}`);
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -68,7 +76,10 @@ export default function WorkoutCard({ workout }) {
               <span>{workout.exercises?.length || 0} exercícios</span>
             </div>
           </div>
-          <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white">
+          <Button 
+            onClick={handleViewDetails}
+            className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+          >
             Ver Detalhes
           </Button>
         </CardContent>

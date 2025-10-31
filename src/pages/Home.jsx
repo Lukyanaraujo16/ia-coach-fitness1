@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { Calendar, Flame, Trophy, TrendingUp, ChevronRight, Zap } from "lucide-react";
+import { Calendar, Flame, Trophy, TrendingUp, ChevronRight, Zap, Target, Crown } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import StatsCard from "../components/home/StatsCard";
@@ -11,6 +11,7 @@ import QuickActionCard from "../components/home/QuickActionCard";
 import NextWorkoutCard from "../components/home/NextWorkoutCard";
 
 export default function Home() {
+  const navigate = useNavigate();
   const [user, setUser] = useState(null);
 
   const { data: workoutLogs = [] } = useQuery({
@@ -28,12 +29,16 @@ export default function Home() {
       try {
         const currentUser = await base44.auth.me();
         setUser(currentUser);
+        // Se não completou onboarding, redireciona
+        if (!currentUser.fitness_goal) {
+          navigate(createPageUrl("Onboarding"));
+        }
       } catch (error) {
         console.error("Error loading user:", error);
       }
     };
     loadUser();
-  }, []);
+  }, [navigate]);
 
   const thisWeekWorkouts = workoutLogs.filter(log => {
     const logDate = new Date(log.date);
@@ -44,19 +49,71 @@ export default function Home() {
 
   const totalCalories = thisWeekWorkouts.reduce((sum, log) => sum + (log.calories_burned || 0), 0);
   const currentWeight = progressEntries[0]?.weight || user?.current_weight || 0;
-  const weightGoal = user?.weight_goal || 0;
+  const weeklyGoal = user?.weekly_goal || 3;
+  const progress = Math.min((thisWeekWorkouts.length / weeklyGoal) * 100, 100);
+
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return "Bom dia";
+    if (hour < 18) return "Boa tarde";
+    return "Boa noite";
+  };
 
   return (
     <div className="py-6 space-y-6">
       {/* Welcome Section */}
-      <div className="space-y-2">
+      <div className="space-y-3">
         <h2 className="text-3xl font-bold text-white">
-          Olá, {user?.full_name?.split(' ')[0] || 'Atleta'}! 👋
+          {getGreeting()}, {user?.full_name?.split(' ')[0] || 'Atleta'}! 👋
         </h2>
         <p className="text-slate-400">
           Pronto para superar seus limites hoje?
         </p>
       </div>
+
+      {/* Premium Banner */}
+      {user?.subscription_status !== 'premium' && (
+        <Link to={createPageUrl("Subscription")}>
+          <Card className="bg-gradient-to-r from-blue-900/50 to-purple-900/50 border-blue-700/50 hover:from-blue-900/60 hover:to-purple-900/60 transition-all cursor-pointer">
+            <CardContent className="p-5 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 bg-yellow-500/20 rounded-xl flex items-center justify-center">
+                  <Crown className="w-6 h-6 text-yellow-400" />
+                </div>
+                <div>
+                  <h3 className="text-white font-semibold">Assine Premium</h3>
+                  <p className="text-slate-300 text-sm">Desbloqueie treinos exclusivos</p>
+                </div>
+              </div>
+              <ChevronRight className="w-5 h-5 text-slate-400" />
+            </CardContent>
+          </Card>
+        </Link>
+      )}
+
+      {/* Weekly Goal Progress */}
+      <Card className="bg-slate-900/50 border-slate-800">
+        <CardContent className="p-5">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <Target className="w-5 h-5 text-blue-400" />
+              <h3 className="text-white font-semibold">Meta Semanal</h3>
+            </div>
+            <span className="text-blue-400 font-bold">
+              {thisWeekWorkouts.length}/{weeklyGoal}
+            </span>
+          </div>
+          <div className="relative h-3 bg-slate-800 rounded-full overflow-hidden">
+            <div
+              className="absolute inset-y-0 left-0 bg-gradient-to-r from-blue-600 to-blue-500 rounded-full transition-all duration-500"
+              style={{ width: `${progress}%` }}
+            />
+          </div>
+          <p className="text-slate-400 text-sm mt-2">
+            {progress === 100 ? "🎉 Meta completa!" : `${(weeklyGoal - thisWeekWorkouts.length)} treinos restantes`}
+          </p>
+        </CardContent>
+      </Card>
 
       {/* Stats Grid */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -84,14 +141,38 @@ export default function Home() {
         <StatsCard
           icon={TrendingUp}
           label="Peso Atual"
-          value={currentWeight}
-          suffix="kg"
+          value={currentWeight || "-"}
+          suffix={currentWeight ? "kg" : ""}
           color="green"
         />
       </div>
 
       {/* Next Workout */}
       <NextWorkoutCard />
+
+      {/* Challenge of the Week */}
+      <Card className="bg-gradient-to-br from-purple-900/30 to-pink-900/30 border-purple-700/50">
+        <CardHeader>
+          <CardTitle className="text-white flex items-center gap-2">
+            <Zap className="w-5 h-5 text-yellow-400" />
+            Desafio da Semana
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <h4 className="text-xl font-bold text-white mb-2">
+            100 Flexões em 7 dias
+          </h4>
+          <p className="text-slate-300 text-sm mb-4">
+            Complete 100 flexões distribuídas ao longo da semana
+          </p>
+          <div className="flex items-center gap-3">
+            <div className="flex-1 h-2 bg-slate-800 rounded-full overflow-hidden">
+              <div className="h-full bg-gradient-to-r from-purple-600 to-pink-600 w-1/3" />
+            </div>
+            <span className="text-slate-300 text-sm font-medium">33/100</span>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Quick Actions */}
       <div className="space-y-3">

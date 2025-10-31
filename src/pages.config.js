@@ -4,6 +4,9 @@ import Progress from './pages/Progress';
 import Community from './pages/Community';
 import Profile from './pages/Profile';
 import Subscription from './pages/Subscription';
+import Welcome from './pages/Welcome';
+import Onboarding from './pages/Onboarding';
+import WorkoutDetail from './pages/WorkoutDetail';
 import Layout from './Layout.jsx';
 
 
@@ -14,6 +17,9 @@ export const PAGES = {
     "Community": Community,
     "Profile": Profile,
     "Subscription": Subscription,
+    "Welcome": Welcome,
+    "Onboarding": Onboarding,
+    "WorkoutDetail": WorkoutDetail,
 }
 
 export const pagesConfig = {
