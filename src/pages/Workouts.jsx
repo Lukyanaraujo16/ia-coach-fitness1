@@ -1,9 +1,10 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
-import { Search } from "lucide-react";
+import { Search, Lock } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
 import WorkoutCard from "../components/workouts/WorkoutCard";
 import ExerciseLibrary from "../components/workouts/ExerciseLibrary";
 
@@ -11,6 +12,7 @@ export default function Workouts() {
   const [activeTab, setActiveTab] = useState("workouts");
   const [searchQuery, setSearchQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
+  const [user, setUser] = useState(null);
 
   const { data: workouts = [], isLoading: loadingWorkouts } = useQuery({
     queryKey: ['workouts'],
@@ -22,7 +24,25 @@ export default function Workouts() {
     queryFn: () => base44.entities.Exercise.list(),
   });
 
-  const filteredWorkouts = workouts.filter(workout => {
+  useEffect(() => {
+    const loadUser = async () => {
+      try {
+        const currentUser = await base44.auth.me();
+        setUser(currentUser);
+      } catch (error) {
+        console.error("Error loading user:", error);
+      }
+    };
+    loadUser();
+  }, []);
+
+  const isPremium = user?.subscription_status === 'premium';
+
+  // Usuários free só veem até 5 treinos
+  const freeWorkouts = workouts.filter(w => !w.is_premium).slice(0, 5);
+  const availableWorkouts = isPremium ? workouts : freeWorkouts;
+
+  const filteredWorkouts = availableWorkouts.filter(workout => {
     const matchesSearch = workout.title.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesCategory = categoryFilter === "all" || workout.category === categoryFilter;
     return matchesSearch && matchesCategory;
@@ -40,7 +60,15 @@ export default function Workouts() {
   return (
     <div className="py-6 space-y-6">
       <div className="space-y-4">
-        <h2 className="text-3xl font-bold text-white">Treinos</h2>
+        <div className="flex items-center justify-between">
+          <h2 className="text-3xl font-bold text-white">Treinos</h2>
+          {!isPremium && (
+            <div className="flex items-center gap-2 text-yellow-400 text-sm">
+              <Lock className="w-4 h-4" />
+              <span>5/{workouts.length} treinos disponíveis</span>
+            </div>
+          )}
+        </div>
         
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
@@ -87,19 +115,40 @@ export default function Workouts() {
 
       {/* Content */}
       {activeTab === "workouts" ? (
-        <div className="grid md:grid-cols-2 gap-4">
-          {loadingWorkouts ? (
-            <p className="text-slate-400 col-span-2 text-center py-12">Carregando...</p>
-          ) : filteredWorkouts.length > 0 ? (
-            filteredWorkouts.map((workout) => (
-              <WorkoutCard key={workout.id} workout={workout} />
-            ))
-          ) : (
-            <div className="col-span-2 text-center py-12">
-              <p className="text-slate-400">Nenhum treino encontrado</p>
-            </div>
+        <>
+          <div className="grid md:grid-cols-2 gap-4">
+            {loadingWorkouts ? (
+              <p className="text-slate-400 col-span-2 text-center py-12">Carregando...</p>
+            ) : filteredWorkouts.length > 0 ? (
+              filteredWorkouts.map((workout) => (
+                <WorkoutCard key={workout.id} workout={workout} />
+              ))
+            ) : (
+              <div className="col-span-2 text-center py-12">
+                <p className="text-slate-400">Nenhum treino encontrado</p>
+              </div>
+            )}
+          </div>
+          
+          {/* Locked Workouts Preview */}
+          {!isPremium && workouts.length > 5 && (
+            <Card className="bg-slate-900/30 border-slate-800 relative overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-r from-blue-900/20 to-purple-900/20 backdrop-blur-sm" />
+              <CardContent className="relative p-8 text-center">
+                <Lock className="w-12 h-12 text-yellow-400 mx-auto mb-4" />
+                <h3 className="text-xl font-bold text-white mb-2">
+                  +{workouts.length - 5} Treinos Premium Bloqueados
+                </h3>
+                <p className="text-slate-300 mb-4">
+                  Desbloqueie acesso completo a todos os treinos e funcionalidades
+                </p>
+                <a href={`/page/Subscription`} className="inline-block px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white rounded-lg font-semibold">
+                  Assinar Premium
+                </a>
+              </CardContent>
+            </Card>
           )}
-        </div>
+        </>
       ) : (
         <ExerciseLibrary exercises={exercises} loading={loadingExercises} searchQuery={searchQuery} />
       )}

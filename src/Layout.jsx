@@ -1,10 +1,24 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
+import { base44 } from "@/api/base44Client";
 import { Link, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { Home, Dumbbell, TrendingUp, Users, User, Crown } from "lucide-react";
+import { Home, Dumbbell, TrendingUp, Users, User, Crown, Shield } from "lucide-react";
 
 export default function Layout({ children, currentPageName }) {
   const location = useLocation();
+  const [user, setUser] = useState(null);
+
+  useEffect(() => {
+    const loadUser = async () => {
+      try {
+        const currentUser = await base44.auth.me();
+        setUser(currentUser);
+      } catch (error) {
+        console.error("Error loading user:", error);
+      }
+    };
+    loadUser();
+  }, []);
 
   const navigationItems = [
     { name: "Home", path: createPageUrl("Home"), icon: Home },
@@ -13,6 +27,15 @@ export default function Layout({ children, currentPageName }) {
     { name: "Comunidade", path: createPageUrl("Community"), icon: Users },
     { name: "Perfil", path: createPageUrl("Profile"), icon: User },
   ];
+
+  // Adiciona item Admin se for admin
+  if (user?.role === 'admin') {
+    navigationItems.push({
+      name: "Admin",
+      path: createPageUrl("Admin"),
+      icon: Shield,
+    });
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 pb-20">
@@ -59,7 +82,7 @@ export default function Layout({ children, currentPageName }) {
                 <Link
                   key={item.name}
                   to={item.path}
-                  className={`flex flex-col items-center gap-1 px-4 py-2 rounded-xl transition-all duration-300 ${
+                  className={`flex flex-col items-center gap-1 px-3 py-2 rounded-xl transition-all duration-300 ${
                     isActive
                       ? "bg-blue-600/20 text-blue-400"
                       : "text-slate-400 hover:text-slate-300"
