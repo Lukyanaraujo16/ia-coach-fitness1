@@ -10,6 +10,8 @@ const colorMap = {
 };
 
 export default function StatsCard({ icon: Icon, label, value, suffix, color = "blue" }) {
+  if (!Icon) return null;
+  
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}

@@ -16,6 +16,8 @@ const iconColorMap = {
 };
 
 export default function QuickActionCard({ icon: Icon, title, subtitle, link, color = "blue" }) {
+  if (!Icon || !link) return null;
+  
   return (
     <Link to={link}>
       <motion.div

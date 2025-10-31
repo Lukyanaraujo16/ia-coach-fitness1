@@ -17,6 +17,8 @@ const categoryColors = {
 function ExerciseCard({ exercise }) {
   const [expanded, setExpanded] = useState(false);
 
+  if (!exercise) return null;
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -34,7 +36,7 @@ function ExerciseCard({ exercise }) {
                 )}
               </div>
               <div className="flex flex-wrap gap-2 mb-3">
-                <Badge className={categoryColors[exercise.category]}>
+                <Badge className={categoryColors[exercise.category] || categoryColors.chest}>
                   {exercise.category}
                 </Badge>
                 <Badge variant="outline" className="text-slate-400 border-slate-700">
@@ -52,7 +54,9 @@ function ExerciseCard({ exercise }) {
                     exit={{ height: 0, opacity: 0 }}
                     className="overflow-hidden"
                   >
-                    <p className="text-slate-400 text-sm mb-2">{exercise.description}</p>
+                    {exercise.description && (
+                      <p className="text-slate-400 text-sm mb-2">{exercise.description}</p>
+                    )}
                     {exercise.muscle_groups && exercise.muscle_groups.length > 0 && (
                       <div className="flex flex-wrap gap-1">
                         {exercise.muscle_groups.map((muscle, idx) => (
@@ -86,9 +90,9 @@ function ExerciseCard({ exercise }) {
   );
 }
 
-export default function ExerciseLibrary({ exercises, loading, searchQuery }) {
+export default function ExerciseLibrary({ exercises = [], loading, searchQuery = "" }) {
   const filteredExercises = exercises.filter((ex) =>
-    ex.name.toLowerCase().includes(searchQuery.toLowerCase())
+    ex?.name?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   if (loading) {

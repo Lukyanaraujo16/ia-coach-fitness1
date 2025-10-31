@@ -3,9 +3,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { TrendingDown, TrendingUp } from "lucide-react";
 
-export default function WeightChart({ data }) {
+export default function WeightChart({ data = [] }) {
   const chartData = data
-    .filter(entry => entry.weight)
+    .filter(entry => entry?.weight)
     .map(entry => ({
       date: new Date(entry.date).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' }),
       weight: entry.weight,

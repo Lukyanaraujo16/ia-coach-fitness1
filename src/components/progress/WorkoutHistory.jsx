@@ -2,7 +2,7 @@ import React from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Calendar, Clock, Flame } from "lucide-react";
 
-export default function WorkoutHistory({ logs }) {
+export default function WorkoutHistory({ logs = [] }) {
   if (logs.length === 0) {
     return (
       <Card className="bg-slate-900/50 border-slate-800">

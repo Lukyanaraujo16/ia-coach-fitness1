@@ -2,8 +2,8 @@ import React from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Camera } from "lucide-react";
 
-export default function ProgressPhotos({ entries }) {
-  const photosEntries = entries.filter(entry => entry.photos && entry.photos.length > 0);
+export default function ProgressPhotos({ entries = [] }) {
+  const photosEntries = entries.filter(entry => entry?.photos && entry.photos.length > 0);
 
   if (photosEntries.length === 0) {
     return (

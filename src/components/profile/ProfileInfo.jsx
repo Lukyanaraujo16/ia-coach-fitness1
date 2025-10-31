@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,12 +12,24 @@ import { Edit2, Save, X } from "lucide-react";
 export default function ProfileInfo({ user, setUser }) {
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({
-    current_weight: user?.current_weight || '',
-    weight_goal: user?.weight_goal || '',
-    height: user?.height || '',
-    fitness_level: user?.fitness_level || 'beginner',
-    bio: user?.bio || '',
+    current_weight: '',
+    weight_goal: '',
+    height: '',
+    fitness_level: 'beginner',
+    bio: '',
   });
+
+  useEffect(() => {
+    if (user) {
+      setFormData({
+        current_weight: user.current_weight || '',
+        weight_goal: user.weight_goal || '',
+        height: user.height || '',
+        fitness_level: user.fitness_level || 'beginner',
+        bio: user.bio || '',
+      });
+    }
+  }, [user]);
 
   const updateProfileMutation = useMutation({
     mutationFn: (data) => base44.auth.updateMe(data),
@@ -37,18 +49,6 @@ export default function ProfileInfo({ user, setUser }) {
       bio: formData.bio,
     });
   };
-
-  React.useEffect(() => {
-    if (user) {
-      setFormData({
-        current_weight: user.current_weight || '',
-        weight_goal: user.weight_goal || '',
-        height: user.height || '',
-        fitness_level: user.fitness_level || 'beginner',
-        bio: user.bio || '',
-      });
-    }
-  }, [user]);
 
   return (
     <Card className="bg-slate-900/50 border-slate-800">
