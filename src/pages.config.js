@@ -9,6 +9,7 @@ import Onboarding from './pages/Onboarding';
 import WorkoutDetail from './pages/WorkoutDetail';
 import Admin from './pages/Admin';
 import WorkoutExecution from './pages/WorkoutExecution';
+import WorkoutSelection from './pages/WorkoutSelection';
 import Layout from './Layout.jsx';
 
 
@@ -24,6 +25,7 @@ export const PAGES = {
     "WorkoutDetail": WorkoutDetail,
     "Admin": Admin,
     "WorkoutExecution": WorkoutExecution,
+    "WorkoutSelection": WorkoutSelection,
 }
 
 export const pagesConfig = {

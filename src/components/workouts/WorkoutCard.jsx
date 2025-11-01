@@ -42,6 +42,8 @@ export default function WorkoutCard({ workout }) {
     navigate(createPageUrl("WorkoutDetail") + `?id=${workout.id}`);
   };
 
+  const totalExercises = workout.days?.reduce((sum, day) => sum + (day.exercises?.length || 0), 0) || 0;
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -73,11 +75,14 @@ export default function WorkoutCard({ workout }) {
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex flex-wrap gap-2">
-            <Badge className={categoryColors[workout.category] || categoryColors.full_body}>
+            <Badge className={categoryColors[workout.category]}>
               {categoryLabels[workout.category] || workout.category}
             </Badge>
             <Badge className={difficultyColors[workout.difficulty]}>
-              {difficultyLabels[workout.difficulty] || workout.difficulty}
+              {difficultyLabels[workout.difficulty]}
+            </Badge>
+            <Badge variant="outline" className="text-slate-400 border-slate-700">
+              {workout.days?.length || 0} dias
             </Badge>
           </div>
           <div className="flex items-center gap-4 text-slate-300 text-sm">
@@ -87,7 +92,7 @@ export default function WorkoutCard({ workout }) {
             </div>
             <div className="flex items-center gap-1">
               <Zap className="w-4 h-4" />
-              <span>{workout.exercises?.length || 0} exercícios</span>
+              <span>{totalExercises} exercícios</span>
             </div>
           </div>
           <Button 

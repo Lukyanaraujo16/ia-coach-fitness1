@@ -7,58 +7,50 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft, Play, Pause, SkipForward, CheckCircle, Plus, Minus } from "lucide-react";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+import { ArrowLeft, Play, Pause, SkipForward, CheckCircle, Plus, Minus, AlertTriangle } from "lucide-react";
 
 export default function WorkoutExecution() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const urlParams = new URLSearchParams(window.location.search);
   const workoutId = urlParams.get('id');
+  const dayNumber = parseInt(urlParams.get('day')) || 1;
 
   const [workout, setWorkout] = useState(null);
+  const [currentDay, setCurrentDay] = useState(null);
   const [currentExerciseIndex, setCurrentExerciseIndex] = useState(0);
+  const [skippedExercises, setSkippedExercises] = useState([]);
   const [restTime, setRestTime] = useState(60);
   const [isResting, setIsResting] = useState(false);
   const [timeRemaining, setTimeRemaining] = useState(60);
-  const [weightUsed, setWeightUsed] = useState("");
   const [showCaloriesInput, setShowCaloriesInput] = useState(false);
   const [caloriesInput, setCaloriesInput] = useState("");
-
-  const { data: exerciseLogs = [] } = useQuery({
-    queryKey: ['exercise-logs'],
-    queryFn: () => base44.entities.ExerciseLog.list('-date'),
-  });
-
-  const logExerciseMutation = useMutation({
-    mutationFn: (data) => base44.entities.ExerciseLog.create(data),
-    onSuccess: () => {
-      queryClient.invalidateQueries(['exercise-logs']);
-    },
-  });
-
-  const createWorkoutLogMutation = useMutation({
-    mutationFn: (data) => base44.entities.WorkoutLog.create(data),
-    onSuccess: () => {
-      queryClient.invalidateQueries(['workout-logs']);
-      navigate(createPageUrl("Home"));
-    },
-  });
+  const [showSkipWarning, setShowSkipWarning] = useState(false);
+  const [user, setUser] = useState(null);
 
   useEffect(() => {
     const loadWorkout = async () => {
       if (workoutId) {
+        const currentUser = await base44.auth.me();
+        setUser(currentUser);
+        
         const workouts = await base44.entities.Workout.list();
         const foundWorkout = workouts.find(w => w.id === workoutId);
         setWorkout(foundWorkout);
-        if (foundWorkout?.exercises?.[0]?.rest_seconds) {
-          setRestTime(foundWorkout.exercises[0].rest_seconds);
-          setTimeRemaining(foundWorkout.exercises[0].rest_seconds);
+        
+        if (foundWorkout?.days) {
+          const day = foundWorkout.days.find(d => d.day_number === dayNumber);
+          setCurrentDay(day);
+          if (day?.exercises?.[0]?.sets?.[0]?.rest_seconds) {
+            const firstRest = day.exercises[0].sets[0].rest_seconds;
+            setRestTime(firstRest);
+            setTimeRemaining(firstRest);
+          }
         }
       }
     };
     loadWorkout();
-  }, [workoutId]);
+  }, [workoutId, dayNumber]);
 
   useEffect(() => {
     let interval;
@@ -72,7 +64,31 @@ export default function WorkoutExecution() {
     return () => clearInterval(interval);
   }, [isResting, timeRemaining]);
 
-  if (!workout) {
+  const createWorkoutLogMutation = useMutation({
+    mutationFn: (data) => base44.entities.WorkoutLog.create(data),
+    onSuccess: async () => {
+      queryClient.invalidateQueries(['workout-logs']);
+      
+      // Atualizar dia completado
+      const completedDays = user?.completed_workout_days || [];
+      if (!completedDays.includes(dayNumber)) {
+        completedDays.push(dayNumber);
+      }
+      
+      // Calcular próximo dia
+      const totalDays = workout?.days?.length || 1;
+      const nextDay = dayNumber >= totalDays ? 1 : dayNumber + 1;
+      
+      await base44.auth.updateMe({
+        current_workout_day: nextDay,
+        completed_workout_days: completedDays,
+      });
+      
+      navigate(createPageUrl("Home"));
+    },
+  });
+
+  if (!workout || !currentDay) {
     return (
       <div className="py-6">
         <p className="text-slate-400 text-center">Carregando...</p>
@@ -80,48 +96,54 @@ export default function WorkoutExecution() {
     );
   }
 
-  const currentExercise = workout.exercises?.[currentExerciseIndex];
-  const isLastExercise = currentExerciseIndex === (workout.exercises?.length || 0) - 1;
+  const currentExercise = currentDay.exercises?.[currentExerciseIndex];
+  const isLastExercise = currentExerciseIndex === (currentDay.exercises?.length || 0) - 1;
 
   const handleStartRest = () => {
     setIsResting(true);
     setTimeRemaining(restTime);
   };
 
-  const handleNextExercise = () => {
-    if (weightUsed) {
-      logExerciseMutation.mutate({
-        exercise_name: `Exercício ${currentExerciseIndex + 1}`,
-        date: new Date().toISOString().split('T')[0],
-        weight_used: parseFloat(weightUsed),
-        reps_completed: currentExercise?.sets || 0,
-        sets_completed: currentExercise?.sets || 0,
-      });
+  const handleSkipExercise = () => {
+    if (!skippedExercises.includes(currentExerciseIndex)) {
+      setSkippedExercises([...skippedExercises, currentExerciseIndex]);
     }
+    handleNextExercise();
+  };
 
-    setWeightUsed("");
+  const handleNextExercise = () => {
     setIsResting(false);
     
     if (isLastExercise) {
-      setShowCaloriesInput(true);
+      if (skippedExercises.length > 0) {
+        setShowSkipWarning(true);
+      } else {
+        setShowCaloriesInput(true);
+      }
     } else {
-      const nextExercise = workout.exercises[currentExerciseIndex + 1];
+      const nextExercise = currentDay.exercises[currentExerciseIndex + 1];
       setCurrentExerciseIndex(currentExerciseIndex + 1);
-      if (nextExercise?.rest_seconds) {
-        setRestTime(nextExercise.rest_seconds);
-        setTimeRemaining(nextExercise.rest_seconds);
+      if (nextExercise?.sets?.[0]?.rest_seconds) {
+        const nextRest = nextExercise.sets[0].rest_seconds;
+        setRestTime(nextRest);
+        setTimeRemaining(nextRest);
       }
     }
+  };
+
+  const handleFinishWithSkipped = () => {
+    setShowSkipWarning(false);
+    setShowCaloriesInput(true);
   };
 
   const handleFinishWorkout = () => {
     createWorkoutLogMutation.mutate({
       workout_id: workout.id,
-      workout_title: workout.title,
+      workout_title: `${workout.title} - Dia ${dayNumber}`,
       date: new Date().toISOString().split('T')[0],
       duration_minutes: workout.duration_minutes,
       calories_burned: caloriesInput ? parseInt(caloriesInput) : undefined,
-      notes: "",
+      notes: skippedExercises.length > 0 ? `${skippedExercises.length} exercícios pulados` : "",
     });
   };
 
@@ -133,16 +155,45 @@ export default function WorkoutExecution() {
     }
   };
 
-  // Get history for current exercise
-  const exerciseHistory = exerciseLogs
-    .filter(log => log.exercise_name === `Exercício ${currentExerciseIndex + 1}`)
-    .slice(0, 10)
-    .reverse()
-    .map(log => ({
-      date: new Date(log.date).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' }),
-      weight: log.weight_used,
-    }));
+  // Skip Warning Modal
+  if (showSkipWarning) {
+    return (
+      <div className="py-6 space-y-6">
+        <Card className="bg-slate-900/50 border-slate-800 max-w-md mx-auto">
+          <CardContent className="p-8 text-center space-y-6">
+            <div className="w-20 h-20 bg-orange-600/20 rounded-full flex items-center justify-center mx-auto">
+              <AlertTriangle className="w-10 h-10 text-orange-400" />
+            </div>
+            <div>
+              <h2 className="text-2xl font-bold text-white mb-2">Atenção!</h2>
+              <p className="text-slate-400">
+                Você pulou {skippedExercises.length} exercício(s). 
+                Tem certeza que deseja finalizar o treino assim mesmo?
+              </p>
+            </div>
+            
+            <div className="space-y-2">
+              <Button
+                onClick={() => setShowSkipWarning(false)}
+                variant="outline"
+                className="w-full border-slate-700 text-slate-300"
+              >
+                Voltar e Completar
+              </Button>
+              <Button
+                onClick={handleFinishWithSkipped}
+                className="w-full bg-orange-600 hover:bg-orange-700"
+              >
+                Finalizar Mesmo Assim
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
+  // Calories Input
   if (showCaloriesInput) {
     return (
       <div className="py-6 space-y-6">
@@ -153,7 +204,7 @@ export default function WorkoutExecution() {
             </div>
             <div>
               <h2 className="text-2xl font-bold text-white mb-2">Treino Concluído!</h2>
-              <p className="text-slate-400">Parabéns por completar o treino 🎉</p>
+              <p className="text-slate-400">Parabéns por completar o Dia {dayNumber}! 🎉</p>
             </div>
             
             <div className="space-y-2">
@@ -192,9 +243,9 @@ export default function WorkoutExecution() {
           <ArrowLeft className="w-5 h-5" />
         </Button>
         <div className="text-center">
-          <p className="text-slate-400 text-sm">Exercício</p>
+          <p className="text-slate-400 text-sm">Dia {dayNumber} - Exercício</p>
           <p className="text-white font-bold">
-            {currentExerciseIndex + 1} / {workout.exercises?.length || 0}
+            {currentExerciseIndex + 1} / {currentDay.exercises?.length || 0}
           </p>
         </div>
         <div className="w-10" />
@@ -205,34 +256,24 @@ export default function WorkoutExecution() {
         <CardContent className="p-6 space-y-4">
           <div>
             <h2 className="text-2xl font-bold text-white mb-2">
-              Exercício {currentExerciseIndex + 1}
+              {currentExercise?.exercise_name}
             </h2>
             {currentExercise?.notes && (
-              <p className="text-slate-400">{currentExercise.notes}</p>
+              <p className="text-slate-400">💡 {currentExercise.notes}</p>
             )}
           </div>
 
-          <div className="grid grid-cols-2 gap-4 p-4 bg-slate-800/50 rounded-lg">
-            <div className="text-center">
-              <p className="text-slate-400 text-sm">Séries</p>
-              <p className="text-3xl font-bold text-white">{currentExercise?.sets}</p>
-            </div>
-            <div className="text-center">
-              <p className="text-slate-400 text-sm">Repetições</p>
-              <p className="text-3xl font-bold text-white">{currentExercise?.reps}</p>
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label className="text-slate-300">Carga Utilizada (kg)</Label>
-            <Input
-              type="number"
-              step="0.5"
-              placeholder="Ex: 10"
-              value={weightUsed}
-              onChange={(e) => setWeightUsed(e.target.value)}
-              className="bg-slate-800 border-slate-700 text-white"
-            />
+          <div className="space-y-3">
+            <h3 className="text-white font-semibold">Séries:</h3>
+            {currentExercise?.sets?.map((set, index) => (
+              <div key={index} className="flex items-center justify-between p-3 bg-slate-800/50 rounded-lg">
+                <span className="text-slate-300">{index + 1}ª Série</span>
+                <div className="flex items-center gap-4">
+                  <span className="text-white font-bold">{set.reps} reps</span>
+                  <span className="text-slate-400 text-sm">{set.rest_seconds}s descanso</span>
+                </div>
+              </div>
+            ))}
           </div>
         </CardContent>
       </Card>
@@ -290,54 +331,32 @@ export default function WorkoutExecution() {
         </CardContent>
       </Card>
 
-      {/* Progress Chart */}
-      {exerciseHistory.length > 0 && (
-        <Card className="bg-slate-900/50 border-slate-800">
-          <CardContent className="p-6">
-            <h3 className="text-white font-semibold mb-4">Evolução da Carga</h3>
-            <ResponsiveContainer width="100%" height={200}>
-              <LineChart data={exerciseHistory}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
-                <XAxis dataKey="date" stroke="#94a3b8" style={{ fontSize: '12px' }} />
-                <YAxis stroke="#94a3b8" style={{ fontSize: '12px' }} />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: '#1e293b',
-                    border: '1px solid #334155',
-                    borderRadius: '8px',
-                    color: '#fff',
-                  }}
-                />
-                <Line
-                  type="monotone"
-                  dataKey="weight"
-                  stroke="#3b82f6"
-                  strokeWidth={3}
-                  dot={{ fill: '#3b82f6', r: 4 }}
-                />
-              </LineChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Next Button */}
-      <Button
-        onClick={handleNextExercise}
-        className="w-full bg-blue-600 hover:bg-blue-700 text-white py-6"
-      >
-        {isLastExercise ? (
-          <>
-            <CheckCircle className="w-5 h-5 mr-2" />
-            Finalizar Treino
-          </>
-        ) : (
-          <>
-            <SkipForward className="w-5 h-5 mr-2" />
-            Próximo Exercício
-          </>
-        )}
-      </Button>
+      {/* Action Buttons */}
+      <div className="flex gap-3">
+        <Button
+          onClick={handleSkipExercise}
+          variant="outline"
+          className="flex-1 border-slate-700 text-slate-300 py-6"
+        >
+          Pular Exercício
+        </Button>
+        <Button
+          onClick={handleNextExercise}
+          className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-6"
+        >
+          {isLastExercise ? (
+            <>
+              <CheckCircle className="w-5 h-5 mr-2" />
+              Finalizar Treino
+            </>
+          ) : (
+            <>
+              <SkipForward className="w-5 h-5 mr-2" />
+              Próximo Exercício
+            </>
+          )}
+        </Button>
+      </div>
     </div>
   );
 }

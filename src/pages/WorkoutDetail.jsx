@@ -5,7 +5,7 @@ import { createPageUrl } from "@/utils";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Clock, Zap, Play, Lock } from "lucide-react";
+import { ArrowLeft, Clock, Zap, Lock, CheckCircle } from "lucide-react";
 import { motion } from "framer-motion";
 
 const categoryLabels = {
@@ -24,12 +24,19 @@ const categoryColors = {
   full_body: "bg-blue-500/20 text-blue-400",
 };
 
+const difficultyLabels = {
+  beginner: "Iniciante",
+  intermediate: "Intermediário",
+  advanced: "Avançado",
+};
+
 export default function WorkoutDetail() {
   const navigate = useNavigate();
   const [workout, setWorkout] = useState(null);
   const [user, setUser] = useState(null);
   const urlParams = new URLSearchParams(window.location.search);
   const workoutId = urlParams.get('id');
+  const fromSelection = urlParams.get('from') === 'selection';
 
   useEffect(() => {
     const loadData = async () => {
@@ -52,8 +59,31 @@ export default function WorkoutDetail() {
   const isPremium = user?.subscription_status === 'premium';
   const isLocked = workout?.is_premium && !isPremium;
 
+  const handleSelectWorkout = async () => {
+    if (isLocked) {
+      navigate(createPageUrl("Subscription"));
+      return;
+    }
+
+    try {
+      await base44.auth.updateMe({
+        selected_workout_id: workout.id,
+        current_workout_day: 1,
+        completed_workout_days: [],
+      });
+      navigate(createPageUrl("Home"));
+    } catch (error) {
+      console.error("Error selecting workout:", error);
+    }
+  };
+
   const handleStartWorkout = () => {
-    navigate(createPageUrl("WorkoutExecution") + `?id=${workout.id}`);
+    if (user?.selected_workout_id === workout?.id) {
+      const currentDay = user.current_workout_day || 1;
+      navigate(createPageUrl("WorkoutExecution") + `?id=${workout.id}&day=${currentDay}`);
+    } else {
+      navigate(createPageUrl("WorkoutExecution") + `?id=${workout.id}&day=1`);
+    }
   };
 
   if (!workout) {
@@ -64,13 +94,15 @@ export default function WorkoutDetail() {
     );
   }
 
+  const totalExercises = workout.days?.reduce((sum, day) => sum + (day.exercises?.length || 0), 0) || 0;
+
   return (
     <div className="py-6 space-y-6">
       <div className="flex items-center gap-4">
         <Button
           variant="ghost"
           size="icon"
-          onClick={() => navigate(createPageUrl("Workouts"))}
+          onClick={() => navigate(fromSelection ? createPageUrl("WorkoutSelection") : createPageUrl("Workouts"))}
           className="text-slate-400 hover:text-white"
         >
           <ArrowLeft className="w-5 h-5" />
@@ -104,7 +136,10 @@ export default function WorkoutDetail() {
               {categoryLabels[workout.category] || workout.category}
             </Badge>
             <Badge variant="outline" className="text-slate-400 border-slate-700 capitalize">
-              {workout.difficulty === 'beginner' ? 'Iniciante' : workout.difficulty === 'intermediate' ? 'Intermediário' : 'Avançado'}
+              {difficultyLabels[workout.difficulty]}
+            </Badge>
+            <Badge variant="outline" className="text-slate-400 border-slate-700">
+              {workout.days?.length || 0} dias
             </Badge>
           </div>
 
@@ -120,49 +155,59 @@ export default function WorkoutDetail() {
               <Zap className="w-5 h-5 text-orange-400" />
               <div>
                 <p className="text-slate-400 text-xs">Exercícios</p>
-                <p className="text-white font-semibold">{workout.exercises?.length || 0}</p>
+                <p className="text-white font-semibold">{totalExercises}</p>
               </div>
             </div>
           </div>
         </CardContent>
       </Card>
 
+      {/* Dias do Treino */}
       <div className="space-y-3">
-        <h3 className="text-lg font-semibold text-white">Exercícios</h3>
-        {workout.exercises && workout.exercises.length > 0 ? (
-          workout.exercises.map((exercise, index) => (
-            <motion.div key={index} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.1 }}>
+        <h3 className="text-lg font-semibold text-white">Dias do Treino</h3>
+        {workout.days && workout.days.length > 0 ? (
+          workout.days.map((day, dayIndex) => (
+            <motion.div key={dayIndex} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: dayIndex * 0.1 }}>
               <Card className={`border-slate-800 ${isLocked ? 'bg-slate-900/30' : 'bg-slate-900/50'}`}>
                 <CardContent className="p-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <h4 className="text-white font-semibold flex items-center gap-2">
+                      📅 Dia {day.day_number}
+                      {user?.selected_workout_id === workout.id && user?.completed_workout_days?.includes(day.day_number) && (
+                        <CheckCircle className="w-4 h-4 text-green-400" />
+                      )}
+                    </h4>
+                    <span className="text-slate-400 text-sm">{day.exercises?.length || 0} exercícios</span>
+                  </div>
+
                   {isLocked ? (
                     <div className="flex items-center justify-center py-8">
                       <Lock className="w-6 h-6 text-slate-600" />
                     </div>
                   ) : (
-                    <div className="flex items-start gap-4">
-                      <div className="w-10 h-10 bg-blue-600/20 rounded-lg flex items-center justify-center flex-shrink-0">
-                        <span className="text-blue-400 font-bold">{index + 1}</span>
-                      </div>
-                      <div className="flex-1">
-                        <h4 className="text-white font-semibold mb-1">Exercício {index + 1}</h4>
-                        <div className="flex flex-wrap gap-3 text-sm text-slate-400">
-                          <div className="flex items-center gap-1">
-                            <span>Séries:</span>
-                            <span className="text-white font-medium">{exercise.sets}</span>
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <span>Reps:</span>
-                            <span className="text-white font-medium">{exercise.reps}</span>
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <span>Descanso:</span>
-                            <span className="text-white font-medium">{exercise.rest_seconds}s</span>
+                    <div className="space-y-2">
+                      {day.exercises?.map((exercise, exIndex) => (
+                        <div key={exIndex} className="bg-slate-800/50 p-3 rounded-lg">
+                          <div className="flex items-start gap-3">
+                            <div className="w-6 h-6 bg-blue-600/20 rounded flex items-center justify-center flex-shrink-0 mt-0.5">
+                              <span className="text-blue-400 text-xs font-bold">{exIndex + 1}</span>
+                            </div>
+                            <div className="flex-1">
+                              <p className="text-white font-medium mb-1">{exercise.exercise_name}</p>
+                              <div className="flex flex-wrap gap-2 text-xs text-slate-400">
+                                {exercise.sets?.map((set, setIndex) => (
+                                  <span key={setIndex} className="bg-slate-700/50 px-2 py-1 rounded">
+                                    {setIndex + 1}x{set.reps} ({set.rest_seconds}s)
+                                  </span>
+                                ))}
+                              </div>
+                              {exercise.notes && (
+                                <p className="text-slate-500 text-xs mt-2">💡 {exercise.notes}</p>
+                              )}
+                            </div>
                           </div>
                         </div>
-                        {exercise.notes && (
-                          <p className="text-slate-500 text-sm mt-2">{exercise.notes}</p>
-                        )}
-                      </div>
+                      ))}
                     </div>
                   )}
                 </CardContent>
@@ -174,19 +219,39 @@ export default function WorkoutDetail() {
         )}
       </div>
 
-      {isLocked ? (
-        <Button
-          onClick={() => navigate(createPageUrl("Subscription"))}
-          className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white py-6"
-        >
-          <Lock className="w-5 h-5 mr-2" />
-          Assinar Premium para Desbloquear
-        </Button>
+      {/* Botões de Ação */}
+      {fromSelection ? (
+        <div className="flex gap-3">
+          <Button
+            variant="outline"
+            onClick={() => navigate(createPageUrl("WorkoutSelection"))}
+            className="flex-1 border-slate-700 text-slate-300 hover:bg-slate-800 py-6"
+          >
+            Ver Outros Treinos
+          </Button>
+          <Button
+            onClick={handleSelectWorkout}
+            className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-6"
+          >
+            {isLocked ? 'Assinar Premium' : 'Selecionar Este Treino'}
+          </Button>
+        </div>
       ) : (
-        <Button onClick={handleStartWorkout} className="w-full bg-blue-600 hover:bg-blue-700 text-white py-6">
-          <Play className="w-5 h-5 mr-2" />
-          Iniciar Treino
-        </Button>
+        <>
+          {isLocked ? (
+            <Button
+              onClick={() => navigate(createPageUrl("Subscription"))}
+              className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white py-6"
+            >
+              <Lock className="w-5 h-5 mr-2" />
+              Assinar Premium para Desbloquear
+            </Button>
+          ) : (
+            <Button onClick={handleStartWorkout} className="w-full bg-blue-600 hover:bg-blue-700 text-white py-6">
+              Iniciar Treino
+            </Button>
+          )}
+        </>
       )}
     </div>
   );
