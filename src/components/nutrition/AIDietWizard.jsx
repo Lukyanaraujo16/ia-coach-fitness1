@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -69,8 +70,10 @@ Crie um plano alimentar COMPLETO e DETALHADO com:
 5. Um título atraente para o plano
 6. Descrição motivadora
 
-IMPORTANTE: 
+IMPORTANT: 
 - Seja específico nas sugestões de alimentos
+- SEMPRE use GRAMAS (g) para alimentos que podem ser pesados (ex: 150g de frango, 200g de arroz, 100g de batata doce)
+- Use unidades apropriadas para outros itens (ex: 2 ovos, 1 banana, 1 fatia de pão)
 - Considere as preferências e restrições mencionadas
 - Calcule as calorias de forma realista para o objetivo
 - As sugestões devem ser práticas e viáveis

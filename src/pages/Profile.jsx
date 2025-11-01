@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
@@ -54,9 +53,10 @@ export default function Profile() {
 
   const updateNameMutation = useMutation({
     mutationFn: (name) => base44.auth.updateMe({ full_name: name }),
-    onSuccess: (updatedUser) => {
+    onSuccess: async () => {
+      const updatedUser = await base44.auth.me();
       setUser(updatedUser);
-      setNewName(updatedUser.full_name || ""); // Added this line
+      setNewName(updatedUser.full_name || "");
       setIsEditingName(false);
     },
   });
