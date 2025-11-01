@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
@@ -43,7 +44,15 @@ export default function WorkoutFormModal({ workout, onClose }) {
         duration_minutes: workout.duration_minutes || '',
         is_premium: workout.is_premium || false,
         image_url: workout.image_url || '',
-        days: workout.days && workout.days.length > 0 ? workout.days : [{ day_number: 1, title: 'Dia 1', exercises: [] }],
+        days: workout.days && workout.days.length > 0
+          ? workout.days.map(day => ({
+              ...day,
+              exercises: day.exercises.map(ex => ({
+                ...ex,
+                exercise_category: ex.exercise_category || '', // Ensure exercise_category is present
+              }))
+            }))
+          : [{ day_number: 1, title: 'Dia 1', exercises: [] }],
       });
       setNumDays(workout.days?.length || 1);
     }
@@ -91,6 +100,7 @@ export default function WorkoutFormModal({ workout, onClose }) {
   const addExerciseToDay = (dayIndex) => {
     const newDays = [...formData.days];
     newDays[dayIndex].exercises.push({
+      exercise_category: '',
       exercise_id: '',
       exercise_name: '',
       sets: [{ reps: '10', rest_seconds: 60 }],
@@ -112,6 +122,10 @@ export default function WorkoutFormModal({ workout, onClose }) {
     if (field === 'exercise_id') {
       const selectedEx = exercises.find(ex => ex.id === value);
       newDays[dayIndex].exercises[exerciseIndex].exercise_name = selectedEx?.name || '';
+    } else if (field === 'exercise_category') {
+      // Reset exercise_id and exercise_name when category changes
+      newDays[dayIndex].exercises[exerciseIndex].exercise_id = '';
+      newDays[dayIndex].exercises[exerciseIndex].exercise_name = '';
     }
     
     setFormData({ ...formData, days: newDays });
@@ -136,6 +150,17 @@ export default function WorkoutFormModal({ workout, onClose }) {
     newDays[dayIndex].exercises[exerciseIndex].sets[setIndex][field] = 
       field === 'rest_seconds' ? parseInt(value) || 60 : value;
     setFormData({ ...formData, days: newDays });
+  };
+
+  const categoryLabels = {
+    chest: "Peito",
+    back: "Costas",
+    legs: "Pernas",
+    shoulders: "Ombros",
+    arms: "Braços",
+    core: "Core",
+    cardio: "Cardio",
+    full_body: "Corpo Inteiro",
   };
 
   return (
@@ -312,131 +337,160 @@ export default function WorkoutFormModal({ workout, onClose }) {
                         </Button>
                       </div>
                     ) : (
-                      day.exercises.map((exercise, exIndex) => (
-                        <Card key={exIndex} className="bg-slate-900/50 border-slate-700">
-                          <CardContent className="p-4 space-y-3">
-                            <div className="flex items-start justify-between gap-3">
-                              <div className="flex-1 space-y-3">
-                                <div className="flex items-center gap-2">
-                                  <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center flex-shrink-0">
-                                    <span className="text-white font-bold text-sm">{exIndex + 1}</span>
-                                  </div>
-                                  <div className="flex-1">
-                                    <Label className="text-slate-300 text-xs mb-1">Exercício *</Label>
-                                    <Select
-                                      value={exercise.exercise_id}
-                                      onValueChange={(value) => updateExercise(dayIndex, exIndex, 'exercise_id', value)}
-                                    >
-                                      <SelectTrigger className="bg-slate-800 border-slate-700 text-white">
-                                        <SelectValue placeholder="Selecione um exercício" />
-                                      </SelectTrigger>
-                                      <SelectContent>
-                                        {loadingExercises ? (
-                                          <div className="p-2 text-slate-400 text-sm">
-                                            Carregando exercícios...
-                                          </div>
-                                        ) : exercises.length === 0 ? (
-                                          <div className="p-2 text-slate-400 text-sm">
-                                            Nenhum exercício cadastrado. Cadastre exercícios primeiro na aba "Exercícios".
-                                          </div>
-                                        ) : (
-                                          exercises.map((ex) => (
-                                            <SelectItem key={ex.id} value={ex.id}>
-                                              {ex.name} ({ex.category})
-                                            </SelectItem>
-                                          ))
-                                        )}
-                                      </SelectContent>
-                                    </Select>
-                                  </div>
-                                </div>
+                      day.exercises.map((exercise, exIndex) => {
+                        const filteredExercises = exercise.exercise_category 
+                          ? exercises.filter(ex => ex.category === exercise.exercise_category)
+                          : [];
 
-                                <div>
-                                  <Label className="text-slate-300 text-xs mb-1">Observações</Label>
-                                  <Input
-                                    placeholder="Ex: Controlar a descida, manter cotovelos próximos..."
-                                    value={exercise.notes}
-                                    onChange={(e) => updateExercise(dayIndex, exIndex, 'notes', e.target.value)}
-                                    className="bg-slate-800 border-slate-700 text-white text-sm"
-                                  />
-                                </div>
-
-                                {/* Séries */}
-                                <div className="space-y-2">
-                                  <div className="flex items-center justify-between">
-                                    <Label className="text-slate-300 text-sm font-semibold">
-                                      Séries e Repetições
-                                    </Label>
-                                    <Button
-                                      type="button"
-                                      size="sm"
-                                      variant="outline"
-                                      onClick={() => addSetToExercise(dayIndex, exIndex)}
-                                      className="h-7 text-xs border-slate-700 text-slate-300"
-                                    >
-                                      <Plus className="w-3 h-3 mr-1" />
-                                      Adicionar Série
-                                    </Button>
-                                  </div>
-                                  
-                                  <div className="space-y-2 bg-slate-800/30 p-3 rounded-lg">
-                                    {exercise.sets.map((set, setIndex) => (
-                                      <div key={setIndex} className="flex items-center gap-2">
-                                        <span className="text-slate-400 text-sm font-medium w-12">
-                                          {setIndex + 1}ª
-                                        </span>
-                                        <div className="flex-1 grid grid-cols-2 gap-2">
-                                          <div>
-                                            <Input
-                                              placeholder="Reps (ex: 10)"
-                                              value={set.reps}
-                                              onChange={(e) => updateSet(dayIndex, exIndex, setIndex, 'reps', e.target.value)}
-                                              className="bg-slate-800 border-slate-700 text-white text-sm h-9"
-                                            />
-                                          </div>
-                                          <div>
-                                            <Input
-                                              type="number"
-                                              placeholder="Descanso (s)"
-                                              value={set.rest_seconds}
-                                              onChange={(e) => updateSet(dayIndex, exIndex, setIndex, 'rest_seconds', e.target.value)}
-                                              className="bg-slate-800 border-slate-700 text-white text-sm h-9"
-                                            />
-                                          </div>
-                                        </div>
-                                        {exercise.sets.length > 1 && (
-                                          <Button
-                                            type="button"
-                                            variant="ghost"
-                                            size="icon"
-                                            onClick={() => removeSetFromExercise(dayIndex, exIndex, setIndex)}
-                                            className="h-9 w-9 text-red-400 hover:bg-red-950/50"
-                                          >
-                                            <X className="w-4 h-4" />
-                                          </Button>
-                                        )}
+                        return (
+                          <Card key={exIndex} className="bg-slate-900/50 border-slate-700">
+                            <CardContent className="p-4 space-y-3">
+                              <div className="flex items-start justify-between gap-3">
+                                <div className="flex-1 space-y-3">
+                                  <div className="flex items-center gap-2">
+                                    <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center flex-shrink-0">
+                                      <span className="text-white font-bold text-sm">{exIndex + 1}</span>
+                                    </div>
+                                    <div className="flex-1 grid grid-cols-2 gap-2">
+                                      <div>
+                                        <Label className="text-slate-300 text-xs mb-1">Categoria *</Label>
+                                        <Select
+                                          value={exercise.exercise_category}
+                                          onValueChange={(value) => updateExercise(dayIndex, exIndex, 'exercise_category', value)}
+                                        >
+                                          <SelectTrigger className="bg-slate-800 border-slate-700 text-white">
+                                            <SelectValue placeholder="Selecione categoria" />
+                                          </SelectTrigger>
+                                          <SelectContent>
+                                            {Object.entries(categoryLabels).map(([key, label]) => (
+                                              <SelectItem key={key} value={key}>{label}</SelectItem>
+                                            ))}
+                                          </SelectContent>
+                                        </Select>
                                       </div>
-                                    ))}
-                                    <p className="text-slate-500 text-xs mt-2">
-                                      💡 Exemplo: 1x10 (60s), 2x8 (90s), 1x6 (120s)
-                                    </p>
+                                      <div>
+                                        <Label className="text-slate-300 text-xs mb-1">Exercício *</Label>
+                                        <Select
+                                          value={exercise.exercise_id}
+                                          onValueChange={(value) => updateExercise(dayIndex, exIndex, 'exercise_id', value)}
+                                          disabled={!exercise.exercise_category}
+                                        >
+                                          <SelectTrigger className="bg-slate-800 border-slate-700 text-white">
+                                            <SelectValue placeholder="Selecione exercício" />
+                                          </SelectTrigger>
+                                          <SelectContent>
+                                            {loadingExercises ? (
+                                              <div className="p-2 text-slate-400 text-sm">
+                                                Carregando...
+                                              </div>
+                                            ) : !exercise.exercise_category ? (
+                                              <div className="p-2 text-slate-400 text-sm">
+                                                Selecione uma categoria primeiro
+                                              </div>
+                                            ) : filteredExercises.length === 0 ? (
+                                              <div className="p-2 text-slate-400 text-sm">
+                                                Nenhum exercício nesta categoria
+                                              </div>
+                                            ) : (
+                                              filteredExercises.map((ex) => (
+                                                <SelectItem key={ex.id} value={ex.id}>
+                                                  {ex.name}
+                                                </SelectItem>
+                                              ))
+                                            )}
+                                          </SelectContent>
+                                        </Select>
+                                      </div>
+                                    </div>
+                                  </div>
+
+                                  <div>
+                                    <Label className="text-slate-300 text-xs mb-1">Observações</Label>
+                                    <Input
+                                      placeholder="Ex: Controlar a descida, manter cotovelos próximos..."
+                                      value={exercise.notes}
+                                      onChange={(e) => updateExercise(dayIndex, exIndex, 'notes', e.target.value)}
+                                      className="bg-slate-800 border-slate-700 text-white text-sm"
+                                    />
+                                  </div>
+
+                                  {/* Séries */}
+                                  <div className="space-y-2">
+                                    <div className="flex items-center justify-between">
+                                      <Label className="text-slate-300 text-sm font-semibold">
+                                        Séries e Repetições
+                                      </Label>
+                                      <Button
+                                        type="button"
+                                        size="sm"
+                                        variant="outline"
+                                        onClick={() => addSetToExercise(dayIndex, exIndex)}
+                                        className="h-7 text-xs border-slate-700 text-slate-300"
+                                      >
+                                        <Plus className="w-3 h-3 mr-1" />
+                                        Adicionar Série
+                                      </Button>
+                                    </div>
+                                    
+                                    <div className="space-y-2 bg-slate-800/30 p-3 rounded-lg">
+                                      {exercise.sets.map((set, setIndex) => (
+                                        <div key={setIndex} className="flex items-center gap-2">
+                                          <span className="text-slate-400 text-sm font-medium w-12">
+                                            {setIndex + 1}ª
+                                          </span>
+                                          <div className="flex-1 grid grid-cols-2 gap-2">
+                                            <div>
+                                              <Input
+                                                placeholder="Reps (ex: 10)"
+                                                value={set.reps}
+                                                onChange={(e) => updateSet(dayIndex, exIndex, setIndex, 'reps', e.target.value)}
+                                                className="bg-slate-800 border-slate-700 text-white text-sm h-9"
+                                              />
+                                            </div>
+                                            <div>
+                                              <Input
+                                                type="number"
+                                                placeholder="Descanso (s)"
+                                                value={set.rest_seconds}
+                                                onChange={(e) => updateSet(dayIndex, exIndex, setIndex, 'rest_seconds', e.target.value)}
+                                                className="bg-slate-800 border-slate-700 text-white text-sm h-9"
+                                              />
+                                            </div>
+                                          </div>
+                                          {exercise.sets.length > 1 && (
+                                            <Button
+                                              type="button"
+                                              variant="ghost"
+                                              size="icon"
+                                              onClick={() => removeSetFromExercise(dayIndex, exIndex, setIndex)}
+                                              className="h-9 w-9 text-red-400 hover:bg-red-950/50"
+                                            >
+                                              <X className="w-4 h-4" />
+                                            </Button>
+                                          )}
+                                        </div>
+                                      ))}
+                                      <p className="text-slate-500 text-xs mt-2">
+                                        💡 Exemplo: 1x10 (60s), 2x8 (90s), 1x6 (120s)
+                                      </p>
+                                    </div>
                                   </div>
                                 </div>
-                              </div>
 
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => removeExerciseFromDay(dayIndex, exIndex)}
-                                className="text-red-400 hover:bg-red-950/50"
-                              >
-                                <Trash2 className="w-5 h-5" />
-                              </Button>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      ))
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => removeExerciseFromDay(dayIndex, exIndex)}
+                                  className="text-red-400 hover:bg-red-950/50"
+                                >
+                                  <Trash2 className="w-5 h-5" />
+                                </Button>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        );
+                      })
                     )}
                   </CardContent>
                 </Card>

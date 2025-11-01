@@ -5,8 +5,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Edit2, Trash2 } from "lucide-react";
+import { Plus, Edit2, Trash2, Upload } from "lucide-react";
 import ExerciseFormModal from "./ExerciseFormModal";
+import ImportExercisesModal from "./ImportExercisesModal";
 
 const categoryColors = {
   chest: "bg-red-500/20 text-red-400",
@@ -32,6 +33,7 @@ const categoryLabels = {
 
 export default function AdminExercises({ exercises = [] }) {
   const [showForm, setShowForm] = useState(false);
+  const [showImport, setShowImport] = useState(false);
   const [editingExercise, setEditingExercise] = useState(null);
   const [categoryFilter, setCategoryFilter] = useState("all");
   const queryClient = useQueryClient();
@@ -95,6 +97,14 @@ export default function AdminExercises({ exercises = [] }) {
                   <SelectItem value="full_body">Corpo Inteiro</SelectItem>
                 </SelectContent>
               </Select>
+              <Button
+                onClick={() => setShowImport(true)}
+                variant="outline"
+                className="border-slate-700 text-slate-300 hover:bg-slate-800"
+              >
+                <Upload className="w-4 h-4 mr-2" />
+                Importar
+              </Button>
               <Button
                 onClick={() => setShowForm(true)}
                 className="bg-blue-600 hover:bg-blue-700"
@@ -172,6 +182,12 @@ export default function AdminExercises({ exercises = [] }) {
         <ExerciseFormModal
           exercise={editingExercise}
           onClose={handleCloseForm}
+        />
+      )}
+
+      {showImport && (
+        <ImportExercisesModal
+          onClose={() => setShowImport(false)}
         />
       )}
     </div>

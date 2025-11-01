@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -138,6 +139,38 @@ export default function Home() {
         </Link>
       )}
 
+      {/* Stats Grid */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <StatsCard
+          icon={Calendar}
+          label="Esta Semana"
+          value={thisWeekWorkouts.length}
+          suffix="treinos"
+          color="blue"
+        />
+        <StatsCard
+          icon={Flame}
+          label="Calorias"
+          value={totalCalories}
+          suffix="kcal"
+          color="orange"
+        />
+        <StatsCard
+          icon={Trophy}
+          label="Sequência"
+          value={thisWeekWorkouts.length >= 3 ? "3+" : thisWeekWorkouts.length}
+          suffix="dias"
+          color="yellow"
+        />
+        <StatsCard
+          icon={TrendingUp}
+          label="Peso Atual"
+          value={currentWeight || "-"}
+          suffix={currentWeight ? "kg" : ""}
+          color="green"
+        />
+      </div>
+
       {/* Weekly Goal Progress */}
       <Card className="bg-slate-900/50 border-slate-800">
         <CardContent className="p-5">
@@ -219,38 +252,6 @@ export default function Home() {
           </CardContent>
         </Card>
       )}
-
-      {/* Stats Grid */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <StatsCard
-          icon={Calendar}
-          label="Esta Semana"
-          value={thisWeekWorkouts.length}
-          suffix="treinos"
-          color="blue"
-        />
-        <StatsCard
-          icon={Flame}
-          label="Calorias"
-          value={totalCalories}
-          suffix="kcal"
-          color="orange"
-        />
-        <StatsCard
-          icon={Trophy}
-          label="Sequência"
-          value={thisWeekWorkouts.length >= 3 ? "3+" : thisWeekWorkouts.length}
-          suffix="dias"
-          color="yellow"
-        />
-        <StatsCard
-          icon={TrendingUp}
-          label="Peso Atual"
-          value={currentWeight || "-"}
-          suffix={currentWeight ? "kg" : ""}
-          color="green"
-        />
-      </div>
 
       {/* Next Workout */}
       <NextWorkoutCard />
