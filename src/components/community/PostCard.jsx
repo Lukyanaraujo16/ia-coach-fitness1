@@ -35,10 +35,14 @@ export default function PostCard({ post, currentUser, onLike, onEdit, onDelete }
   const hasLiked = post.liked_by?.includes(currentUser?.id);
   const isOwnPost = post.created_by === currentUser?.email || post.created_by_id === currentUser?.id;
 
+  // Não mostrar posts inativos
+  if (post.is_active === false) {
+    return null;
+  }
+
   useEffect(() => {
     const loadAuthorName = async () => {
       try {
-        // Buscar o usuário pelo email
         const users = await base44.entities.User.list();
         const author = users.find(u => u.email === post.created_by || u.id === post.created_by_id);
         if (author?.full_name) {

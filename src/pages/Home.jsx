@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -163,7 +162,7 @@ export default function Home() {
         </CardContent>
       </Card>
 
-      {/* Challenge of the Week - Updated */}
+      {/* Challenge of the Week */}
       {activeChallenge && (
         <Card className="bg-gradient-to-br from-purple-900/30 to-pink-900/30 border-purple-700/50">
           <CardHeader>
@@ -197,7 +196,7 @@ export default function Home() {
             <div className="flex gap-2">
               <Input
                 type="number"
-                placeholder={`Quantas ${activeChallenge.unit} você fez?`}
+                placeholder={`Quantas ${activeChallenge.unit}?`}
                 value={challengeInput}
                 onChange={(e) => setChallengeInput(e.target.value)}
                 onKeyPress={(e) => e.key === 'Enter' && handleAddProgress()}

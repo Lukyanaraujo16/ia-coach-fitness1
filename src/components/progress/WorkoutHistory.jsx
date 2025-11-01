@@ -1,8 +1,26 @@
 import React from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { base44 } from "@/api/base44Client";
 import { Card, CardContent } from "@/components/ui/card";
-import { Calendar, Clock, Flame } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Calendar, Clock, Flame, Trash2 } from "lucide-react";
 
 export default function WorkoutHistory({ logs = [] }) {
+  const queryClient = useQueryClient();
+
+  const deleteLogMutation = useMutation({
+    mutationFn: (logId) => base44.entities.WorkoutLog.delete(logId),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['workout-logs']);
+    },
+  });
+
+  const handleDeleteLog = (logId, workoutTitle) => {
+    if (confirm(`Tem certeza que deseja excluir o treino "${workoutTitle}"?`)) {
+      deleteLogMutation.mutate(logId);
+    }
+  };
+
   if (logs.length === 0) {
     return (
       <Card className="bg-slate-900/50 border-slate-800">
@@ -41,12 +59,23 @@ export default function WorkoutHistory({ logs = [] }) {
                   <p className="text-slate-500 text-sm mt-2">{log.notes}</p>
                 )}
               </div>
-              {log.difficulty_rating && (
-                <div className="flex flex-col items-center">
-                  <div className="text-2xl font-bold text-blue-400">{log.difficulty_rating}</div>
-                  <div className="text-xs text-slate-500">/ 5</div>
-                </div>
-              )}
+              <div className="flex flex-col items-end gap-2">
+                {log.difficulty_rating && (
+                  <div className="flex flex-col items-center">
+                    <div className="text-2xl font-bold text-blue-400">{log.difficulty_rating}</div>
+                    <div className="text-xs text-slate-500">/ 5</div>
+                  </div>
+                )}
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => handleDeleteLog(log.id, log.workout_title)}
+                  disabled={deleteLogMutation.isPending}
+                  className="text-red-400 hover:text-red-300 hover:bg-red-950/50"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </Button>
+              </div>
             </div>
           </CardContent>
         </Card>
