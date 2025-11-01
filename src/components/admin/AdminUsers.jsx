@@ -1,12 +1,50 @@
 import React, { useState } from "react";
+import { base44 } from "@/api/base44Client";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search, Crown, User } from "lucide-react";
+import { Search, Crown, User, Trash2, Shield } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 export default function AdminUsers({ users = [] }) {
   const [searchQuery, setSearchQuery] = useState("");
+  const queryClient = useQueryClient();
+
+  const updateUserMutation = useMutation({
+    mutationFn: ({ userId, data }) => base44.entities.User.update(userId, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['all-users']);
+    },
+  });
+
+  const deleteUserMutation = useMutation({
+    mutationFn: (userId) => base44.entities.User.delete(userId),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['all-users']);
+    },
+  });
+
+  const handleTogglePremium = (user) => {
+    const newStatus = user.subscription_status === 'premium' ? 'free' : 'premium';
+    updateUserMutation.mutate({
+      userId: user.id,
+      data: { subscription_status: newStatus },
+    });
+  };
+
+  const handleDeleteUser = (userId) => {
+    if (confirm('Tem certeza que deseja excluir este usuário?')) {
+      deleteUserMutation.mutate(userId);
+    }
+  };
 
   const filteredUsers = users.filter(user => 
     user.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -40,6 +78,7 @@ export default function AdminUsers({ users = [] }) {
                   <TableHead className="text-slate-400">Plano</TableHead>
                   <TableHead className="text-slate-400">Nível</TableHead>
                   <TableHead className="text-slate-400">Cadastro</TableHead>
+                  <TableHead className="text-slate-400">Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -70,11 +109,35 @@ export default function AdminUsers({ users = [] }) {
                     </TableCell>
                     <TableCell>
                       <Badge variant="outline" className="text-slate-400 border-slate-700 capitalize">
-                        {user.fitness_level || 'N/A'}
+                        {user.fitness_level === 'beginner' ? 'Iniciante' : 
+                         user.fitness_level === 'intermediate' ? 'Intermediário' : 
+                         user.fitness_level === 'advanced' ? 'Avançado' : 'N/A'}
                       </Badge>
                     </TableCell>
                     <TableCell className="text-slate-400 text-sm">
                       {new Date(user.created_date).toLocaleDateString('pt-BR')}
+                    </TableCell>
+                    <TableCell>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="sm" className="text-slate-400">
+                            Ações
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent>
+                          <DropdownMenuItem onClick={() => handleTogglePremium(user)}>
+                            <Crown className="w-4 h-4 mr-2" />
+                            {user.subscription_status === 'premium' ? 'Remover Premium' : 'Tornar Premium'}
+                          </DropdownMenuItem>
+                          <DropdownMenuItem 
+                            onClick={() => handleDeleteUser(user.id)}
+                            className="text-red-400"
+                          >
+                            <Trash2 className="w-4 h-4 mr-2" />
+                            Excluir Usuário
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </TableCell>
                   </TableRow>
                 ))}

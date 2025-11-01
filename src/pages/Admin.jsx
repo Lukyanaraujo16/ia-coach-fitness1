@@ -1,14 +1,15 @@
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Users, DollarSign, TrendingUp, Dumbbell, Crown, Plus } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Users, DollarSign, Dumbbell, Crown, Zap } from "lucide-react";
 import AdminUsers from "../components/admin/AdminUsers";
 import AdminWorkouts from "../components/admin/AdminWorkouts";
+import AdminExercises from "../components/admin/AdminExercises";
+import AdminChallenges from "../components/admin/AdminChallenges";
 import AdminMetrics from "../components/admin/AdminMetrics";
 
 export default function Admin() {
@@ -26,13 +27,22 @@ export default function Admin() {
     queryFn: () => base44.entities.Workout.list(),
   });
 
+  const { data: exercises = [] } = useQuery({
+    queryKey: ['all-exercises'],
+    queryFn: () => base44.entities.Exercise.list(),
+  });
+
+  const { data: challenges = [] } = useQuery({
+    queryKey: ['all-challenges'],
+    queryFn: () => base44.entities.Challenge.list(),
+  });
+
   useEffect(() => {
     const loadUser = async () => {
       try {
         const currentUser = await base44.auth.me();
         setUser(currentUser);
         
-        // Verificar se é admin
         if (currentUser.role !== 'admin') {
           navigate(createPageUrl("Home"));
         }
@@ -129,7 +139,7 @@ export default function Admin() {
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="bg-slate-900/50 border border-slate-800 w-full md:w-auto">
+        <TabsList className="bg-slate-900/50 border border-slate-800 w-full md:w-auto overflow-x-auto">
           <TabsTrigger value="metrics" className="data-[state=active]:bg-blue-600">
             Métricas
           </TabsTrigger>
@@ -139,6 +149,12 @@ export default function Admin() {
           <TabsTrigger value="workouts" className="data-[state=active]:bg-blue-600">
             Treinos
           </TabsTrigger>
+          <TabsTrigger value="exercises" className="data-[state=active]:bg-blue-600">
+            Exercícios
+          </TabsTrigger>
+          <TabsTrigger value="challenges" className="data-[state=active]:bg-blue-600">
+            Desafios
+          </TabsTrigger>
         </TabsList>
       </Tabs>
 
@@ -146,6 +162,8 @@ export default function Admin() {
       {activeTab === "metrics" && <AdminMetrics users={users} workouts={workouts} />}
       {activeTab === "users" && <AdminUsers users={users} />}
       {activeTab === "workouts" && <AdminWorkouts workouts={workouts} />}
+      {activeTab === "exercises" && <AdminExercises exercises={exercises} />}
+      {activeTab === "challenges" && <AdminChallenges challenges={challenges} />}
     </div>
   );
 }
