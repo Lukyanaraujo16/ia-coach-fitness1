@@ -5,13 +5,15 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Input } from "@/components/ui/input";
-import { Camera, Upload, Loader2, Sparkles, RefreshCw, Plus, Trash2 } from "lucide-react";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Camera, Upload, Loader2, Sparkles, RefreshCw, Type } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 export default function CalorieCounter() {
+  const [inputMode, setInputMode] = useState("photo"); // "photo" or "text"
   const [selectedFile, setSelectedFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
+  const [mealDescription, setMealDescription] = useState("");
   const [mealType, setMealType] = useState("lunch");
   const [notes, setNotes] = useState("");
   const [analysisResult, setAnalysisResult] = useState(null);
@@ -39,19 +41,27 @@ export default function CalorieCounter() {
   };
 
   const analyzePhoto = async (adjustmentText = null) => {
-    if (!selectedFile) return;
+    if (!selectedFile && !mealDescription) return;
 
     setIsAnalyzing(true);
     try {
-      // 1. Upload da foto (se ainda não foi feito)
-      let photoUrl = analysisResult?.photoUrl;
-      if (!photoUrl) {
-        const uploadResult = await base44.integrations.Core.UploadFile({ file: selectedFile });
-        photoUrl = uploadResult.file_url;
+      let photoUrl = null;
+      
+      // Se for foto, fazer upload
+      if (inputMode === "photo") {
+        if (!analysisResult?.photoUrl) {
+          const uploadResult = await base44.integrations.Core.UploadFile({ file: selectedFile });
+          photoUrl = uploadResult.file_url;
+        } else {
+          photoUrl = analysisResult.photoUrl;
+        }
       }
 
-      // 2. Análise com IA
-      let analysisPrompt = `
+      // Montar prompt
+      let analysisPrompt = "";
+      
+      if (inputMode === "photo") {
+        analysisPrompt = `
 Analise esta foto de comida e retorne informações nutricionais detalhadas.
 Identifique todos os alimentos visíveis, estime as quantidades e calcule:
 - Calorias totais
@@ -63,15 +73,30 @@ Identifique todos os alimentos visíveis, estime as quantidades e calcule:
 Liste cada alimento com sua quantidade estimada e calorias individuais.
 Seja o mais preciso possível com base na aparência visual dos alimentos.
 `;
+      } else {
+        analysisPrompt = `
+O usuário descreveu a seguinte refeição: "${mealDescription}"
 
-      // Se houver ajuste solicitado pelo usuário
+Analise esta descrição e retorne informações nutricionais detalhadas:
+- Calorias totais
+- Proteínas (g)
+- Carboidratos (g)
+- Gorduras (g)  
+- Fibras (g)
+
+Liste cada alimento mencionado com sua quantidade estimada (ou inferida se não especificada) e calorias individuais.
+Seja o mais preciso possível com base nas quantidades típicas se não foram especificadas.
+`;
+      }
+
+      // Adicionar ajuste se houver
       if (adjustmentText) {
         analysisPrompt += `\n\nO usuário solicitou o seguinte ajuste: "${adjustmentText}"\nRecalcule os valores nutricionais considerando esta correção/adição.`;
       }
 
       const analysis = await base44.integrations.Core.InvokeLLM({
         prompt: analysisPrompt,
-        file_urls: photoUrl,
+        file_urls: inputMode === "photo" ? photoUrl : undefined,
         response_json_schema: {
           type: "object",
           properties: {
@@ -106,8 +131,8 @@ Seja o mais preciso possível com base na aparência visual dos alimentos.
       setAdjustmentRequest("");
       setShowAdjustment(false);
     } catch (error) {
-      console.error("Erro ao analisar foto:", error);
-      alert("Erro ao analisar a foto. Tente novamente.");
+      console.error("Erro ao analisar:", error);
+      alert("Erro ao analisar. Tente novamente.");
     } finally {
       setIsAnalyzing(false);
     }
@@ -130,6 +155,7 @@ Seja o mais preciso possível com base na aparência visual dos alimentos.
       // Reset
       setSelectedFile(null);
       setPreviewUrl(null);
+      setMealDescription("");
       setAnalysisResult(null);
       setNotes("");
       setAdjustmentRequest("");
@@ -144,7 +170,7 @@ Seja o mais preciso possível com base na aparência visual dos alimentos.
     saveMealMutation.mutate({
       date: new Date().toISOString().split('T')[0],
       meal_type: mealType,
-      photo_url: analysisResult.photoUrl,
+      photo_url: analysisResult.photoUrl || null,
       food_items: analysisResult.food_items,
       total_calories: analysisResult.total_calories,
       macros: analysisResult.macros,
@@ -153,21 +179,37 @@ Seja o mais preciso possível com base na aparência visual dos alimentos.
     });
   };
 
+  const canAnalyze = inputMode === "photo" ? (selectedFile && !analysisResult) : (mealDescription.trim() && !analysisResult);
+
   return (
     <div className="space-y-6">
       <Card className="bg-slate-900/50 border-slate-800">
         <CardHeader>
           <CardTitle className="text-white flex items-center gap-2">
             <Camera className="w-5 h-5 text-green-400" />
-            Contador de Calorias por Foto
+            Contador de Calorias
           </CardTitle>
           <p className="text-slate-400 text-sm">
-            Tire uma foto da sua refeição e deixe a IA calcular as calorias para você! 📸
+            Envie uma foto ou descreva sua refeição para calcular as calorias! 📸
           </p>
         </CardHeader>
         <CardContent className="space-y-4">
-          {/* Upload Area */}
-          {!previewUrl && (
+          {/* Mode Selector */}
+          <Tabs value={inputMode} onValueChange={setInputMode} className="w-full">
+            <TabsList className="bg-slate-800 border border-slate-700 w-full grid grid-cols-2">
+              <TabsTrigger value="photo" className="data-[state=active]:bg-green-600">
+                <Camera className="w-4 h-4 mr-2" />
+                Foto
+              </TabsTrigger>
+              <TabsTrigger value="text" className="data-[state=active]:bg-green-600">
+                <Type className="w-4 h-4 mr-2" />
+                Texto
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
+
+          {/* Photo Input */}
+          {inputMode === "photo" && !previewUrl && (
             <label className="block">
               <div className="border-2 border-dashed border-slate-700 rounded-xl p-12 text-center cursor-pointer hover:border-green-600 transition-all duration-300">
                 <Upload className="w-12 h-12 text-slate-500 mx-auto mb-4" />
@@ -188,8 +230,8 @@ Seja o mais preciso possível com base na aparência visual dos alimentos.
             </label>
           )}
 
-          {/* Preview */}
-          {previewUrl && (
+          {/* Photo Preview */}
+          {inputMode === "photo" && previewUrl && (
             <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
@@ -219,8 +261,26 @@ Seja o mais preciso possível com base na aparência visual dos alimentos.
             </motion.div>
           )}
 
+          {/* Text Input */}
+          {inputMode === "text" && !analysisResult && (
+            <div className="space-y-2">
+              <label className="text-slate-300 text-sm font-medium">
+                Descreva sua refeição
+              </label>
+              <Textarea
+                value={mealDescription}
+                onChange={(e) => setMealDescription(e.target.value)}
+                placeholder="Ex: 200g de arroz integral, 150g de frango grelhado, salada verde com azeite, 1 batata doce média"
+                className="bg-slate-800 border-slate-700 text-white min-h-32"
+              />
+              <p className="text-slate-500 text-xs">
+                💡 Dica: Seja específico com as quantidades para uma análise mais precisa
+              </p>
+            </div>
+          )}
+
           {/* Meal Type */}
-          {previewUrl && !analysisResult && (
+          {!analysisResult && (inputMode === "photo" ? previewUrl : mealDescription.trim()) && (
             <div className="space-y-2">
               <label className="text-slate-300 text-sm font-medium">
                 Tipo de Refeição
@@ -241,7 +301,7 @@ Seja o mais preciso possível com base na aparência visual dos alimentos.
           )}
 
           {/* Analyze Button */}
-          {previewUrl && !analysisResult && (
+          {canAnalyze && (
             <Button
               onClick={() => analyzePhoto()}
               disabled={isAnalyzing}
@@ -353,7 +413,7 @@ Seja o mais preciso possível com base na aparência visual dos alimentos.
                     <Textarea
                       value={adjustmentRequest}
                       onChange={(e) => setAdjustmentRequest(e.target.value)}
-                      placeholder="Ex: Adicione 2 ovos cozidos que não apareceram na foto&#10;ou: A porção de arroz está maior, cerca de 200g"
+                      placeholder="Ex: Adicione 2 ovos cozidos que não apareceram&#10;ou: A porção de arroz está maior, cerca de 200g"
                       className="bg-slate-800 border-slate-700 text-white"
                       rows={3}
                     />
@@ -418,6 +478,7 @@ Seja o mais preciso possível com base na aparência visual dos alimentos.
                       setAnalysisResult(null);
                       setPreviewUrl(null);
                       setSelectedFile(null);
+                      setMealDescription("");
                       setShowAdjustment(false);
                     }}
                     className="flex-1 border-slate-700 text-slate-300"

@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -5,6 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Lock, Target, TrendingUp, Zap, ChevronRight } from "lucide-react";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
+import { useState } from "react";
+import AIDietWizard from "./AIDietWizard";
 
 const goalIcons = {
   lose_weight: "🔥",
@@ -21,6 +24,7 @@ const goalLabels = {
 };
 
 export default function NutritionPlans({ plans = [], user }) {
+  const [showAIWizard, setShowAIWizard] = useState(false);
   const isPremium = user?.subscription_status === 'premium';
 
   return (
@@ -31,9 +35,17 @@ export default function NutritionPlans({ plans = [], user }) {
             <Target className="w-5 h-5 text-green-400" />
             Planos Alimentares Personalizados
           </h3>
-          <p className="text-slate-300 text-sm">
+          <p className="text-slate-300 text-sm mb-4">
             Escolha um plano de acordo com seu objetivo fitness e siga as recomendações para alcançar seus resultados! 🎯
           </p>
+          
+          <Button
+            onClick={() => setShowAIWizard(true)}
+            className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500"
+          >
+            <Zap className="w-4 h-4 mr-2" />
+            Criar Minha Dieta Personalizada com IA
+          </Button>
         </CardContent>
       </Card>
 
@@ -147,6 +159,10 @@ export default function NutritionPlans({ plans = [], user }) {
             );
           })}
         </div>
+      )}
+
+      {showAIWizard && (
+        <AIDietWizard user={user} onClose={() => setShowAIWizard(false)} />
       )}
     </div>
   );

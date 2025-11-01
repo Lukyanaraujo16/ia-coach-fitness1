@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
@@ -12,6 +13,7 @@ import AdminExercises from "../components/admin/AdminExercises";
 import AdminChallenges from "../components/admin/AdminChallenges";
 import AdminMetrics from "../components/admin/AdminMetrics";
 import AdminCommunity from "../components/admin/AdminCommunity";
+import AdminNutrition from "../components/admin/AdminNutrition"; // Added import
 
 export default function Admin() {
   const navigate = useNavigate();
@@ -41,6 +43,11 @@ export default function Admin() {
   const { data: posts = [] } = useQuery({
     queryKey: ['all-posts'],
     queryFn: () => base44.entities.CommunityPost.list('-created_date'),
+  });
+
+  const { data: nutritionPlans = [] } = useQuery({ // Added new query
+    queryKey: ['all-nutrition-plans'],
+    queryFn: () => base44.entities.NutritionPlan.list(),
   });
 
   useEffect(() => {
@@ -145,7 +152,7 @@ export default function Admin() {
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="bg-slate-900/50 border border-slate-800 w-full grid grid-cols-3 md:grid-cols-6 gap-2">
+        <TabsList className="bg-slate-900/50 border border-slate-800 w-full grid grid-cols-3 md:grid-cols-7 gap-2"> {/* Changed grid-cols to 7 */}
           <TabsTrigger value="metrics" className="data-[state=active]:bg-blue-600">
             Métricas
           </TabsTrigger>
@@ -157,6 +164,9 @@ export default function Admin() {
           </TabsTrigger>
           <TabsTrigger value="exercises" className="data-[state=active]:bg-blue-600">
             Exercícios
+          </TabsTrigger>
+          <TabsTrigger value="nutrition" className="data-[state=active]:bg-blue-600"> {/* Added new tab trigger */}
+            Nutrição
           </TabsTrigger>
           <TabsTrigger value="challenges" className="data-[state=active]:bg-blue-600">
             Desafios
@@ -172,6 +182,7 @@ export default function Admin() {
       {activeTab === "users" && <AdminUsers users={users} />}
       {activeTab === "workouts" && <AdminWorkouts workouts={workouts} exercises={exercises} />}
       {activeTab === "exercises" && <AdminExercises exercises={exercises} />}
+      {activeTab === "nutrition" && <AdminNutrition plans={nutritionPlans} />} {/* Added new content component */}
       {activeTab === "challenges" && <AdminChallenges challenges={challenges} />}
       {activeTab === "community" && <AdminCommunity posts={posts} />}
     </div>
