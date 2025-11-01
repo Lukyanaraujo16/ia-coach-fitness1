@@ -72,12 +72,31 @@ export default function NutritionGoalsModal({ user, onClose, onSave }) {
             <div className="space-y-2">
               <Label className="text-slate-300">Meta Diária de Calorias *</Label>
               <Input
-                type="number"
-                min="1000"
-                max="5000"
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
                 value={formData.daily_calorie_goal}
-                onChange={(e) => setFormData({ ...formData, daily_calorie_goal: parseInt(e.target.value) || 2000 })}
+                onChange={(e) => {
+                  const value = e.target.value.replace(/[^0-9]/g, '');
+                  const numValue = parseInt(value) || 0;
+                  if (numValue >= 1000 && numValue <= 5000) {
+                    setFormData({ ...formData, daily_calorie_goal: numValue });
+                  } else if (value === '') {
+                    setFormData({ ...formData, daily_calorie_goal: '' });
+                  } else if (numValue < 1000) {
+                    setFormData({ ...formData, daily_calorie_goal: numValue });
+                  }
+                }}
+                onBlur={(e) => {
+                  const value = parseInt(e.target.value) || 2000;
+                  if (value < 1000) {
+                    setFormData({ ...formData, daily_calorie_goal: 1000 });
+                  } else if (value > 5000) {
+                    setFormData({ ...formData, daily_calorie_goal: 5000 });
+                  }
+                }}
                 className="bg-slate-800 border-slate-700 text-white text-lg font-semibold"
+                placeholder="2000"
                 required
               />
               <p className="text-slate-500 text-xs">
@@ -98,12 +117,19 @@ export default function NutritionGoalsModal({ user, onClose, onSave }) {
                   </div>
                   <div className="flex items-center gap-3">
                     <Input
-                      type="number"
-                      min="0"
-                      max="100"
+                      type="text"
+                      inputMode="numeric"
+                      pattern="[0-9]*"
                       value={formData.macro_protein_percentage}
-                      onChange={(e) => setFormData({ ...formData, macro_protein_percentage: parseInt(e.target.value) || 0 })}
+                      onChange={(e) => {
+                        const value = e.target.value.replace(/[^0-9]/g, '');
+                        const numValue = parseInt(value) || 0;
+                        if (numValue <= 100) {
+                          setFormData({ ...formData, macro_protein_percentage: numValue });
+                        }
+                      }}
                       className="bg-slate-800 border-slate-700 text-white w-24"
+                      placeholder="30"
                     />
                     <span className="text-slate-400">%</span>
                     <div className="flex-1 h-2 bg-slate-800 rounded-full overflow-hidden">
@@ -123,12 +149,19 @@ export default function NutritionGoalsModal({ user, onClose, onSave }) {
                   </div>
                   <div className="flex items-center gap-3">
                     <Input
-                      type="number"
-                      min="0"
-                      max="100"
+                      type="text"
+                      inputMode="numeric"
+                      pattern="[0-9]*"
                       value={formData.macro_carbs_percentage}
-                      onChange={(e) => setFormData({ ...formData, macro_carbs_percentage: parseInt(e.target.value) || 0 })}
+                      onChange={(e) => {
+                        const value = e.target.value.replace(/[^0-9]/g, '');
+                        const numValue = parseInt(value) || 0;
+                        if (numValue <= 100) {
+                          setFormData({ ...formData, macro_carbs_percentage: numValue });
+                        }
+                      }}
                       className="bg-slate-800 border-slate-700 text-white w-24"
+                      placeholder="40"
                     />
                     <span className="text-slate-400">%</span>
                     <div className="flex-1 h-2 bg-slate-800 rounded-full overflow-hidden">
@@ -148,12 +181,19 @@ export default function NutritionGoalsModal({ user, onClose, onSave }) {
                   </div>
                   <div className="flex items-center gap-3">
                     <Input
-                      type="number"
-                      min="0"
-                      max="100"
+                      type="text"
+                      inputMode="numeric"
+                      pattern="[0-9]*"
                       value={formData.macro_fat_percentage}
-                      onChange={(e) => setFormData({ ...formData, macro_fat_percentage: parseInt(e.target.value) || 0 })}
+                      onChange={(e) => {
+                        const value = e.target.value.replace(/[^0-9]/g, '');
+                        const numValue = parseInt(value) || 0;
+                        if (numValue <= 100) {
+                          setFormData({ ...formData, macro_fat_percentage: numValue });
+                        }
+                      }}
                       className="bg-slate-800 border-slate-700 text-white w-24"
+                      placeholder="30"
                     />
                     <span className="text-slate-400">%</span>
                     <div className="flex-1 h-2 bg-slate-800 rounded-full overflow-hidden">
