@@ -59,30 +59,30 @@ export default function Nutrition() {
 
   return (
     <div className="py-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <div className="space-y-3">
-          <h2 className="text-3xl font-bold text-white">Nutrição</h2>
-          <p className="text-slate-400">
-            Acompanhe suas refeições e atinja suas metas
-          </p>
-        </div>
-        <Button
-          variant="outline"
-          size="icon"
-          onClick={() => setShowGoalsModal(true)}
-          className="border-slate-700 text-slate-400 hover:text-white hover:bg-slate-800"
-        >
-          <Settings className="w-5 h-5" />
-        </Button>
+      <div className="space-y-3">
+        <h2 className="text-3xl font-bold text-white">Nutrição</h2>
+        <p className="text-slate-400">
+          Acompanhe suas refeições e atinja suas metas
+        </p>
       </div>
 
       {/* Today's Summary */}
       <Card className="bg-gradient-to-br from-green-900/30 to-emerald-900/20 border-green-800/50">
         <CardHeader>
-          <CardTitle className="text-white flex items-center gap-2">
-            <Target className="w-5 h-5 text-green-400" />
-            Hoje
-          </CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-white flex items-center gap-2">
+              <Target className="w-5 h-5 text-green-400" />
+              Hoje
+            </CardTitle>
+            <Button
+              onClick={() => setShowGoalsModal(true)}
+              size="sm"
+              className="bg-blue-600/20 border border-blue-600/30 text-blue-400 hover:bg-blue-600/30"
+            >
+              <Settings className="w-4 h-4 mr-2" />
+              Configurar Metas
+            </Button>
+          </div>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">

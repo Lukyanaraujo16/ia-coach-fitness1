@@ -44,18 +44,18 @@ export default function NutritionGoalsModal({ user, onClose, onSave }) {
 
   return (
     <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <Card className="bg-slate-900 border-slate-800 max-w-2xl w-full">
-        <CardHeader className="flex flex-row items-center justify-between border-b border-slate-800">
+      <Card className="bg-slate-900 border-slate-800 max-w-2xl w-full max-h-[90vh] flex flex-col">
+        <CardHeader className="flex flex-row items-center justify-between border-b border-slate-800 flex-shrink-0">
           <CardTitle className="text-white">Configurar Metas Nutricionais</CardTitle>
           <Button variant="ghost" size="icon" onClick={onClose}>
             <X className="w-5 h-5" />
           </Button>
         </CardHeader>
-        <CardContent className="p-6">
+        <CardContent className="p-6 overflow-y-auto">
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="p-4 bg-blue-900/20 border border-blue-800/50 rounded-lg">
               <div className="flex items-start gap-3">
-                <AlertCircle className="w-5 h-5 text-blue-400 mt-0.5" />
+                <AlertCircle className="w-5 h-5 text-blue-400 mt-0.5 flex-shrink-0" />
                 <div>
                   <p className="text-blue-400 font-semibold mb-1">
                     Personalize suas metas
@@ -247,7 +247,7 @@ export default function NutritionGoalsModal({ user, onClose, onSave }) {
             </div>
 
             {/* Actions */}
-            <div className="flex gap-3 pt-4 border-t border-slate-800">
+            <div className="flex gap-3 pt-4 border-t border-slate-800 sticky bottom-0 bg-slate-900 -mx-6 px-6 pb-6">
               <Button
                 type="button"
                 variant="outline"
