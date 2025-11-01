@@ -1,14 +1,16 @@
+
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Crown, LogOut, User, Settings, Edit2, Save, X, Dumbbell, Trash2, AlertTriangle } from "lucide-react";
+import { Crown, LogOut, User, Settings, Edit2, Save, X, Dumbbell, Trash2, AlertTriangle, Download, Bell } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import ProfileStats from "../components/profile/ProfileStats";
 import ProfileInfo from "../components/profile/ProfileInfo";
+import { useNotifications } from "../components/pwa/NotificationManager";
 
 export default function Profile() {
   const navigate = useNavigate();
@@ -17,6 +19,8 @@ export default function Profile() {
   const [isEditingName, setIsEditingName] = useState(false);
   const [newName, setNewName] = useState("");
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const notifications = useNotifications();
+  const [notificationPermission, setNotificationPermission] = useState('default');
 
   const { data: selectedWorkout } = useQuery({
     queryKey: ['selected-workout', user?.selected_workout_id],
@@ -49,6 +53,11 @@ export default function Profile() {
       }
     };
     loadUser();
+
+    // Verificar permissão de notificações
+    if (notifications.isSupported()) {
+      setNotificationPermission(notifications.getPermission());
+    }
   }, []);
 
   const updateNameMutation = useMutation({
@@ -108,6 +117,36 @@ export default function Profile() {
 
   const confirmDeleteAccount = () => {
     deleteAccountMutation.mutate();
+  };
+
+  const handleInstallApp = () => {
+    // This part tries to dispatch the 'beforeinstallprompt' event.
+    // In a real PWA setup, this event would typically be captured earlier
+    // and its 'prompt()' method saved to be called by this button.
+    // This simplified version attempts to trigger it, but direct dispatching
+    // doesn't usually work to bring up the browser's install prompt directly.
+    // It's more of a hint for the user.
+    const event = new Event('beforeinstallprompt');
+    window.dispatchEvent(event);
+    
+    // Fallback: instruções manuais
+    if (navigator.userAgent.match(/iPhone|iPad|iPod/i)) {
+      alert('Para instalar no iOS:\n1. Toque no botão de compartilhar (geralmente um quadrado com uma seta para cima)\n2. Selecione "Adicionar à Tela de Início"');
+    } else {
+      alert('Para instalar:\n1. Toque no menu do navegador (geralmente três pontos ⋮)\n2. Selecione "Adicionar à tela inicial" ou "Instalar app"');
+    }
+  };
+
+  const handleEnableNotifications = async () => {
+    const result = await notifications.requestPermission();
+    if (result.success) {
+      setNotificationPermission('granted');
+      notifications.showNotification('Notificações Ativadas! 🎉', {
+        body: 'Agora você receberá lembretes sobre seus treinos',
+      });
+    } else {
+      alert(result.error);
+    }
   };
 
   const isPremium = user?.subscription_status === 'premium';
@@ -225,6 +264,31 @@ export default function Profile() {
 
       {/* Actions */}
       <div className="space-y-3">
+        {/* Instalar App */}
+        {!window.matchMedia('(display-mode: standalone)').matches && (
+          <Button
+            variant="outline"
+            onClick={handleInstallApp}
+            className="w-full justify-start border-slate-800 text-slate-300 hover:bg-slate-800"
+          >
+            <Download className="w-5 h-5 mr-3" />
+            Instalar Aplicativo
+          </Button>
+        )}
+
+        {/* Notificações */}
+        {notifications.isSupported() && (
+          <Button
+            variant="outline"
+            onClick={handleEnableNotifications}
+            disabled={notificationPermission === 'granted'}
+            className="w-full justify-start border-slate-800 text-slate-300 hover:bg-slate-800"
+          >
+            <Bell className="w-5 h-5 mr-3" />
+            {notificationPermission === 'granted' ? 'Notificações Ativas' : 'Ativar Notificações'}
+          </Button>
+        )}
+
         <Button
           variant="outline"
           className="w-full justify-start border-slate-800 text-slate-300 hover:bg-slate-800"
