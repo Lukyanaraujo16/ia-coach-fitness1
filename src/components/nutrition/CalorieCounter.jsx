@@ -5,7 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Camera, Upload, Loader2, Sparkles } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Camera, Upload, Loader2, Sparkles, RefreshCw, Plus, Trash2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 export default function CalorieCounter() {
@@ -15,6 +16,8 @@ export default function CalorieCounter() {
   const [notes, setNotes] = useState("");
   const [analysisResult, setAnalysisResult] = useState(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [adjustmentRequest, setAdjustmentRequest] = useState("");
+  const [showAdjustment, setShowAdjustment] = useState(false);
   const queryClient = useQueryClient();
 
   const mealTypes = {
@@ -31,20 +34,24 @@ export default function CalorieCounter() {
       setSelectedFile(file);
       setPreviewUrl(URL.createObjectURL(file));
       setAnalysisResult(null);
+      setShowAdjustment(false);
     }
   };
 
-  const analyzePhoto = async () => {
+  const analyzePhoto = async (adjustmentText = null) => {
     if (!selectedFile) return;
 
     setIsAnalyzing(true);
     try {
-      // 1. Upload da foto
-      const uploadResult = await base44.integrations.Core.UploadFile({ file: selectedFile });
-      const photoUrl = uploadResult.file_url;
+      // 1. Upload da foto (se ainda não foi feito)
+      let photoUrl = analysisResult?.photoUrl;
+      if (!photoUrl) {
+        const uploadResult = await base44.integrations.Core.UploadFile({ file: selectedFile });
+        photoUrl = uploadResult.file_url;
+      }
 
       // 2. Análise com IA
-      const analysisPrompt = `
+      let analysisPrompt = `
 Analise esta foto de comida e retorne informações nutricionais detalhadas.
 Identifique todos os alimentos visíveis, estime as quantidades e calcule:
 - Calorias totais
@@ -56,6 +63,11 @@ Identifique todos os alimentos visíveis, estime as quantidades e calcule:
 Liste cada alimento com sua quantidade estimada e calorias individuais.
 Seja o mais preciso possível com base na aparência visual dos alimentos.
 `;
+
+      // Se houver ajuste solicitado pelo usuário
+      if (adjustmentText) {
+        analysisPrompt += `\n\nO usuário solicitou o seguinte ajuste: "${adjustmentText}"\nRecalcule os valores nutricionais considerando esta correção/adição.`;
+      }
 
       const analysis = await base44.integrations.Core.InvokeLLM({
         prompt: analysisPrompt,
@@ -91,12 +103,22 @@ Seja o mais preciso possível com base na aparência visual dos alimentos.
       });
 
       setAnalysisResult({ ...analysis, photoUrl });
+      setAdjustmentRequest("");
+      setShowAdjustment(false);
     } catch (error) {
       console.error("Erro ao analisar foto:", error);
       alert("Erro ao analisar a foto. Tente novamente.");
     } finally {
       setIsAnalyzing(false);
     }
+  };
+
+  const handleReanalyze = () => {
+    if (!adjustmentRequest.trim()) {
+      alert("Digite o que deseja adicionar ou corrigir");
+      return;
+    }
+    analyzePhoto(adjustmentRequest);
   };
 
   const saveMealMutation = useMutation({
@@ -110,6 +132,8 @@ Seja o mais preciso possível com base na aparência visual dos alimentos.
       setPreviewUrl(null);
       setAnalysisResult(null);
       setNotes("");
+      setAdjustmentRequest("");
+      setShowAdjustment(false);
       alert("Refeição salva com sucesso! 🎉");
     },
   });
@@ -219,7 +243,7 @@ Seja o mais preciso possível com base na aparência visual dos alimentos.
           {/* Analyze Button */}
           {previewUrl && !analysisResult && (
             <Button
-              onClick={analyzePhoto}
+              onClick={() => analyzePhoto()}
               disabled={isAnalyzing}
               className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 py-6"
             >
@@ -311,6 +335,60 @@ Seja o mais preciso possível com base na aparência visual dos alimentos.
                   </div>
                 </div>
 
+                {/* Adjustment Section */}
+                {!showAdjustment ? (
+                  <Button
+                    variant="outline"
+                    onClick={() => setShowAdjustment(true)}
+                    className="w-full border-blue-700 text-blue-400 hover:bg-blue-900/30"
+                  >
+                    <RefreshCw className="w-4 h-4 mr-2" />
+                    A IA identificou tudo corretamente?
+                  </Button>
+                ) : (
+                  <div className="space-y-3 p-4 bg-blue-900/20 border border-blue-800/50 rounded-lg">
+                    <p className="text-blue-400 text-sm font-semibold">
+                      💡 Adicione ou corrija algo:
+                    </p>
+                    <Textarea
+                      value={adjustmentRequest}
+                      onChange={(e) => setAdjustmentRequest(e.target.value)}
+                      placeholder="Ex: Adicione 2 ovos cozidos que não apareceram na foto&#10;ou: A porção de arroz está maior, cerca de 200g"
+                      className="bg-slate-800 border-slate-700 text-white"
+                      rows={3}
+                    />
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        onClick={() => {
+                          setShowAdjustment(false);
+                          setAdjustmentRequest("");
+                        }}
+                        className="flex-1 border-slate-700"
+                      >
+                        Cancelar
+                      </Button>
+                      <Button
+                        onClick={handleReanalyze}
+                        disabled={isAnalyzing || !adjustmentRequest.trim()}
+                        className="flex-1 bg-blue-600 hover:bg-blue-700"
+                      >
+                        {isAnalyzing ? (
+                          <>
+                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                            Recalculando...
+                          </>
+                        ) : (
+                          <>
+                            <RefreshCw className="w-4 h-4 mr-2" />
+                            Recalcular
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  </div>
+                )}
+
                 {/* Recommendations */}
                 {analysisResult.recommendations && (
                   <div className="p-4 bg-blue-900/20 border border-blue-800/50 rounded-lg">
@@ -340,6 +418,7 @@ Seja o mais preciso possível com base na aparência visual dos alimentos.
                       setAnalysisResult(null);
                       setPreviewUrl(null);
                       setSelectedFile(null);
+                      setShowAdjustment(false);
                     }}
                     className="flex-1 border-slate-700 text-slate-300"
                   >

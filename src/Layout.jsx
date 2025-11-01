@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { Link, useLocation } from "react-router-dom";
@@ -73,10 +72,10 @@ export default function Layout({ children, currentPageName }) {
         {children}
       </main>
 
-      {/* Bottom Navigation */}
+      {/* Bottom Navigation - Rolável no mobile */}
       <nav className="fixed bottom-0 left-0 right-0 bg-slate-950/95 backdrop-blur-xl border-t border-slate-800/50 z-50">
-        <div className="max-w-7xl mx-auto px-2 py-2">
-          <div className="flex justify-around items-center">
+        <div className="max-w-7xl mx-auto">
+          <div className="flex overflow-x-auto scrollbar-hide py-2 px-2">
             {navigationItems.map((item) => {
               const isActive = location.pathname === item.path;
               const Icon = item.icon;
@@ -84,7 +83,7 @@ export default function Layout({ children, currentPageName }) {
                 <Link
                   key={item.name}
                   to={item.path}
-                  className={`flex flex-col items-center gap-1 px-3 py-2 rounded-xl transition-all duration-300 ${
+                  className={`flex flex-col items-center gap-1 px-4 py-2 rounded-xl transition-all duration-300 whitespace-nowrap flex-shrink-0 ${
                     isActive
                       ? "bg-blue-600/20 text-blue-400"
                       : "text-slate-400 hover:text-slate-300"
@@ -98,6 +97,16 @@ export default function Layout({ children, currentPageName }) {
           </div>
         </div>
       </nav>
+
+      <style>{`
+        .scrollbar-hide::-webkit-scrollbar {
+          display: none;
+        }
+        .scrollbar-hide {
+          -ms-overflow-style: none;
+          scrollbar-width: none;
+        }
+      `}</style>
     </div>
   );
 }
