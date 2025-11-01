@@ -52,13 +52,22 @@ export default function Profile() {
   }, []);
 
   const updateNameMutation = useMutation({
-    mutationFn: (name) => base44.auth.updateMe({ full_name: name }),
-    onSuccess: async () => {
+    mutationFn: async (name) => {
+      await base44.auth.updateMe({ full_name: name });
+      // Recarregar os dados do usuário após atualizar
       const updatedUser = await base44.auth.me();
+      return updatedUser;
+    },
+    onSuccess: (updatedUser) => {
       setUser(updatedUser);
       setNewName(updatedUser.full_name || "");
       setIsEditingName(false);
+      queryClient.invalidateQueries(['user']);
     },
+    onError: (error) => {
+      console.error("Erro ao atualizar nome:", error);
+      alert("Erro ao atualizar nome. Tente novamente.");
+    }
   });
 
   const changeWorkoutMutation = useMutation({
@@ -90,8 +99,11 @@ export default function Profile() {
   };
 
   const handleSaveName = () => {
-    if (newName.trim()) {
-      updateNameMutation.mutate(newName.trim());
+    const trimmedName = newName.trim();
+    if (trimmedName && trimmedName !== user?.full_name) {
+      updateNameMutation.mutate(trimmedName);
+    } else {
+      setIsEditingName(false);
     }
   };
 
@@ -129,6 +141,7 @@ export default function Profile() {
                     onChange={(e) => setNewName(e.target.value)}
                     className="bg-slate-800 border-slate-700 text-white"
                     placeholder="Seu nome"
+                    onKeyPress={(e) => e.key === 'Enter' && handleSaveName()}
                   />
                   <Button
                     size="icon"

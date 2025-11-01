@@ -1,19 +1,20 @@
-
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Camera, TrendingUp, Book, Target } from "lucide-react";
+import { Camera, TrendingUp, Book, Target, Settings } from "lucide-react";
 import CalorieCounter from "../components/nutrition/CalorieCounter";
 import NutritionStats from "../components/nutrition/NutritionStats";
 import MealHistory from "../components/nutrition/MealHistory";
 import NutritionPlans from "../components/nutrition/NutritionPlans";
+import NutritionGoalsModal from "../components/nutrition/NutritionGoalsModal";
 
 export default function Nutrition() {
   const [activeTab, setActiveTab] = useState("counter");
   const [user, setUser] = useState(null);
+  const [showGoalsModal, setShowGoalsModal] = useState(false);
 
   const { data: mealLogs = [] } = useQuery({
     queryKey: ['meal-logs'],
@@ -45,22 +46,34 @@ export default function Nutrition() {
   const todayCarbs = todayMeals.reduce((sum, log) => sum + (log.macros?.carbs || 0), 0);
   const todayFat = todayMeals.reduce((sum, log) => sum + (log.macros?.fat || 0), 0);
 
-  // Meta diária (pode vir do usuário ou default)
+  // Meta diária (do usuário ou default)
   const calorieGoal = user?.daily_calorie_goal || 2000;
+  const proteinPercentage = user?.macro_protein_percentage || 30;
+  const carbsPercentage = user?.macro_carbs_percentage || 40;
+  const fatPercentage = user?.macro_fat_percentage || 30;
   
-  // Calcular metas de macros em gramas (baseado na meta de calorias)
-  // Approximate macro calories: Protein 4 kcal/g, Carbs 4 kcal/g, Fat 9 kcal/g
-  const proteinGoal = Math.round((calorieGoal * 0.30) / 4); // 30% das calorias / 4 kcal por grama
-  const carbsGoal = Math.round((calorieGoal * 0.40) / 4); // 40% das calorias / 4 kcal por grama
-  const fatGoal = Math.round((calorieGoal * 0.30) / 9); // 30% das calorias / 9 kcal por grama
+  // Calcular metas de macros em gramas (baseado na meta de calorias e porcentagens)
+  const proteinGoal = Math.round((calorieGoal * (proteinPercentage / 100)) / 4);
+  const carbsGoal = Math.round((calorieGoal * (carbsPercentage / 100)) / 4);
+  const fatGoal = Math.round((calorieGoal * (fatPercentage / 100)) / 9);
 
   return (
     <div className="py-6 space-y-6">
-      <div className="space-y-3">
-        <h2 className="text-3xl font-bold text-white">Nutrição</h2>
-        <p className="text-slate-400">
-          Acompanhe suas refeições e atinja suas metas
-        </p>
+      <div className="flex items-center justify-between">
+        <div className="space-y-3">
+          <h2 className="text-3xl font-bold text-white">Nutrição</h2>
+          <p className="text-slate-400">
+            Acompanhe suas refeições e atinja suas metas
+          </p>
+        </div>
+        <Button
+          variant="outline"
+          size="icon"
+          onClick={() => setShowGoalsModal(true)}
+          className="border-slate-700 text-slate-400 hover:text-white hover:bg-slate-800"
+        >
+          <Settings className="w-5 h-5" />
+        </Button>
       </div>
 
       {/* Today's Summary */}
@@ -92,7 +105,7 @@ export default function Nutrition() {
             {/* Proteínas */}
             <div>
               <div className="flex items-center justify-between mb-2">
-                <span className="text-slate-300 text-sm">Proteínas</span>
+                <span className="text-slate-300 text-sm">Proteínas ({proteinPercentage}%)</span>
                 <span className="text-blue-400 font-bold">
                   {Math.round(todayProtein)}g / {proteinGoal}g
                 </span>
@@ -108,7 +121,7 @@ export default function Nutrition() {
             {/* Carboidratos */}
             <div>
               <div className="flex items-center justify-between mb-2">
-                <span className="text-slate-300 text-sm">Carboidratos</span>
+                <span className="text-slate-300 text-sm">Carboidratos ({carbsPercentage}%)</span>
                 <span className="text-orange-400 font-bold">
                   {Math.round(todayCarbs)}g / {carbsGoal}g
                 </span>
@@ -124,7 +137,7 @@ export default function Nutrition() {
             {/* Gorduras */}
             <div>
               <div className="flex items-center justify-between mb-2">
-                <span className="text-slate-300 text-sm">Gorduras</span>
+                <span className="text-slate-300 text-sm">Gorduras ({fatPercentage}%)</span>
                 <span className="text-yellow-400 font-bold">
                   {Math.round(todayFat)}g / {fatGoal}g
                 </span>
@@ -167,6 +180,18 @@ export default function Nutrition() {
       {activeTab === "stats" && <NutritionStats mealLogs={mealLogs} calorieGoal={calorieGoal} />}
       {activeTab === "history" && <MealHistory mealLogs={mealLogs} />}
       {activeTab === "plans" && <NutritionPlans plans={nutritionPlans} user={user} />}
+
+      {/* Goals Modal */}
+      {showGoalsModal && (
+        <NutritionGoalsModal
+          user={user}
+          onClose={() => setShowGoalsModal(false)}
+          onSave={() => {
+            setShowGoalsModal(false);
+            window.location.reload();
+          }}
+        />
+      )}
     </div>
   );
 }
