@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
@@ -6,14 +5,13 @@ import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
-import { Users, DollarSign, Dumbbell, Crown, MessageSquare, Bell } from "lucide-react";
+import { Users, DollarSign, Dumbbell, Crown, MessageSquare } from "lucide-react";
 import AdminUsers from "../components/admin/AdminUsers";
 import AdminWorkouts from "../components/admin/AdminWorkouts";
 import AdminExercises from "../components/admin/AdminExercises";
 import AdminChallenges from "../components/admin/AdminChallenges";
 import AdminMetrics from "../components/admin/AdminMetrics";
 import AdminCommunity from "../components/admin/AdminCommunity";
-import AdminNotifications from "../components/admin/AdminNotifications";
 
 export default function Admin() {
   const navigate = useNavigate();
@@ -147,7 +145,7 @@ export default function Admin() {
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="bg-slate-900/50 border border-slate-800 w-full grid grid-cols-3 md:grid-cols-7 gap-2">
+        <TabsList className="bg-slate-900/50 border border-slate-800 w-full grid grid-cols-3 md:grid-cols-6 gap-2">
           <TabsTrigger value="metrics" className="data-[state=active]:bg-blue-600">
             Métricas
           </TabsTrigger>
@@ -166,9 +164,6 @@ export default function Admin() {
           <TabsTrigger value="community" className="data-[state=active]:bg-blue-600">
             Comunidade
           </TabsTrigger>
-          <TabsTrigger value="notifications" className="data-[state=active]:bg-blue-600">
-            Notificações
-          </TabsTrigger>
         </TabsList>
       </Tabs>
 
@@ -179,7 +174,6 @@ export default function Admin() {
       {activeTab === "exercises" && <AdminExercises exercises={exercises} />}
       {activeTab === "challenges" && <AdminChallenges challenges={challenges} />}
       {activeTab === "community" && <AdminCommunity posts={posts} />}
-      {activeTab === "notifications" && <AdminNotifications />}
     </div>
   );
 }

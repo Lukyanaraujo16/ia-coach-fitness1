@@ -10,16 +10,12 @@ import { Input } from "@/components/ui/input";
 import StatsCard from "../components/home/StatsCard";
 import QuickActionCard from "../components/home/QuickActionCard";
 import NextWorkoutCard from "../components/home/NextWorkoutCard";
-import InstallPrompt from "../components/pwa/InstallPrompt";
-import { useNotifications } from "../components/pwa/NotificationManager";
 
 export default function Home() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [user, setUser] = useState(null);
   const [challengeInput, setChallengeInput] = useState("");
-  const [showInstallPrompt, setShowInstallPrompt] = useState(false);
-  const notifications = useNotifications();
 
   const { data: workoutLogs = [] } = useQuery({
     queryKey: ['workout-logs'],
@@ -79,15 +75,6 @@ export default function Home() {
         setUser(currentUser);
         if (!currentUser.fitness_goal) {
           navigate(createPageUrl("Onboarding"));
-        } else {
-          // Mostrar prompt de instalação após onboarding
-          const hasSeenInstallPrompt = localStorage.getItem('pwa-install-seen');
-          if (!hasSeenInstallPrompt) {
-            setTimeout(() => {
-              setShowInstallPrompt(true);
-              localStorage.setItem('pwa-install-seen', 'true');
-            }, 2000);
-          }
         }
       } catch (error) {
         console.error("Error loading user:", error);
@@ -330,14 +317,6 @@ export default function Home() {
           )}
         </CardContent>
       </Card>
-
-      {/* Install Prompt */}
-      {showInstallPrompt && (
-        <InstallPrompt
-          onInstall={() => setShowInstallPrompt(false)}
-          onDismiss={() => setShowInstallPrompt(false)}
-        />
-      )}
     </div>
   );
 }
