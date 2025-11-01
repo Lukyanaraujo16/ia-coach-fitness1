@@ -5,7 +5,7 @@ import { createPageUrl } from "@/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Clock, TrendingUp, Zap, Lock } from "lucide-react";
+import { Clock, Zap, Lock } from "lucide-react";
 
 const categoryColors = {
   strength: "bg-orange-500/20 text-orange-400 border-orange-500/30",
@@ -15,10 +15,24 @@ const categoryColors = {
   full_body: "bg-blue-500/20 text-blue-400 border-blue-500/30",
 };
 
+const categoryLabels = {
+  strength: "Força",
+  cardio: "Cardio",
+  hiit: "HIIT",
+  flexibility: "Flexibilidade",
+  full_body: "Corpo Inteiro",
+};
+
 const difficultyColors = {
   beginner: "bg-green-500/20 text-green-400",
   intermediate: "bg-yellow-500/20 text-yellow-400",
   advanced: "bg-red-500/20 text-red-400",
+};
+
+const difficultyLabels = {
+  beginner: "Iniciante",
+  intermediate: "Intermediário",
+  advanced: "Avançado",
 };
 
 export default function WorkoutCard({ workout }) {
@@ -60,10 +74,10 @@ export default function WorkoutCard({ workout }) {
         <CardContent className="space-y-4">
           <div className="flex flex-wrap gap-2">
             <Badge className={categoryColors[workout.category] || categoryColors.full_body}>
-              {workout.category}
+              {categoryLabels[workout.category] || workout.category}
             </Badge>
             <Badge className={difficultyColors[workout.difficulty]}>
-              {workout.difficulty}
+              {difficultyLabels[workout.difficulty] || workout.difficulty}
             </Badge>
           </div>
           <div className="flex items-center gap-4 text-slate-300 text-sm">
@@ -80,7 +94,7 @@ export default function WorkoutCard({ workout }) {
             onClick={handleViewDetails}
             className="w-full bg-blue-600 hover:bg-blue-700 text-white"
           >
-            Ver Detalhes
+            Ver Treino
           </Button>
         </CardContent>
       </Card>

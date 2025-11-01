@@ -1,18 +1,22 @@
+
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { Calendar, Flame, Trophy, TrendingUp, ChevronRight, Zap, Target, Crown } from "lucide-react";
+import { Calendar, Flame, Trophy, TrendingUp, ChevronRight, Zap, Target, Crown, Plus } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import StatsCard from "../components/home/StatsCard";
 import QuickActionCard from "../components/home/QuickActionCard";
 import NextWorkoutCard from "../components/home/NextWorkoutCard";
 
 export default function Home() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [user, setUser] = useState(null);
+  const [challengeInput, setChallengeInput] = useState("");
 
   const { data: workoutLogs = [] } = useQuery({
     queryKey: ['workout-logs'],
@@ -23,6 +27,47 @@ export default function Home() {
     queryKey: ['progress-entries'],
     queryFn: () => base44.entities.ProgressEntry.list('-date', 1),
   });
+
+  const { data: challenges = [] } = useQuery({
+    queryKey: ['challenges'],
+    queryFn: () => base44.entities.Challenge.list('-created_date'),
+  });
+
+  const { data: challengeProgress = [] } = useQuery({
+    queryKey: ['challenge-progress'],
+    queryFn: () => base44.entities.ChallengeProgress.list(),
+  });
+
+  const activeChallenge = challenges.find(c => c.is_active);
+  const userProgress = challengeProgress.find(p => p.challenge_id === activeChallenge?.id);
+
+  const updateProgressMutation = useMutation({
+    mutationFn: (data) => {
+      if (userProgress) {
+        return base44.entities.ChallengeProgress.update(userProgress.id, data);
+      }
+      return base44.entities.ChallengeProgress.create(data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(['challenge-progress']);
+      setChallengeInput("");
+    },
+  });
+
+  const handleAddProgress = () => {
+    if (!challengeInput || !activeChallenge) return;
+    
+    const toAdd = parseInt(challengeInput);
+    if (isNaN(toAdd) || toAdd <= 0) return;
+
+    const newProgress = (userProgress?.current_progress || 0) + toAdd;
+    
+    updateProgressMutation.mutate({
+      challenge_id: activeChallenge.id,
+      current_progress: newProgress,
+      completed: newProgress >= activeChallenge.target,
+    });
+  };
 
   useEffect(() => {
     const loadUser = async () => {
@@ -58,6 +103,10 @@ export default function Home() {
     if (hour < 18) return "Boa tarde";
     return "Boa noite";
   };
+
+  const challengePercentage = activeChallenge 
+    ? Math.min(((userProgress?.current_progress || 0) / activeChallenge.target) * 100, 100)
+    : 0;
 
   return (
     <div className="py-6 space-y-6">
@@ -150,29 +199,63 @@ export default function Home() {
       {/* Next Workout */}
       <NextWorkoutCard />
 
-      {/* Challenge of the Week */}
-      <Card className="bg-gradient-to-br from-purple-900/30 to-pink-900/30 border-purple-700/50">
-        <CardHeader>
-          <CardTitle className="text-white flex items-center gap-2">
-            <Zap className="w-5 h-5 text-yellow-400" />
-            Desafio da Semana
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <h4 className="text-xl font-bold text-white mb-2">
-            100 Flexões em 7 dias
-          </h4>
-          <p className="text-slate-300 text-sm mb-4">
-            Complete 100 flexões distribuídas ao longo da semana
-          </p>
-          <div className="flex items-center gap-3">
-            <div className="flex-1 h-2 bg-slate-800 rounded-full overflow-hidden">
-              <div className="h-full bg-gradient-to-r from-purple-600 to-pink-600 w-1/3" />
+      {/* Challenge of the Week - Updated */}
+      {activeChallenge && (
+        <Card className="bg-gradient-to-br from-purple-900/30 to-pink-900/30 border-purple-700/50">
+          <CardHeader>
+            <CardTitle className="text-white flex items-center gap-2">
+              <Zap className="w-5 h-5 text-yellow-400" />
+              Desafio da Semana
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div>
+              <h4 className="text-xl font-bold text-white mb-2">
+                {activeChallenge.title}
+              </h4>
+              <p className="text-slate-300 text-sm">
+                {activeChallenge.description}
+              </p>
             </div>
-            <span className="text-slate-300 text-sm font-medium">33/100</span>
-          </div>
-        </CardContent>
-      </Card>
+            
+            <div className="flex items-center gap-3">
+              <div className="flex-1 h-2 bg-slate-800 rounded-full overflow-hidden">
+                <div 
+                  className="h-full bg-gradient-to-r from-purple-600 to-pink-600 transition-all duration-500" 
+                  style={{ width: `${challengePercentage}%` }}
+                />
+              </div>
+              <span className="text-slate-300 text-sm font-medium">
+                {userProgress?.current_progress || 0}/{activeChallenge.target}
+              </span>
+            </div>
+
+            <div className="flex gap-2">
+              <Input
+                type="number"
+                placeholder="Quantidade"
+                value={challengeInput}
+                onChange={(e) => setChallengeInput(e.target.value)}
+                className="bg-slate-800 border-slate-700 text-white"
+              />
+              <Button
+                onClick={handleAddProgress}
+                disabled={updateProgressMutation.isPending || !challengeInput || parseInt(challengeInput) <= 0}
+                className="bg-purple-600 hover:bg-purple-700 whitespace-nowrap"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Registrar
+              </Button>
+            </div>
+
+            {userProgress?.completed && (
+              <p className="text-green-400 text-sm font-semibold mt-2">
+                🎉 Desafio Completo! Parabéns!
+              </p>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       {/* Quick Actions */}
       <div className="space-y-3">

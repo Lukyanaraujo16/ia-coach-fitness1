@@ -4,10 +4,18 @@ import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronRight, Target, Home, TrendingUp } from "lucide-react";
+import { ChevronRight, Target, Home, TrendingUp, User as UserIcon } from "lucide-react";
 
 const STEPS = [
+  {
+    id: "personal_info",
+    title: "Suas Informações",
+    icon: UserIcon,
+    type: "form",
+  },
   {
     id: "goal",
     title: "Qual seu objetivo?",
@@ -44,6 +52,11 @@ export default function Onboarding() {
   const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState(0);
   const [answers, setAnswers] = useState({
+    full_name: "",
+    current_weight: "",
+    height: "",
+    weight_goal: "",
+    weekly_goal: "3",
     goal: "",
     location: "",
     level: "",
@@ -56,7 +69,8 @@ export default function Onboarding() {
       try {
         const currentUser = await base44.auth.me();
         setUser(currentUser);
-        // Se já tem objetivo configurado, redireciona para Home
+        setAnswers(prev => ({ ...prev, full_name: currentUser.full_name || "" }));
+        
         if (currentUser.fitness_goal) {
           navigate(createPageUrl("Home"));
         }
@@ -86,6 +100,11 @@ export default function Onboarding() {
     setIsLoading(true);
     try {
       await base44.auth.updateMe({
+        full_name: answers.full_name,
+        current_weight: answers.current_weight ? parseFloat(answers.current_weight) : undefined,
+        height: answers.height ? parseFloat(answers.height) : undefined,
+        weight_goal: answers.weight_goal ? parseFloat(answers.weight_goal) : undefined,
+        weekly_goal: parseInt(answers.weekly_goal),
         fitness_goal: answers.goal,
         training_location: answers.location,
         fitness_level: answers.level,
@@ -98,7 +117,12 @@ export default function Onboarding() {
     }
   };
 
-  const canProceed = answers[currentStepData.id] !== "";
+  const canProceed = () => {
+    if (currentStepData.type === "form") {
+      return answers.full_name && answers.current_weight && answers.height && answers.weight_goal && answers.weekly_goal;
+    }
+    return answers[currentStepData.id] !== "";
+  };
 
   if (!user) {
     return (
@@ -110,7 +134,6 @@ export default function Onboarding() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 flex flex-col items-center justify-center px-4 py-12">
-      {/* Progress Bar */}
       <div className="w-full max-w-md mb-8">
         <div className="flex gap-2">
           {STEPS.map((_, index) => (
@@ -127,7 +150,6 @@ export default function Onboarding() {
         </p>
       </div>
 
-      {/* Content */}
       <AnimatePresence mode="wait">
         <motion.div
           key={currentStep}
@@ -146,34 +168,96 @@ export default function Onboarding() {
                   {currentStepData.title}
                 </h2>
                 <p className="text-slate-400">
-                  Escolha a opção que melhor descreve você
+                  {currentStepData.type === "form" 
+                    ? "Preencha seus dados para personalizar sua experiência"
+                    : "Escolha a opção que melhor descreve você"}
                 </p>
               </div>
 
-              <div className="space-y-3">
-                {currentStepData.options.map((option) => (
-                  <motion.button
-                    key={option.value}
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                    onClick={() => handleSelect(option.value)}
-                    className={`w-full p-4 rounded-xl border-2 transition-all duration-300 text-left ${
-                      answers[currentStepData.id] === option.value
-                        ? "border-blue-600 bg-blue-600/20"
-                        : "border-slate-800 bg-slate-800/50 hover:border-slate-700"
-                    }`}
-                  >
-                    <div className="flex items-center gap-3">
-                      <span className="text-3xl">{option.emoji}</span>
-                      <span className="text-white font-medium">{option.label}</span>
+              {currentStepData.type === "form" ? (
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label className="text-slate-300">Nome Completo</Label>
+                    <Input
+                      value={answers.full_name}
+                      onChange={(e) => setAnswers({ ...answers, full_name: e.target.value })}
+                      className="bg-slate-800 border-slate-700 text-white"
+                      placeholder="Seu nome"
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label className="text-slate-300">Peso Atual (kg)</Label>
+                      <Input
+                        type="number"
+                        step="0.1"
+                        value={answers.current_weight}
+                        onChange={(e) => setAnswers({ ...answers, current_weight: e.target.value })}
+                        className="bg-slate-800 border-slate-700 text-white"
+                        placeholder="70"
+                      />
                     </div>
-                  </motion.button>
-                ))}
-              </div>
+                    <div className="space-y-2">
+                      <Label className="text-slate-300">Altura (cm)</Label>
+                      <Input
+                        type="number"
+                        value={answers.height}
+                        onChange={(e) => setAnswers({ ...answers, height: e.target.value })}
+                        className="bg-slate-800 border-slate-700 text-white"
+                        placeholder="175"
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-slate-300">Meta de Peso (kg)</Label>
+                    <Input
+                      type="number"
+                      step="0.1"
+                      value={answers.weight_goal}
+                      onChange={(e) => setAnswers({ ...answers, weight_goal: e.target.value })}
+                      className="bg-slate-800 border-slate-700 text-white"
+                      placeholder="65"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-slate-300">Meta Semanal de Treinos</Label>
+                    <Input
+                      type="number"
+                      min="1"
+                      max="7"
+                      value={answers.weekly_goal}
+                      onChange={(e) => setAnswers({ ...answers, weekly_goal: e.target.value })}
+                      className="bg-slate-800 border-slate-700 text-white"
+                      placeholder="3"
+                    />
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {currentStepData.options.map((option) => (
+                    <motion.button
+                      key={option.value}
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      onClick={() => handleSelect(option.value)}
+                      className={`w-full p-4 rounded-xl border-2 transition-all duration-300 text-left ${
+                        answers[currentStepData.id] === option.value
+                          ? "border-blue-600 bg-blue-600/20"
+                          : "border-slate-800 bg-slate-800/50 hover:border-slate-700"
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <span className="text-3xl">{option.emoji}</span>
+                        <span className="text-white font-medium">{option.label}</span>
+                      </div>
+                    </motion.button>
+                  ))}
+                </div>
+              )}
 
               <Button
                 onClick={handleNext}
-                disabled={!canProceed || isLoading}
+                disabled={!canProceed() || isLoading}
                 className="w-full mt-8 bg-blue-600 hover:bg-blue-700 text-white py-6 text-lg"
               >
                 {isLoading ? (

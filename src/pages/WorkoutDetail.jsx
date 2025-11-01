@@ -5,8 +5,24 @@ import { createPageUrl } from "@/utils";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Clock, Zap, Play, Lock, CheckCircle } from "lucide-react";
+import { ArrowLeft, Clock, Zap, Play, Lock } from "lucide-react";
 import { motion } from "framer-motion";
+
+const categoryLabels = {
+  strength: "Força",
+  cardio: "Cardio",
+  hiit: "HIIT",
+  flexibility: "Flexibilidade",
+  full_body: "Corpo Inteiro",
+};
+
+const categoryColors = {
+  strength: "bg-orange-500/20 text-orange-400",
+  cardio: "bg-red-500/20 text-red-400",
+  hiit: "bg-purple-500/20 text-purple-400",
+  flexibility: "bg-green-500/20 text-green-400",
+  full_body: "bg-blue-500/20 text-blue-400",
+};
 
 export default function WorkoutDetail() {
   const navigate = useNavigate();
@@ -36,6 +52,10 @@ export default function WorkoutDetail() {
   const isPremium = user?.subscription_status === 'premium';
   const isLocked = workout?.is_premium && !isPremium;
 
+  const handleStartWorkout = () => {
+    navigate(createPageUrl("WorkoutExecution") + `?id=${workout.id}`);
+  };
+
   if (!workout) {
     return (
       <div className="py-6">
@@ -44,17 +64,8 @@ export default function WorkoutDetail() {
     );
   }
 
-  const categoryColors = {
-    strength: "bg-orange-500/20 text-orange-400",
-    cardio: "bg-red-500/20 text-red-400",
-    hiit: "bg-purple-500/20 text-purple-400",
-    flexibility: "bg-green-500/20 text-green-400",
-    full_body: "bg-blue-500/20 text-blue-400",
-  };
-
   return (
     <div className="py-6 space-y-6">
-      {/* Header */}
       <div className="flex items-center gap-4">
         <Button
           variant="ghost"
@@ -67,14 +78,9 @@ export default function WorkoutDetail() {
         <h2 className="text-2xl font-bold text-white flex-1">Detalhes do Treino</h2>
       </div>
 
-      {/* Hero Image */}
       {workout.image_url && (
         <div className="relative h-48 bg-gradient-to-br from-blue-900/30 to-slate-900 rounded-2xl overflow-hidden">
-          <img
-            src={workout.image_url}
-            alt={workout.title}
-            className="w-full h-full object-cover opacity-60"
-          />
+          <img src={workout.image_url} alt={workout.title} className="w-full h-full object-cover opacity-60" />
           {isLocked && (
             <div className="absolute inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center">
               <div className="text-center">
@@ -86,7 +92,6 @@ export default function WorkoutDetail() {
         </div>
       )}
 
-      {/* Info Card */}
       <Card className="bg-slate-900/50 border-slate-800">
         <CardContent className="p-6 space-y-4">
           <div>
@@ -96,10 +101,10 @@ export default function WorkoutDetail() {
 
           <div className="flex flex-wrap gap-2">
             <Badge className={categoryColors[workout.category]}>
-              {workout.category}
+              {categoryLabels[workout.category] || workout.category}
             </Badge>
-            <Badge variant="outline" className="text-slate-400 border-slate-700">
-              {workout.difficulty}
+            <Badge variant="outline" className="text-slate-400 border-slate-700 capitalize">
+              {workout.difficulty === 'beginner' ? 'Iniciante' : workout.difficulty === 'intermediate' ? 'Intermediário' : 'Avançado'}
             </Badge>
           </div>
 
@@ -122,33 +127,24 @@ export default function WorkoutDetail() {
         </CardContent>
       </Card>
 
-      {/* Exercises List */}
       <div className="space-y-3">
         <h3 className="text-lg font-semibold text-white">Exercícios</h3>
         {workout.exercises && workout.exercises.length > 0 ? (
           workout.exercises.map((exercise, index) => (
-            <motion.div
-              key={index}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.1 }}
-            >
+            <motion.div key={index} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.1 }}>
               <Card className={`border-slate-800 ${isLocked ? 'bg-slate-900/30' : 'bg-slate-900/50'}`}>
                 <CardContent className="p-4">
-                  {isLocked && (
+                  {isLocked ? (
                     <div className="flex items-center justify-center py-8">
                       <Lock className="w-6 h-6 text-slate-600" />
                     </div>
-                  )}
-                  {!isLocked && (
+                  ) : (
                     <div className="flex items-start gap-4">
                       <div className="w-10 h-10 bg-blue-600/20 rounded-lg flex items-center justify-center flex-shrink-0">
                         <span className="text-blue-400 font-bold">{index + 1}</span>
                       </div>
                       <div className="flex-1">
-                        <h4 className="text-white font-semibold mb-1">
-                          Exercício {index + 1}
-                        </h4>
+                        <h4 className="text-white font-semibold mb-1">Exercício {index + 1}</h4>
                         <div className="flex flex-wrap gap-3 text-sm text-slate-400">
                           <div className="flex items-center gap-1">
                             <span>Séries:</span>
@@ -178,7 +174,6 @@ export default function WorkoutDetail() {
         )}
       </div>
 
-      {/* CTA */}
       {isLocked ? (
         <Button
           onClick={() => navigate(createPageUrl("Subscription"))}
@@ -188,9 +183,7 @@ export default function WorkoutDetail() {
           Assinar Premium para Desbloquear
         </Button>
       ) : (
-        <Button
-          className="w-full bg-blue-600 hover:bg-blue-700 text-white py-6"
-        >
+        <Button onClick={handleStartWorkout} className="w-full bg-blue-600 hover:bg-blue-700 text-white py-6">
           <Play className="w-5 h-5 mr-2" />
           Iniciar Treino
         </Button>
