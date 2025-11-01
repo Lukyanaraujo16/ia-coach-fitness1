@@ -5,7 +5,7 @@ import {
   isOneSignalSubscribed,
   setOneSignalTags,
   setOneSignalExternalUserId 
-} from "@/lib/onesignal";
+} from "@/utils/onesignal";
 import { toast } from "sonner";
 
 export function useOneSignalNotifications(user) {
@@ -13,26 +13,21 @@ export function useOneSignalNotifications(user) {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Inicializar OneSignal quando o componente montar
     initOneSignal();
 
-    // Verificar status de inscrição
     const checkSubscription = async () => {
       const subscribed = await isOneSignalSubscribed();
       setIsSubscribed(subscribed);
       setIsLoading(false);
     };
 
-    // Aguardar um pouco para OneSignal carregar
     setTimeout(checkSubscription, 1000);
   }, []);
 
   useEffect(() => {
-    // Quando tiver usuário logado, identificar no OneSignal
     if (user?.id) {
       setOneSignalExternalUserId(user.id);
       
-      // Adicionar tags para segmentação
       setOneSignalTags({
         user_id: user.id,
         email: user.email,
