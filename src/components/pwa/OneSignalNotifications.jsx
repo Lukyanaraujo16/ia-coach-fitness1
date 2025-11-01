@@ -1,0 +1,68 @@
+import { useEffect, useState } from "react";
+import { 
+  initOneSignal, 
+  requestOneSignalPermission, 
+  isOneSignalSubscribed,
+  setOneSignalTags,
+  setOneSignalExternalUserId 
+} from "@/lib/onesignal";
+import { toast } from "sonner";
+
+export function useOneSignalNotifications(user) {
+  const [isSubscribed, setIsSubscribed] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    // Inicializar OneSignal quando o componente montar
+    initOneSignal();
+
+    // Verificar status de inscrição
+    const checkSubscription = async () => {
+      const subscribed = await isOneSignalSubscribed();
+      setIsSubscribed(subscribed);
+      setIsLoading(false);
+    };
+
+    // Aguardar um pouco para OneSignal carregar
+    setTimeout(checkSubscription, 1000);
+  }, []);
+
+  useEffect(() => {
+    // Quando tiver usuário logado, identificar no OneSignal
+    if (user?.id) {
+      setOneSignalExternalUserId(user.id);
+      
+      // Adicionar tags para segmentação
+      setOneSignalTags({
+        user_id: user.id,
+        email: user.email,
+        fitness_level: user.fitness_level || 'beginner',
+        fitness_goal: user.fitness_goal || 'maintain',
+        subscription: user.subscription_status || 'free',
+        active: user.is_active !== false,
+      });
+    }
+  }, [user]);
+
+  const requestPermission = async () => {
+    const result = await requestOneSignalPermission();
+    
+    if (result.success) {
+      setIsSubscribed(true);
+      toast.success(result.message);
+    } else {
+      toast.error(result.error);
+    }
+    
+    return result;
+  };
+
+  return {
+    isSubscribed,
+    isLoading,
+    requestPermission,
+    isSupported: typeof window !== 'undefined' && 'Notification' in window,
+  };
+}
+
+export default useOneSignalNotifications;
