@@ -1,8 +1,9 @@
+
 import React, { useEffect, useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { Link, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { Home, Dumbbell, TrendingUp, Users, User, Crown, Shield } from "lucide-react";
+import { Home, Dumbbell, TrendingUp, Users, User, Crown, Shield, Apple } from "lucide-react";
 
 export default function Layout({ children, currentPageName }) {
   const location = useLocation();
@@ -23,6 +24,7 @@ export default function Layout({ children, currentPageName }) {
   const navigationItems = [
     { name: "Home", path: createPageUrl("Home"), icon: Home },
     { name: "Treinos", path: createPageUrl("Workouts"), icon: Dumbbell },
+    { name: "Nutrição", path: createPageUrl("Nutrition"), icon: Apple },
     { name: "Progresso", path: createPageUrl("Progress"), icon: TrendingUp },
     { name: "Comunidade", path: createPageUrl("Community"), icon: Users },
     { name: "Perfil", path: createPageUrl("Profile"), icon: User },
