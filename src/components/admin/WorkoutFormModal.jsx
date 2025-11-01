@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,8 +9,15 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { X, Plus, Trash2 } from "lucide-react";
 
-export default function WorkoutFormModal({ workout, onClose, exercises = [] }) {
+export default function WorkoutFormModal({ workout, onClose }) {
   const queryClient = useQueryClient();
+  
+  // Carregar exercícios diretamente aqui
+  const { data: exercises = [], isLoading: loadingExercises } = useQuery({
+    queryKey: ['all-exercises'],
+    queryFn: () => base44.entities.Exercise.list(),
+  });
+
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -269,7 +276,7 @@ export default function WorkoutFormModal({ workout, onClose, exercises = [] }) {
             <div className="space-y-4">
               <h3 className="text-xl font-bold text-white">Configurar Dias do Treino</h3>
               <p className="text-slate-400 text-sm">
-                Configure os exercícios para cada dia. Você pode adicionar múltiplas séries com repetições e descansos diferentes.
+                Configure os exercícios para cada dia. {loadingExercises ? 'Carregando exercícios...' : `${exercises.length} exercícios disponíveis`}
               </p>
               
               {formData.days.map((day, dayIndex) => (
@@ -282,6 +289,7 @@ export default function WorkoutFormModal({ workout, onClose, exercises = [] }) {
                         size="sm"
                         onClick={() => addExerciseToDay(dayIndex)}
                         className="bg-blue-600 hover:bg-blue-700"
+                        disabled={loadingExercises}
                       >
                         <Plus className="w-4 h-4 mr-2" />
                         Adicionar Exercício
@@ -297,6 +305,7 @@ export default function WorkoutFormModal({ workout, onClose, exercises = [] }) {
                           size="sm"
                           onClick={() => addExerciseToDay(dayIndex)}
                           className="bg-blue-600 hover:bg-blue-700"
+                          disabled={loadingExercises}
                         >
                           <Plus className="w-4 h-4 mr-2" />
                           Adicionar Primeiro Exercício
@@ -322,14 +331,18 @@ export default function WorkoutFormModal({ workout, onClose, exercises = [] }) {
                                         <SelectValue placeholder="Selecione um exercício" />
                                       </SelectTrigger>
                                       <SelectContent>
-                                        {exercises.length === 0 ? (
+                                        {loadingExercises ? (
                                           <div className="p-2 text-slate-400 text-sm">
-                                            Nenhum exercício cadastrado
+                                            Carregando exercícios...
+                                          </div>
+                                        ) : exercises.length === 0 ? (
+                                          <div className="p-2 text-slate-400 text-sm">
+                                            Nenhum exercício cadastrado. Cadastre exercícios primeiro na aba "Exercícios".
                                           </div>
                                         ) : (
                                           exercises.map((ex) => (
                                             <SelectItem key={ex.id} value={ex.id}>
-                                              {ex.name}
+                                              {ex.name} ({ex.category})
                                             </SelectItem>
                                           ))
                                         )}
