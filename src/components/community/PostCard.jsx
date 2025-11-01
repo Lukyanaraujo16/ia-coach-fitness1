@@ -1,9 +1,16 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
+import { base44 } from "@/api/base44Client";
 import { motion } from "framer-motion";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Heart, MessageCircle, Trophy } from "lucide-react";
+import { Heart, MessageCircle, Trophy, Edit2, Trash2, MoreVertical } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const achievementLabels = {
   workout_completed: "Treino Completado",
@@ -23,8 +30,26 @@ const achievementColors = {
   other: "bg-slate-500/20 text-slate-400",
 };
 
-export default function PostCard({ post, currentUser, onLike }) {
+export default function PostCard({ post, currentUser, onLike, onEdit, onDelete }) {
+  const [authorName, setAuthorName] = useState(post.created_by || 'Usuário');
   const hasLiked = post.liked_by?.includes(currentUser?.id);
+  const isOwnPost = post.created_by === currentUser?.email || post.created_by_id === currentUser?.id;
+
+  useEffect(() => {
+    const loadAuthorName = async () => {
+      try {
+        // Buscar o usuário pelo email
+        const users = await base44.entities.User.list();
+        const author = users.find(u => u.email === post.created_by || u.id === post.created_by_id);
+        if (author?.full_name) {
+          setAuthorName(author.full_name);
+        }
+      } catch (error) {
+        console.error("Error loading author:", error);
+      }
+    };
+    loadAuthorName();
+  }, [post]);
 
   return (
     <motion.div
@@ -38,11 +63,11 @@ export default function PostCard({ post, currentUser, onLike }) {
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-blue-700 rounded-full flex items-center justify-center">
                 <span className="text-white font-semibold">
-                  {post.created_by?.[0]?.toUpperCase() || 'U'}
+                  {authorName[0]?.toUpperCase() || 'U'}
                 </span>
               </div>
               <div>
-                <p className="text-white font-medium">{post.created_by || 'Usuário'}</p>
+                <p className="text-white font-medium">{authorName}</p>
                 <p className="text-slate-500 text-xs">
                   {new Date(post.created_date).toLocaleDateString('pt-BR', {
                     day: 'numeric',
@@ -53,10 +78,33 @@ export default function PostCard({ post, currentUser, onLike }) {
                 </p>
               </div>
             </div>
-            <Badge className={achievementColors[post.achievement_type]}>
-              <Trophy className="w-3 h-3 mr-1" />
-              {achievementLabels[post.achievement_type]}
-            </Badge>
+            
+            <div className="flex items-center gap-2">
+              <Badge className={achievementColors[post.achievement_type]}>
+                <Trophy className="w-3 h-3 mr-1" />
+                {achievementLabels[post.achievement_type]}
+              </Badge>
+              
+              {isOwnPost && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon" className="text-slate-400">
+                      <MoreVertical className="w-4 h-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent>
+                    <DropdownMenuItem onClick={onEdit}>
+                      <Edit2 className="w-4 h-4 mr-2" />
+                      Editar
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={onDelete} className="text-red-400">
+                      <Trash2 className="w-4 h-4 mr-2" />
+                      Excluir
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
+            </div>
           </div>
 
           {/* Content */}

@@ -8,6 +8,7 @@ import PostCard from "../components/community/PostCard";
 
 export default function Community() {
   const [showForm, setShowForm] = useState(false);
+  const [editingPost, setEditingPost] = useState(null);
   const [user, setUser] = useState(null);
   const queryClient = useQueryClient();
 
@@ -29,10 +30,23 @@ export default function Community() {
   }, []);
 
   const createPostMutation = useMutation({
-    mutationFn: (data) => base44.entities.CommunityPost.create(data),
+    mutationFn: (data) => {
+      if (editingPost) {
+        return base44.entities.CommunityPost.update(editingPost.id, data);
+      }
+      return base44.entities.CommunityPost.create(data);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries(['community-posts']);
       setShowForm(false);
+      setEditingPost(null);
+    },
+  });
+
+  const deletePostMutation = useMutation({
+    mutationFn: (postId) => base44.entities.CommunityPost.delete(postId),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['community-posts']);
     },
   });
 
@@ -59,6 +73,17 @@ export default function Community() {
     createPostMutation.mutate(data);
   };
 
+  const handleEditPost = (post) => {
+    setEditingPost(post);
+    setShowForm(true);
+  };
+
+  const handleDeletePost = (postId) => {
+    if (confirm('Tem certeza que deseja excluir esta postagem?')) {
+      deletePostMutation.mutate(postId);
+    }
+  };
+
   const handleLikePost = (post) => {
     if (!user) return;
     likePostMutation.mutate({
@@ -76,7 +101,10 @@ export default function Community() {
           <p className="text-slate-400 mt-1">Compartilhe suas conquistas</p>
         </div>
         <Button
-          onClick={() => setShowForm(!showForm)}
+          onClick={() => {
+            setEditingPost(null);
+            setShowForm(!showForm);
+          }}
           className="bg-blue-600 hover:bg-blue-700 text-white"
         >
           <Plus className="w-4 h-4 mr-2" />
@@ -86,9 +114,14 @@ export default function Community() {
 
       {showForm && (
         <CreatePostForm
+          post={editingPost}
           onSubmit={handleCreatePost}
-          onCancel={() => setShowForm(false)}
+          onCancel={() => {
+            setShowForm(false);
+            setEditingPost(null);
+          }}
           isLoading={createPostMutation.isPending}
+          isPremium={user?.subscription_status === 'premium'}
         />
       )}
 
@@ -102,6 +135,8 @@ export default function Community() {
               post={post}
               currentUser={user}
               onLike={() => handleLikePost(post)}
+              onEdit={() => handleEditPost(post)}
+              onDelete={() => handleDeletePost(post.id)}
             />
           ))
         ) : (
