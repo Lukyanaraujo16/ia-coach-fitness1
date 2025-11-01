@@ -109,7 +109,8 @@ export default function Onboarding() {
         training_location: answers.location,
         fitness_level: answers.level,
       });
-      navigate(createPageUrl("Home"));
+      // Redirecionar para seleção de treinos
+      navigate(createPageUrl("WorkoutSelection"));
     } catch (error) {
       console.error("Error saving onboarding:", error);
     } finally {
