@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -8,11 +7,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { X, ChevronRight, ChevronLeft, Sparkles, Loader2 } from "lucide-react";
+import { X, ChevronRight, ChevronLeft, Sparkles, Loader2, AlertCircle } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 const STEPS = [
   { id: "goal", title: "Qual seu objetivo?" },
+  { id: "weight_confirm", title: "Confirme seu Peso" },
+  { id: "macros", title: "Distribuição de Macros" },
   { id: "preferences", title: "Preferências Alimentares" },
   { id: "restrictions", title: "Restrições" },
   { id: "details", title: "Detalhes Finais" },
@@ -26,6 +27,11 @@ export default function AIDietWizard({ user, onClose }) {
   
   const [formData, setFormData] = useState({
     goal: "",
+    current_weight: user?.current_weight || "",
+    calculated_calories: 0,
+    protein_percentage: 30,
+    carbs_percentage: 40,
+    fat_percentage: 30,
     target_weight: "",
     weekly_goal: "0.5",
     favorite_foods: "",
@@ -44,11 +50,18 @@ Crie um plano alimentar personalizado COMPLETO com base nas seguintes informaç�
 
 **PERFIL DO USUÁRIO:**
 - Objetivo: ${data.goal === 'lose_weight' ? 'Emagrecer' : data.goal === 'gain_muscle' ? 'Ganhar massa muscular' : 'Manter peso'}
-- Peso atual: ${user.current_weight || 'não informado'}kg
+- Peso atual: ${data.current_weight}kg
 - Peso meta: ${data.target_weight || user.weight_goal || 'não informado'}kg
 - Meta semanal: ${data.weekly_goal}kg/semana
 - Nível fitness: ${user.fitness_level || 'iniciante'}
 - Altura: ${user.height || 'não informada'}cm
+
+**METAS NUTRICIONAIS:**
+- Calorias máximas diárias: ${data.calculated_calories} kcal
+- Distribuição de macronutrientes:
+  * Proteínas: ${data.protein_percentage}%
+  * Carboidratos: ${data.carbs_percentage}%
+  * Gorduras: ${data.fat_percentage}%
 
 **PREFERÊNCIAS:**
 - Alimentos favoritos: ${data.favorite_foods || 'sem preferências específicas'}
@@ -62,20 +75,20 @@ Crie um plano alimentar personalizado COMPLETO com base nas seguintes informaç�
 - Alergias: ${data.allergies || 'nenhuma'}
 
 **INSTRUÇÕES:**
-Crie um plano alimentar COMPLETO e DETALHADO com:
-1. Calorias diárias calculadas com base no objetivo
-2. Distribuição de macronutrientes (proteína, carboidratos, gorduras) em porcentagens
-3. Lista COMPLETA de refeições para cada horário do dia com sugestões específicas de alimentos
+Crie um plano alimentar COMPLETO e DETALHADO que respeite EXATAMENTE as metas nutricionais acima:
+1. As calorias diárias DEVEM ser NO MÁXIMO ${data.calculated_calories} kcal
+2. A distribuição de macronutrientes DEVE ser ${data.protein_percentage}% proteína, ${data.carbs_percentage}% carboidratos, ${data.fat_percentage}% gorduras
+3. Liste TODAS as refeições com horários e alimentos específicos
 4. Pelo menos 5-7 dicas nutricionais práticas e personalizadas
 5. Um título atraente para o plano
 6. Descrição motivadora
 
-IMPORTANT: 
+IMPORTANTE: 
 - Seja específico nas sugestões de alimentos
 - SEMPRE use GRAMAS (g) para alimentos que podem ser pesados (ex: 150g de frango, 200g de arroz, 100g de batata doce)
 - Use unidades apropriadas para outros itens (ex: 2 ovos, 1 banana, 1 fatia de pão)
 - Considere as preferências e restrições mencionadas
-- Calcule as calorias de forma realista para o objetivo
+- As quantidades devem bater com as calorias e macros especificados
 - As sugestões devem ser práticas e viáveis
 `;
 
@@ -125,16 +138,30 @@ IMPORTANT:
   });
 
   const savePlanMutation = useMutation({
-    mutationFn: (planData) => base44.entities.NutritionPlan.create(planData),
+    mutationFn: async (planData) => {
+      // Salvar o plano
+      await base44.entities.NutritionPlan.create(planData);
+      
+      // Atualizar a meta de calorias do usuário
+      await base44.auth.updateMe({
+        daily_calorie_goal: formData.calculated_calories,
+      });
+    },
     onSuccess: () => {
       queryClient.invalidateQueries(['nutrition-plans']);
       alert("Seu plano alimentar foi salvo com sucesso! 🎉");
       onClose();
+      window.location.reload(); // Recarregar para atualizar a meta
     },
   });
 
   const handleNext = () => {
-    if (currentStep < STEPS.length - 1) {
+    if (currentStep === 0 && formData.goal === "lose_weight") {
+      // Calcular calorias para emagrecimento
+      const calculatedCal = Math.round(parseFloat(formData.current_weight) * 20);
+      setFormData({ ...formData, calculated_calories: calculatedCal });
+      setCurrentStep(currentStep + 1);
+    } else if (currentStep < STEPS.length - 1) {
       setCurrentStep(currentStep + 1);
     } else {
       handleGenerate();
@@ -175,12 +202,17 @@ IMPORTANT:
   const canProceed = () => {
     switch (currentStep) {
       case 0:
-        return formData.goal && formData.target_weight;
+        return formData.goal;
       case 1:
-        return true; // Preferências são opcionais
+        return formData.current_weight && parseFloat(formData.current_weight) > 0;
       case 2:
-        return true; // Restrições são opcionais
+        const total = formData.protein_percentage + formData.carbs_percentage + formData.fat_percentage;
+        return total === 100;
       case 3:
+        return true; // Preferências são opcionais
+      case 4:
+        return true; // Restrições são opcionais
+      case 5:
         return formData.meals_per_day;
       default:
         return false;
@@ -210,6 +242,7 @@ IMPORTANT:
               <p className="text-3xl font-bold text-green-400 mb-1">
                 {generatedPlan.daily_calories} kcal/dia
               </p>
+              <p className="text-slate-500 text-sm">Meta máxima de calorias</p>
               <div className="grid grid-cols-3 gap-3 mt-3">
                 <div>
                   <p className="text-blue-400 font-bold">{generatedPlan.macros_distribution.protein_percentage}%</p>
@@ -317,7 +350,7 @@ IMPORTANT:
                 </p>
               </div>
 
-              {/* Step Content */}
+              {/* Step 0: Goal */}
               {currentStep === 0 && (
                 <div className="space-y-4">
                   <div className="space-y-2">
@@ -336,41 +369,131 @@ IMPORTANT:
                       </SelectContent>
                     </Select>
                   </div>
+                </div>
+              )}
 
-                  <div className="grid grid-cols-2 gap-4">
+              {/* Step 1: Weight Confirmation */}
+              {currentStep === 1 && (
+                <div className="space-y-4">
+                  <div className="p-4 bg-blue-900/20 border border-blue-800/50 rounded-lg">
+                    <div className="flex items-start gap-3">
+                      <AlertCircle className="w-5 h-5 text-blue-400 mt-0.5" />
+                      <div>
+                        <p className="text-blue-400 font-semibold mb-1">
+                          Confirmação Importante
+                        </p>
+                        <p className="text-slate-300 text-sm">
+                          Vamos calcular sua meta de calorias com base no seu peso atual.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label className="text-slate-300">Seu peso atual está correto? *</Label>
+                    <Input
+                      type="number"
+                      step="0.1"
+                      value={formData.current_weight}
+                      onChange={(e) => setFormData({ ...formData, current_weight: e.target.value })}
+                      className="bg-slate-800 border-slate-700 text-white"
+                      placeholder="Ex: 75"
+                    />
+                    <p className="text-slate-500 text-xs">
+                      Peso atual cadastrado: {user?.current_weight || 'não informado'} kg
+                    </p>
+                  </div>
+
+                  {formData.current_weight && parseFloat(formData.current_weight) > 0 && (
+                    <div className="p-4 bg-green-900/20 border border-green-800/50 rounded-lg">
+                      <p className="text-green-400 font-semibold mb-1">
+                        Meta de Calorias Calculada
+                      </p>
+                      <p className="text-white text-2xl font-bold">
+                        {Math.round(parseFloat(formData.current_weight) * 20)} kcal/dia
+                      </p>
+                      <p className="text-slate-400 text-sm mt-1">
+                        Este será o MÁXIMO de calorias da sua dieta de emagrecimento
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Step 2: Macros Distribution */}
+              {currentStep === 2 && (
+                <div className="space-y-4">
+                  <div className="p-4 bg-blue-900/20 border border-blue-800/50 rounded-lg">
+                    <p className="text-blue-400 font-semibold mb-1">
+                      Distribua os macronutrientes
+                    </p>
+                    <p className="text-slate-300 text-sm">
+                      A soma deve ser exatamente 100%
+                    </p>
+                  </div>
+
+                  <div className="space-y-4">
                     <div className="space-y-2">
-                      <Label className="text-slate-300">Peso Meta (kg) *</Label>
+                      <Label className="text-slate-300">Proteínas (%)</Label>
                       <Input
                         type="number"
-                        step="0.1"
-                        value={formData.target_weight}
-                        onChange={(e) => setFormData({ ...formData, target_weight: e.target.value })}
+                        min="0"
+                        max="100"
+                        value={formData.protein_percentage}
+                        onChange={(e) => setFormData({ ...formData, protein_percentage: parseInt(e.target.value) || 0 })}
                         className="bg-slate-800 border-slate-700 text-white"
-                        placeholder="Ex: 70"
                       />
                     </div>
 
                     <div className="space-y-2">
-                      <Label className="text-slate-300">Meta Semanal (kg)</Label>
-                      <Select
-                        value={formData.weekly_goal}
-                        onValueChange={(value) => setFormData({ ...formData, weekly_goal: value })}
-                      >
-                        <SelectTrigger className="bg-slate-800 border-slate-700 text-white">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="0.25">0.25 kg/semana</SelectItem>
-                          <SelectItem value="0.5">0.5 kg/semana</SelectItem>
-                          <SelectItem value="1">1 kg/semana</SelectItem>
-                        </SelectContent>
-                      </Select>
+                      <Label className="text-slate-300">Carboidratos (%)</Label>
+                      <Input
+                        type="number"
+                        min="0"
+                        max="100"
+                        value={formData.carbs_percentage}
+                        onChange={(e) => setFormData({ ...formData, carbs_percentage: parseInt(e.target.value) || 0 })}
+                        className="bg-slate-800 border-slate-700 text-white"
+                      />
                     </div>
+
+                    <div className="space-y-2">
+                      <Label className="text-slate-300">Gorduras (%)</Label>
+                      <Input
+                        type="number"
+                        min="0"
+                        max="100"
+                        value={formData.fat_percentage}
+                        onChange={(e) => setFormData({ ...formData, fat_percentage: parseInt(e.target.value) || 0 })}
+                        className="bg-slate-800 border-slate-700 text-white"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Total */}
+                  <div className={`p-4 rounded-lg ${
+                    (formData.protein_percentage + formData.carbs_percentage + formData.fat_percentage) === 100
+                      ? 'bg-green-900/20 border border-green-800/50'
+                      : 'bg-red-900/20 border border-red-800/50'
+                  }`}>
+                    <p className={`font-bold ${
+                      (formData.protein_percentage + formData.carbs_percentage + formData.fat_percentage) === 100
+                        ? 'text-green-400'
+                        : 'text-red-400'
+                    }`}>
+                      Total: {formData.protein_percentage + formData.carbs_percentage + formData.fat_percentage}%
+                    </p>
+                    {(formData.protein_percentage + formData.carbs_percentage + formData.fat_percentage) !== 100 && (
+                      <p className="text-red-300 text-sm mt-1">
+                        A soma deve ser exatamente 100%
+                      </p>
+                    )}
                   </div>
                 </div>
               )}
 
-              {currentStep === 1 && (
+              {/* Step 3: Preferences */}
+              {currentStep === 3 && (
                 <div className="space-y-4">
                   <div className="space-y-2">
                     <Label className="text-slate-300">Alimentos Favoritos</Label>
@@ -394,7 +517,8 @@ IMPORTANT:
                 </div>
               )}
 
-              {currentStep === 2 && (
+              {/* Step 4: Restrictions */}
+              {currentStep === 4 && (
                 <div className="space-y-4">
                   <div className="space-y-2">
                     <Label className="text-slate-300">Restrições Alimentares</Label>
@@ -418,7 +542,8 @@ IMPORTANT:
                 </div>
               )}
 
-              {currentStep === 3 && (
+              {/* Step 5: Details */}
+              {currentStep === 5 && (
                 <div className="space-y-4">
                   <div className="space-y-2">
                     <Label className="text-slate-300">Quantas refeições por dia?</Label>

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
@@ -36,7 +37,7 @@ export default function Nutrition() {
     loadUser();
   }, []);
 
-  // Calcular calorias de hoje
+  // Calcular calorias e macros de hoje
   const today = new Date().toISOString().split('T')[0];
   const todayMeals = mealLogs.filter(log => log.date === today && log.analysis_complete);
   const todayCalories = todayMeals.reduce((sum, log) => sum + (log.total_calories || 0), 0);
@@ -44,8 +45,14 @@ export default function Nutrition() {
   const todayCarbs = todayMeals.reduce((sum, log) => sum + (log.macros?.carbs || 0), 0);
   const todayFat = todayMeals.reduce((sum, log) => sum + (log.macros?.fat || 0), 0);
 
-  // Meta diária (pode vir do plano ou default)
+  // Meta diária (pode vir do usuário ou default)
   const calorieGoal = user?.daily_calorie_goal || 2000;
+  
+  // Calcular metas de macros em gramas (baseado na meta de calorias)
+  // Approximate macro calories: Protein 4 kcal/g, Carbs 4 kcal/g, Fat 9 kcal/g
+  const proteinGoal = Math.round((calorieGoal * 0.30) / 4); // 30% das calorias / 4 kcal por grama
+  const carbsGoal = Math.round((calorieGoal * 0.40) / 4); // 40% das calorias / 4 kcal por grama
+  const fatGoal = Math.round((calorieGoal * 0.30) / 9); // 30% das calorias / 9 kcal por grama
 
   return (
     <div className="py-6 space-y-6">
@@ -66,6 +73,7 @@ export default function Nutrition() {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
+            {/* Calorias */}
             <div>
               <div className="flex items-center justify-between mb-2">
                 <span className="text-slate-300 text-sm">Calorias</span>
@@ -81,18 +89,51 @@ export default function Nutrition() {
               </div>
             </div>
 
-            <div className="grid grid-cols-3 gap-3">
-              <div className="text-center p-3 bg-slate-900/50 rounded-lg">
-                <p className="text-blue-400 text-2xl font-bold">{Math.round(todayProtein)}g</p>
-                <p className="text-slate-400 text-xs mt-1">Proteína</p>
+            {/* Proteínas */}
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-slate-300 text-sm">Proteínas</span>
+                <span className="text-blue-400 font-bold">
+                  {Math.round(todayProtein)}g / {proteinGoal}g
+                </span>
               </div>
-              <div className="text-center p-3 bg-slate-900/50 rounded-lg">
-                <p className="text-orange-400 text-2xl font-bold">{Math.round(todayCarbs)}g</p>
-                <p className="text-slate-400 text-xs mt-1">Carbos</p>
+              <div className="h-3 bg-slate-800 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-gradient-to-r from-blue-600 to-blue-500 transition-all duration-500"
+                  style={{ width: `${Math.min((todayProtein / proteinGoal) * 100, 100)}%` }}
+                />
               </div>
-              <div className="text-center p-3 bg-slate-900/50 rounded-lg">
-                <p className="text-yellow-400 text-2xl font-bold">{Math.round(todayFat)}g</p>
-                <p className="text-slate-400 text-xs mt-1">Gorduras</p>
+            </div>
+
+            {/* Carboidratos */}
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-slate-300 text-sm">Carboidratos</span>
+                <span className="text-orange-400 font-bold">
+                  {Math.round(todayCarbs)}g / {carbsGoal}g
+                </span>
+              </div>
+              <div className="h-3 bg-slate-800 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-gradient-to-r from-orange-600 to-orange-500 transition-all duration-500"
+                  style={{ width: `${Math.min((todayCarbs / carbsGoal) * 100, 100)}%` }}
+                />
+              </div>
+            </div>
+
+            {/* Gorduras */}
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-slate-300 text-sm">Gorduras</span>
+                <span className="text-yellow-400 font-bold">
+                  {Math.round(todayFat)}g / {fatGoal}g
+                </span>
+              </div>
+              <div className="h-3 bg-slate-800 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-gradient-to-r from-yellow-600 to-yellow-500 transition-all duration-500"
+                  style={{ width: `${Math.min((todayFat / fatGoal) * 100, 100)}%` }}
+                />
               </div>
             </div>
           </div>
