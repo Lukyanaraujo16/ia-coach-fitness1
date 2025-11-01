@@ -9,7 +9,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import ProfileStats from "../components/profile/ProfileStats";
 import ProfileInfo from "../components/profile/ProfileInfo";
-import { useOneSignalNotifications } from "../components/pwa/OneSignalNotifications";
+import { useNotifications } from "../components/pwa/NotificationManager";
 
 export default function Profile() {
   const navigate = useNavigate();
@@ -18,8 +18,8 @@ export default function Profile() {
   const [isEditingName, setIsEditingName] = useState(false);
   const [newName, setNewName] = useState("");
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-
-  const { isSubscribed, requestPermission, isSupported } = useOneSignalNotifications(user);
+  const notifications = useNotifications();
+  const [notificationPermission, setNotificationPermission] = useState('default');
 
   const { data: selectedWorkout } = useQuery({
     queryKey: ['selected-workout', user?.selected_workout_id],
@@ -52,6 +52,11 @@ export default function Profile() {
       }
     };
     loadUser();
+    
+    // Verificar permissão de notificações
+    if (notifications.isSupported()) {
+      setNotificationPermission(notifications.getPermission());
+    }
   }, []);
 
   const updateNameMutation = useMutation({
@@ -75,13 +80,10 @@ export default function Profile() {
 
   const deleteAccountMutation = useMutation({
     mutationFn: async () => {
-      // Desativar todos os posts do usuário
       for (const post of posts) {
         await base44.entities.CommunityPost.update(post.id, { is_active: false });
       }
-      // Desativar conta
       await base44.auth.updateMe({ is_active: false });
-      // Fazer logout
       await base44.auth.logout();
     },
     onSuccess: () => {
@@ -117,11 +119,22 @@ export default function Profile() {
     const event = new Event('beforeinstallprompt');
     window.dispatchEvent(event);
     
-    // Fallback: instruções manuais
     if (navigator.userAgent.match(/iPhone|iPad|iPod/i)) {
-      alert('Para instalar no iOS:\n1. Toque no botão de compartilhar (geralmente um quadrado com uma seta para cima)\n2. Selecione "Adicionar à Tela de Início"');
+      alert('Para instalar no iOS:\n1. Toque no botão de compartilhar\n2. Selecione "Adicionar à Tela de Início"');
     } else {
-      alert('Para instalar:\n1. Toque no menu do navegador (geralmente três pontos ⋮)\n2. Selecione "Adicionar à tela inicial" ou "Instalar app"');
+      alert('Para instalar:\n1. Toque no menu do navegador (⋮)\n2. Selecione "Adicionar à tela inicial" ou "Instalar app"');
+    }
+  };
+
+  const handleEnableNotifications = async () => {
+    const result = await notifications.requestPermission();
+    if (result.success) {
+      setNotificationPermission('granted');
+      notifications.showNotification('Notificações Ativadas! 🎉', {
+        body: 'Agora você receberá lembretes sobre seus treinos',
+      });
+    } else {
+      alert(result.error);
     }
   };
 
@@ -252,16 +265,16 @@ export default function Profile() {
           </Button>
         )}
 
-        {/* Notificações OneSignal */}
-        {isSupported && (
+        {/* Notificações Básicas */}
+        {notifications.isSupported() && (
           <Button
             variant="outline"
-            onClick={requestPermission}
-            disabled={isSubscribed}
+            onClick={handleEnableNotifications}
+            disabled={notificationPermission === 'granted'}
             className="w-full justify-start border-slate-800 text-slate-300 hover:bg-slate-800"
           >
             <Bell className="w-5 h-5 mr-3" />
-            {isSubscribed ? 'Notificações Ativas ✓' : 'Ativar Notificações'}
+            {notificationPermission === 'granted' ? 'Notificações Ativas ✓' : 'Ativar Notificações'}
           </Button>
         )}
 
