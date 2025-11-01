@@ -5,12 +5,13 @@ import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
-import { Users, DollarSign, Dumbbell, Crown, Zap } from "lucide-react";
+import { Users, DollarSign, Dumbbell, Crown, MessageSquare } from "lucide-react";
 import AdminUsers from "../components/admin/AdminUsers";
 import AdminWorkouts from "../components/admin/AdminWorkouts";
 import AdminExercises from "../components/admin/AdminExercises";
 import AdminChallenges from "../components/admin/AdminChallenges";
 import AdminMetrics from "../components/admin/AdminMetrics";
+import AdminCommunity from "../components/admin/AdminCommunity";
 
 export default function Admin() {
   const navigate = useNavigate();
@@ -35,6 +36,11 @@ export default function Admin() {
   const { data: challenges = [] } = useQuery({
     queryKey: ['all-challenges'],
     queryFn: () => base44.entities.Challenge.list(),
+  });
+
+  const { data: posts = [] } = useQuery({
+    queryKey: ['all-posts'],
+    queryFn: () => base44.entities.CommunityPost.list('-created_date'),
   });
 
   useEffect(() => {
@@ -139,7 +145,7 @@ export default function Admin() {
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="bg-slate-900/50 border border-slate-800 w-full md:w-auto overflow-x-auto">
+        <TabsList className="bg-slate-900/50 border border-slate-800 w-full grid grid-cols-3 md:grid-cols-6 gap-2">
           <TabsTrigger value="metrics" className="data-[state=active]:bg-blue-600">
             Métricas
           </TabsTrigger>
@@ -155,15 +161,19 @@ export default function Admin() {
           <TabsTrigger value="challenges" className="data-[state=active]:bg-blue-600">
             Desafios
           </TabsTrigger>
+          <TabsTrigger value="community" className="data-[state=active]:bg-blue-600">
+            Comunidade
+          </TabsTrigger>
         </TabsList>
       </Tabs>
 
       {/* Content */}
       {activeTab === "metrics" && <AdminMetrics users={users} workouts={workouts} />}
       {activeTab === "users" && <AdminUsers users={users} />}
-      {activeTab === "workouts" && <AdminWorkouts workouts={workouts} />}
+      {activeTab === "workouts" && <AdminWorkouts workouts={workouts} exercises={exercises} />}
       {activeTab === "exercises" && <AdminExercises exercises={exercises} />}
       {activeTab === "challenges" && <AdminChallenges challenges={challenges} />}
+      {activeTab === "community" && <AdminCommunity posts={posts} />}
     </div>
   );
 }

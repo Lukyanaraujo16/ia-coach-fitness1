@@ -4,7 +4,7 @@ import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { Calendar, Flame, Trophy, TrendingUp, ChevronRight, Zap, Target, Crown, Plus } from "lucide-react";
+import { Calendar, Flame, Trophy, TrendingUp, ChevronRight, Zap, Target, Crown } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -74,7 +74,6 @@ export default function Home() {
       try {
         const currentUser = await base44.auth.me();
         setUser(currentUser);
-        // Se não completou onboarding, redireciona
         if (!currentUser.fitness_goal) {
           navigate(createPageUrl("Onboarding"));
         }
@@ -164,41 +163,6 @@ export default function Home() {
         </CardContent>
       </Card>
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <StatsCard
-          icon={Calendar}
-          label="Esta Semana"
-          value={thisWeekWorkouts.length}
-          suffix="treinos"
-          color="blue"
-        />
-        <StatsCard
-          icon={Flame}
-          label="Calorias"
-          value={totalCalories}
-          suffix="kcal"
-          color="orange"
-        />
-        <StatsCard
-          icon={Trophy}
-          label="Sequência"
-          value={thisWeekWorkouts.length >= 3 ? "3+" : thisWeekWorkouts.length}
-          suffix="dias"
-          color="yellow"
-        />
-        <StatsCard
-          icon={TrendingUp}
-          label="Peso Atual"
-          value={currentWeight || "-"}
-          suffix={currentWeight ? "kg" : ""}
-          color="green"
-        />
-      </div>
-
-      {/* Next Workout */}
-      <NextWorkoutCard />
-
       {/* Challenge of the Week - Updated */}
       {activeChallenge && (
         <Card className="bg-gradient-to-br from-purple-900/30 to-pink-900/30 border-purple-700/50">
@@ -233,29 +197,64 @@ export default function Home() {
             <div className="flex gap-2">
               <Input
                 type="number"
-                placeholder="Quantidade"
+                placeholder={`Quantas ${activeChallenge.unit} você fez?`}
                 value={challengeInput}
                 onChange={(e) => setChallengeInput(e.target.value)}
+                onKeyPress={(e) => e.key === 'Enter' && handleAddProgress()}
                 className="bg-slate-800 border-slate-700 text-white"
               />
               <Button
                 onClick={handleAddProgress}
-                disabled={updateProgressMutation.isPending || !challengeInput || parseInt(challengeInput) <= 0}
-                className="bg-purple-600 hover:bg-purple-700 whitespace-nowrap"
+                disabled={updateProgressMutation.isPending || !challengeInput}
+                className="bg-purple-600 hover:bg-purple-700 whitespace-nowrap px-6"
               >
-                <Plus className="w-4 h-4 mr-2" />
                 Registrar
               </Button>
             </div>
 
             {userProgress?.completed && (
-              <p className="text-green-400 text-sm font-semibold mt-2">
+              <p className="text-green-400 text-sm font-semibold">
                 🎉 Desafio Completo! Parabéns!
               </p>
             )}
           </CardContent>
         </Card>
       )}
+
+      {/* Stats Grid */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <StatsCard
+          icon={Calendar}
+          label="Esta Semana"
+          value={thisWeekWorkouts.length}
+          suffix="treinos"
+          color="blue"
+        />
+        <StatsCard
+          icon={Flame}
+          label="Calorias"
+          value={totalCalories}
+          suffix="kcal"
+          color="orange"
+        />
+        <StatsCard
+          icon={Trophy}
+          label="Sequência"
+          value={thisWeekWorkouts.length >= 3 ? "3+" : thisWeekWorkouts.length}
+          suffix="dias"
+          color="yellow"
+        />
+        <StatsCard
+          icon={TrendingUp}
+          label="Peso Atual"
+          value={currentWeight || "-"}
+          suffix={currentWeight ? "kg" : ""}
+          color="green"
+        />
+      </div>
+
+      {/* Next Workout */}
+      <NextWorkoutCard />
 
       {/* Quick Actions */}
       <div className="space-y-3">
