@@ -1,10 +1,11 @@
+
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { TrendingUp, Target, Zap } from "lucide-react";
 
 export default function NutritionStats({ mealLogs = [], calorieGoal = 2000 }) {
-  // Últimos 7 dias
+  // Últimos 7 dias - já filtrado por usuário no componente pai
   const last7Days = [];
   for (let i = 6; i >= 0; i--) {
     const date = new Date();

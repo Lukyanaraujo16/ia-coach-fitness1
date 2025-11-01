@@ -16,16 +16,6 @@ export default function Nutrition() {
   const [user, setUser] = useState(null);
   const [showGoalsModal, setShowGoalsModal] = useState(false);
 
-  const { data: mealLogs = [] } = useQuery({
-    queryKey: ['meal-logs'],
-    queryFn: () => base44.entities.MealLog.list('-date'),
-  });
-
-  const { data: nutritionPlans = [] } = useQuery({
-    queryKey: ['nutrition-plans'],
-    queryFn: () => base44.entities.NutritionPlan.list(),
-  });
-
   useEffect(() => {
     const loadUser = async () => {
       try {
@@ -37,6 +27,21 @@ export default function Nutrition() {
     };
     loadUser();
   }, []);
+
+  const { data: mealLogs = [] } = useQuery({
+    queryKey: ['meal-logs', user?.email],
+    queryFn: async () => {
+      if (!user?.email) return [];
+      const allLogs = await base44.entities.MealLog.list('-date');
+      return allLogs.filter(log => log.created_by === user.email);
+    },
+    enabled: !!user?.email,
+  });
+
+  const { data: nutritionPlans = [] } = useQuery({
+    queryKey: ['nutrition-plans'],
+    queryFn: () => base44.entities.NutritionPlan.list(),
+  });
 
   // Calcular calorias e macros de hoje
   const today = new Date().toISOString().split('T')[0];

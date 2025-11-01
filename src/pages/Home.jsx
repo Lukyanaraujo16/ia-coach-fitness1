@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -17,14 +18,39 @@ export default function Home() {
   const [user, setUser] = useState(null);
   const [challengeInput, setChallengeInput] = useState("");
 
+  useEffect(() => {
+    const loadUser = async () => {
+      try {
+        const currentUser = await base44.auth.me();
+        setUser(currentUser);
+        if (!currentUser.fitness_goal) {
+          navigate(createPageUrl("Onboarding"));
+        }
+      } catch (error) {
+        console.error("Error loading user:", error);
+      }
+    };
+    loadUser();
+  }, [navigate]);
+
   const { data: workoutLogs = [] } = useQuery({
-    queryKey: ['workout-logs'],
-    queryFn: () => base44.entities.WorkoutLog.list('-date'),
+    queryKey: ['workout-logs', user?.email],
+    queryFn: async () => {
+      if (!user?.email) return [];
+      const allLogs = await base44.entities.WorkoutLog.list('-date');
+      return allLogs.filter(log => log.created_by === user.email);
+    },
+    enabled: !!user?.email,
   });
 
   const { data: progressEntries = [] } = useQuery({
-    queryKey: ['progress-entries'],
-    queryFn: () => base44.entities.ProgressEntry.list('-date', 1),
+    queryKey: ['progress-entries', user?.email],
+    queryFn: async () => {
+      if (!user?.email) return [];
+      const allEntries = await base44.entities.ProgressEntry.list('-date', 1);
+      return allEntries.filter(entry => entry.created_by === user.email);
+    },
+    enabled: !!user?.email,
   });
 
   const { data: challenges = [] } = useQuery({
@@ -33,8 +59,13 @@ export default function Home() {
   });
 
   const { data: challengeProgress = [] } = useQuery({
-    queryKey: ['challenge-progress'],
-    queryFn: () => base44.entities.ChallengeProgress.list(),
+    queryKey: ['challenge-progress', user?.email],
+    queryFn: async () => {
+      if (!user?.email) return [];
+      const allProgress = await base44.entities.ChallengeProgress.list();
+      return allProgress.filter(p => p.created_by === user.email);
+    },
+    enabled: !!user?.email,
   });
 
   const activeChallenge = challenges.find(c => c.is_active);
@@ -67,21 +98,6 @@ export default function Home() {
       completed: newProgress >= activeChallenge.target,
     });
   };
-
-  useEffect(() => {
-    const loadUser = async () => {
-      try {
-        const currentUser = await base44.auth.me();
-        setUser(currentUser);
-        if (!currentUser.fitness_goal) {
-          navigate(createPageUrl("Onboarding"));
-        }
-      } catch (error) {
-        console.error("Error loading user:", error);
-      }
-    };
-    loadUser();
-  }, [navigate]);
 
   const thisWeekWorkouts = workoutLogs.filter(log => {
     const logDate = new Date(log.date);

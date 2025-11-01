@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -12,16 +12,39 @@ import ProgressPhotos from "../components/progress/ProgressPhotos";
 export default function Progress() {
   const [activeTab, setActiveTab] = useState("weight");
   const [showForm, setShowForm] = useState(false);
+  const [user, setUser] = useState(null);
   const queryClient = useQueryClient();
 
+  useEffect(() => {
+    const loadUser = async () => {
+      try {
+        const currentUser = await base44.auth.me();
+        setUser(currentUser);
+      } catch (error) {
+        console.error("Error loading user:", error);
+      }
+    };
+    loadUser();
+  }, []);
+
   const { data: progressEntries = [] } = useQuery({
-    queryKey: ['progress-entries'],
-    queryFn: () => base44.entities.ProgressEntry.list('-date'),
+    queryKey: ['progress-entries', user?.email],
+    queryFn: async () => {
+      if (!user?.email) return [];
+      const allEntries = await base44.entities.ProgressEntry.list('-date');
+      return allEntries.filter(entry => entry.created_by === user.email);
+    },
+    enabled: !!user?.email,
   });
 
   const { data: workoutLogs = [] } = useQuery({
-    queryKey: ['workout-logs'],
-    queryFn: () => base44.entities.WorkoutLog.list('-date'),
+    queryKey: ['workout-logs', user?.email],
+    queryFn: async () => {
+      if (!user?.email) return [];
+      const allLogs = await base44.entities.WorkoutLog.list('-date');
+      return allLogs.filter(log => log.created_by === user.email);
+    },
+    enabled: !!user?.email,
   });
 
   const createProgressMutation = useMutation({
