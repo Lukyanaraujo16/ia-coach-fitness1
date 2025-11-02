@@ -182,10 +182,10 @@ export default function WorkoutFormModal({ workout, onClose }) {
       // Initialize individual config with default sets structure
       if (!isCurrentlySelected && !individualConfigs[exerciseId]) {
         const defaultSets = [];
-        for (let i = 0; i < bulkSetsConfig.numSets; i++) {
+        for (let i = 0; i < 3; i++) { // Sempre começar com 3 séries
           defaultSets.push({
-            reps: bulkSetsConfig.reps,
-            rest: bulkSetsConfig.rest
+            reps: '10',
+            rest: 60
           });
         }
         setIndividualConfigs(configs => ({
@@ -675,7 +675,7 @@ export default function WorkoutFormModal({ workout, onClose }) {
       {/* Bulk Add Modal - UPDATED */}
       {showBulkAdd && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
-          <Card className="bg-slate-900 border-slate-800 max-w-4xl w-full max-h-[85vh] flex flex-col">
+          <Card className="bg-slate-900 border-slate-800 max-w-4xl w-full max-h-[90vh] flex flex-col">
             <CardHeader className="border-b border-slate-800 flex-shrink-0">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-white">Adicionar Múltiplos Exercícios - Dia {formData.days[bulkAddDay].day_number}</CardTitle>
@@ -683,69 +683,91 @@ export default function WorkoutFormModal({ workout, onClose }) {
                   <X className="w-5 h-5" />
                 </Button>
               </div>
+              <p className="text-slate-400 text-sm mt-2">
+                {useIndividualConfig 
+                  ? "Configure séries diferentes para cada exercício" 
+                  : "Todos os exercícios terão as mesmas séries"}
+              </p>
             </CardHeader>
             <CardContent className="p-6 overflow-y-auto flex-1">
               <div className="space-y-6">
                 {/* Toggle para configuração individual */}
-                <div className="flex items-center gap-3 p-4 bg-blue-900/20 border border-blue-800/50 rounded-lg">
-                  <input
-                    type="checkbox"
-                    id="useIndividual"
-                    checked={useIndividualConfig}
-                    onChange={(e) => setUseIndividualConfig(e.target.checked)}
-                    className="w-4 h-4"
-                  />
-                  <Label htmlFor="useIndividual" className="text-white cursor-pointer flex-1">
-                    Configurar séries individualmente para cada exercício
-                  </Label>
-                </div>
+                <Card className="bg-blue-900/10 border-blue-800/50">
+                  <CardContent className="p-4">
+                    <div className="flex items-start gap-3">
+                      <input
+                        type="checkbox"
+                        id="useIndividual"
+                        checked={useIndividualConfig}
+                        onChange={(e) => setUseIndividualConfig(e.target.checked)}
+                        className="w-5 h-5 mt-0.5 cursor-pointer"
+                      />
+                      <div className="flex-1">
+                        <Label htmlFor="useIndividual" className="text-white font-semibold cursor-pointer block mb-1">
+                          Configurar séries individualmente
+                        </Label>
+                        <p className="text-slate-400 text-xs">
+                          {useIndividualConfig 
+                            ? "Cada exercício terá sua própria configuração de séries (ex: 4x10, 3x8, 2x15)"
+                            : "Todos os exercícios terão a mesma configuração"}
+                        </p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
 
                 {/* Config Padrão */}
                 {!useIndividualConfig && (
-                  <div className="p-4 bg-green-900/20 border border-green-800/50 rounded-lg">
-                    <h4 className="text-white font-semibold mb-3">Configuração Padrão de Séries</h4>
-                    <div className="grid grid-cols-3 gap-3">
-                      <div>
-                        <Label className="text-slate-300 text-sm">Nº de Séries</Label>
-                        <Input
-                          type="number"
-                          min="1"
-                          max="10"
-                          value={bulkSetsConfig.numSets}
-                          onChange={(e) => setBulkSetsConfig({...bulkSetsConfig, numSets: parseInt(e.target.value) || 1})}
-                          className="bg-slate-800 border-slate-700 text-white"
-                        />
+                  <Card className="bg-green-900/10 border-green-800/50">
+                    <CardHeader>
+                      <h4 className="text-white font-semibold">Configuração Padrão</h4>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                      <div className="grid grid-cols-3 gap-3">
+                        <div>
+                          <Label className="text-slate-300 text-sm mb-2 block">Nº de Séries</Label>
+                          <Input
+                            type="number"
+                            min="1"
+                            max="10"
+                            value={bulkSetsConfig.numSets}
+                            onChange={(e) => setBulkSetsConfig({...bulkSetsConfig, numSets: parseInt(e.target.value) || 1})}
+                            className="bg-slate-800 border-slate-700 text-white text-center font-bold"
+                          />
+                        </div>
+                        <div>
+                          <Label className="text-slate-300 text-sm mb-2 block">Repetições</Label>
+                          <Input
+                            value={bulkSetsConfig.reps}
+                            onChange={(e) => setBulkSetsConfig({...bulkSetsConfig, reps: e.target.value})}
+                            className="bg-slate-800 border-slate-700 text-white text-center font-bold"
+                            placeholder="Ex: 10"
+                          />
+                        </div>
+                        <div>
+                          <Label className="text-slate-300 text-sm mb-2 block">Descanso (s)</Label>
+                          <Input
+                            type="number"
+                            value={bulkSetsConfig.rest}
+                            onChange={(e) => setBulkSetsConfig({...bulkSetsConfig, rest: parseInt(e.target.value) || 60})}
+                            className="bg-slate-800 border-slate-700 text-white text-center font-bold"
+                          />
+                        </div>
                       </div>
-                      <div>
-                        <Label className="text-slate-300 text-sm">Repetições</Label>
-                        <Input
-                          value={bulkSetsConfig.reps}
-                          onChange={(e) => setBulkSetsConfig({...bulkSetsConfig, reps: e.target.value})}
-                          className="bg-slate-800 border-slate-700 text-white"
-                          placeholder="Ex: 10"
-                        />
+                      <div className="p-3 bg-slate-800/50 rounded-lg">
+                        <p className="text-slate-300 text-sm font-medium">
+                          📝 Exemplo: {bulkSetsConfig.numSets} séries de {bulkSetsConfig.reps} repetições com {bulkSetsConfig.rest}s de descanso
+                        </p>
                       </div>
-                      <div>
-                        <Label className="text-slate-300 text-sm">Descanso (s)</Label>
-                        <Input
-                          type="number"
-                          value={bulkSetsConfig.rest}
-                          onChange={(e) => setBulkSetsConfig({...bulkSetsConfig, rest: parseInt(e.target.value) || 60})}
-                          className="bg-slate-800 border-slate-700 text-white"
-                        />
-                      </div>
-                    </div>
-                    <p className="text-slate-400 text-xs mt-2">
-                      Todos os exercícios terão {bulkSetsConfig.numSets}x{bulkSetsConfig.reps} ({bulkSetsConfig.rest}s descanso)
-                    </p>
-                  </div>
+                    </CardContent>
+                  </Card>
                 )}
 
                 {/* Seleção de Categoria */}
                 <div>
-                  <Label className="text-slate-300 mb-2">Selecione a Categoria *</Label>
+                  <Label className="text-slate-300 mb-2 block font-semibold">Selecione a Categoria *</Label>
                   <Select value={bulkCategory} onValueChange={setBulkCategory}>
-                    <SelectTrigger className="bg-slate-800 border-slate-700 text-white">
+                    <SelectTrigger className="bg-slate-800 border-slate-700 text-white h-12">
                       <SelectValue placeholder="Escolha uma categoria" />
                     </SelectTrigger>
                     <SelectContent>
@@ -762,8 +784,8 @@ export default function WorkoutFormModal({ workout, onClose }) {
                 {bulkCategory && (
                   <div>
                     <div className="flex items-center justify-between mb-3">
-                      <Label className="text-slate-300">
-                        Selecione os Exercícios ({selectedExercises.length} selecionados)
+                      <Label className="text-white font-semibold">
+                        Selecione os Exercícios ({selectedExercises.length} selecionado{selectedExercises.length !== 1 ? 's' : ''})
                       </Label>
                       <div className="flex gap-2">
                         <Button
@@ -771,24 +793,24 @@ export default function WorkoutFormModal({ workout, onClose }) {
                           size="sm"
                           variant="outline"
                           onClick={() => setSelectedExercises(filteredBulkExercises.map(ex => ex.id))}
-                          className="text-xs border-slate-700 text-slate-300"
+                          className="text-xs border-slate-700 text-slate-300 hover:bg-slate-800"
                         >
-                          Selecionar Todos
+                          Todos
                         </Button>
                         <Button
                           type="button"
                           size="sm"
                           variant="outline"
                           onClick={() => setSelectedExercises([])}
-                          className="text-xs border-slate-700 text-slate-300"
+                          className="text-xs border-slate-700 text-slate-300 hover:bg-slate-800"
                         >
                           Limpar
                         </Button>
                       </div>
                     </div>
-                    <div className="space-y-2 max-h-[400px] overflow-y-auto bg-slate-800/30 p-3 rounded-lg">
+                    <div className="space-y-3 max-h-[400px] overflow-y-auto bg-slate-800/20 p-4 rounded-lg border border-slate-800">
                       {filteredBulkExercises.length === 0 ? (
-                        <p className="text-slate-500 text-center py-8">
+                        <p className="text-slate-500 text-center py-12">
                           Nenhum exercício nesta categoria
                         </p>
                       ) : (
@@ -797,84 +819,102 @@ export default function WorkoutFormModal({ workout, onClose }) {
                           const config = individualConfigs[exercise.id] || { sets: [] };
                           
                           return (
-                            <div
+                            <Card
                               key={exercise.id}
-                              className={`rounded-lg transition-all ${
+                              className={`transition-all ${
                                 isSelected
-                                  ? 'bg-blue-600/20 border-2 border-blue-600/50'
-                                  : 'bg-slate-800/50 border-2 border-transparent hover:border-slate-700'
+                                  ? 'bg-blue-600/20 border-2 border-blue-600'
+                                  : 'bg-slate-800/70 border-2 border-slate-700 hover:border-slate-600'
                               }`}
                             >
-                              <label className="flex items-start gap-3 p-3 cursor-pointer">
-                                <input
-                                  type="checkbox"
-                                  checked={isSelected}
-                                  onChange={() => handleToggleExercise(exercise.id)}
-                                  className="mt-1 w-4 h-4"
-                                />
-                                <div className="flex-1">
-                                  <p className="text-white font-medium">{exercise.name}</p>
-                                  {exercise.description && (
-                                    <p className="text-slate-400 text-sm mt-1 line-clamp-2">
-                                      {exercise.description}
-                                    </p>
-                                  )}
-                                </div>
-                              </label>
-                              
-                              {/* Config individual com lista de séries */}
-                              {useIndividualConfig && isSelected && (
-                                <div className="px-3 pb-3 border-t border-slate-700 pt-3 mt-2 space-y-2">
-                                  <div className="flex items-center justify-between mb-2">
-                                    <Label className="text-slate-400 text-xs">Configurar Séries</Label>
-                                    <Button
-                                      type="button"
-                                      size="sm"
-                                      variant="outline"
-                                      onClick={() => addIndividualSet(exercise.id)}
-                                      className="h-6 text-xs border-slate-700 text-slate-300"
-                                    >
-                                      <Plus className="w-3 h-3 mr-1" />
-                                      Série
-                                    </Button>
+                              <CardContent className="p-0">
+                                <label className="flex items-start gap-3 p-4 cursor-pointer">
+                                  <input
+                                    type="checkbox"
+                                    checked={isSelected}
+                                    onChange={() => handleToggleExercise(exercise.id)}
+                                    className="mt-1 w-5 h-5 cursor-pointer"
+                                  />
+                                  <div className="flex-1">
+                                    <p className="text-white font-semibold text-lg">{exercise.name}</p>
+                                    {exercise.description && (
+                                      <p className="text-slate-400 text-sm mt-1 line-clamp-2">
+                                        {exercise.description}
+                                      </p>
+                                    )}
                                   </div>
-                                  <div className="space-y-2 max-h-48 overflow-y-auto">
-                                    {config.sets.map((set, setIdx) => (
-                                      <div key={setIdx} className="flex items-center gap-2 bg-slate-900/50 p-2 rounded">
-                                        <span className="text-slate-400 text-xs w-8">{setIdx + 1}ª</span>
-                                        <Input
-                                          value={set.reps}
-                                          onChange={(e) => updateIndividualSet(exercise.id, setIdx, 'reps', e.target.value)}
-                                          className="bg-slate-800 border-slate-700 text-white text-xs h-7 flex-1"
-                                          placeholder="Reps"
-                                        />
-                                        <Input
-                                          type="number"
-                                          value={set.rest}
-                                          onChange={(e) => updateIndividualSet(exercise.id, setIdx, 'rest', e.target.value)}
-                                          className="bg-slate-800 border-slate-700 text-white text-xs h-7 w-16"
-                                          placeholder="60s"
-                                        />
-                                        {config.sets.length > 1 && (
-                                          <Button
-                                            type="button"
-                                            variant="ghost"
-                                            size="icon"
-                                            onClick={() => removeIndividualSet(exercise.id, setIdx)}
-                                            className="h-7 w-7 text-red-400"
-                                          >
-                                            <X className="w-3 h-3" />
-                                          </Button>
-                                        )}
+                                </label>
+                                
+                                {/* Config individual com lista de séries */}
+                                {useIndividualConfig && isSelected && (
+                                  <div className="px-4 pb-4 border-t-2 border-slate-700 pt-4 bg-slate-900/50">
+                                    <div className="flex items-center justify-between mb-3">
+                                      <Label className="text-blue-400 font-semibold flex items-center gap-2">
+                                        <span className="text-lg">📋</span>
+                                        Séries Personalizadas
+                                      </Label>
+                                      <Button
+                                        type="button"
+                                        size="sm"
+                                        onClick={() => addIndividualSet(exercise.id)}
+                                        className="bg-blue-600 hover:bg-blue-700 h-8 text-xs"
+                                      >
+                                        <Plus className="w-3 h-3 mr-1" />
+                                        Adicionar Série
+                                      </Button>
+                                    </div>
+                                    <div className="space-y-2">
+                                      {config.sets.map((set, setIdx) => (
+                                        <div key={setIdx} className="flex items-center gap-2 bg-slate-800 p-3 rounded-lg border border-slate-700">
+                                          <div className="flex items-center justify-center w-10 h-10 bg-blue-600/20 rounded-lg flex-shrink-0">
+                                            <span className="text-blue-400 font-bold">{setIdx + 1}</span>
+                                          </div>
+                                          <div className="flex-1 grid grid-cols-2 gap-2">
+                                            <div>
+                                              <Label className="text-slate-400 text-xs mb-1 block">Reps</Label>
+                                              <Input
+                                                value={set.reps}
+                                                onChange={(e) => updateIndividualSet(exercise.id, setIdx, 'reps', e.target.value)}
+                                                className="bg-slate-900 border-slate-700 text-white h-9 text-center font-bold"
+                                                placeholder="10"
+                                              />
+                                            </div>
+                                            <div>
+                                              <Label className="text-slate-400 text-xs mb-1 block">Descanso (s)</Label>
+                                              <Input
+                                                type="number"
+                                                value={set.rest}
+                                                onChange={(e) => updateIndividualSet(exercise.id, setIdx, 'rest', e.target.value)}
+                                                className="bg-slate-900 border-slate-700 text-white h-9 text-center font-bold"
+                                                placeholder="60"
+                                              />
+                                            </div>
+                                          </div>
+                                          {config.sets.length > 1 && (
+                                            <Button
+                                              type="button"
+                                              variant="ghost"
+                                              size="icon"
+                                              onClick={() => removeIndividualSet(exercise.id, setIdx)}
+                                              className="h-9 w-9 text-red-400 hover:bg-red-950/50 flex-shrink-0"
+                                            >
+                                              <X className="w-4 h-4" />
+                                            </Button>
+                                          )}
+                                        </div>
+                                      ))}
+                                    </div>
+                                    {config.sets.length > 0 && (
+                                      <div className="mt-3 p-2 bg-blue-900/20 rounded border border-blue-800/50">
+                                        <p className="text-blue-400 text-xs font-medium">
+                                          💡 Resumo: {config.sets.map((set, idx) => `${idx + 1}x${set.reps} (${set.rest}s)`).join(' • ')}
+                                        </p>
                                       </div>
-                                    ))}
+                                    )}
                                   </div>
-                                  <p className="text-slate-500 text-xs">
-                                    💡 Exemplo: 1ª série 10 reps (60s), 2ª série 8 reps (90s)
-                                  </p>
-                                </div>
-                              )}
-                            </div>
+                                )}
+                              </CardContent>
+                            </Card>
                           );
                         })
                       )}
@@ -883,20 +923,21 @@ export default function WorkoutFormModal({ workout, onClose }) {
                 )}
               </div>
             </CardContent>
-            <div className="border-t border-slate-800 p-4 flex gap-3 flex-shrink-0">
+            <div className="border-t border-slate-800 p-4 flex gap-3 flex-shrink-0 bg-slate-900">
               <Button
                 variant="outline"
                 onClick={() => setShowBulkAdd(false)}
-                className="flex-1 border-slate-700"
+                className="flex-1 border-slate-700 text-slate-300 hover:bg-slate-800 h-12"
               >
                 Cancelar
               </Button>
               <Button
                 onClick={handleBulkAddExercises}
                 disabled={selectedExercises.length === 0}
-                className="flex-1 bg-purple-600 hover:bg-purple-700"
+                className="flex-1 bg-purple-600 hover:bg-purple-700 h-12 font-semibold text-lg"
               >
-                Adicionar {selectedExercises.length} Exercício(s)
+                <Plus className="w-5 h-5 mr-2" />
+                Adicionar {selectedExercises.length} Exercício{selectedExercises.length !== 1 ? 's' : ''}
               </Button>
             </div>
           </Card>
