@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
@@ -8,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { X, Plus, Trash2 } from "lucide-react";
+import { X, Plus, Trash2, List } from "lucide-react";
 
 export default function WorkoutFormModal({ workout, onClose }) {
   const queryClient = useQueryClient();
@@ -32,6 +31,15 @@ export default function WorkoutFormModal({ workout, onClose }) {
   });
 
   const [numDays, setNumDays] = useState(1);
+  const [showBulkAdd, setShowBulkAdd] = useState(false);
+  const [bulkAddDay, setBulkAddDay] = useState(0);
+  const [bulkCategory, setBulkCategory] = useState('');
+  const [selectedExercises, setSelectedExercises] = useState([]);
+  const [bulkSetsConfig, setBulkSetsConfig] = useState({
+    numSets: 3,
+    reps: '10',
+    rest: 60,
+  });
 
   useEffect(() => {
     if (workout) {
@@ -49,7 +57,7 @@ export default function WorkoutFormModal({ workout, onClose }) {
               ...day,
               exercises: day.exercises.map(ex => ({
                 ...ex,
-                exercise_category: ex.exercise_category || '', // Ensure exercise_category is present
+                exercise_category: ex.exercise_category || '',
               }))
             }))
           : [{ day_number: 1, title: 'Dia 1', exercises: [] }],
@@ -123,7 +131,6 @@ export default function WorkoutFormModal({ workout, onClose }) {
       const selectedEx = exercises.find(ex => ex.id === value);
       newDays[dayIndex].exercises[exerciseIndex].exercise_name = selectedEx?.name || '';
     } else if (field === 'exercise_category') {
-      // Reset exercise_id and exercise_name when category changes
       newDays[dayIndex].exercises[exerciseIndex].exercise_id = '';
       newDays[dayIndex].exercises[exerciseIndex].exercise_name = '';
     }
@@ -152,6 +159,49 @@ export default function WorkoutFormModal({ workout, onClose }) {
     setFormData({ ...formData, days: newDays });
   };
 
+  // Bulk Add Functions
+  const handleOpenBulkAdd = (dayIndex) => {
+    setBulkAddDay(dayIndex);
+    setBulkCategory('');
+    setSelectedExercises([]);
+    setShowBulkAdd(true);
+  };
+
+  const handleToggleExercise = (exerciseId) => {
+    setSelectedExercises(prev => 
+      prev.includes(exerciseId) 
+        ? prev.filter(id => id !== exerciseId)
+        : [...prev, exerciseId]
+    );
+  };
+
+  const handleBulkAddExercises = () => {
+    if (selectedExercises.length === 0) return;
+
+    const newDays = [...formData.days];
+    const sets = [];
+    for (let i = 0; i < bulkSetsConfig.numSets; i++) {
+      sets.push({ reps: bulkSetsConfig.reps, rest_seconds: bulkSetsConfig.rest });
+    }
+
+    selectedExercises.forEach(exerciseId => {
+      const exercise = exercises.find(ex => ex.id === exerciseId);
+      if (exercise) {
+        newDays[bulkAddDay].exercises.push({
+          exercise_category: exercise.category,
+          exercise_id: exercise.id,
+          exercise_name: exercise.name,
+          sets: [...sets],
+          notes: '',
+        });
+      }
+    });
+
+    setFormData({ ...formData, days: newDays });
+    setShowBulkAdd(false);
+    setSelectedExercises([]);
+  };
+
   const categoryLabels = {
     chest: "Peito",
     back: "Costas",
@@ -162,6 +212,10 @@ export default function WorkoutFormModal({ workout, onClose }) {
     cardio: "Cardio",
     full_body: "Corpo Inteiro",
   };
+
+  const filteredBulkExercises = bulkCategory 
+    ? exercises.filter(ex => ex.category === bulkCategory)
+    : [];
 
   return (
     <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto">
@@ -307,24 +361,19 @@ export default function WorkoutFormModal({ workout, onClose }) {
               {formData.days.map((day, dayIndex) => (
                 <Card key={dayIndex} className="bg-slate-800/30 border-slate-700">
                   <CardHeader className="bg-slate-800/50">
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-center justify-between gap-3">
                       <h4 className="text-white font-bold text-lg">📅 Dia {day.day_number}</h4>
-                      <Button
-                        type="button"
-                        size="sm"
-                        onClick={() => addExerciseToDay(dayIndex)}
-                        className="bg-blue-600 hover:bg-blue-700"
-                        disabled={loadingExercises}
-                      >
-                        <Plus className="w-4 h-4 mr-2" />
-                        Adicionar Exercício
-                      </Button>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="p-4 space-y-4">
-                    {day.exercises.length === 0 ? (
-                      <div className="text-center py-8 bg-slate-900/30 rounded-lg border-2 border-dashed border-slate-700">
-                        <p className="text-slate-500 mb-3">Nenhum exercício adicionado ainda</p>
+                      <div className="flex gap-2">
+                        <Button
+                          type="button"
+                          size="sm"
+                          onClick={() => handleOpenBulkAdd(dayIndex)}
+                          className="bg-purple-600 hover:bg-purple-700"
+                          disabled={loadingExercises}
+                        >
+                          <List className="w-4 h-4 mr-2" />
+                          Adicionar Múltiplos
+                        </Button>
                         <Button
                           type="button"
                           size="sm"
@@ -333,8 +382,37 @@ export default function WorkoutFormModal({ workout, onClose }) {
                           disabled={loadingExercises}
                         >
                           <Plus className="w-4 h-4 mr-2" />
-                          Adicionar Primeiro Exercício
+                          Adicionar 1 Exercício
                         </Button>
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="p-4 space-y-4">
+                    {day.exercises.length === 0 ? (
+                      <div className="text-center py-8 bg-slate-900/30 rounded-lg border-2 border-dashed border-slate-700">
+                        <p className="text-slate-500 mb-3">Nenhum exercício adicionado ainda</p>
+                        <div className="flex gap-2 justify-center">
+                          <Button
+                            type="button"
+                            size="sm"
+                            onClick={() => handleOpenBulkAdd(dayIndex)}
+                            className="bg-purple-600 hover:bg-purple-700"
+                            disabled={loadingExercises}
+                          >
+                            <List className="w-4 h-4 mr-2" />
+                            Adicionar Múltiplos
+                          </Button>
+                          <Button
+                            type="button"
+                            size="sm"
+                            onClick={() => addExerciseToDay(dayIndex)}
+                            className="bg-blue-600 hover:bg-blue-700"
+                            disabled={loadingExercises}
+                          >
+                            <Plus className="w-4 h-4 mr-2" />
+                            Adicionar 1
+                          </Button>
+                        </div>
                       </div>
                     ) : (
                       day.exercises.map((exercise, exIndex) => {
@@ -518,6 +596,161 @@ export default function WorkoutFormModal({ workout, onClose }) {
           </form>
         </CardContent>
       </Card>
+
+      {/* Bulk Add Modal */}
+      {showBulkAdd && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
+          <Card className="bg-slate-900 border-slate-800 max-w-3xl w-full max-h-[80vh] flex flex-col">
+            <CardHeader className="border-b border-slate-800 flex-shrink-0">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-white">Adicionar Múltiplos Exercícios - Dia {formData.days[bulkAddDay].day_number}</CardTitle>
+                <Button variant="ghost" size="icon" onClick={() => setShowBulkAdd(false)}>
+                  <X className="w-5 h-5" />
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent className="p-6 overflow-y-auto flex-1">
+              <div className="space-y-6">
+                {/* Config de Séries Padrão */}
+                <div className="p-4 bg-blue-900/20 border border-blue-800/50 rounded-lg">
+                  <h4 className="text-white font-semibold mb-3">Configuração Padrão de Séries</h4>
+                  <div className="grid grid-cols-3 gap-3">
+                    <div>
+                      <Label className="text-slate-300 text-sm">Nº de Séries</Label>
+                      <Input
+                        type="number"
+                        min="1"
+                        max="10"
+                        value={bulkSetsConfig.numSets}
+                        onChange={(e) => setBulkSetsConfig({...bulkSetsConfig, numSets: parseInt(e.target.value) || 1})}
+                        className="bg-slate-800 border-slate-700 text-white"
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-slate-300 text-sm">Repetições</Label>
+                      <Input
+                        value={bulkSetsConfig.reps}
+                        onChange={(e) => setBulkSetsConfig({...bulkSetsConfig, reps: e.target.value})}
+                        className="bg-slate-800 border-slate-700 text-white"
+                        placeholder="Ex: 10"
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-slate-300 text-sm">Descanso (s)</Label>
+                      <Input
+                        type="number"
+                        value={bulkSetsConfig.rest}
+                        onChange={(e) => setBulkSetsConfig({...bulkSetsConfig, rest: parseInt(e.target.value) || 60})}
+                        className="bg-slate-800 border-slate-700 text-white"
+                      />
+                    </div>
+                  </div>
+                  <p className="text-slate-400 text-xs mt-2">
+                    Todos os exercícios selecionados terão {bulkSetsConfig.numSets}x{bulkSetsConfig.reps} ({bulkSetsConfig.rest}s descanso)
+                  </p>
+                </div>
+
+                {/* Seleção de Categoria */}
+                <div>
+                  <Label className="text-slate-300 mb-2">Selecione a Categoria *</Label>
+                  <Select value={bulkCategory} onValueChange={setBulkCategory}>
+                    <SelectTrigger className="bg-slate-800 border-slate-700 text-white">
+                      <SelectValue placeholder="Escolha uma categoria" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {Object.entries(categoryLabels).map(([key, label]) => (
+                        <SelectItem key={key} value={key}>
+                          {label} ({exercises.filter(ex => ex.category === key).length} exercícios)
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Lista de Exercícios */}
+                {bulkCategory && (
+                  <div>
+                    <div className="flex items-center justify-between mb-3">
+                      <Label className="text-slate-300">
+                        Selecione os Exercícios ({selectedExercises.length} selecionados)
+                      </Label>
+                      <div className="flex gap-2">
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          onClick={() => setSelectedExercises(filteredBulkExercises.map(ex => ex.id))}
+                          className="text-xs border-slate-700 text-slate-300"
+                        >
+                          Selecionar Todos
+                        </Button>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          onClick={() => setSelectedExercises([])}
+                          className="text-xs border-slate-700 text-slate-300"
+                        >
+                          Limpar
+                        </Button>
+                      </div>
+                    </div>
+                    <div className="space-y-2 max-h-96 overflow-y-auto bg-slate-800/30 p-3 rounded-lg">
+                      {filteredBulkExercises.length === 0 ? (
+                        <p className="text-slate-500 text-center py-8">
+                          Nenhum exercício nesta categoria
+                        </p>
+                      ) : (
+                        filteredBulkExercises.map((exercise) => (
+                          <label
+                            key={exercise.id}
+                            className={`flex items-start gap-3 p-3 rounded-lg cursor-pointer transition-all ${
+                              selectedExercises.includes(exercise.id)
+                                ? 'bg-blue-600/20 border-2 border-blue-600/50'
+                                : 'bg-slate-800/50 border-2 border-transparent hover:border-slate-700'
+                            }`}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={selectedExercises.includes(exercise.id)}
+                              onChange={() => handleToggleExercise(exercise.id)}
+                              className="mt-1 w-4 h-4"
+                            />
+                            <div className="flex-1">
+                              <p className="text-white font-medium">{exercise.name}</p>
+                              {exercise.description && (
+                                <p className="text-slate-400 text-sm mt-1 line-clamp-2">
+                                  {exercise.description}
+                                </p>
+                              )}
+                            </div>
+                          </label>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+            <div className="border-t border-slate-800 p-4 flex gap-3 flex-shrink-0">
+              <Button
+                variant="outline"
+                onClick={() => setShowBulkAdd(false)}
+                className="flex-1 border-slate-700"
+              >
+                Cancelar
+              </Button>
+              <Button
+                onClick={handleBulkAddExercises}
+                disabled={selectedExercises.length === 0}
+                className="flex-1 bg-purple-600 hover:bg-purple-700"
+              >
+                Adicionar {selectedExercises.length} Exercício(s)
+              </Button>
+            </div>
+          </Card>
+        </div>
+      )}
     </div>
   );
 }
