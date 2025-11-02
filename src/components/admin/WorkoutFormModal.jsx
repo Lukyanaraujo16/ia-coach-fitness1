@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { X, Plus, Trash2, List } from "lucide-react";
+import { Badge } from "@/components/ui/badge"; // Added Badge import
 
 export default function WorkoutFormModal({ workout, onClose }) {
   const queryClient = useQueryClient();
@@ -175,14 +176,14 @@ export default function WorkoutFormModal({ workout, onClose }) {
   const handleToggleExercise = (exerciseId) => {
     setSelectedExercises(prev => {
       const isCurrentlySelected = prev.includes(exerciseId);
-      const newSelected = isCurrentlySelected 
-        ? prev.filter(id => id !== exerciseId)
-        : [...prev, exerciseId];
       
-      // Initialize individual config with default sets structure
-      if (!isCurrentlySelected && !individualConfigs[exerciseId]) {
+      if (isCurrentlySelected) {
+        // Remove from selection
+        return prev.filter(id => id !== exerciseId);
+      } else {
+        // Add to selection and initialize config
         const defaultSets = [];
-        for (let i = 0; i < 3; i++) { // Sempre começar com 3 séries
+        for (let i = 0; i < 3; i++) {
           defaultSets.push({
             reps: '10',
             rest: 60
@@ -192,9 +193,8 @@ export default function WorkoutFormModal({ workout, onClose }) {
           ...configs,
           [exerciseId]: { sets: defaultSets }
         }));
+        return [...prev, exerciseId];
       }
-      
-      return newSelected;
     });
   };
 
@@ -672,210 +672,253 @@ export default function WorkoutFormModal({ workout, onClose }) {
         </CardContent>
       </Card>
 
-      {/* Bulk Add Modal - UPDATED */}
+      {/* Bulk Add Modal - IMPROVED */}
       {showBulkAdd && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
-          <Card className="bg-slate-900 border-slate-800 max-w-4xl w-full max-h-[90vh] flex flex-col">
-            <CardHeader className="border-b border-slate-800 flex-shrink-0">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-white">Adicionar Múltiplos Exercícios - Dia {formData.days[bulkAddDay].day_number}</CardTitle>
+        <div className="fixed inset-0 bg-black/90 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
+          <Card className="bg-slate-900 border-slate-800 max-w-5xl w-full max-h-[92vh] flex flex-col">
+            <CardHeader className="border-b border-slate-800 flex-shrink-0 pb-4">
+              <div className="flex items-center justify-between mb-2">
+                <CardTitle className="text-white text-xl">
+                  Adicionar Múltiplos Exercícios - Dia {formData.days[bulkAddDay].day_number}
+                </CardTitle>
                 <Button variant="ghost" size="icon" onClick={() => setShowBulkAdd(false)}>
                   <X className="w-5 h-5" />
                 </Button>
               </div>
-              <p className="text-slate-400 text-sm mt-2">
-                {useIndividualConfig 
-                  ? "Configure séries diferentes para cada exercício" 
-                  : "Todos os exercícios terão as mesmas séries"}
-              </p>
             </CardHeader>
-            <CardContent className="p-6 overflow-y-auto flex-1">
-              <div className="space-y-6">
-                {/* Toggle para configuração individual */}
-                <Card className="bg-blue-900/10 border-blue-800/50">
-                  <CardContent className="p-4">
-                    <div className="flex items-start gap-3">
-                      <input
-                        type="checkbox"
-                        id="useIndividual"
-                        checked={useIndividualConfig}
-                        onChange={(e) => setUseIndividualConfig(e.target.checked)}
-                        className="w-5 h-5 mt-0.5 cursor-pointer"
-                      />
-                      <div className="flex-1">
-                        <Label htmlFor="useIndividual" className="text-white font-semibold cursor-pointer block mb-1">
-                          Configurar séries individualmente
-                        </Label>
-                        <p className="text-slate-400 text-xs">
-                          {useIndividualConfig 
-                            ? "Cada exercício terá sua própria configuração de séries (ex: 4x10, 3x8, 2x15)"
-                            : "Todos os exercícios terão a mesma configuração"}
-                        </p>
+            
+            <CardContent className="p-6 overflow-y-auto flex-1 space-y-6">
+              {/* PASSO 1: Toggle Individual Config */}
+              <Card className={`border-2 ${useIndividualConfig ? 'bg-blue-900/20 border-blue-600' : 'bg-slate-800/30 border-slate-700'}`}>
+                <CardContent className="p-5">
+                  <label className="flex items-start gap-4 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={useIndividualConfig}
+                      onChange={(e) => setUseIndividualConfig(e.target.checked)}
+                      className="w-6 h-6 mt-0.5 cursor-pointer"
+                    />
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-2">
+                        <h4 className="text-white font-bold text-lg">
+                          Configurar séries individualmente para cada exercício
+                        </h4>
+                        {useIndividualConfig && (
+                          <Badge className="bg-blue-600 text-white">ATIVO</Badge>
+                        )}
                       </div>
+                      <p className="text-slate-400 text-sm">
+                        {useIndividualConfig 
+                          ? "✅ Cada exercício terá suas próprias séries (ex: Supino 4x10, Crucifixo 3x12)"
+                          : "Todos os exercícios terão a mesma configuração de séries"}
+                      </p>
+                    </div>
+                  </label>
+                </CardContent>
+              </Card>
+
+              {/* PASSO 2: Config Padrão (só aparece se individual desligado) */}
+              {!useIndividualConfig && (
+                <Card className="bg-green-900/10 border-green-800">
+                  <CardHeader>
+                    <h4 className="text-white font-semibold flex items-center gap-2">
+                      <span className="text-2xl">⚙️</span>
+                      Configuração Padrão (aplicada a todos)
+                    </h4>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="grid grid-cols-3 gap-4">
+                      <div>
+                        <Label className="text-slate-300 text-sm mb-2 block font-semibold">Nº de Séries</Label>
+                        <Input
+                          type="number"
+                          min="1"
+                          max="10"
+                          value={bulkSetsConfig.numSets}
+                          onChange={(e) => setBulkSetsConfig({...bulkSetsConfig, numSets: parseInt(e.target.value) || 1})}
+                          className="bg-slate-800 border-slate-700 text-white text-center text-xl font-bold h-14"
+                        />
+                      </div>
+                      <div>
+                        <Label className="text-slate-300 text-sm mb-2 block font-semibold">Repetições</Label>
+                        <Input
+                          value={bulkSetsConfig.reps}
+                          onChange={(e) => setBulkSetsConfig({...bulkSetsConfig, reps: e.target.value})}
+                          className="bg-slate-800 border-slate-700 text-white text-center text-xl font-bold h-14"
+                          placeholder="10"
+                        />
+                      </div>
+                      <div>
+                        <Label className="text-slate-300 text-sm mb-2 block font-semibold">Descanso (s)</Label>
+                        <Input
+                          type="number"
+                          value={bulkSetsConfig.rest}
+                          onChange={(e) => setBulkSetsConfig({...bulkSetsConfig, rest: parseInt(e.target.value) || 60})}
+                          className="bg-slate-800 border-slate-700 text-white text-center text-xl font-bold h-14"
+                        />
+                      </div>
+                    </div>
+                    <div className="p-4 bg-slate-800/50 rounded-lg border border-slate-700">
+                      <p className="text-green-400 font-semibold text-center">
+                        📝 Preview: {bulkSetsConfig.numSets} séries × {bulkSetsConfig.reps} reps ({bulkSetsConfig.rest}s descanso)
+                      </p>
                     </div>
                   </CardContent>
                 </Card>
+              )}
 
-                {/* Config Padrão */}
-                {!useIndividualConfig && (
-                  <Card className="bg-green-900/10 border-green-800/50">
-                    <CardHeader>
-                      <h4 className="text-white font-semibold">Configuração Padrão</h4>
-                    </CardHeader>
-                    <CardContent className="space-y-3">
-                      <div className="grid grid-cols-3 gap-3">
-                        <div>
-                          <Label className="text-slate-300 text-sm mb-2 block">Nº de Séries</Label>
-                          <Input
-                            type="number"
-                            min="1"
-                            max="10"
-                            value={bulkSetsConfig.numSets}
-                            onChange={(e) => setBulkSetsConfig({...bulkSetsConfig, numSets: parseInt(e.target.value) || 1})}
-                            className="bg-slate-800 border-slate-700 text-white text-center font-bold"
-                          />
-                        </div>
-                        <div>
-                          <Label className="text-slate-300 text-sm mb-2 block">Repetições</Label>
-                          <Input
-                            value={bulkSetsConfig.reps}
-                            onChange={(e) => setBulkSetsConfig({...bulkSetsConfig, reps: e.target.value})}
-                            className="bg-slate-800 border-slate-700 text-white text-center font-bold"
-                            placeholder="Ex: 10"
-                          />
-                        </div>
-                        <div>
-                          <Label className="text-slate-300 text-sm mb-2 block">Descanso (s)</Label>
-                          <Input
-                            type="number"
-                            value={bulkSetsConfig.rest}
-                            onChange={(e) => setBulkSetsConfig({...bulkSetsConfig, rest: parseInt(e.target.value) || 60})}
-                            className="bg-slate-800 border-slate-700 text-white text-center font-bold"
-                          />
-                        </div>
-                      </div>
-                      <div className="p-3 bg-slate-800/50 rounded-lg">
-                        <p className="text-slate-300 text-sm font-medium">
-                          📝 Exemplo: {bulkSetsConfig.numSets} séries de {bulkSetsConfig.reps} repetições com {bulkSetsConfig.rest}s de descanso
-                        </p>
-                      </div>
-                    </CardContent>
-                  </Card>
-                )}
+              {/* PASSO 3: Seleção de Categoria */}
+              <div>
+                <Label className="text-white mb-3 block font-bold text-lg flex items-center gap-2">
+                  <span className="text-2xl">📂</span>
+                  Selecione a Categoria
+                </Label>
+                <Select value={bulkCategory} onValueChange={setBulkCategory}>
+                  <SelectTrigger className="bg-slate-800 border-slate-700 text-white h-14 text-lg">
+                    <SelectValue placeholder="Escolha uma categoria" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Object.entries(categoryLabels).map(([key, label]) => (
+                      <SelectItem key={key} value={key} className="text-base">
+                        {label} ({exercises.filter(ex => ex.category === key).length} exercícios)
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
 
-                {/* Seleção de Categoria */}
+              {/* PASSO 4: Lista de Exercícios */}
+              {bulkCategory && (
                 <div>
-                  <Label className="text-slate-300 mb-2 block font-semibold">Selecione a Categoria *</Label>
-                  <Select value={bulkCategory} onValueChange={setBulkCategory}>
-                    <SelectTrigger className="bg-slate-800 border-slate-700 text-white h-12">
-                      <SelectValue placeholder="Escolha uma categoria" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {Object.entries(categoryLabels).map(([key, label]) => (
-                        <SelectItem key={key} value={key}>
-                          {label} ({exercises.filter(ex => ex.category === key).length} exercícios)
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {/* Lista de Exercícios */}
-                {bulkCategory && (
-                  <div>
-                    <div className="flex items-center justify-between mb-3">
-                      <Label className="text-white font-semibold">
-                        Selecione os Exercícios ({selectedExercises.length} selecionado{selectedExercises.length !== 1 ? 's' : ''})
-                      </Label>
-                      <div className="flex gap-2">
-                        <Button
-                          type="button"
-                          size="sm"
-                          variant="outline"
-                          onClick={() => setSelectedExercises(filteredBulkExercises.map(ex => ex.id))}
-                          className="text-xs border-slate-700 text-slate-300 hover:bg-slate-800"
-                        >
-                          Todos
-                        </Button>
-                        <Button
-                          type="button"
-                          size="sm"
-                          variant="outline"
-                          onClick={() => setSelectedExercises([])}
-                          className="text-xs border-slate-700 text-slate-300 hover:bg-slate-800"
-                        >
-                          Limpar
-                        </Button>
-                      </div>
+                  <div className="flex items-center justify-between mb-4">
+                    <Label className="text-white font-bold text-lg flex items-center gap-2">
+                      <span className="text-2xl">✅</span>
+                      Marque os Exercícios
+                      <Badge className="bg-blue-600 text-white text-base ml-2">
+                        {selectedExercises.length} selecionado{selectedExercises.length !== 1 ? 's' : ''}
+                      </Badge>
+                    </Label>
+                    <div className="flex gap-2">
+                      <Button
+                        type="button"
+                        size="sm"
+                        onClick={() => {
+                          const allIds = filteredBulkExercises.map(ex => ex.id);
+                          setSelectedExercises(allIds);
+                          // Initialize configs for all
+                          allIds.forEach(id => {
+                            if (!individualConfigs[id]) {
+                              const defaultSets = [];
+                              for (let i = 0; i < 3; i++) {
+                                defaultSets.push({ reps: '10', rest: 60 });
+                              }
+                              setIndividualConfigs(configs => ({
+                                ...configs,
+                                [id]: { sets: defaultSets }
+                              }));
+                            }
+                          });
+                        }}
+                        className="bg-blue-600 hover:bg-blue-700"
+                      >
+                        Selecionar Todos
+                      </Button>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        onClick={() => setSelectedExercises([])}
+                        className="border-slate-700"
+                      >
+                        Limpar
+                      </Button>
                     </div>
-                    <div className="space-y-3 max-h-[400px] overflow-y-auto bg-slate-800/20 p-4 rounded-lg border border-slate-800">
-                      {filteredBulkExercises.length === 0 ? (
-                        <p className="text-slate-500 text-center py-12">
-                          Nenhum exercício nesta categoria
-                        </p>
-                      ) : (
-                        filteredBulkExercises.map((exercise) => {
-                          const isSelected = selectedExercises.includes(exercise.id);
-                          const config = individualConfigs[exercise.id] || { sets: [] };
-                          
-                          return (
-                            <Card
-                              key={exercise.id}
-                              className={`transition-all ${
-                                isSelected
-                                  ? 'bg-blue-600/20 border-2 border-blue-600'
-                                  : 'bg-slate-800/70 border-2 border-slate-700 hover:border-slate-600'
-                              }`}
-                            >
-                              <CardContent className="p-0">
-                                <label className="flex items-start gap-3 p-4 cursor-pointer">
-                                  <input
-                                    type="checkbox"
-                                    checked={isSelected}
-                                    onChange={() => handleToggleExercise(exercise.id)}
-                                    className="mt-1 w-5 h-5 cursor-pointer"
-                                  />
-                                  <div className="flex-1">
-                                    <p className="text-white font-semibold text-lg">{exercise.name}</p>
-                                    {exercise.description && (
-                                      <p className="text-slate-400 text-sm mt-1 line-clamp-2">
-                                        {exercise.description}
-                                      </p>
-                                    )}
+                  </div>
+                  
+                  <div className="space-y-4 bg-slate-800/20 p-4 rounded-xl border-2 border-slate-700 max-h-[500px] overflow-y-auto">
+                    {filteredBulkExercises.length === 0 ? (
+                      <p className="text-slate-500 text-center py-16 text-lg">
+                        Nenhum exercício nesta categoria
+                      </p>
+                    ) : (
+                      filteredBulkExercises.map((exercise) => {
+                        const isSelected = selectedExercises.includes(exercise.id);
+                        const config = individualConfigs[exercise.id] || { sets: [] };
+                        
+                        return (
+                          <Card
+                            key={exercise.id}
+                            className={`transition-all ${
+                              isSelected
+                                ? 'bg-blue-600/20 border-3 border-blue-500'
+                                : 'bg-slate-800/70 border-2 border-slate-700 hover:border-slate-600'
+                            }`}
+                          >
+                            <CardContent className="p-0">
+                              {/* Checkbox Header */}
+                              <label className="flex items-start gap-4 p-5 cursor-pointer hover:bg-slate-700/30">
+                                <input
+                                  type="checkbox"
+                                  checked={isSelected}
+                                  onChange={() => handleToggleExercise(exercise.id)}
+                                  className="w-6 h-6 mt-1 cursor-pointer"
+                                />
+                                <div className="flex-1">
+                                  <h5 className="text-white font-bold text-lg mb-1">{exercise.name}</h5>
+                                  {exercise.description && (
+                                    <p className="text-slate-400 text-sm line-clamp-2">
+                                      {exercise.description}
+                                    </p>
+                                  )}
+                                </div>
+                              </label>
+                              
+                              {/* Configuração Individual de Séries */}
+                              {useIndividualConfig && isSelected && (
+                                <div className="px-5 pb-5 border-t-2 border-slate-700 pt-5 bg-slate-900/70 space-y-3">
+                                  <div className="flex items-center justify-between mb-3">
+                                    <h6 className="text-blue-400 font-bold flex items-center gap-2 text-base">
+                                      <span className="text-xl">📋</span>
+                                      Configurar Séries Deste Exercício
+                                    </h6>
+                                    <Button
+                                      type="button"
+                                      size="sm"
+                                      onClick={() => addIndividualSet(exercise.id)}
+                                      className="bg-blue-600 hover:bg-blue-700"
+                                    >
+                                      <Plus className="w-4 h-4 mr-1" />
+                                      Adicionar Série
+                                    </Button>
                                   </div>
-                                </label>
-                                
-                                {/* Config individual com lista de séries */}
-                                {useIndividualConfig && isSelected && (
-                                  <div className="px-4 pb-4 border-t-2 border-slate-700 pt-4 bg-slate-900/50">
-                                    <div className="flex items-center justify-between mb-3">
-                                      <Label className="text-blue-400 font-semibold flex items-center gap-2">
-                                        <span className="text-lg">📋</span>
-                                        Séries Personalizadas
-                                      </Label>
+                                  
+                                  {config.sets.length === 0 ? (
+                                    <div className="text-center py-6 bg-slate-800 rounded-lg border-2 border-dashed border-slate-600">
+                                      <p className="text-slate-400 mb-3">Nenhuma série configurada</p>
                                       <Button
                                         type="button"
                                         size="sm"
                                         onClick={() => addIndividualSet(exercise.id)}
-                                        className="bg-blue-600 hover:bg-blue-700 h-8 text-xs"
+                                        className="bg-blue-600 hover:bg-blue-700"
                                       >
-                                        <Plus className="w-3 h-3 mr-1" />
-                                        Adicionar Série
+                                        <Plus className="w-4 h-4 mr-2" />
+                                        Adicionar Primeira Série
                                       </Button>
                                     </div>
+                                  ) : (
                                     <div className="space-y-2">
                                       {config.sets.map((set, setIdx) => (
-                                        <div key={setIdx} className="flex items-center gap-2 bg-slate-800 p-3 rounded-lg border border-slate-700">
-                                          <div className="flex items-center justify-center w-10 h-10 bg-blue-600/20 rounded-lg flex-shrink-0">
-                                            <span className="text-blue-400 font-bold">{setIdx + 1}</span>
+                                        <div key={setIdx} className="flex items-center gap-3 bg-slate-800 p-4 rounded-lg border-2 border-slate-700">
+                                          <div className="flex items-center justify-center w-12 h-12 bg-blue-600 rounded-lg flex-shrink-0">
+                                            <span className="text-white font-bold text-lg">{setIdx + 1}</span>
                                           </div>
-                                          <div className="flex-1 grid grid-cols-2 gap-2">
+                                          <div className="flex-1 grid grid-cols-2 gap-3">
                                             <div>
-                                              <Label className="text-slate-400 text-xs mb-1 block">Reps</Label>
+                                              <Label className="text-slate-400 text-xs mb-1 block">Repetições</Label>
                                               <Input
                                                 value={set.reps}
                                                 onChange={(e) => updateIndividualSet(exercise.id, setIdx, 'reps', e.target.value)}
-                                                className="bg-slate-900 border-slate-700 text-white h-9 text-center font-bold"
+                                                className="bg-slate-900 border-slate-600 text-white h-11 text-center font-bold text-lg"
                                                 placeholder="10"
                                               />
                                             </div>
@@ -885,7 +928,7 @@ export default function WorkoutFormModal({ workout, onClose }) {
                                                 type="number"
                                                 value={set.rest}
                                                 onChange={(e) => updateIndividualSet(exercise.id, setIdx, 'rest', e.target.value)}
-                                                className="bg-slate-900 border-slate-700 text-white h-9 text-center font-bold"
+                                                className="bg-slate-900 border-slate-600 text-white h-11 text-center font-bold text-lg"
                                                 placeholder="60"
                                               />
                                             </div>
@@ -896,47 +939,52 @@ export default function WorkoutFormModal({ workout, onClose }) {
                                               variant="ghost"
                                               size="icon"
                                               onClick={() => removeIndividualSet(exercise.id, setIdx)}
-                                              className="h-9 w-9 text-red-400 hover:bg-red-950/50 flex-shrink-0"
+                                              className="h-11 w-11 text-red-400 hover:bg-red-950/50 flex-shrink-0"
                                             >
-                                              <X className="w-4 h-4" />
+                                              <Trash2 className="w-5 h-5" />
                                             </Button>
                                           )}
                                         </div>
                                       ))}
                                     </div>
-                                    {config.sets.length > 0 && (
-                                      <div className="mt-3 p-2 bg-blue-900/20 rounded border border-blue-800/50">
-                                        <p className="text-blue-400 text-xs font-medium">
-                                          💡 Resumo: {config.sets.map((set, idx) => `${idx + 1}x${set.reps} (${set.rest}s)`).join(' • ')}
-                                        </p>
-                                      </div>
-                                    )}
-                                  </div>
-                                )}
-                              </CardContent>
-                            </Card>
-                          );
-                        })
-                      )}
-                    </div>
+                                  )}
+                                  
+                                  {/* Preview das Séries */}
+                                  {config.sets.length > 0 && (
+                                    <div className="p-3 bg-blue-900/30 rounded-lg border border-blue-700">
+                                      <p className="text-blue-300 text-sm font-semibold flex items-center gap-2">
+                                        <span>💡</span>
+                                        {config.sets.map((set, idx) => `${idx + 1}×${set.reps} (${set.rest}s)`).join(' • ')}
+                                      </p>
+                                    </div>
+                                  )}
+                                </div>
+                              )}
+                            </CardContent>
+                          </Card>
+                        );
+                      })
+                    )}
                   </div>
-                )}
-              </div>
+                </div>
+              )}
             </CardContent>
-            <div className="border-t border-slate-800 p-4 flex gap-3 flex-shrink-0 bg-slate-900">
+            
+            {/* Footer com Botões */}
+            <div className="border-t-2 border-slate-800 p-5 flex gap-4 flex-shrink-0 bg-slate-900">
               <Button
                 variant="outline"
                 onClick={() => setShowBulkAdd(false)}
-                className="flex-1 border-slate-700 text-slate-300 hover:bg-slate-800 h-12"
+                className="flex-1 border-slate-700 h-14 text-lg"
               >
                 Cancelar
               </Button>
               <Button
                 onClick={handleBulkAddExercises}
                 disabled={selectedExercises.length === 0}
-                className="flex-1 bg-purple-600 hover:bg-purple-700 h-12 font-semibold text-lg"
+                className="flex-1 bg-purple-600 hover:bg-purple-700 h-14 text-lg font-bold"
               >
-                <Plus className="w-5 h-5 mr-2" />
+                <Plus className="w-6 h-6 mr-2" />
                 Adicionar {selectedExercises.length} Exercício{selectedExercises.length !== 1 ? 's' : ''}
               </Button>
             </div>
