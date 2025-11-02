@@ -39,9 +39,9 @@ export default function WorkoutFormModal({ workout, onClose }) {
   const [selectedExercises, setSelectedExercises] = useState([]);
   const [bulkSetsConfig, setBulkSetsConfig] = useState({
     sets: [
-      { reps: '10', rest: 60 },
-      { reps: '10', rest: 60 },
-      { reps: '10', rest: 60 }
+      { times: 1, reps: '10', rest: 60, notes: '' },
+      { times: 1, reps: '10', rest: 60, notes: '' },
+      { times: 1, reps: '10', rest: 60, notes: '' }
     ]
   });
   const [individualConfigs, setIndividualConfigs] = useState({});
@@ -64,6 +64,11 @@ export default function WorkoutFormModal({ workout, onClose }) {
               exercises: day.exercises.map(ex => ({
                 ...ex,
                 exercise_category: ex.exercise_category || '',
+                sets: ex.sets.map(set => ({
+                  ...set,
+                  times: set.times || 1, // Ensure times exists and defaults to 1
+                  notes: set.notes || '', // Ensure notes exists and defaults to ''
+                }))
               }))
             }))
           : [{ day_number: 1, title: 'Dia 1', exercises: [] }],
@@ -117,7 +122,7 @@ export default function WorkoutFormModal({ workout, onClose }) {
       exercise_category: '',
       exercise_id: '',
       exercise_name: '',
-      sets: [{ reps: '10', rest_seconds: 60 }],
+      sets: [{ times: 1, reps: '10', rest_seconds: 60, notes: '' }],
       notes: '',
     });
     setFormData({ ...formData, days: newDays });
@@ -146,7 +151,7 @@ export default function WorkoutFormModal({ workout, onClose }) {
 
   const addSetToExercise = (dayIndex, exerciseIndex) => {
     const newDays = [...formData.days];
-    newDays[dayIndex].exercises[exerciseIndex].sets.push({ reps: '10', rest_seconds: 60 });
+    newDays[dayIndex].exercises[exerciseIndex].sets.push({ times: 1, reps: '10', rest_seconds: 60, notes: '' });
     setFormData({ ...formData, days: newDays });
   };
 
@@ -160,8 +165,14 @@ export default function WorkoutFormModal({ workout, onClose }) {
 
   const updateSet = (dayIndex, exerciseIndex, setIndex, field, value) => {
     const newDays = [...formData.days];
-    newDays[dayIndex].exercises[exerciseIndex].sets[setIndex][field] = 
-      field === 'rest_seconds' ? parseInt(value) || 60 : value;
+    const currentSet = newDays[dayIndex].exercises[exerciseIndex].sets[setIndex];
+    
+    if (field === 'rest_seconds' || field === 'times') {
+      currentSet[field] = parseInt(value) || (field === 'times' ? 1 : 60);
+    } else {
+      currentSet[field] = value;
+    }
+    
     setFormData({ ...formData, days: newDays });
   };
 
@@ -180,13 +191,12 @@ export default function WorkoutFormModal({ workout, onClose }) {
       const isCurrentlySelected = prev.includes(exerciseId);
       
       if (isCurrentlySelected) {
-        // Remove from selection
         return prev.filter(id => id !== exerciseId);
       } else {
         // Add to selection and initialize config with bulk config
         setIndividualConfigs(configs => ({
           ...configs,
-          [exerciseId]: { sets: [...bulkSetsConfig.sets] }
+          [exerciseId]: { sets: bulkSetsConfig.sets.map(s => ({...s})) } // Deep copy sets
         }));
         return [...prev, exerciseId];
       }
@@ -197,10 +207,19 @@ export default function WorkoutFormModal({ workout, onClose }) {
     setIndividualConfigs(configs => {
       const exerciseConfig = configs[exerciseId] || { sets: [] };
       const newSets = [...exerciseConfig.sets];
-      newSets[setIndex] = {
-        ...newSets[setIndex],
-        [field]: field === 'rest' ? parseInt(value) || 60 : value
-      };
+      
+      if (field === 'rest' || field === 'times') {
+        newSets[setIndex] = {
+          ...newSets[setIndex],
+          [field]: parseInt(value) || (field === 'times' ? 1 : 60)
+        };
+      } else {
+        newSets[setIndex] = {
+          ...newSets[setIndex],
+          [field]: value
+        };
+      }
+      
       return {
         ...configs,
         [exerciseId]: { sets: newSets }
@@ -211,11 +230,11 @@ export default function WorkoutFormModal({ workout, onClose }) {
   const addIndividualSet = (exerciseId) => {
     setIndividualConfigs(configs => {
       const exerciseConfig = configs[exerciseId] || { sets: [] };
-      const lastSet = exerciseConfig.sets[exerciseConfig.sets.length - 1] || { reps: '10', rest: 60 };
+      const lastSet = exerciseConfig.sets[exerciseConfig.sets.length - 1] || { times: 1, reps: '10', rest: 60, notes: '' };
       return {
         ...configs,
         [exerciseId]: {
-          sets: [...exerciseConfig.sets, { reps: lastSet.reps, rest: lastSet.rest }]
+          sets: [...exerciseConfig.sets, { times: lastSet.times, reps: lastSet.reps, rest: lastSet.rest, notes: '' }]
         }
       };
     });
@@ -235,9 +254,9 @@ export default function WorkoutFormModal({ workout, onClose }) {
 
   // Bulk Sets Config Functions
   const addBulkSet = () => {
-    const lastSet = bulkSetsConfig.sets[bulkSetsConfig.sets.length - 1] || { reps: '10', rest: 60 };
+    const lastSet = bulkSetsConfig.sets[bulkSetsConfig.sets.length - 1] || { times: 1, reps: '10', rest: 60, notes: '' };
     setBulkSetsConfig({
-      sets: [...bulkSetsConfig.sets, { reps: lastSet.reps, rest: lastSet.rest }]
+      sets: [...bulkSetsConfig.sets, { times: lastSet.times, reps: lastSet.reps, rest: lastSet.rest, notes: '' }]
     });
   };
 
@@ -250,10 +269,19 @@ export default function WorkoutFormModal({ workout, onClose }) {
 
   const updateBulkSet = (setIndex, field, value) => {
     const newSets = [...bulkSetsConfig.sets];
-    newSets[setIndex] = {
-      ...newSets[setIndex],
-      [field]: field === 'rest' ? parseInt(value) || 60 : value
-    };
+    
+    if (field === 'rest' || field === 'times') {
+      newSets[setIndex] = {
+        ...newSets[setIndex],
+        [field]: parseInt(value) || (field === 'times' ? 1 : 60)
+      };
+    } else {
+      newSets[setIndex] = {
+        ...newSets[setIndex],
+        [field]: value
+      };
+    }
+    
     setBulkSetsConfig({ sets: newSets });
   };
 
@@ -269,16 +297,18 @@ export default function WorkoutFormModal({ workout, onClose }) {
       let sets = [];
       
       if (useIndividualConfig && individualConfigs[exerciseId]) {
-        // Use individual configuration with custom sets
         sets = individualConfigs[exerciseId].sets.map(set => ({
+          times: set.times || 1,
           reps: set.reps,
-          rest_seconds: set.rest
+          rest_seconds: set.rest,
+          notes: set.notes || ''
         }));
       } else {
-        // Use bulk configuration
         sets = bulkSetsConfig.sets.map(set => ({
+          times: set.times || 1,
           reps: set.reps,
-          rest_seconds: set.rest
+          rest_seconds: set.rest,
+          notes: set.notes || ''
         }));
       }
 
@@ -578,7 +608,7 @@ export default function WorkoutFormModal({ workout, onClose }) {
                                   </div>
 
                                   <div>
-                                    <Label className="text-slate-300 text-xs mb-1">Observações</Label>
+                                    <Label className="text-slate-300 text-xs mb-1">Observações do Exercício</Label>
                                     <Input
                                       placeholder="Ex: Controlar a descida, manter cotovelos próximos..."
                                       value={exercise.notes}
@@ -607,44 +637,68 @@ export default function WorkoutFormModal({ workout, onClose }) {
                                     
                                     <div className="space-y-2 bg-slate-800/30 p-3 rounded-lg">
                                       {exercise.sets.map((set, setIndex) => (
-                                        <div key={setIndex} className="flex items-center gap-2">
-                                          <span className="text-slate-400 text-sm font-medium w-12">
-                                            {setIndex + 1}ª
-                                          </span>
-                                          <div className="flex-1 grid grid-cols-2 gap-2">
-                                            <div>
-                                              <Input
-                                                placeholder="Reps (ex: 10)"
-                                                value={set.reps}
-                                                onChange={(e) => updateSet(dayIndex, exIndex, setIndex, 'reps', e.target.value)}
-                                                className="bg-slate-800 border-slate-700 text-white text-sm h-9"
-                                              />
+                                        <div key={setIndex} className="space-y-2 p-3 bg-slate-900/50 rounded-lg border border-slate-700">
+                                          <div className="flex items-center gap-2">
+                                            <span className="text-slate-400 text-sm font-medium w-8">
+                                              {setIndex + 1}ª
+                                            </span>
+                                            <div className="flex-1 grid grid-cols-3 gap-2">
+                                              <div>
+                                                <Label className="text-slate-400 text-xs mb-1 block">Vezes</Label>
+                                                <Input
+                                                  type="number"
+                                                  min="1"
+                                                  placeholder="1"
+                                                  value={set.times || 1}
+                                                  onChange={(e) => updateSet(dayIndex, exIndex, setIndex, 'times', e.target.value)}
+                                                  className="bg-slate-800 border-slate-700 text-white text-sm h-9"
+                                                />
+                                              </div>
+                                              <div>
+                                                <Label className="text-slate-400 text-xs mb-1 block">Reps</Label>
+                                                <Input
+                                                  placeholder="10"
+                                                  value={set.reps}
+                                                  onChange={(e) => updateSet(dayIndex, exIndex, setIndex, 'reps', e.target.value)}
+                                                  className="bg-slate-800 border-slate-700 text-white text-sm h-9"
+                                                />
+                                              </div>
+                                              <div>
+                                                <Label className="text-slate-400 text-xs mb-1 block">Desc. (s)</Label>
+                                                <Input
+                                                  type="number"
+                                                  placeholder="60"
+                                                  value={set.rest_seconds}
+                                                  onChange={(e) => updateSet(dayIndex, exIndex, setIndex, 'rest_seconds', e.target.value)}
+                                                  className="bg-slate-800 border-slate-700 text-white text-sm h-9"
+                                                />
+                                              </div>
                                             </div>
-                                            <div>
-                                              <Input
-                                                type="number"
-                                                placeholder="Descanso (s)"
-                                                value={set.rest_seconds}
-                                                onChange={(e) => updateSet(dayIndex, exIndex, setIndex, 'rest_seconds', e.target.value)}
-                                                className="bg-slate-800 border-slate-700 text-white text-sm h-9"
-                                              />
-                                            </div>
+                                            {exercise.sets.length > 1 && (
+                                              <Button
+                                                type="button"
+                                                variant="ghost"
+                                                size="icon"
+                                                onClick={() => removeSetFromExercise(dayIndex, exIndex, setIndex)}
+                                                className="h-9 w-9 text-red-400 hover:bg-red-950/50"
+                                              >
+                                                <X className="w-4 h-4" />
+                                              </Button>
+                                            )}
                                           </div>
-                                          {exercise.sets.length > 1 && (
-                                            <Button
-                                              type="button"
-                                              variant="ghost"
-                                              size="icon"
-                                              onClick={() => removeSetFromExercise(dayIndex, exIndex, setIndex)}
-                                              className="h-9 w-9 text-red-400 hover:bg-red-950/50"
-                                            >
-                                              <X className="w-4 h-4" />
-                                            </Button>
-                                          )}
+                                          <div>
+                                            <Label className="text-slate-400 text-xs mb-1 block">Observação da Série</Label>
+                                            <Input
+                                              placeholder="Ex: Aumentar peso na última, drop set..."
+                                              value={set.notes || ''}
+                                              onChange={(e) => updateSet(dayIndex, exIndex, setIndex, 'notes', e.target.value)}
+                                              className="bg-slate-800 border-slate-700 text-white text-xs h-8"
+                                            />
+                                          </div>
                                         </div>
                                       ))}
                                       <p className="text-slate-500 text-xs mt-2">
-                                        💡 Exemplo: 1x10 (60s), 2x8 (90s), 1x6 (120s)
+                                        💡 Exemplo: 2x10 (fazer 2 vezes a série de 10 reps com 60s de descanso)
                                       </p>
                                     </div>
                                   </div>
@@ -692,7 +746,7 @@ export default function WorkoutFormModal({ workout, onClose }) {
         </CardContent>
       </Card>
 
-      {/* Bulk Add Modal - UPDATED WITH SERIES VARIATION */}
+      {/* Bulk Add Modal - UPDATED */}
       {showBulkAdd && (
         <div className="fixed inset-0 bg-black/90 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
           <Card className="bg-slate-900 border-slate-800 max-w-5xl w-full max-h-[92vh] flex flex-col">
@@ -737,7 +791,7 @@ export default function WorkoutFormModal({ workout, onClose }) {
                 </CardContent>
               </Card>
 
-              {/* PASSO 2: Config Padrão com Variação de Séries */}
+              {/* Config Padrão com Variação de Séries */}
               {!useIndividualConfig && (
                 <Card className="bg-green-900/10 border-green-800">
                   <CardHeader>
@@ -763,51 +817,75 @@ export default function WorkoutFormModal({ workout, onClose }) {
                   <CardContent className="space-y-3">
                     <div className="space-y-2">
                       {bulkSetsConfig.sets.map((set, setIdx) => (
-                        <div key={setIdx} className="flex items-center gap-3 bg-slate-800 p-4 rounded-lg border-2 border-slate-700">
-                          <div className="flex items-center justify-center w-12 h-12 bg-green-600 rounded-lg flex-shrink-0">
-                            <span className="text-white font-bold text-lg">{setIdx + 1}</span>
-                          </div>
-                          <div className="flex-1 grid grid-cols-2 gap-3">
-                            <div>
-                              <Label className="text-slate-400 text-xs mb-1 block">Repetições</Label>
-                              <Input
-                                value={set.reps}
-                                onChange={(e) => updateBulkSet(setIdx, 'reps', e.target.value)}
-                                className="bg-slate-900 border-slate-600 text-white h-11 text-center font-bold text-lg"
-                                placeholder="10"
-                              />
+                        <div key={setIdx} className="space-y-2 p-4 bg-slate-800 rounded-lg border-2 border-slate-700">
+                          <div className="flex items-center gap-3">
+                            <div className="flex items-center justify-center w-12 h-12 bg-green-600 rounded-lg flex-shrink-0">
+                              <span className="text-white font-bold text-lg">{setIdx + 1}</span>
                             </div>
-                            <div>
-                              <Label className="text-slate-400 text-xs mb-1 block">Descanso (s)</Label>
-                              <Input
-                                type="number"
-                                value={set.rest}
-                                onChange={(e) => updateBulkSet(setIdx, 'rest', e.target.value)}
-                                className="bg-slate-900 border-slate-600 text-white h-11 text-center font-bold text-lg"
-                                placeholder="60"
-                              />
+                            <div className="flex-1 grid grid-cols-3 gap-3">
+                              <div>
+                                <Label className="text-slate-400 text-xs mb-1 block">Vezes</Label>
+                                <Input
+                                  type="number"
+                                  min="1"
+                                  value={set.times || 1}
+                                  onChange={(e) => updateBulkSet(setIdx, 'times', e.target.value)}
+                                  className="bg-slate-900 border-slate-600 text-white h-11 text-center font-bold text-lg"
+                                  placeholder="1"
+                                />
+                              </div>
+                              <div>
+                                <Label className="text-slate-400 text-xs mb-1 block">Repetições</Label>
+                                <Input
+                                  value={set.reps}
+                                  onChange={(e) => updateBulkSet(setIdx, 'reps', e.target.value)}
+                                  className="bg-slate-900 border-slate-600 text-white h-11 text-center font-bold text-lg"
+                                  placeholder="10"
+                                />
+                              </div>
+                              <div>
+                                <Label className="text-slate-400 text-xs mb-1 block">Descanso (s)</Label>
+                                <Input
+                                  type="number"
+                                  value={set.rest}
+                                  onChange={(e) => updateBulkSet(setIdx, 'rest', e.target.value)}
+                                  className="bg-slate-900 border-slate-600 text-white h-11 text-center font-bold text-lg"
+                                  placeholder="60"
+                                />
+                              </div>
                             </div>
+                            {bulkSetsConfig.sets.length > 1 && (
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => removeBulkSet(setIdx)}
+                                className="h-11 w-11 text-red-400 hover:bg-red-950/50 flex-shrink-0"
+                              >
+                                <Trash2 className="w-5 h-5" />
+                              </Button>
+                            )}
                           </div>
-                          {bulkSetsConfig.sets.length > 1 && (
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => removeBulkSet(setIdx)}
-                              className="h-11 w-11 text-red-400 hover:bg-red-950/50 flex-shrink-0"
-                            >
-                              <Trash2 className="w-5 h-5" />
-                            </Button>
-                          )}
+                          <div>
+                            <Label className="text-slate-400 text-xs mb-1 block">Observação da Série</Label>
+                            <Input
+                              placeholder="Ex: Drop set, aumentar carga..."
+                              value={set.notes || ''}
+                              onChange={(e) => updateBulkSet(setIdx, 'notes', e.target.value)}
+                              className="bg-slate-900 border-slate-600 text-white text-sm h-9"
+                            />
+                          </div>
                         </div>
                       ))}
                     </div>
                     
-                    {/* Preview das Séries Padrão */}
+                    {/* Preview */}
                     <div className="p-4 bg-slate-800/50 rounded-lg border border-slate-700">
                       <p className="text-green-400 font-semibold mb-2">📝 Preview da Configuração:</p>
                       <p className="text-slate-300 text-sm">
-                        {bulkSetsConfig.sets.map((set, idx) => `${idx + 1}×${set.reps} (${set.rest}s)`).join(' • ')}
+                        {bulkSetsConfig.sets.map((set, idx) => 
+                          `${idx + 1}ª: ${set.times}×${set.reps} (${set.rest}s)${set.notes ? ` - ${set.notes}` : ''}`
+                        ).join(' • ')}
                       </p>
                       <p className="text-slate-500 text-xs mt-2">
                         Esta configuração será aplicada a todos os {selectedExercises.length} exercício(s) selecionado(s)
@@ -859,7 +937,7 @@ export default function WorkoutFormModal({ workout, onClose }) {
                             if (!individualConfigs[id]) {
                               setIndividualConfigs(configs => ({
                                 ...configs,
-                                [id]: { sets: [...bulkSetsConfig.sets] }
+                                [id]: { sets: bulkSetsConfig.sets.map(s => ({...s})) } // Deep copy sets
                               }));
                             }
                           });
@@ -953,53 +1031,77 @@ export default function WorkoutFormModal({ workout, onClose }) {
                                   ) : (
                                     <div className="space-y-2">
                                       {config.sets.map((set, setIdx) => (
-                                        <div key={setIdx} className="flex items-center gap-3 bg-slate-800 p-4 rounded-lg border-2 border-slate-700">
-                                          <div className="flex items-center justify-center w-12 h-12 bg-blue-600 rounded-lg flex-shrink-0">
-                                            <span className="text-white font-bold text-lg">{setIdx + 1}</span>
-                                          </div>
-                                          <div className="flex-1 grid grid-cols-2 gap-3">
-                                            <div>
-                                              <Label className="text-slate-400 text-xs mb-1 block">Repetições</Label>
-                                              <Input
-                                                value={set.reps}
-                                                onChange={(e) => updateIndividualSet(exercise.id, setIdx, 'reps', e.target.value)}
-                                                className="bg-slate-900 border-slate-600 text-white h-11 text-center font-bold text-lg"
-                                                placeholder="10"
-                                              />
+                                        <div key={setIdx} className="space-y-2 p-4 bg-slate-800 rounded-lg border-2 border-slate-700">
+                                          <div className="flex items-center gap-3">
+                                            <div className="flex items-center justify-center w-12 h-12 bg-blue-600 rounded-lg flex-shrink-0">
+                                              <span className="text-white font-bold text-lg">{setIdx + 1}</span>
                                             </div>
-                                            <div>
-                                              <Label className="text-slate-400 text-xs mb-1 block">Descanso (s)</Label>
-                                              <Input
-                                                type="number"
-                                                value={set.rest}
-                                                onChange={(e) => updateIndividualSet(exercise.id, setIdx, 'rest', e.target.value)}
-                                                className="bg-slate-900 border-slate-600 text-white h-11 text-center font-bold text-lg"
-                                                placeholder="60"
-                                              />
+                                            <div className="flex-1 grid grid-cols-3 gap-3">
+                                              <div>
+                                                <Label className="text-slate-400 text-xs mb-1 block">Vezes</Label>
+                                                <Input
+                                                  type="number"
+                                                  min="1"
+                                                  value={set.times || 1}
+                                                  onChange={(e) => updateIndividualSet(exercise.id, setIdx, 'times', e.target.value)}
+                                                  className="bg-slate-900 border-slate-600 text-white h-11 text-center font-bold text-lg"
+                                                  placeholder="1"
+                                                />
+                                              </div>
+                                              <div>
+                                                <Label className="text-slate-400 text-xs mb-1 block">Repetições</Label>
+                                                <Input
+                                                  value={set.reps}
+                                                  onChange={(e) => updateIndividualSet(exercise.id, setIdx, 'reps', e.target.value)}
+                                                  className="bg-slate-900 border-slate-600 text-white h-11 text-center font-bold text-lg"
+                                                  placeholder="10"
+                                                />
+                                              </div>
+                                              <div>
+                                                <Label className="text-slate-400 text-xs mb-1 block">Desc. (s)</Label>
+                                                <Input
+                                                  type="number"
+                                                  value={set.rest}
+                                                  onChange={(e) => updateIndividualSet(exercise.id, setIdx, 'rest', e.target.value)}
+                                                  className="bg-slate-900 border-slate-600 text-white h-11 text-center font-bold text-lg"
+                                                  placeholder="60"
+                                                />
+                                              </div>
                                             </div>
+                                            {config.sets.length > 1 && (
+                                              <Button
+                                                type="button"
+                                                variant="ghost"
+                                                size="icon"
+                                                onClick={() => removeIndividualSet(exercise.id, setIdx)}
+                                                className="h-11 w-11 text-red-400 hover:bg-red-950/50 flex-shrink-0"
+                                              >
+                                                <Trash2 className="w-5 h-5" />
+                                              </Button>
+                                            )}
                                           </div>
-                                          {config.sets.length > 1 && (
-                                            <Button
-                                              type="button"
-                                              variant="ghost"
-                                              size="icon"
-                                              onClick={() => removeIndividualSet(exercise.id, setIdx)}
-                                              className="h-11 w-11 text-red-400 hover:bg-red-950/50 flex-shrink-0"
-                                            >
-                                              <Trash2 className="w-5 h-5" />
-                                            </Button>
-                                          )}
+                                          <div>
+                                            <Label className="text-slate-400 text-xs mb-1 block">Observação da Série</Label>
+                                            <Input
+                                              placeholder="Ex: Drop set, aumentar carga..."
+                                              value={set.notes || ''}
+                                              onChange={(e) => updateIndividualSet(exercise.id, setIdx, 'notes', e.target.value)}
+                                              className="bg-slate-900 border-slate-600 text-white text-sm h-9"
+                                            />
+                                          </div>
                                         </div>
                                       ))}
                                     </div>
                                   )}
                                   
-                                  {/* Preview das Séries */}
+                                  {/* Preview */}
                                   {config.sets.length > 0 && (
                                     <div className="p-3 bg-blue-900/30 rounded-lg border border-blue-700">
                                       <p className="text-blue-300 text-sm font-semibold flex items-center gap-2">
                                         <span>💡</span>
-                                        {config.sets.map((set, idx) => `${idx + 1}×${set.reps} (${set.rest}s)`).join(' • ')}
+                                        {config.sets.map((set, idx) => 
+                                          `${idx + 1}ª: ${set.times}×${set.reps} (${set.rest}s)`
+                                        ).join(' • ')}
                                       </p>
                                     </div>
                                   )}
