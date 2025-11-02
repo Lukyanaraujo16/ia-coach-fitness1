@@ -38,9 +38,11 @@ export default function WorkoutFormModal({ workout, onClose }) {
   const [bulkCategory, setBulkCategory] = useState('');
   const [selectedExercises, setSelectedExercises] = useState([]);
   const [bulkSetsConfig, setBulkSetsConfig] = useState({
-    numSets: 3,
-    reps: '10',
-    rest: 60,
+    sets: [
+      { reps: '10', rest: 60 },
+      { reps: '10', rest: 60 },
+      { reps: '10', rest: 60 }
+    ]
   });
   const [individualConfigs, setIndividualConfigs] = useState({});
   const [useIndividualConfig, setUseIndividualConfig] = useState(false);
@@ -181,17 +183,10 @@ export default function WorkoutFormModal({ workout, onClose }) {
         // Remove from selection
         return prev.filter(id => id !== exerciseId);
       } else {
-        // Add to selection and initialize config
-        const defaultSets = [];
-        for (let i = 0; i < 3; i++) {
-          defaultSets.push({
-            reps: '10',
-            rest: 60
-          });
-        }
+        // Add to selection and initialize config with bulk config
         setIndividualConfigs(configs => ({
           ...configs,
-          [exerciseId]: { sets: defaultSets }
+          [exerciseId]: { sets: [...bulkSetsConfig.sets] }
         }));
         return [...prev, exerciseId];
       }
@@ -238,6 +233,30 @@ export default function WorkoutFormModal({ workout, onClose }) {
     });
   };
 
+  // Bulk Sets Config Functions
+  const addBulkSet = () => {
+    const lastSet = bulkSetsConfig.sets[bulkSetsConfig.sets.length - 1] || { reps: '10', rest: 60 };
+    setBulkSetsConfig({
+      sets: [...bulkSetsConfig.sets, { reps: lastSet.reps, rest: lastSet.rest }]
+    });
+  };
+
+  const removeBulkSet = (setIndex) => {
+    if (bulkSetsConfig.sets.length <= 1) return;
+    setBulkSetsConfig({
+      sets: bulkSetsConfig.sets.filter((_, idx) => idx !== setIndex)
+    });
+  };
+
+  const updateBulkSet = (setIndex, field, value) => {
+    const newSets = [...bulkSetsConfig.sets];
+    newSets[setIndex] = {
+      ...newSets[setIndex],
+      [field]: field === 'rest' ? parseInt(value) || 60 : value
+    };
+    setBulkSetsConfig({ sets: newSets });
+  };
+
   const handleBulkAddExercises = () => {
     if (selectedExercises.length === 0) return;
 
@@ -257,9 +276,10 @@ export default function WorkoutFormModal({ workout, onClose }) {
         }));
       } else {
         // Use bulk configuration
-        for (let i = 0; i < bulkSetsConfig.numSets; i++) {
-          sets.push({ reps: bulkSetsConfig.reps, rest_seconds: bulkSetsConfig.rest });
-        }
+        sets = bulkSetsConfig.sets.map(set => ({
+          reps: set.reps,
+          rest_seconds: set.rest
+        }));
       }
 
       newDays[bulkAddDay].exercises.push({
@@ -672,7 +692,7 @@ export default function WorkoutFormModal({ workout, onClose }) {
         </CardContent>
       </Card>
 
-      {/* Bulk Add Modal - IMPROVED */}
+      {/* Bulk Add Modal - UPDATED WITH SERIES VARIATION */}
       {showBulkAdd && (
         <div className="fixed inset-0 bg-black/90 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
           <Card className="bg-slate-900 border-slate-800 max-w-5xl w-full max-h-[92vh] flex flex-col">
@@ -709,58 +729,88 @@ export default function WorkoutFormModal({ workout, onClose }) {
                       </div>
                       <p className="text-slate-400 text-sm">
                         {useIndividualConfig 
-                          ? "✅ Cada exercício terá suas próprias séries (ex: Supino 4x10, Crucifixo 3x12)"
-                          : "Todos os exercícios terão a mesma configuração de séries"}
+                          ? "✅ Cada exercício terá suas próprias séries personalizadas"
+                          : "Todos os exercícios receberão a mesma configuração de séries"}
                       </p>
                     </div>
                   </label>
                 </CardContent>
               </Card>
 
-              {/* PASSO 2: Config Padrão (só aparece se individual desligado) */}
+              {/* PASSO 2: Config Padrão com Variação de Séries */}
               {!useIndividualConfig && (
                 <Card className="bg-green-900/10 border-green-800">
                   <CardHeader>
-                    <h4 className="text-white font-semibold flex items-center gap-2">
-                      <span className="text-2xl">⚙️</span>
-                      Configuração Padrão (aplicada a todos)
-                    </h4>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="grid grid-cols-3 gap-4">
-                      <div>
-                        <Label className="text-slate-300 text-sm mb-2 block font-semibold">Nº de Séries</Label>
-                        <Input
-                          type="number"
-                          min="1"
-                          max="10"
-                          value={bulkSetsConfig.numSets}
-                          onChange={(e) => setBulkSetsConfig({...bulkSetsConfig, numSets: parseInt(e.target.value) || 1})}
-                          className="bg-slate-800 border-slate-700 text-white text-center text-xl font-bold h-14"
-                        />
-                      </div>
-                      <div>
-                        <Label className="text-slate-300 text-sm mb-2 block font-semibold">Repetições</Label>
-                        <Input
-                          value={bulkSetsConfig.reps}
-                          onChange={(e) => setBulkSetsConfig({...bulkSetsConfig, reps: e.target.value})}
-                          className="bg-slate-800 border-slate-700 text-white text-center text-xl font-bold h-14"
-                          placeholder="10"
-                        />
-                      </div>
-                      <div>
-                        <Label className="text-slate-300 text-sm mb-2 block font-semibold">Descanso (s)</Label>
-                        <Input
-                          type="number"
-                          value={bulkSetsConfig.rest}
-                          onChange={(e) => setBulkSetsConfig({...bulkSetsConfig, rest: parseInt(e.target.value) || 60})}
-                          className="bg-slate-800 border-slate-700 text-white text-center text-xl font-bold h-14"
-                        />
-                      </div>
+                    <div className="flex items-center justify-between">
+                      <h4 className="text-white font-semibold flex items-center gap-2">
+                        <span className="text-2xl">⚙️</span>
+                        Configuração Padrão de Séries
+                      </h4>
+                      <Button
+                        type="button"
+                        size="sm"
+                        onClick={addBulkSet}
+                        className="bg-green-600 hover:bg-green-700"
+                      >
+                        <Plus className="w-4 h-4 mr-1" />
+                        Adicionar Série
+                      </Button>
                     </div>
+                    <p className="text-slate-400 text-sm mt-2">
+                      Configure as séries que serão aplicadas a todos os exercícios selecionados
+                    </p>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <div className="space-y-2">
+                      {bulkSetsConfig.sets.map((set, setIdx) => (
+                        <div key={setIdx} className="flex items-center gap-3 bg-slate-800 p-4 rounded-lg border-2 border-slate-700">
+                          <div className="flex items-center justify-center w-12 h-12 bg-green-600 rounded-lg flex-shrink-0">
+                            <span className="text-white font-bold text-lg">{setIdx + 1}</span>
+                          </div>
+                          <div className="flex-1 grid grid-cols-2 gap-3">
+                            <div>
+                              <Label className="text-slate-400 text-xs mb-1 block">Repetições</Label>
+                              <Input
+                                value={set.reps}
+                                onChange={(e) => updateBulkSet(setIdx, 'reps', e.target.value)}
+                                className="bg-slate-900 border-slate-600 text-white h-11 text-center font-bold text-lg"
+                                placeholder="10"
+                              />
+                            </div>
+                            <div>
+                              <Label className="text-slate-400 text-xs mb-1 block">Descanso (s)</Label>
+                              <Input
+                                type="number"
+                                value={set.rest}
+                                onChange={(e) => updateBulkSet(setIdx, 'rest', e.target.value)}
+                                className="bg-slate-900 border-slate-600 text-white h-11 text-center font-bold text-lg"
+                                placeholder="60"
+                              />
+                            </div>
+                          </div>
+                          {bulkSetsConfig.sets.length > 1 && (
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => removeBulkSet(setIdx)}
+                              className="h-11 w-11 text-red-400 hover:bg-red-950/50 flex-shrink-0"
+                            >
+                              <Trash2 className="w-5 h-5" />
+                            </Button>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                    
+                    {/* Preview das Séries Padrão */}
                     <div className="p-4 bg-slate-800/50 rounded-lg border border-slate-700">
-                      <p className="text-green-400 font-semibold text-center">
-                        📝 Preview: {bulkSetsConfig.numSets} séries × {bulkSetsConfig.reps} reps ({bulkSetsConfig.rest}s descanso)
+                      <p className="text-green-400 font-semibold mb-2">📝 Preview da Configuração:</p>
+                      <p className="text-slate-300 text-sm">
+                        {bulkSetsConfig.sets.map((set, idx) => `${idx + 1}×${set.reps} (${set.rest}s)`).join(' • ')}
+                      </p>
+                      <p className="text-slate-500 text-xs mt-2">
+                        Esta configuração será aplicada a todos os {selectedExercises.length} exercício(s) selecionado(s)
                       </p>
                     </div>
                   </CardContent>
@@ -805,16 +855,11 @@ export default function WorkoutFormModal({ workout, onClose }) {
                         onClick={() => {
                           const allIds = filteredBulkExercises.map(ex => ex.id);
                           setSelectedExercises(allIds);
-                          // Initialize configs for all
                           allIds.forEach(id => {
                             if (!individualConfigs[id]) {
-                              const defaultSets = [];
-                              for (let i = 0; i < 3; i++) {
-                                defaultSets.push({ reps: '10', rest: 60 });
-                              }
                               setIndividualConfigs(configs => ({
                                 ...configs,
-                                [id]: { sets: defaultSets }
+                                [id]: { sets: [...bulkSetsConfig.sets] }
                               }));
                             }
                           });
