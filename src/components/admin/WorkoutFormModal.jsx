@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
@@ -40,6 +41,8 @@ export default function WorkoutFormModal({ workout, onClose }) {
     reps: '10',
     rest: 60,
   });
+  const [individualConfigs, setIndividualConfigs] = useState({});
+  const [useIndividualConfig, setUseIndividualConfig] = useState(false);
 
   useEffect(() => {
     if (workout) {
@@ -164,42 +167,82 @@ export default function WorkoutFormModal({ workout, onClose }) {
     setBulkAddDay(dayIndex);
     setBulkCategory('');
     setSelectedExercises([]);
+    setIndividualConfigs({}); // Reset individual configs
+    setUseIndividualConfig(false); // Reset toggle
     setShowBulkAdd(true);
   };
 
   const handleToggleExercise = (exerciseId) => {
-    setSelectedExercises(prev => 
-      prev.includes(exerciseId) 
+    setSelectedExercises(prev => {
+      const isCurrentlySelected = prev.includes(exerciseId);
+      const newSelected = isCurrentlySelected 
         ? prev.filter(id => id !== exerciseId)
-        : [...prev, exerciseId]
-    );
+        : [...prev, exerciseId];
+      
+      // Initialize individual config for newly selected exercise if it's not already there
+      if (!isCurrentlySelected && !individualConfigs[exerciseId]) {
+        setIndividualConfigs(configs => ({
+          ...configs,
+          [exerciseId]: {
+            numSets: bulkSetsConfig.numSets,
+            reps: bulkSetsConfig.reps,
+            rest: bulkSetsConfig.rest,
+          }
+        }));
+      } else if (isCurrentlySelected) {
+        // Optionally remove config if unselected, but keeping it might be useful if re-selected
+        // For simplicity, we'll keep it, but it's an option:
+        // const newIndividualConfigs = { ...individualConfigs };
+        // delete newIndividualConfigs[exerciseId];
+        // setIndividualConfigs(newIndividualConfigs);
+      }
+      
+      return newSelected;
+    });
+  };
+
+  const updateIndividualConfig = (exerciseId, field, value) => {
+    setIndividualConfigs(configs => ({
+      ...configs,
+      [exerciseId]: {
+        ...configs[exerciseId],
+        [field]: field === 'numSets' || field === 'rest' ? parseInt(value) || 1 : value
+      }
+    }));
   };
 
   const handleBulkAddExercises = () => {
     if (selectedExercises.length === 0) return;
 
     const newDays = [...formData.days];
-    const sets = [];
-    for (let i = 0; i < bulkSetsConfig.numSets; i++) {
-      sets.push({ reps: bulkSetsConfig.reps, rest_seconds: bulkSetsConfig.rest });
-    }
 
     selectedExercises.forEach(exerciseId => {
       const exercise = exercises.find(ex => ex.id === exerciseId);
-      if (exercise) {
-        newDays[bulkAddDay].exercises.push({
-          exercise_category: exercise.category,
-          exercise_id: exercise.id,
-          exercise_name: exercise.name,
-          sets: [...sets],
-          notes: '',
-        });
+      if (!exercise) return;
+
+      // Use individual config if enabled and available, otherwise use bulk config
+      const configToUse = useIndividualConfig && individualConfigs[exerciseId] 
+        ? individualConfigs[exerciseId]
+        : bulkSetsConfig;
+
+      const sets = [];
+      for (let i = 0; i < configToUse.numSets; i++) {
+        sets.push({ reps: configToUse.reps, rest_seconds: configToUse.rest });
       }
+
+      newDays[bulkAddDay].exercises.push({
+        exercise_category: exercise.category,
+        exercise_id: exercise.id,
+        exercise_name: exercise.name,
+        sets: [...sets],
+        notes: '',
+      });
     });
 
     setFormData({ ...formData, days: newDays });
     setShowBulkAdd(false);
     setSelectedExercises([]);
+    setIndividualConfigs({}); // Reset individual configs after adding
   };
 
   const categoryLabels = {
@@ -600,7 +643,7 @@ export default function WorkoutFormModal({ workout, onClose }) {
       {/* Bulk Add Modal */}
       {showBulkAdd && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
-          <Card className="bg-slate-900 border-slate-800 max-w-3xl w-full max-h-[80vh] flex flex-col">
+          <Card className="bg-slate-900 border-slate-800 max-w-4xl w-full max-h-[85vh] flex flex-col">
             <CardHeader className="border-b border-slate-800 flex-shrink-0">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-white">Adicionar Múltiplos Exercícios - Dia {formData.days[bulkAddDay].day_number}</CardTitle>
@@ -611,44 +654,60 @@ export default function WorkoutFormModal({ workout, onClose }) {
             </CardHeader>
             <CardContent className="p-6 overflow-y-auto flex-1">
               <div className="space-y-6">
-                {/* Config de Séries Padrão */}
-                <div className="p-4 bg-blue-900/20 border border-blue-800/50 rounded-lg">
-                  <h4 className="text-white font-semibold mb-3">Configuração Padrão de Séries</h4>
-                  <div className="grid grid-cols-3 gap-3">
-                    <div>
-                      <Label className="text-slate-300 text-sm">Nº de Séries</Label>
-                      <Input
-                        type="number"
-                        min="1"
-                        max="10"
-                        value={bulkSetsConfig.numSets}
-                        onChange={(e) => setBulkSetsConfig({...bulkSetsConfig, numSets: parseInt(e.target.value) || 1})}
-                        className="bg-slate-800 border-slate-700 text-white"
-                      />
-                    </div>
-                    <div>
-                      <Label className="text-slate-300 text-sm">Repetições</Label>
-                      <Input
-                        value={bulkSetsConfig.reps}
-                        onChange={(e) => setBulkSetsConfig({...bulkSetsConfig, reps: e.target.value})}
-                        className="bg-slate-800 border-slate-700 text-white"
-                        placeholder="Ex: 10"
-                      />
-                    </div>
-                    <div>
-                      <Label className="text-slate-300 text-sm">Descanso (s)</Label>
-                      <Input
-                        type="number"
-                        value={bulkSetsConfig.rest}
-                        onChange={(e) => setBulkSetsConfig({...bulkSetsConfig, rest: parseInt(e.target.value) || 60})}
-                        className="bg-slate-800 border-slate-700 text-white"
-                      />
-                    </div>
-                  </div>
-                  <p className="text-slate-400 text-xs mt-2">
-                    Todos os exercícios selecionados terão {bulkSetsConfig.numSets}x{bulkSetsConfig.reps} ({bulkSetsConfig.rest}s descanso)
-                  </p>
+                {/* Toggle para configuração individual */}
+                <div className="flex items-center gap-3 p-4 bg-blue-900/20 border border-blue-800/50 rounded-lg">
+                  <input
+                    type="checkbox"
+                    id="useIndividual"
+                    checked={useIndividualConfig}
+                    onChange={(e) => setUseIndividualConfig(e.target.checked)}
+                    className="w-4 h-4"
+                  />
+                  <Label htmlFor="useIndividual" className="text-white cursor-pointer flex-1">
+                    Configurar séries individualmente para cada exercício
+                  </Label>
                 </div>
+
+                {/* Config Padrão (condicionalmente visível) */}
+                {!useIndividualConfig && (
+                  <div className="p-4 bg-green-900/20 border border-green-800/50 rounded-lg">
+                    <h4 className="text-white font-semibold mb-3">Configuração Padrão de Séries</h4>
+                    <div className="grid grid-cols-3 gap-3">
+                      <div>
+                        <Label className="text-slate-300 text-sm">Nº de Séries</Label>
+                        <Input
+                          type="number"
+                          min="1"
+                          max="10"
+                          value={bulkSetsConfig.numSets}
+                          onChange={(e) => setBulkSetsConfig({...bulkSetsConfig, numSets: parseInt(e.target.value) || 1})}
+                          className="bg-slate-800 border-slate-700 text-white"
+                        />
+                      </div>
+                      <div>
+                        <Label className="text-slate-300 text-sm">Repetições</Label>
+                        <Input
+                          value={bulkSetsConfig.reps}
+                          onChange={(e) => setBulkSetsConfig({...bulkSetsConfig, reps: e.target.value})}
+                          className="bg-slate-800 border-slate-700 text-white"
+                          placeholder="Ex: 10"
+                        />
+                      </div>
+                      <div>
+                        <Label className="text-slate-300 text-sm">Descanso (s)</Label>
+                        <Input
+                          type="number"
+                          value={bulkSetsConfig.rest}
+                          onChange={(e) => setBulkSetsConfig({...bulkSetsConfig, rest: parseInt(e.target.value) || 60})}
+                          className="bg-slate-800 border-slate-700 text-white"
+                        />
+                      </div>
+                    </div>
+                    <p className="text-slate-400 text-xs mt-2">
+                      Todos os exercícios selecionados (sem configuração individual) terão {bulkSetsConfig.numSets}x{bulkSetsConfig.reps} ({bulkSetsConfig.rest}s descanso)
+                    </p>
+                  </div>
+                )}
 
                 {/* Seleção de Categoria */}
                 <div>
@@ -695,37 +754,81 @@ export default function WorkoutFormModal({ workout, onClose }) {
                         </Button>
                       </div>
                     </div>
-                    <div className="space-y-2 max-h-96 overflow-y-auto bg-slate-800/30 p-3 rounded-lg">
+                    <div className="space-y-2 max-h-[400px] overflow-y-auto bg-slate-800/30 p-3 rounded-lg">
                       {filteredBulkExercises.length === 0 ? (
                         <p className="text-slate-500 text-center py-8">
                           Nenhum exercício nesta categoria
                         </p>
                       ) : (
-                        filteredBulkExercises.map((exercise) => (
-                          <label
-                            key={exercise.id}
-                            className={`flex items-start gap-3 p-3 rounded-lg cursor-pointer transition-all ${
-                              selectedExercises.includes(exercise.id)
-                                ? 'bg-blue-600/20 border-2 border-blue-600/50'
-                                : 'bg-slate-800/50 border-2 border-transparent hover:border-slate-700'
-                            }`}
-                          >
-                            <input
-                              type="checkbox"
-                              checked={selectedExercises.includes(exercise.id)}
-                              onChange={() => handleToggleExercise(exercise.id)}
-                              className="mt-1 w-4 h-4"
-                            />
-                            <div className="flex-1">
-                              <p className="text-white font-medium">{exercise.name}</p>
-                              {exercise.description && (
-                                <p className="text-slate-400 text-sm mt-1 line-clamp-2">
-                                  {exercise.description}
-                                </p>
+                        filteredBulkExercises.map((exercise) => {
+                          const isSelected = selectedExercises.includes(exercise.id);
+                          // Use individual config if it exists, otherwise fallback to bulk config
+                          const currentConfig = individualConfigs[exercise.id] || bulkSetsConfig;
+                          
+                          return (
+                            <div
+                              key={exercise.id}
+                              className={`rounded-lg transition-all ${
+                                isSelected
+                                  ? 'bg-blue-600/20 border-2 border-blue-600/50'
+                                  : 'bg-slate-800/50 border-2 border-transparent hover:border-slate-700'
+                              }`}
+                            >
+                              <label className="flex items-start gap-3 p-3 cursor-pointer">
+                                <input
+                                  type="checkbox"
+                                  checked={isSelected}
+                                  onChange={() => handleToggleExercise(exercise.id)}
+                                  className="mt-1 w-4 h-4"
+                                />
+                                <div className="flex-1">
+                                  <p className="text-white font-medium">{exercise.name}</p>
+                                  {exercise.description && (
+                                    <p className="text-slate-400 text-sm mt-1 line-clamp-2">
+                                      {exercise.description}
+                                    </p>
+                                  )}
+                                </div>
+                              </label>
+                              
+                              {/* Config individual for selected exercises if useIndividualConfig is true */}
+                              {useIndividualConfig && isSelected && (
+                                <div className="px-3 pb-3 grid grid-cols-3 gap-2 border-t border-slate-700 pt-3 mt-2">
+                                  <div>
+                                    <Label className="text-slate-400 text-xs">Séries</Label>
+                                    <Input
+                                      type="number"
+                                      min="1"
+                                      max="10"
+                                      value={currentConfig.numSets}
+                                      onChange={(e) => updateIndividualConfig(exercise.id, 'numSets', e.target.value)}
+                                      className="bg-slate-800 border-slate-700 text-white text-sm h-8"
+                                    />
+                                  </div>
+                                  <div>
+                                    <Label className="text-slate-400 text-xs">Reps</Label>
+                                    <Input
+                                      value={currentConfig.reps}
+                                      onChange={(e) => updateIndividualConfig(exercise.id, 'reps', e.target.value)}
+                                      className="bg-slate-800 border-slate-700 text-white text-sm h-8"
+                                      placeholder="10"
+                                    />
+                                  </div>
+                                  <div>
+                                    <Label className="text-slate-400 text-xs">Desc. (s)</Label>
+                                    <Input
+                                      type="number"
+                                      value={currentConfig.rest}
+                                      onChange={(e) => updateIndividualConfig(exercise.id, 'rest', e.target.value)}
+                                      className="bg-slate-800 border-slate-700 text-white text-sm h-8"
+                                      placeholder="60"
+                                    />
+                                  </div>
+                                </div>
                               )}
                             </div>
-                          </label>
-                        ))
+                          );
+                        })
                       )}
                     </div>
                   </div>
