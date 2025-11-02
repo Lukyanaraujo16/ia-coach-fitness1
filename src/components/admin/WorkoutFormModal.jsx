@@ -167,8 +167,8 @@ export default function WorkoutFormModal({ workout, onClose }) {
     setBulkAddDay(dayIndex);
     setBulkCategory('');
     setSelectedExercises([]);
-    setIndividualConfigs({}); // Reset individual configs
-    setUseIndividualConfig(false); // Reset toggle
+    setIndividualConfigs({});
+    setUseIndividualConfig(false);
     setShowBulkAdd(true);
   };
 
@@ -179,36 +179,63 @@ export default function WorkoutFormModal({ workout, onClose }) {
         ? prev.filter(id => id !== exerciseId)
         : [...prev, exerciseId];
       
-      // Initialize individual config for newly selected exercise if it's not already there
+      // Initialize individual config with default sets structure
       if (!isCurrentlySelected && !individualConfigs[exerciseId]) {
+        const defaultSets = [];
+        for (let i = 0; i < bulkSetsConfig.numSets; i++) {
+          defaultSets.push({
+            reps: bulkSetsConfig.reps,
+            rest: bulkSetsConfig.rest
+          });
+        }
         setIndividualConfigs(configs => ({
           ...configs,
-          [exerciseId]: {
-            numSets: bulkSetsConfig.numSets,
-            reps: bulkSetsConfig.reps,
-            rest: bulkSetsConfig.rest,
-          }
+          [exerciseId]: { sets: defaultSets }
         }));
-      } else if (isCurrentlySelected) {
-        // Optionally remove config if unselected, but keeping it might be useful if re-selected
-        // For simplicity, we'll keep it, but it's an option:
-        // const newIndividualConfigs = { ...individualConfigs };
-        // delete newIndividualConfigs[exerciseId];
-        // setIndividualConfigs(newIndividualConfigs);
       }
       
       return newSelected;
     });
   };
 
-  const updateIndividualConfig = (exerciseId, field, value) => {
-    setIndividualConfigs(configs => ({
-      ...configs,
-      [exerciseId]: {
-        ...configs[exerciseId],
-        [field]: field === 'numSets' || field === 'rest' ? parseInt(value) || 1 : value
-      }
-    }));
+  const updateIndividualSet = (exerciseId, setIndex, field, value) => {
+    setIndividualConfigs(configs => {
+      const exerciseConfig = configs[exerciseId] || { sets: [] };
+      const newSets = [...exerciseConfig.sets];
+      newSets[setIndex] = {
+        ...newSets[setIndex],
+        [field]: field === 'rest' ? parseInt(value) || 60 : value
+      };
+      return {
+        ...configs,
+        [exerciseId]: { sets: newSets }
+      };
+    });
+  };
+
+  const addIndividualSet = (exerciseId) => {
+    setIndividualConfigs(configs => {
+      const exerciseConfig = configs[exerciseId] || { sets: [] };
+      const lastSet = exerciseConfig.sets[exerciseConfig.sets.length - 1] || { reps: '10', rest: 60 };
+      return {
+        ...configs,
+        [exerciseId]: {
+          sets: [...exerciseConfig.sets, { reps: lastSet.reps, rest: lastSet.rest }]
+        }
+      };
+    });
+  };
+
+  const removeIndividualSet = (exerciseId, setIndex) => {
+    setIndividualConfigs(configs => {
+      const exerciseConfig = configs[exerciseId] || { sets: [] };
+      if (exerciseConfig.sets.length <= 1) return configs;
+      const newSets = exerciseConfig.sets.filter((_, idx) => idx !== setIndex);
+      return {
+        ...configs,
+        [exerciseId]: { sets: newSets }
+      };
+    });
   };
 
   const handleBulkAddExercises = () => {
@@ -220,21 +247,26 @@ export default function WorkoutFormModal({ workout, onClose }) {
       const exercise = exercises.find(ex => ex.id === exerciseId);
       if (!exercise) return;
 
-      // Use individual config if enabled and available, otherwise use bulk config
-      const configToUse = useIndividualConfig && individualConfigs[exerciseId] 
-        ? individualConfigs[exerciseId]
-        : bulkSetsConfig;
-
-      const sets = [];
-      for (let i = 0; i < configToUse.numSets; i++) {
-        sets.push({ reps: configToUse.reps, rest_seconds: configToUse.rest });
+      let sets = [];
+      
+      if (useIndividualConfig && individualConfigs[exerciseId]) {
+        // Use individual configuration with custom sets
+        sets = individualConfigs[exerciseId].sets.map(set => ({
+          reps: set.reps,
+          rest_seconds: set.rest
+        }));
+      } else {
+        // Use bulk configuration
+        for (let i = 0; i < bulkSetsConfig.numSets; i++) {
+          sets.push({ reps: bulkSetsConfig.reps, rest_seconds: bulkSetsConfig.rest });
+        }
       }
 
       newDays[bulkAddDay].exercises.push({
         exercise_category: exercise.category,
         exercise_id: exercise.id,
         exercise_name: exercise.name,
-        sets: [...sets],
+        sets: sets,
         notes: '',
       });
     });
@@ -242,7 +274,7 @@ export default function WorkoutFormModal({ workout, onClose }) {
     setFormData({ ...formData, days: newDays });
     setShowBulkAdd(false);
     setSelectedExercises([]);
-    setIndividualConfigs({}); // Reset individual configs after adding
+    setIndividualConfigs({});
   };
 
   const categoryLabels = {
@@ -640,7 +672,7 @@ export default function WorkoutFormModal({ workout, onClose }) {
         </CardContent>
       </Card>
 
-      {/* Bulk Add Modal */}
+      {/* Bulk Add Modal - UPDATED */}
       {showBulkAdd && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
           <Card className="bg-slate-900 border-slate-800 max-w-4xl w-full max-h-[85vh] flex flex-col">
@@ -668,7 +700,7 @@ export default function WorkoutFormModal({ workout, onClose }) {
                   </Label>
                 </div>
 
-                {/* Config Padrão (condicionalmente visível) */}
+                {/* Config Padrão */}
                 {!useIndividualConfig && (
                   <div className="p-4 bg-green-900/20 border border-green-800/50 rounded-lg">
                     <h4 className="text-white font-semibold mb-3">Configuração Padrão de Séries</h4>
@@ -704,7 +736,7 @@ export default function WorkoutFormModal({ workout, onClose }) {
                       </div>
                     </div>
                     <p className="text-slate-400 text-xs mt-2">
-                      Todos os exercícios selecionados (sem configuração individual) terão {bulkSetsConfig.numSets}x{bulkSetsConfig.reps} ({bulkSetsConfig.rest}s descanso)
+                      Todos os exercícios terão {bulkSetsConfig.numSets}x{bulkSetsConfig.reps} ({bulkSetsConfig.rest}s descanso)
                     </p>
                   </div>
                 )}
@@ -762,8 +794,7 @@ export default function WorkoutFormModal({ workout, onClose }) {
                       ) : (
                         filteredBulkExercises.map((exercise) => {
                           const isSelected = selectedExercises.includes(exercise.id);
-                          // Use individual config if it exists, otherwise fallback to bulk config
-                          const currentConfig = individualConfigs[exercise.id] || bulkSetsConfig;
+                          const config = individualConfigs[exercise.id] || { sets: [] };
                           
                           return (
                             <div
@@ -791,39 +822,56 @@ export default function WorkoutFormModal({ workout, onClose }) {
                                 </div>
                               </label>
                               
-                              {/* Config individual for selected exercises if useIndividualConfig is true */}
+                              {/* Config individual com lista de séries */}
                               {useIndividualConfig && isSelected && (
-                                <div className="px-3 pb-3 grid grid-cols-3 gap-2 border-t border-slate-700 pt-3 mt-2">
-                                  <div>
-                                    <Label className="text-slate-400 text-xs">Séries</Label>
-                                    <Input
-                                      type="number"
-                                      min="1"
-                                      max="10"
-                                      value={currentConfig.numSets}
-                                      onChange={(e) => updateIndividualConfig(exercise.id, 'numSets', e.target.value)}
-                                      className="bg-slate-800 border-slate-700 text-white text-sm h-8"
-                                    />
+                                <div className="px-3 pb-3 border-t border-slate-700 pt-3 mt-2 space-y-2">
+                                  <div className="flex items-center justify-between mb-2">
+                                    <Label className="text-slate-400 text-xs">Configurar Séries</Label>
+                                    <Button
+                                      type="button"
+                                      size="sm"
+                                      variant="outline"
+                                      onClick={() => addIndividualSet(exercise.id)}
+                                      className="h-6 text-xs border-slate-700 text-slate-300"
+                                    >
+                                      <Plus className="w-3 h-3 mr-1" />
+                                      Série
+                                    </Button>
                                   </div>
-                                  <div>
-                                    <Label className="text-slate-400 text-xs">Reps</Label>
-                                    <Input
-                                      value={currentConfig.reps}
-                                      onChange={(e) => updateIndividualConfig(exercise.id, 'reps', e.target.value)}
-                                      className="bg-slate-800 border-slate-700 text-white text-sm h-8"
-                                      placeholder="10"
-                                    />
+                                  <div className="space-y-2 max-h-48 overflow-y-auto">
+                                    {config.sets.map((set, setIdx) => (
+                                      <div key={setIdx} className="flex items-center gap-2 bg-slate-900/50 p-2 rounded">
+                                        <span className="text-slate-400 text-xs w-8">{setIdx + 1}ª</span>
+                                        <Input
+                                          value={set.reps}
+                                          onChange={(e) => updateIndividualSet(exercise.id, setIdx, 'reps', e.target.value)}
+                                          className="bg-slate-800 border-slate-700 text-white text-xs h-7 flex-1"
+                                          placeholder="Reps"
+                                        />
+                                        <Input
+                                          type="number"
+                                          value={set.rest}
+                                          onChange={(e) => updateIndividualSet(exercise.id, setIdx, 'rest', e.target.value)}
+                                          className="bg-slate-800 border-slate-700 text-white text-xs h-7 w-16"
+                                          placeholder="60s"
+                                        />
+                                        {config.sets.length > 1 && (
+                                          <Button
+                                            type="button"
+                                            variant="ghost"
+                                            size="icon"
+                                            onClick={() => removeIndividualSet(exercise.id, setIdx)}
+                                            className="h-7 w-7 text-red-400"
+                                          >
+                                            <X className="w-3 h-3" />
+                                          </Button>
+                                        )}
+                                      </div>
+                                    ))}
                                   </div>
-                                  <div>
-                                    <Label className="text-slate-400 text-xs">Desc. (s)</Label>
-                                    <Input
-                                      type="number"
-                                      value={currentConfig.rest}
-                                      onChange={(e) => updateIndividualConfig(exercise.id, 'rest', e.target.value)}
-                                      className="bg-slate-800 border-slate-700 text-white text-sm h-8"
-                                      placeholder="60"
-                                    />
-                                  </div>
+                                  <p className="text-slate-500 text-xs">
+                                    💡 Exemplo: 1ª série 10 reps (60s), 2ª série 8 reps (90s)
+                                  </p>
                                 </div>
                               )}
                             </div>
