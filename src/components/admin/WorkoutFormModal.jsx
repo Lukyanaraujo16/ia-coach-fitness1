@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -7,13 +8,17 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { X, Plus, Trash2, ChevronDown, ChevronUp, GripVertical } from "lucide-react";
+import { X, Plus, Trash2, ChevronDown, ChevronUp, GripVertical, CheckSquare, Square, Search } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
 export default function WorkoutFormModal({ workout, exercises, onClose }) {
   const queryClient = useQueryClient();
   const [expandedDay, setExpandedDay] = useState(0);
   const [expandedExercise, setExpandedExercise] = useState(null);
+  const [showBulkAdd, setShowBulkAdd] = useState(false);
+  const [bulkSearchQuery, setBulkSearchQuery] = useState("");
+  const [selectedExercises, setSelectedExercises] = useState([]);
+  const [currentDayForBulk, setCurrentDayForBulk] = useState(0);
   
   const [formData, setFormData] = useState(
     workout || {
@@ -92,6 +97,40 @@ export default function WorkoutFormModal({ workout, exercises, onClose }) {
     setExpandedExercise(`${dayIndex}-${newDays[dayIndex].exercises.length - 1}`);
   };
 
+  const openBulkAdd = (dayIndex) => {
+    setCurrentDayForBulk(dayIndex);
+    setSelectedExercises([]);
+    setBulkSearchQuery("");
+    setShowBulkAdd(true);
+  };
+
+  const toggleExerciseSelection = (exerciseId) => {
+    setSelectedExercises(prev => 
+      prev.includes(exerciseId) 
+        ? prev.filter(id => id !== exerciseId)
+        : [...prev, exerciseId]
+    );
+  };
+
+  const addBulkExercises = () => {
+    const newDays = [...formData.days];
+    const exercisesToAdd = exercises.filter(ex => selectedExercises.includes(ex.id));
+    
+    exercisesToAdd.forEach(exercise => {
+      newDays[currentDayForBulk].exercises.push({
+        exercise_id: exercise.id,
+        exercise_name: exercise.name,
+        exercise_category: exercise.category,
+        sets: [{ times: 3, reps: "10-12", rest_seconds: 60, notes: "" }],
+        notes: "",
+      });
+    });
+    
+    setFormData({ ...formData, days: newDays });
+    setShowBulkAdd(false);
+    setSelectedExercises([]);
+  };
+
   const removeExercise = (dayIndex, exerciseIndex) => {
     const newDays = [...formData.days];
     newDays[dayIndex].exercises.splice(exerciseIndex, 1);
@@ -140,6 +179,22 @@ export default function WorkoutFormModal({ workout, exercises, onClose }) {
   const toggleExercise = (dayIndex, exerciseIndex) => {
     const key = `${dayIndex}-${exerciseIndex}`;
     setExpandedExercise(expandedExercise === key ? null : key);
+  };
+
+  const filteredExercises = exercises.filter(ex => 
+    ex.name.toLowerCase().includes(bulkSearchQuery.toLowerCase()) ||
+    ex.category.toLowerCase().includes(bulkSearchQuery.toLowerCase())
+  );
+
+  const categoryColors = {
+    chest: "bg-red-500/20 text-red-400",
+    back: "bg-blue-500/20 text-blue-400",
+    legs: "bg-green-500/20 text-green-400",
+    shoulders: "bg-yellow-500/20 text-yellow-400",
+    arms: "bg-purple-500/20 text-purple-400",
+    core: "bg-orange-500/20 text-orange-400",
+    cardio: "bg-pink-500/20 text-pink-400",
+    full_body: "bg-indigo-500/20 text-indigo-400",
   };
 
   return (
@@ -305,19 +360,31 @@ export default function WorkoutFormModal({ workout, exercises, onClose }) {
 
                       {/* Exercícios */}
                       <div className="space-y-3">
-                        <div className="flex items-center justify-between">
+                        <div className="flex items-center justify-between gap-2">
                           <Label className="text-slate-300">Exercícios</Label>
-                          <Button
-                            type="button"
-                            onClick={() => addExercise(dayIndex)}
-                            size="sm"
-                            className="bg-green-600 hover:bg-green-700 h-8"
-                          >
-                            <Plus className="w-4 h-4 mr-1" />
-                            Adicionar
-                          </Button>
+                          <div className="flex gap-2">
+                            <Button
+                              type="button"
+                              onClick={() => openBulkAdd(dayIndex)}
+                              size="sm"
+                              className="bg-purple-600 hover:bg-purple-700 h-8"
+                            >
+                              <CheckSquare className="w-4 h-4 mr-1" />
+                              Múltiplos
+                            </Button>
+                            <Button
+                              type="button"
+                              onClick={() => addExercise(dayIndex)}
+                              size="sm"
+                              className="bg-green-600 hover:bg-green-700 h-8"
+                            >
+                              <Plus className="w-4 h-4 mr-1" />
+                              Único
+                            </Button>
+                          </div>
                         </div>
 
+                        {/* Lista de exercícios */}
                         {day.exercises.map((exercise, exerciseIndex) => {
                           const isExpanded = expandedExercise === `${dayIndex}-${exerciseIndex}`;
                           return (
@@ -512,6 +579,110 @@ export default function WorkoutFormModal({ workout, exercises, onClose }) {
           </form>
         </CardContent>
       </Card>
+
+      {/* Modal de Adicionar Múltiplos Exercícios */}
+      {showBulkAdd && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <Card className="bg-slate-900 border-slate-800 max-w-2xl w-full max-h-[80vh] overflow-hidden flex flex-col">
+            <CardHeader className="border-b border-slate-800 flex-shrink-0">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-white">Adicionar Múltiplos Exercícios</CardTitle>
+                <Button variant="ghost" size="icon" onClick={() => setShowBulkAdd(false)}>
+                  <X className="w-5 h-5" />
+                </Button>
+              </div>
+              <p className="text-slate-400 text-sm mt-2">
+                Selecione os exercícios que deseja adicionar ao Dia {currentDayForBulk + 1}
+              </p>
+            </CardHeader>
+            <CardContent className="p-4 overflow-y-auto flex-1">
+              <div className="space-y-4">
+                {/* Search */}
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                  <Input
+                    placeholder="Buscar exercícios..."
+                    value={bulkSearchQuery}
+                    onChange={(e) => setBulkSearchQuery(e.target.value)}
+                    className="pl-10 bg-slate-800 border-slate-700 text-white"
+                  />
+                </div>
+
+                {/* Selected Count */}
+                {selectedExercises.length > 0 && (
+                  <div className="bg-blue-900/20 border border-blue-800/50 rounded-lg p-3">
+                    <p className="text-blue-400 text-sm font-medium">
+                      ✓ {selectedExercises.length} exercício(s) selecionado(s)
+                    </p>
+                  </div>
+                )}
+
+                {/* Exercise List */}
+                <div className="space-y-2">
+                  {filteredExercises.map((exercise) => (
+                    <button
+                      key={exercise.id}
+                      type="button"
+                      onClick={() => toggleExerciseSelection(exercise.id)}
+                      className={`w-full text-left p-3 rounded-lg border-2 transition-all ${
+                        selectedExercises.includes(exercise.id)
+                          ? 'border-blue-600 bg-blue-600/20'
+                          : 'border-slate-700 bg-slate-800/50 hover:border-slate-600'
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        {selectedExercises.includes(exercise.id) ? (
+                          <CheckSquare className="w-5 h-5 text-blue-400 flex-shrink-0" />
+                        ) : (
+                          <Square className="w-5 h-5 text-slate-500 flex-shrink-0" />
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <p className="text-white font-medium truncate">{exercise.name}</p>
+                          <div className="flex items-center gap-2 mt-1">
+                            <Badge className={`${categoryColors[exercise.category]} text-xs`}>
+                              {exercise.category}
+                            </Badge>
+                            <Badge variant="outline" className="text-slate-400 border-slate-600 text-xs">
+                              {exercise.difficulty}
+                            </Badge>
+                          </div>
+                        </div>
+                      </div>
+                    </button>
+                  ))}
+
+                  {filteredExercises.length === 0 && (
+                    <p className="text-slate-500 text-center py-8">
+                      Nenhum exercício encontrado
+                    </p>
+                  )}
+                </div>
+              </div>
+            </CardContent>
+            <div className="border-t border-slate-800 p-4 flex-shrink-0">
+              <div className="flex gap-3">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setShowBulkAdd(false)}
+                  className="flex-1 bg-slate-800 border-slate-600 text-slate-200"
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  type="button"
+                  onClick={addBulkExercises}
+                  disabled={selectedExercises.length === 0}
+                  className="flex-1 bg-blue-600 hover:bg-blue-700"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Adicionar {selectedExercises.length} Exercício(s)
+                </Button>
+              </div>
+            </div>
+          </Card>
+        </div>
+      )}
     </div>
   );
 }
