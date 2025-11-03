@@ -7,9 +7,11 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Plus, Edit2, Trash2, Lock } from "lucide-react";
 import WorkoutFormModal from "./WorkoutFormModal";
+import AIWorkoutGenerator from "./AIWorkoutGenerator";
 
 export default function AdminWorkouts({ workouts = [], exercises = [] }) {
   const [showForm, setShowForm] = useState(false);
+  const [showAIGenerator, setShowAIGenerator] = useState(false);
   const [editingWorkout, setEditingWorkout] = useState(null);
   const queryClient = useQueryClient();
 
@@ -57,16 +59,28 @@ export default function AdminWorkouts({ workouts = [], exercises = [] }) {
     <div className="space-y-4">
       <Card className="bg-slate-900/50 border-slate-800">
         <CardHeader>
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between gap-3 flex-wrap">
             <CardTitle className="text-white">Gerenciar Treinos</CardTitle>
-            <Button
-              onClick={() => setShowForm(true)}
-              className="bg-blue-600 hover:bg-blue-700"
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              Novo Treino
-            </Button>
+            <div className="flex gap-2">
+              <Button
+                onClick={() => setShowAIGenerator(true)}
+                className="bg-purple-600 hover:bg-purple-700"
+              >
+                <span className="text-xl mr-2">✨</span>
+                Gerar com IA
+              </Button>
+              <Button
+                onClick={() => setShowForm(true)}
+                className="bg-blue-600 hover:bg-blue-700"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Novo Treino
+              </Button>
+            </div>
           </div>
+          <p className="text-slate-400 text-sm mt-2">
+            Use a IA para gerar treinos completos automaticamente ou crie manualmente
+          </p>
         </CardHeader>
         <CardContent>
           <div className="grid md:grid-cols-2 gap-4">
@@ -139,6 +153,10 @@ export default function AdminWorkouts({ workouts = [], exercises = [] }) {
           exercises={exercises}
           onClose={handleCloseForm}
         />
+      )}
+
+      {showAIGenerator && (
+        <AIWorkoutGenerator onClose={() => setShowAIGenerator(false)} />
       )}
     </div>
   );
