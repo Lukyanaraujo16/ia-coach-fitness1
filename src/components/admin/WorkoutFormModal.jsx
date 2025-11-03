@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { X, Plus, Trash2, ChevronDown, ChevronUp, GripVertical, CheckSquare, Square, Search } from "lucide-react";
+import { X, Plus, Trash2, ChevronDown, ChevronUp, GripVertical, CheckSquare, Square, Search, ArrowRight, ArrowLeft } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
 export default function WorkoutFormModal({ workout, exercises, onClose }) {
@@ -16,9 +16,13 @@ export default function WorkoutFormModal({ workout, exercises, onClose }) {
   const [expandedDay, setExpandedDay] = useState(0);
   const [expandedExercise, setExpandedExercise] = useState(null);
   const [showBulkAdd, setShowBulkAdd] = useState(false);
+  const [bulkAddStep, setBulkAddStep] = useState(1); // 1: selecionar exercícios, 2: configurar séries
   const [bulkSearchQuery, setBulkSearchQuery] = useState("");
   const [selectedExercises, setSelectedExercises] = useState([]);
   const [currentDayForBulk, setCurrentDayForBulk] = useState(0);
+  const [bulkSetsConfig, setBulkSetsConfig] = useState([
+    { times: 3, reps: "10-12", rest_seconds: 60, notes: "" }
+  ]);
   
   const [formData, setFormData] = useState(
     workout || {
@@ -101,6 +105,8 @@ export default function WorkoutFormModal({ workout, exercises, onClose }) {
     setCurrentDayForBulk(dayIndex);
     setSelectedExercises([]);
     setBulkSearchQuery("");
+    setBulkAddStep(1);
+    setBulkSetsConfig([{ times: 3, reps: "10-12", rest_seconds: 60, notes: "" }]);
     setShowBulkAdd(true);
   };
 
@@ -112,6 +118,32 @@ export default function WorkoutFormModal({ workout, exercises, onClose }) {
     );
   };
 
+  const handleBulkNext = () => {
+    if (bulkAddStep === 1 && selectedExercises.length > 0) {
+      setBulkAddStep(2);
+    }
+  };
+
+  const handleBulkBack = () => {
+    setBulkAddStep(1);
+  };
+
+  const addBulkSet = () => {
+    setBulkSetsConfig([...bulkSetsConfig, { times: 1, reps: "10", rest_seconds: 60, notes: "" }]);
+  };
+
+  const removeBulkSet = (index) => {
+    if (bulkSetsConfig.length > 1) {
+      setBulkSetsConfig(bulkSetsConfig.filter((_, i) => i !== index));
+    }
+  };
+
+  const updateBulkSet = (index, field, value) => {
+    const newSets = [...bulkSetsConfig];
+    newSets[index][field] = value;
+    setBulkSetsConfig(newSets);
+  };
+
   const addBulkExercises = () => {
     const newDays = [...formData.days];
     const exercisesToAdd = exercises.filter(ex => selectedExercises.includes(ex.id));
@@ -121,7 +153,7 @@ export default function WorkoutFormModal({ workout, exercises, onClose }) {
         exercise_id: exercise.id,
         exercise_name: exercise.name,
         exercise_category: exercise.category,
-        sets: [{ times: 3, reps: "10-12", rest_seconds: 60, notes: "" }],
+        sets: bulkSetsConfig.map(set => ({ ...set })), // Clone da configuração
         notes: "",
       });
     });
@@ -129,6 +161,7 @@ export default function WorkoutFormModal({ workout, exercises, onClose }) {
     setFormData({ ...formData, days: newDays });
     setShowBulkAdd(false);
     setSelectedExercises([]);
+    setBulkAddStep(1);
   };
 
   const removeExercise = (dayIndex, exerciseIndex) => {
@@ -586,100 +619,240 @@ export default function WorkoutFormModal({ workout, exercises, onClose }) {
           <Card className="bg-slate-900 border-slate-800 max-w-2xl w-full max-h-[80vh] overflow-hidden flex flex-col">
             <CardHeader className="border-b border-slate-800 flex-shrink-0">
               <div className="flex items-center justify-between">
-                <CardTitle className="text-white">Adicionar Múltiplos Exercícios</CardTitle>
+                <CardTitle className="text-white">
+                  {bulkAddStep === 1 ? "Selecionar Exercícios" : "Configurar Séries"}
+                </CardTitle>
                 <Button variant="ghost" size="icon" onClick={() => setShowBulkAdd(false)}>
                   <X className="w-5 h-5" />
                 </Button>
               </div>
               <p className="text-slate-400 text-sm mt-2">
-                Selecione os exercícios que deseja adicionar ao Dia {currentDayForBulk + 1}
+                {bulkAddStep === 1 
+                  ? `Selecione os exercícios para o Dia ${currentDayForBulk + 1}`
+                  : `Configure as séries que serão aplicadas a todos os ${selectedExercises.length} exercícios`
+                }
               </p>
+              
+              {/* Progress Indicator */}
+              <div className="flex items-center gap-2 mt-4">
+                <div className={`flex-1 h-2 rounded-full ${bulkAddStep >= 1 ? 'bg-purple-600' : 'bg-slate-700'}`} />
+                <div className={`flex-1 h-2 rounded-full ${bulkAddStep >= 2 ? 'bg-purple-600' : 'bg-slate-700'}`} />
+              </div>
             </CardHeader>
-            <CardContent className="p-4 overflow-y-auto flex-1">
-              <div className="space-y-4">
-                {/* Search */}
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                  <Input
-                    placeholder="Buscar exercícios..."
-                    value={bulkSearchQuery}
-                    onChange={(e) => setBulkSearchQuery(e.target.value)}
-                    className="pl-10 bg-slate-800 border-slate-700 text-white"
-                  />
-                </div>
 
-                {/* Selected Count */}
-                {selectedExercises.length > 0 && (
-                  <div className="bg-blue-900/20 border border-blue-800/50 rounded-lg p-3">
-                    <p className="text-blue-400 text-sm font-medium">
-                      ✓ {selectedExercises.length} exercício(s) selecionado(s)
-                    </p>
-                  </div>
-                )}
+            {/* STEP 1: Seleção de Exercícios */}
+            {bulkAddStep === 1 && (
+              <>
+                <CardContent className="p-4 overflow-y-auto flex-1">
+                  <div className="space-y-4">
+                    {/* Search */}
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                      <Input
+                        placeholder="Buscar exercícios..."
+                        value={bulkSearchQuery}
+                        onChange={(e) => setBulkSearchQuery(e.target.value)}
+                        className="pl-10 bg-slate-800 border-slate-700 text-white"
+                      />
+                    </div>
 
-                {/* Exercise List */}
-                <div className="space-y-2">
-                  {filteredExercises.map((exercise) => (
-                    <button
-                      key={exercise.id}
-                      type="button"
-                      onClick={() => toggleExerciseSelection(exercise.id)}
-                      className={`w-full text-left p-3 rounded-lg border-2 transition-all ${
-                        selectedExercises.includes(exercise.id)
-                          ? 'border-blue-600 bg-blue-600/20'
-                          : 'border-slate-700 bg-slate-800/50 hover:border-slate-600'
-                      }`}
-                    >
-                      <div className="flex items-center gap-3">
-                        {selectedExercises.includes(exercise.id) ? (
-                          <CheckSquare className="w-5 h-5 text-blue-400 flex-shrink-0" />
-                        ) : (
-                          <Square className="w-5 h-5 text-slate-500 flex-shrink-0" />
-                        )}
-                        <div className="flex-1 min-w-0">
-                          <p className="text-white font-medium truncate">{exercise.name}</p>
-                          <div className="flex items-center gap-2 mt-1">
-                            <Badge className={`${categoryColors[exercise.category]} text-xs`}>
-                              {exercise.category}
-                            </Badge>
-                            <Badge variant="outline" className="text-slate-400 border-slate-600 text-xs">
-                              {exercise.difficulty}
-                            </Badge>
-                          </div>
-                        </div>
+                    {/* Selected Count */}
+                    {selectedExercises.length > 0 && (
+                      <div className="bg-purple-900/20 border border-purple-800/50 rounded-lg p-3">
+                        <p className="text-purple-400 text-sm font-medium">
+                          ✓ {selectedExercises.length} exercício(s) selecionado(s)
+                        </p>
                       </div>
-                    </button>
-                  ))}
+                    )}
 
-                  {filteredExercises.length === 0 && (
-                    <p className="text-slate-500 text-center py-8">
-                      Nenhum exercício encontrado
-                    </p>
-                  )}
+                    {/* Exercise List */}
+                    <div className="space-y-2">
+                      {filteredExercises.map((exercise) => (
+                        <button
+                          key={exercise.id}
+                          type="button"
+                          onClick={() => toggleExerciseSelection(exercise.id)}
+                          className={`w-full text-left p-3 rounded-lg border-2 transition-all ${
+                            selectedExercises.includes(exercise.id)
+                              ? 'border-purple-600 bg-purple-600/20'
+                              : 'border-slate-700 bg-slate-800/50 hover:border-slate-600'
+                          }`}
+                        >
+                          <div className="flex items-center gap-3">
+                            {selectedExercises.includes(exercise.id) ? (
+                              <CheckSquare className="w-5 h-5 text-purple-400 flex-shrink-0" />
+                            ) : (
+                              <Square className="w-5 h-5 text-slate-500 flex-shrink-0" />
+                            )}
+                            <div className="flex-1 min-w-0">
+                              <p className="text-white font-medium truncate">{exercise.name}</p>
+                              <div className="flex items-center gap-2 mt-1">
+                                <Badge className={`${categoryColors[exercise.category]} text-xs`}>
+                                  {exercise.category}
+                                </Badge>
+                                <Badge variant="outline" className="text-slate-400 border-slate-600 text-xs">
+                                  {exercise.difficulty}
+                                </Badge>
+                              </div>
+                            </div>
+                          </div>
+                        </button>
+                      ))}
+
+                      {filteredExercises.length === 0 && (
+                        <p className="text-slate-500 text-center py-8">
+                          Nenhum exercício encontrado
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </CardContent>
+                <div className="border-t border-slate-800 p-4 flex-shrink-0">
+                  <div className="flex gap-3">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => setShowBulkAdd(false)}
+                      className="flex-1 bg-slate-800 border-slate-600 text-slate-200"
+                    >
+                      Cancelar
+                    </Button>
+                    <Button
+                      type="button"
+                      onClick={handleBulkNext}
+                      disabled={selectedExercises.length === 0}
+                      className="flex-1 bg-purple-600 hover:bg-purple-700"
+                    >
+                      Avançar
+                      <ArrowRight className="w-4 h-4 ml-2" />
+                    </Button>
+                  </div>
                 </div>
-              </div>
-            </CardContent>
-            <div className="border-t border-slate-800 p-4 flex-shrink-0">
-              <div className="flex gap-3">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setShowBulkAdd(false)}
-                  className="flex-1 bg-slate-800 border-slate-600 text-slate-200"
-                >
-                  Cancelar
-                </Button>
-                <Button
-                  type="button"
-                  onClick={addBulkExercises}
-                  disabled={selectedExercises.length === 0}
-                  className="flex-1 bg-blue-600 hover:bg-blue-700"
-                >
-                  <Plus className="w-4 h-4 mr-2" />
-                  Adicionar {selectedExercises.length} Exercício(s)
-                </Button>
-              </div>
-            </div>
+              </>
+            )}
+
+            {/* STEP 2: Configuração de Séries */}
+            {bulkAddStep === 2 && (
+              <>
+                <CardContent className="p-4 overflow-y-auto flex-1">
+                  <div className="space-y-4">
+                    <div className="bg-blue-900/20 border border-blue-800/50 rounded-lg p-4">
+                      <p className="text-blue-400 text-sm font-medium mb-2">
+                        📋 {selectedExercises.length} exercícios selecionados
+                      </p>
+                      <p className="text-slate-300 text-xs">
+                        Configure abaixo as séries que serão aplicadas a todos eles
+                      </p>
+                    </div>
+
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <Label className="text-slate-300">Séries</Label>
+                        <Button
+                          type="button"
+                          onClick={addBulkSet}
+                          size="sm"
+                          className="bg-green-600 hover:bg-green-700 h-8"
+                        >
+                          <Plus className="w-3 h-3 mr-1" />
+                          Adicionar Série
+                        </Button>
+                      </div>
+
+                      {bulkSetsConfig.map((set, index) => (
+                        <Card key={index} className="bg-slate-800/50 border-slate-600 p-4">
+                          <div className="space-y-3">
+                            <div className="flex items-center justify-between">
+                              <span className="text-white font-medium">Série {index + 1}</span>
+                              {bulkSetsConfig.length > 1 && (
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => removeBulkSet(index)}
+                                  className="text-red-400 hover:text-red-300 hover:bg-red-900/20 h-8 w-8"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </Button>
+                              )}
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-3">
+                              <div className="space-y-2">
+                                <Label className="text-slate-400 text-sm">Vezes</Label>
+                                <Input
+                                  type="number"
+                                  value={set.times}
+                                  onChange={(e) => updateBulkSet(index, "times", parseInt(e.target.value))}
+                                  className="bg-slate-700 border-slate-600 text-white"
+                                  min="1"
+                                />
+                              </div>
+                              <div className="space-y-2">
+                                <Label className="text-slate-400 text-sm">Repetições</Label>
+                                <Input
+                                  value={set.reps}
+                                  onChange={(e) => updateBulkSet(index, "reps", e.target.value)}
+                                  className="bg-slate-700 border-slate-600 text-white"
+                                  placeholder="10-12"
+                                />
+                              </div>
+                            </div>
+
+                            <div className="space-y-2">
+                              <Label className="text-slate-400 text-sm">Descanso (segundos)</Label>
+                              <Input
+                                type="number"
+                                value={set.rest_seconds}
+                                onChange={(e) => updateBulkSet(index, "rest_seconds", parseInt(e.target.value))}
+                                className="bg-slate-700 border-slate-600 text-white"
+                              />
+                            </div>
+
+                            <div className="space-y-2">
+                              <Label className="text-slate-400 text-sm">Observações (opcional)</Label>
+                              <Input
+                                value={set.notes}
+                                onChange={(e) => updateBulkSet(index, "notes", e.target.value)}
+                                className="bg-slate-700 border-slate-600 text-white"
+                                placeholder="Ex: aumentar carga progressivamente"
+                              />
+                            </div>
+                          </div>
+                        </Card>
+                      ))}
+                    </div>
+
+                    <div className="bg-green-900/20 border border-green-800/50 rounded-lg p-4">
+                      <p className="text-green-400 text-sm">
+                        ✅ Essas séries serão aplicadas a todos os {selectedExercises.length} exercícios selecionados
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+                <div className="border-t border-slate-800 p-4 flex-shrink-0">
+                  <div className="flex gap-3">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={handleBulkBack}
+                      className="flex-1 bg-slate-800 border-slate-600 text-slate-200"
+                    >
+                      <ArrowLeft className="w-4 h-4 mr-2" />
+                      Voltar
+                    </Button>
+                    <Button
+                      type="button"
+                      onClick={addBulkExercises}
+                      className="flex-1 bg-green-600 hover:bg-green-700"
+                    >
+                      <CheckSquare className="w-4 h-4 mr-2" />
+                      Adicionar Todos
+                    </Button>
+                  </div>
+                </div>
+              </>
+            )}
           </Card>
         </div>
       )}
