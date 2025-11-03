@@ -138,10 +138,17 @@ export default function WorkoutExecution() {
   };
 
   const handleFinishWorkout = () => {
+    // Usar data local (horário do Brasil)
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+    const localDate = `${year}-${month}-${day}`;
+
     createWorkoutLogMutation.mutate({
       workout_id: workout.id,
       workout_title: `${workout.title} - Dia ${dayNumber}`,
-      date: new Date().toISOString().split('T')[0],
+      date: localDate,
       duration_minutes: workout.duration_minutes,
       calories_burned: caloriesInput ? parseInt(caloriesInput) : undefined,
       notes: skippedExercises.length > 0 ? `${skippedExercises.length} exercícios pulados` : "",

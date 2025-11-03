@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -57,7 +58,9 @@ export default function MealHistory({ mealLogs = [] }) {
       {sortedDates.map((date) => {
         const meals = groupedByDate[date];
         const totalCalories = meals.reduce((sum, m) => sum + (m.total_calories || 0), 0);
-        const dateObj = new Date(date + 'T00:00:00');
+        
+        // Usar data local para formatação
+        const dateObj = new Date(date + 'T12:00:00'); // Adicionar meio-dia para evitar problema de fuso
         const formattedDate = dateObj.toLocaleDateString('pt-BR', {
           weekday: 'long',
           day: '2-digit',

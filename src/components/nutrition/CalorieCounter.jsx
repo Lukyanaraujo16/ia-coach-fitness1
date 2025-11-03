@@ -163,7 +163,7 @@ Seja o mais preciso possível com base nas quantidades típicas se não foram es
       setNotes("");
       setAdjustmentRequest("");
       setShowAdjustment(false);
-      setShowPhotoOptions(false); // Reset photo options visibility
+      setShowPhotoOptions(false);
       alert("Refeição salva com sucesso! 🎉");
     },
   });
@@ -171,8 +171,15 @@ Seja o mais preciso possível com base nas quantidades típicas se não foram es
   const handleSaveMeal = () => {
     if (!analysisResult) return;
 
+    // Usar data local (horário do Brasil)
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+    const localDate = `${year}-${month}-${day}`;
+
     saveMealMutation.mutate({
-      date: new Date().toISOString().split('T')[0],
+      date: localDate,
       meal_type: mealType,
       photo_url: analysisResult.photoUrl || null,
       food_items: analysisResult.food_items,

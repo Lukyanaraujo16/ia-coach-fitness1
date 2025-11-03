@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
@@ -43,8 +44,16 @@ export default function Nutrition() {
     queryFn: () => base44.entities.NutritionPlan.list(),
   });
 
-  // Calcular calorias e macros de hoje
-  const today = new Date().toISOString().split('T')[0];
+  // Calcular calorias e macros de hoje - usando data local
+  const getLocalDate = () => {
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  const today = getLocalDate();
   const todayMeals = mealLogs.filter(log => log.date === today && log.analysis_complete);
   const todayCalories = todayMeals.reduce((sum, log) => sum + (log.total_calories || 0), 0);
   const todayProtein = todayMeals.reduce((sum, log) => sum + (log.macros?.protein || 0), 0);

@@ -5,12 +5,22 @@ import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, R
 import { TrendingUp, Target, Zap } from "lucide-react";
 
 export default function NutritionStats({ mealLogs = [], calorieGoal = 2000 }) {
+  // Função para obter data local no formato 'YYYY-MM-DD'
+  const getLocalDateString = (daysAgo = 0) => {
+    const date = new Date();
+    date.setDate(date.getDate() - daysAgo);
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
   // Últimos 7 dias - já filtrado por usuário no componente pai
   const last7Days = [];
   for (let i = 6; i >= 0; i--) {
     const date = new Date();
     date.setDate(date.getDate() - i);
-    const dateStr = date.toISOString().split('T')[0];
+    const dateStr = getLocalDateString(i);
     
     const dayMeals = mealLogs.filter(log => log.date === dateStr && log.analysis_complete);
     const calories = dayMeals.reduce((sum, log) => sum + (log.total_calories || 0), 0);

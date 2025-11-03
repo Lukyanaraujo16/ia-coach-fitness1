@@ -100,10 +100,12 @@ export default function Home() {
   };
 
   const thisWeekWorkouts = workoutLogs.filter(log => {
-    const logDate = new Date(log.date);
+    const logDate = new Date(log.date + 'T00:00:00'); // Adicionar hora para evitar problema de fuso
     const today = new Date();
-    const weekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
-    return logDate >= weekAgo;
+    today.setHours(0, 0, 0, 0); // Zerar horas para comparação precisa
+    const weekAgo = new Date(today);
+    weekAgo.setDate(weekAgo.getDate() - 7);
+    return logDate >= weekAgo && logDate <= today;
   });
 
   const totalCalories = thisWeekWorkouts.reduce((sum, log) => sum + (log.calories_burned || 0), 0);

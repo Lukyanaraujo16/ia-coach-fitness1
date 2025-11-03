@@ -1,3 +1,4 @@
+
 import React from "react";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
@@ -48,11 +49,14 @@ export default function AdminMetrics({ users = [], workouts = [] }) {
     count,
   }));
 
-  // Activity metrics
+  // Activity metrics - corrigir comparação de data
   const last7Days = workoutLogs.filter(log => {
-    const logDate = new Date(log.date);
-    const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-    return logDate >= weekAgo;
+    const logDate = new Date(log.date + 'T00:00:00');
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const weekAgo = new Date(today);
+    weekAgo.setDate(weekAgo.getDate() - 7);
+    return logDate >= weekAgo && logDate <= today;
   });
 
   return (

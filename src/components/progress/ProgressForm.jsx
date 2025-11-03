@@ -9,8 +9,17 @@ import { Textarea } from "@/components/ui/textarea";
 import { X } from "lucide-react";
 
 export default function ProgressForm({ onSubmit, onCancel, isLoading }) {
+  // Usar data local (horário do Brasil)
+  const getLocalDate = () => {
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
   const [formData, setFormData] = useState({
-    date: new Date().toISOString().split('T')[0],
+    date: getLocalDate(),
     weight: '',
     body_fat_percentage: '',
     measurements: {
