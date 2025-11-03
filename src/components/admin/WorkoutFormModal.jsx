@@ -617,235 +617,236 @@ export default function WorkoutFormModal({ workout, exercises, onClose }) {
 
       {/* Modal de Múltiplos Exercícios */}
       {showBulkAdd && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[110] flex items-center justify-center p-4">
-          <Card className="bg-slate-900 border-slate-800 max-w-2xl w-full max-h-[85vh] overflow-hidden flex flex-col">
-            {/* ... keep existing bulk modal content */}
-            <CardHeader className="border-b border-slate-800 flex-shrink-0 p-4">
-              <div className="flex items-center justify-between gap-3">
-                <CardTitle className="text-white text-base">
-                  {bulkAddStep === 1 ? "Selecionar Exercícios" : "Configurar Séries"}
-                </CardTitle>
-                <Button 
-                  type="button"
-                  variant="ghost" 
-                  size="icon" 
-                  onClick={() => setShowBulkAdd(false)}
-                  className="text-slate-400 hover:text-white h-10 w-10"
-                >
-                  <X className="w-5 h-5" />
-                </Button>
-              </div>
-              <p className="text-slate-400 text-xs mt-2">
-                {bulkAddStep === 1 
-                  ? `Selecione os exercícios para o Dia ${currentDayForBulk + 1}`
-                  : `Configure as séries para ${selectedExercises.length} exercício(s)`
-                }
-              </p>
-              
-              <div className="flex items-center gap-2 mt-3">
-                <div className={`flex-1 h-2 rounded-full ${bulkAddStep >= 1 ? 'bg-purple-600' : 'bg-slate-700'}`} />
-                <div className={`flex-1 h-2 rounded-full ${bulkAddStep >= 2 ? 'bg-purple-600' : 'bg-slate-700'}`} />
-              </div>
-            </CardHeader>
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[110] flex items-start justify-center p-4 overflow-y-auto">
+          <div className="w-full max-w-2xl my-4 md:my-8">
+            <Card className="bg-slate-900 border-slate-800 w-full">
+              <CardHeader className="border-b border-slate-800 p-4 sticky top-0 bg-slate-900 z-10">
+                <div className="flex items-center justify-between gap-3">
+                  <CardTitle className="text-white text-base">
+                    {bulkAddStep === 1 ? "Selecionar Exercícios" : "Configurar Séries"}
+                  </CardTitle>
+                  <Button 
+                    type="button"
+                    variant="ghost" 
+                    size="icon" 
+                    onClick={() => setShowBulkAdd(false)}
+                    className="text-slate-400 hover:text-white h-10 w-10 flex-shrink-0"
+                  >
+                    <X className="w-5 h-5" />
+                  </Button>
+                </div>
+                <p className="text-slate-400 text-xs mt-2">
+                  {bulkAddStep === 1 
+                    ? `Selecione os exercícios para o Dia ${currentDayForBulk + 1}`
+                    : `Configure as séries para ${selectedExercises.length} exercício(s)`
+                  }
+                </p>
+                
+                <div className="flex items-center gap-2 mt-3">
+                  <div className={`flex-1 h-2 rounded-full ${bulkAddStep >= 1 ? 'bg-purple-600' : 'bg-slate-700'}`} />
+                  <div className={`flex-1 h-2 rounded-full ${bulkAddStep >= 2 ? 'bg-purple-600' : 'bg-slate-700'}`} />
+                </div>
+              </CardHeader>
 
-            {bulkAddStep === 1 ? (
-              <>
-                <CardContent className="p-4 overflow-y-auto flex-1">
-                  <div className="space-y-3">
-                    <div className="relative">
-                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                      <Input
-                        placeholder="Buscar exercícios..."
-                        value={bulkSearchQuery}
-                        onChange={(e) => setBulkSearchQuery(e.target.value)}
-                        className="pl-10 bg-slate-800 border-slate-700 text-white h-11"
-                      />
+              {bulkAddStep === 1 ? (
+                <>
+                  <CardContent className="p-4 max-h-[60vh] overflow-y-auto">
+                    <div className="space-y-3">
+                      <div className="relative">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                        <Input
+                          placeholder="Buscar exercícios..."
+                          value={bulkSearchQuery}
+                          onChange={(e) => setBulkSearchQuery(e.target.value)}
+                          className="pl-10 bg-slate-800 border-slate-700 text-white h-11"
+                        />
+                      </div>
+
+                      {selectedExercises.length > 0 && (
+                        <div className="bg-purple-900/20 border border-purple-800/50 rounded-lg p-2.5 sticky top-0 bg-slate-900 z-10">
+                          <p className="text-purple-400 text-xs font-medium">
+                            ✓ {selectedExercises.length} selecionado(s)
+                          </p>
+                        </div>
+                      )}
+
+                      <div className="space-y-2">
+                        {filteredExercises.map((exercise) => (
+                          <button
+                            key={exercise.id}
+                            type="button"
+                            onClick={() => toggleExerciseSelection(exercise.id)}
+                            className={`w-full text-left p-2.5 rounded-lg border-2 transition-all ${
+                              selectedExercises.includes(exercise.id)
+                                ? 'border-purple-600 bg-purple-600/20'
+                                : 'border-slate-700 bg-slate-800/50'
+                            }`}
+                          >
+                            <div className="flex items-center gap-2">
+                              {selectedExercises.includes(exercise.id) ? (
+                                <CheckSquare className="w-4 h-4 text-purple-400 flex-shrink-0" />
+                              ) : (
+                                <Square className="w-4 h-4 text-slate-500 flex-shrink-0" />
+                              )}
+                              <div className="flex-1 min-w-0">
+                                <p className="text-white font-medium text-sm truncate">{exercise.name}</p>
+                                <div className="flex items-center gap-1.5 mt-0.5">
+                                  <Badge className={`${categoryColors[exercise.category]} text-xs py-0`}>
+                                    {exercise.category}
+                                  </Badge>
+                                </div>
+                              </div>
+                            </div>
+                          </button>
+                        ))}
+                      </div>
                     </div>
-
-                    {selectedExercises.length > 0 && (
-                      <div className="bg-purple-900/20 border border-purple-800/50 rounded-lg p-2.5">
-                        <p className="text-purple-400 text-xs font-medium">
-                          ✓ {selectedExercises.length} selecionado(s)
+                  </CardContent>
+                  <div className="border-t border-slate-800 p-3 bg-slate-900 sticky bottom-0">
+                    <div className="flex gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => setShowBulkAdd(false)}
+                        className="flex-1 bg-slate-800 border-slate-600 text-slate-200 h-11"
+                      >
+                        Cancelar
+                      </Button>
+                      <Button
+                        type="button"
+                        onClick={handleBulkNext}
+                        disabled={selectedExercises.length === 0}
+                        className="flex-1 bg-purple-600 hover:bg-purple-700 h-11"
+                      >
+                        Avançar
+                        <ArrowRight className="w-4 h-4 ml-1" />
+                      </Button>
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <CardContent className="p-4 max-h-[60vh] overflow-y-auto">
+                    <div className="space-y-3">
+                      <div className="bg-blue-900/20 border border-blue-800/50 rounded-lg p-3 sticky top-0 bg-slate-900 z-10">
+                        <p className="text-blue-400 text-xs font-medium mb-1">
+                          📋 {selectedExercises.length} exercício(s)
+                        </p>
+                        <p className="text-slate-300 text-xs">
+                          Configure as séries abaixo
                         </p>
                       </div>
-                    )}
 
-                    <div className="space-y-2">
-                      {filteredExercises.map((exercise) => (
-                        <button
-                          key={exercise.id}
-                          type="button"
-                          onClick={() => toggleExerciseSelection(exercise.id)}
-                          className={`w-full text-left p-2.5 rounded-lg border-2 transition-all ${
-                            selectedExercises.includes(exercise.id)
-                              ? 'border-purple-600 bg-purple-600/20'
-                              : 'border-slate-700 bg-slate-800/50'
-                          }`}
-                        >
-                          <div className="flex items-center gap-2">
-                            {selectedExercises.includes(exercise.id) ? (
-                              <CheckSquare className="w-4 h-4 text-purple-400 flex-shrink-0" />
-                            ) : (
-                              <Square className="w-4 h-4 text-slate-500 flex-shrink-0" />
-                            )}
-                            <div className="flex-1 min-w-0">
-                              <p className="text-white font-medium text-sm truncate">{exercise.name}</p>
-                              <div className="flex items-center gap-1.5 mt-0.5">
-                                <Badge className={`${categoryColors[exercise.category]} text-xs py-0`}>
-                                  {exercise.category}
-                                </Badge>
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <Label className="text-slate-300 text-sm">Séries</Label>
+                          <Button
+                            type="button"
+                            onClick={addBulkSet}
+                            size="sm"
+                            className="bg-green-600 hover:bg-green-700 h-8 text-xs"
+                          >
+                            <Plus className="w-3 h-3 mr-1" />
+                            Série
+                          </Button>
+                        </div>
+
+                        {bulkSetsConfig.map((set, index) => (
+                          <Card key={index} className="bg-slate-800/50 border-slate-600 p-3">
+                            <div className="space-y-2">
+                              <div className="flex items-center justify-between">
+                                <span className="text-white font-medium text-sm">Série {index + 1}</span>
+                                {bulkSetsConfig.length > 1 && (
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() => removeBulkSet(index)}
+                                    className="text-red-400 hover:text-red-300 hover:bg-red-900/20 h-7 w-7"
+                                  >
+                                    <Trash2 className="w-3 h-3" />
+                                  </Button>
+                                )}
                               </div>
-                            </div>
-                          </div>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                </CardContent>
-                <div className="border-t border-slate-800 p-3 flex-shrink-0">
-                  <div className="flex gap-2">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => setShowBulkAdd(false)}
-                      className="flex-1 bg-slate-800 border-slate-600 text-slate-200 h-11"
-                    >
-                      Cancelar
-                    </Button>
-                    <Button
-                      type="button"
-                      onClick={handleBulkNext}
-                      disabled={selectedExercises.length === 0}
-                      className="flex-1 bg-purple-600 hover:bg-purple-700 h-11"
-                    >
-                      Avançar
-                      <ArrowRight className="w-4 h-4 ml-1" />
-                    </Button>
-                  </div>
-                </div>
-              </>
-            ) : (
-              <>
-                <CardContent className="p-4 overflow-y-auto flex-1">
-                  <div className="space-y-3">
-                    <div className="bg-blue-900/20 border border-blue-800/50 rounded-lg p-3">
-                      <p className="text-blue-400 text-xs font-medium mb-1">
-                        📋 {selectedExercises.length} exercício(s)
-                      </p>
-                      <p className="text-slate-300 text-xs">
-                        Configure as séries abaixo
-                      </p>
-                    </div>
 
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <Label className="text-slate-300 text-sm">Séries</Label>
-                        <Button
-                          type="button"
-                          onClick={addBulkSet}
-                          size="sm"
-                          className="bg-green-600 hover:bg-green-700 h-8 text-xs"
-                        >
-                          <Plus className="w-3 h-3 mr-1" />
-                          Série
-                        </Button>
-                      </div>
+                              <div className="grid grid-cols-2 gap-2">
+                                <div className="space-y-1">
+                                  <Label className="text-slate-400 text-xs">Vezes</Label>
+                                  <Input
+                                    type="number"
+                                    value={set.times}
+                                    onChange={(e) => updateBulkSet(index, "times", parseInt(e.target.value))}
+                                    className="bg-slate-700 border-slate-600 text-white h-10"
+                                    min="1"
+                                  />
+                                </div>
+                                <div className="space-y-1">
+                                  <Label className="text-slate-400 text-xs">Reps</Label>
+                                  <Input
+                                    value={set.reps}
+                                    onChange={(e) => updateBulkSet(index, "reps", e.target.value)}
+                                    className="bg-slate-700 border-slate-600 text-white h-10"
+                                    placeholder="10-12"
+                                  />
+                                </div>
+                              </div>
 
-                      {bulkSetsConfig.map((set, index) => (
-                        <Card key={index} className="bg-slate-800/50 border-slate-600 p-3">
-                          <div className="space-y-2">
-                            <div className="flex items-center justify-between">
-                              <span className="text-white font-medium text-sm">Série {index + 1}</span>
-                              {bulkSetsConfig.length > 1 && (
-                                <Button
-                                  type="button"
-                                  variant="ghost"
-                                  size="icon"
-                                  onClick={() => removeBulkSet(index)}
-                                  className="text-red-400 hover:text-red-300 hover:bg-red-900/20 h-7 w-7"
-                                >
-                                  <Trash2 className="w-3 h-3" />
-                                </Button>
-                              )}
-                            </div>
-
-                            <div className="grid grid-cols-2 gap-2">
                               <div className="space-y-1">
-                                <Label className="text-slate-400 text-xs">Vezes</Label>
+                                <Label className="text-slate-400 text-xs">Descanso (seg)</Label>
                                 <Input
                                   type="number"
-                                  value={set.times}
-                                  onChange={(e) => updateBulkSet(index, "times", parseInt(e.target.value))}
+                                  value={set.rest_seconds}
+                                  onChange={(e) => updateBulkSet(index, "rest_seconds", parseInt(e.target.value))}
                                   className="bg-slate-700 border-slate-600 text-white h-10"
-                                  min="1"
                                 />
                               </div>
+
                               <div className="space-y-1">
-                                <Label className="text-slate-400 text-xs">Reps</Label>
+                                <Label className="text-slate-400 text-xs">Observações</Label>
                                 <Input
-                                  value={set.reps}
-                                  onChange={(e) => updateBulkSet(index, "reps", e.target.value)}
+                                  value={set.notes}
+                                  onChange={(e) => updateBulkSet(index, "notes", e.target.value)}
                                   className="bg-slate-700 border-slate-600 text-white h-10"
-                                  placeholder="10-12"
+                                  placeholder="Ex: progressivo"
                                 />
                               </div>
                             </div>
+                          </Card>
+                        ))}
+                      </div>
 
-                            <div className="space-y-1">
-                              <Label className="text-slate-400 text-xs">Descanso (seg)</Label>
-                              <Input
-                                type="number"
-                                value={set.rest_seconds}
-                                onChange={(e) => updateBulkSet(index, "rest_seconds", parseInt(e.target.value))}
-                                className="bg-slate-700 border-slate-600 text-white h-10"
-                              />
-                            </div>
-
-                            <div className="space-y-1">
-                              <Label className="text-slate-400 text-xs">Observações</Label>
-                              <Input
-                                value={set.notes}
-                                onChange={(e) => updateBulkSet(index, "notes", e.target.value)}
-                                className="bg-slate-700 border-slate-600 text-white h-10"
-                                placeholder="Ex: progressivo"
-                              />
-                            </div>
-                          </div>
-                        </Card>
-                      ))}
+                      <div className="bg-green-900/20 border border-green-800/50 rounded-lg p-2.5">
+                        <p className="text-green-400 text-xs">
+                          ✅ Aplicar a {selectedExercises.length} exercício(s)
+                        </p>
+                      </div>
                     </div>
-
-                    <div className="bg-green-900/20 border border-green-800/50 rounded-lg p-2.5">
-                      <p className="text-green-400 text-xs">
-                        ✅ Aplicar a {selectedExercises.length} exercício(s)
-                      </p>
+                  </CardContent>
+                  <div className="border-t border-slate-800 p-3 bg-slate-900 sticky bottom-0">
+                    <div className="flex gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={handleBulkBack}
+                        className="flex-1 bg-slate-800 border-slate-600 text-slate-200 h-11"
+                      >
+                        <ArrowLeft className="w-4 h-4 mr-1" />
+                        Voltar
+                      </Button>
+                      <Button
+                        type="button"
+                        onClick={addBulkExercises}
+                        className="flex-1 bg-green-600 hover:bg-green-700 h-11"
+                      >
+                        <CheckSquare className="w-4 h-4 mr-1" />
+                        Adicionar
+                      </Button>
                     </div>
                   </div>
-                </CardContent>
-                <div className="border-t border-slate-800 p-3 flex-shrink-0">
-                  <div className="flex gap-2">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={handleBulkBack}
-                      className="flex-1 bg-slate-800 border-slate-600 text-slate-200 h-11"
-                    >
-                      <ArrowLeft className="w-4 h-4 mr-1" />
-                      Voltar
-                    </Button>
-                    <Button
-                      type="button"
-                      onClick={addBulkExercises}
-                      className="flex-1 bg-green-600 hover:bg-green-700 h-11"
-                    >
-                      <CheckSquare className="w-4 h-4 mr-1" />
-                      Adicionar
-                    </Button>
-                  </div>
-                </div>
-              </>
-            )}
-          </Card>
+                </>
+              )}
+            </Card>
+          </div>
         </div>
       )}
     </div>
