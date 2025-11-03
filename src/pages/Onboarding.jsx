@@ -7,7 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronRight, Target, Home, TrendingUp, User as UserIcon } from "lucide-react";
+import { ChevronRight, Target, Home, TrendingUp, User as UserIcon, Users } from "lucide-react";
 
 const STEPS = [
   {
@@ -15,6 +15,16 @@ const STEPS = [
     title: "Suas Informações",
     icon: UserIcon,
     type: "form",
+  },
+  {
+    id: "gender",
+    title: "Qual seu gênero?",
+    icon: Users,
+    options: [
+      { value: "male", label: "Masculino", emoji: "👨" },
+      { value: "female", label: "Feminino", emoji: "👩" },
+      { value: "other", label: "Outro", emoji: "🧑" },
+    ],
   },
   {
     id: "goal",
@@ -57,6 +67,7 @@ export default function Onboarding() {
     height: "",
     weight_goal: "",
     weekly_goal: "3",
+    gender: "",
     goal: "",
     location: "",
     level: "",
@@ -69,8 +80,13 @@ export default function Onboarding() {
       try {
         const currentUser = await base44.auth.me();
         setUser(currentUser);
-        setAnswers(prev => ({ ...prev, full_name: currentUser.full_name || "" }));
         
+        // Se já tem nome, usa como padrão mas ainda permite editar
+        if (currentUser.full_name) {
+          setAnswers(prev => ({ ...prev, full_name: currentUser.full_name }));
+        }
+        
+        // Se já completou onboarding, redireciona
         if (currentUser.fitness_goal) {
           navigate(createPageUrl("Home"));
         }
@@ -100,19 +116,20 @@ export default function Onboarding() {
     setIsLoading(true);
     try {
       await base44.auth.updateMe({
-        full_name: answers.full_name,
+        full_name: answers.full_name.trim(),
         current_weight: answers.current_weight ? parseFloat(answers.current_weight) : undefined,
         height: answers.height ? parseFloat(answers.height) : undefined,
         weight_goal: answers.weight_goal ? parseFloat(answers.weight_goal) : undefined,
         weekly_goal: parseInt(answers.weekly_goal),
+        gender: answers.gender,
         fitness_goal: answers.goal,
         training_location: answers.location,
         fitness_level: answers.level,
       });
-      // Redirecionar para seleção de treinos
       navigate(createPageUrl("WorkoutSelection"));
     } catch (error) {
       console.error("Error saving onboarding:", error);
+      alert("Erro ao salvar suas informações. Tente novamente.");
     } finally {
       setIsLoading(false);
     }
@@ -120,7 +137,7 @@ export default function Onboarding() {
 
   const canProceed = () => {
     if (currentStepData.type === "form") {
-      return answers.full_name && answers.current_weight && answers.height && answers.weight_goal && answers.weekly_goal;
+      return answers.full_name.trim() && answers.current_weight && answers.height && answers.weight_goal && answers.weekly_goal;
     }
     return answers[currentStepData.id] !== "";
   };
@@ -178,17 +195,20 @@ export default function Onboarding() {
               {currentStepData.type === "form" ? (
                 <div className="space-y-4">
                   <div className="space-y-2">
-                    <Label className="text-slate-300">Nome Completo</Label>
+                    <Label className="text-slate-300">Nome Completo *</Label>
                     <Input
                       value={answers.full_name}
                       onChange={(e) => setAnswers({ ...answers, full_name: e.target.value })}
                       className="bg-slate-800 border-slate-700 text-white"
-                      placeholder="Seu nome"
+                      placeholder="Digite seu nome completo"
                     />
+                    <p className="text-slate-500 text-xs">
+                      Este será o nome exibido no app
+                    </p>
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label className="text-slate-300">Peso Atual (kg)</Label>
+                      <Label className="text-slate-300">Peso Atual (kg) *</Label>
                       <Input
                         type="number"
                         step="0.1"
@@ -199,7 +219,7 @@ export default function Onboarding() {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label className="text-slate-300">Altura (cm)</Label>
+                      <Label className="text-slate-300">Altura (cm) *</Label>
                       <Input
                         type="number"
                         value={answers.height}
@@ -210,7 +230,7 @@ export default function Onboarding() {
                     </div>
                   </div>
                   <div className="space-y-2">
-                    <Label className="text-slate-300">Meta de Peso (kg)</Label>
+                    <Label className="text-slate-300">Meta de Peso (kg) *</Label>
                     <Input
                       type="number"
                       step="0.1"
@@ -221,7 +241,7 @@ export default function Onboarding() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label className="text-slate-300">Meta Semanal de Treinos</Label>
+                    <Label className="text-slate-300">Meta Semanal de Treinos *</Label>
                     <Input
                       type="number"
                       min="1"
@@ -231,6 +251,9 @@ export default function Onboarding() {
                       className="bg-slate-800 border-slate-700 text-white"
                       placeholder="3"
                     />
+                    <p className="text-slate-500 text-xs">
+                      Quantos dias por semana você quer treinar?
+                    </p>
                   </div>
                 </div>
               ) : (

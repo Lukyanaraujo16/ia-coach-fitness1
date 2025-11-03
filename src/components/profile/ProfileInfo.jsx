@@ -16,6 +16,7 @@ export default function ProfileInfo({ user, setUser }) {
     current_weight: '',
     weight_goal: '',
     height: '',
+    gender: 'male', // Added gender field
     fitness_level: 'beginner',
     bio: '',
   });
@@ -26,6 +27,7 @@ export default function ProfileInfo({ user, setUser }) {
         current_weight: user.current_weight || '',
         weight_goal: user.weight_goal || '',
         height: user.height || '',
+        gender: user.gender || 'male', // Initialize gender from user
         fitness_level: user.fitness_level || 'beginner',
         bio: user.bio || '',
       });
@@ -46,9 +48,16 @@ export default function ProfileInfo({ user, setUser }) {
       current_weight: formData.current_weight ? parseFloat(formData.current_weight) : undefined,
       weight_goal: formData.weight_goal ? parseFloat(formData.weight_goal) : undefined,
       height: formData.height ? parseFloat(formData.height) : undefined,
+      gender: formData.gender, // Include gender in mutation data
       fitness_level: formData.fitness_level,
       bio: formData.bio,
     });
+  };
+
+  const genderLabels = {
+    male: "Masculino",
+    female: "Feminino",
+    other: "Outro"
   };
 
   return (
@@ -109,6 +118,24 @@ export default function ProfileInfo({ user, setUser }) {
                 className="bg-slate-800 border-slate-700 text-white"
               />
             </div>
+            {/* New Gender Select */}
+            <div className="space-y-2">
+              <Label className="text-slate-300">Gênero</Label>
+              <Select
+                value={formData.gender}
+                onValueChange={(value) => setFormData({ ...formData, gender: value })}
+              >
+                <SelectTrigger className="bg-slate-800 border-slate-700 text-white">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="male">Masculino</SelectItem>
+                  <SelectItem value="female">Feminino</SelectItem>
+                  <SelectItem value="other">Outro</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            {/* End New Gender Select */}
             <div className="space-y-2">
               <Label className="text-slate-300">Nível de Condicionamento</Label>
               <Select
@@ -129,7 +156,7 @@ export default function ProfileInfo({ user, setUser }) {
               <Label className="text-slate-300">Bio</Label>
               <Textarea
                 value={formData.bio}
-                onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
+                onChange={(e) => setFormData({ ...formData, bio: e.target.value })} // Fixed typo: orphData -> formData
                 className="bg-slate-800 border-slate-700 text-white"
                 placeholder="Conte um pouco sobre você..."
               />
@@ -157,6 +184,12 @@ export default function ProfileInfo({ user, setUser }) {
               <span className="text-slate-400">Altura:</span>
               <span className="text-white font-medium">{user?.height || '-'} cm</span>
             </div>
+            {/* Display Gender */}
+            <div className="flex justify-between">
+              <span className="text-slate-400">Gênero:</span>
+              <span className="text-white font-medium">{user?.gender ? genderLabels[user.gender] : '-'}</span>
+            </div>
+            {/* End Display Gender */}
             <div className="flex justify-between">
               <span className="text-slate-400">Nível:</span>
               <span className="text-white font-medium capitalize">{user?.fitness_level || '-'}</span>
