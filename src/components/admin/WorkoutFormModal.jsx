@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -285,7 +286,7 @@ export default function WorkoutFormModal({ workout, exercises, onClose }) {
                       <SelectTrigger className="bg-slate-800 border-slate-700 text-white h-12">
                         <SelectValue />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent className="z-[150]" position="popper" sideOffset={5}>
                         <SelectItem value="strength">Força</SelectItem>
                         <SelectItem value="cardio">Cardio</SelectItem>
                         <SelectItem value="hiit">HIIT</SelectItem>
@@ -301,7 +302,7 @@ export default function WorkoutFormModal({ workout, exercises, onClose }) {
                       <SelectTrigger className="bg-slate-800 border-slate-700 text-white h-12">
                         <SelectValue />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent className="z-[150]" position="popper" sideOffset={5}>
                         <SelectItem value="beginner">Iniciante</SelectItem>
                         <SelectItem value="intermediate">Intermediário</SelectItem>
                         <SelectItem value="advanced">Avançado</SelectItem>
@@ -315,7 +316,7 @@ export default function WorkoutFormModal({ workout, exercises, onClose }) {
                       <SelectTrigger className="bg-slate-800 border-slate-700 text-white h-12">
                         <SelectValue />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent className="z-[150]" position="popper" sideOffset={5}>
                         <SelectItem value="gym">Academia</SelectItem>
                         <SelectItem value="home">Casa</SelectItem>
                         <SelectItem value="both">Ambos</SelectItem>
@@ -347,7 +348,7 @@ export default function WorkoutFormModal({ workout, exercises, onClose }) {
                 </div>
               </div>
 
-              {/* Dias do Treino - keep existing code */}
+              {/* Dias do Treino */}
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <h3 className="text-white font-semibold text-base">Dias do Treino</h3>
@@ -427,7 +428,7 @@ export default function WorkoutFormModal({ workout, exercises, onClose }) {
                             </div>
                           </div>
 
-                          {/* Exercise cards - simplified for mobile */}
+                          {/* Exercise cards */}
                           {day.exercises.map((exercise, exerciseIndex) => {
                             const isExpanded = expandedExercise === `${dayIndex}-${exerciseIndex}`;
                             return (
@@ -475,7 +476,7 @@ export default function WorkoutFormModal({ workout, exercises, onClose }) {
                                         <SelectTrigger className="bg-slate-800 border-slate-600 text-white h-10 text-sm">
                                           <SelectValue placeholder="Selecione..." />
                                         </SelectTrigger>
-                                        <SelectContent className="max-h-60">
+                                        <SelectContent className="max-h-60 z-[150]" position="popper" sideOffset={5}>
                                           {exercises.map((ex) => (
                                             <SelectItem key={ex.id} value={ex.id} className="text-sm">
                                               {ex.name}
@@ -485,6 +486,7 @@ export default function WorkoutFormModal({ workout, exercises, onClose }) {
                                       </Select>
                                     </div>
 
+                                    {/* Séries */}
                                     <div className="space-y-2">
                                       <div className="flex items-center justify-between">
                                         <Label className="text-slate-300 text-xs">Séries</Label>
@@ -590,7 +592,7 @@ export default function WorkoutFormModal({ workout, exercises, onClose }) {
                 ))}
               </div>
 
-              {/* Botões de Ação - Fixed at bottom */}
+              {/* Botões de Ação */}
               <div className="sticky bottom-0 left-0 right-0 bg-slate-900 border-t border-slate-800 p-4 -mx-4 -mb-4 flex gap-3">
                 <Button
                   type="button"
@@ -613,10 +615,11 @@ export default function WorkoutFormModal({ workout, exercises, onClose }) {
         </Card>
       </div>
 
-      {/* Modal de Múltiplos Exercícios - keep existing bulk add modal code */}
+      {/* Modal de Múltiplos Exercícios */}
       {showBulkAdd && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[110] flex items-center justify-center p-4">
           <Card className="bg-slate-900 border-slate-800 max-w-2xl w-full max-h-[85vh] overflow-hidden flex flex-col">
+            {/* ... keep existing bulk modal content */}
             <CardHeader className="border-b border-slate-800 flex-shrink-0 p-4">
               <div className="flex items-center justify-between gap-3">
                 <CardTitle className="text-white text-base">
