@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
@@ -8,12 +7,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { X, Sparkles, Loader2, Plus, CheckCircle } from "lucide-react";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { X, Sparkles, Loader2, Plus, CheckCircle, FileText } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { motion, AnimatePresence } from "framer-motion";
 
 export default function AIWorkoutGenerator({ onClose }) {
   const queryClient = useQueryClient();
+  const [mode, setMode] = useState("auto"); // "auto" ou "text"
   const [step, setStep] = useState(1); // 1: config, 2: generating, 3: preview
   const [generatedWorkout, setGeneratedWorkout] = useState(null);
   const [newExercisesCreated, setNewExercisesCreated] = useState([]);
@@ -29,6 +30,16 @@ export default function AIWorkoutGenerator({ onClose }) {
     additionalNotes: '',
   });
 
+  const [textImport, setTextImport] = useState({
+    title: '',
+    description: '',
+    category: 'strength',
+    difficulty: 'intermediate',
+    location: 'gym',
+    duration: 60,
+    workoutText: '',
+  });
+
   // Buscar exercícios existentes
   const { data: existingExercises = [] } = useQuery({
     queryKey: ['all-exercises'],
@@ -37,7 +48,6 @@ export default function AIWorkoutGenerator({ onClose }) {
 
   const generateWorkoutMutation = useMutation({
     mutationFn: async (configData) => {
-      // Preparar lista de exercícios para a IA
       const exercisesList = existingExercises.map(ex => ({
         id: ex.id,
         name: ex.name,
@@ -172,6 +182,141 @@ Retorne um treino completo com estrutura clara de dias e exercícios, incluindo 
     },
   });
 
+  const importFromTextMutation = useMutation({
+    mutationFn: async (data) => {
+      const exercisesList = existingExercises.map(ex => ({
+        id: ex.id,
+        name: ex.name,
+        category: ex.category,
+        equipment: ex.equipment,
+        difficulty: ex.difficulty,
+      }));
+
+      const prompt = `
+Você é um especialista em estruturação de treinos. Receba o treino colado abaixo e converta para o formato estruturado.
+
+**TREINO COLADO:**
+${data.workoutText}
+
+**EXERCÍCIOS DISPONÍVEIS NO SISTEMA:**
+${exercisesList.map(ex => `- ${ex.name} (ID: ${ex.id}, ${ex.category}, ${ex.equipment})`).join('\n')}
+
+**INSTRUÇÕES:**
+1. Analise o texto colado e identifique:
+   - Quantos dias tem o treino
+   - Quais exercícios em cada dia
+   - Séries, repetições e descanso de cada exercício
+   - Observações especiais
+
+2. Para CADA exercício identificado:
+   - Procure o exercício na lista de exercícios disponíveis
+   - Se encontrar uma CORRESPONDÊNCIA EXATA ou MUITO SIMILAR, use "use_existing: true" e coloque o ID do exercício
+   - Se NÃO encontrar, coloque "use_existing: false" e adicione à lista "new_exercises"
+
+3. SEMPRE adicione CARDIO no final de cada dia se não tiver
+
+4. Estruture séries com:
+   - "times": quantas vezes fazer (padrão 1)
+   - "reps": repetições (pode ser "10", "12-15", "até falha", etc)
+   - "rest_seconds": tempo de descanso
+   - "notes": qualquer observação da série (ex: "aumentar peso", "drop set")
+
+5. Título e descrição:
+   - Se não fornecido no texto, crie baseado no conteúdo
+   - Use: Título="${data.title}", Descrição="${data.description}"
+
+6. Categorias válidas: chest, back, legs, shoulders, arms, core, cardio, full_body
+7. Dificuldades: beginner, intermediate, advanced
+8. Equipamentos: bodyweight, dumbbells, barbell, machine, resistance_band, kettlebell, none
+
+**FORMATO DE RESPOSTA:**
+Retorne um treino completo estruturado.
+`;
+
+      const result = await base44.integrations.Core.InvokeLLM({
+        prompt,
+        response_json_schema: {
+          type: "object",
+          properties: {
+            title: { type: "string" },
+            description: { type: "string" },
+            category: { type: "string" },
+            difficulty: { type: "string" },
+            training_location: { type: "string" },
+            duration_minutes: { type: "number" },
+            is_premium: { type: "boolean" },
+            days: {
+              type: "array",
+              items: {
+                type: "object",
+                properties: {
+                  day_number: { type: "number" },
+                  title: { type: "string" },
+                  exercises: {
+                    type: "array",
+                    items: {
+                      type: "object",
+                      properties: {
+                        use_existing: { type: "boolean" },
+                        exercise_id: { type: "string" },
+                        exercise_name: { type: "string" },
+                        exercise_category: { type: "string" },
+                        sets: {
+                          type: "array",
+                          items: {
+                            type: "object",
+                            properties: {
+                              times: { type: "number" },
+                              reps: { type: "string" },
+                              rest_seconds: { type: "number" },
+                              notes: { type: "string" }
+                            }
+                          }
+                        },
+                        notes: { type: "string" }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            new_exercises: {
+              type: "array",
+              items: {
+                type: "object",
+                properties: {
+                  name: { type: "string" },
+                  description: { type: "string" },
+                  category: { type: "string" },
+                  difficulty: { type: "string" },
+                  equipment: { type: "string" }
+                }
+              }
+            },
+            tips: {
+              type: "array",
+              items: { type: "string" }
+            }
+          }
+        }
+      });
+
+      // Sobrescrever com dados do form
+      result.title = data.title || result.title;
+      result.description = data.description || result.description;
+      result.category = data.category;
+      result.difficulty = data.difficulty;
+      result.training_location = data.location;
+      result.duration_minutes = data.duration;
+
+      return result;
+    },
+    onSuccess: (result) => {
+      setGeneratedWorkout(result);
+      setStep(3);
+    },
+  });
+
   const createExercisesMutation = useMutation({
     mutationFn: async (exercises) => {
       if (!exercises || exercises.length === 0) return [];
@@ -183,23 +328,19 @@ Retorne um treino completo com estrutura clara de dias e exercícios, incluindo 
     mutationFn: async () => {
       let newExercises = [];
       
-      // 1. Criar exercícios novos se necessário
       if (generatedWorkout.new_exercises && generatedWorkout.new_exercises.length > 0) {
         newExercises = await createExercisesMutation.mutateAsync(generatedWorkout.new_exercises);
         setNewExercisesCreated(newExercises);
       }
 
-      // 2. Mapear IDs dos novos exercícios
       const exerciseNameToId = {};
       newExercises.forEach(ex => {
         exerciseNameToId[ex.name] = ex.id;
       });
 
-      // 3. Processar os dias e exercícios
       const processedDays = generatedWorkout.days.map(day => ({
         ...day,
         exercises: day.exercises.map(exercise => {
-          // Se usar exercício existente, manter o ID
           if (exercise.use_existing && exercise.exercise_id) {
             return {
               exercise_id: exercise.exercise_id,
@@ -214,7 +355,6 @@ Retorne um treino completo com estrutura clara de dias e exercícios, incluindo 
               notes: exercise.notes || ''
             };
           } else {
-            // Se for novo exercício, usar o ID criado
             const newExId = exerciseNameToId[exercise.exercise_name];
             return {
               exercise_id: newExId || '',
@@ -232,7 +372,6 @@ Retorne um treino completo com estrutura clara de dias e exercícios, incluindo 
         })
       }));
 
-      // 4. Salvar o treino
       await base44.entities.Workout.create({
         title: generatedWorkout.title,
         description: generatedWorkout.description,
@@ -255,7 +394,11 @@ Retorne um treino completo com estrutura clara de dias e exercícios, incluindo 
 
   const handleGenerate = () => {
     setStep(2);
-    generateWorkoutMutation.mutate(config);
+    if (mode === "auto") {
+      generateWorkoutMutation.mutate(config);
+    } else {
+      importFromTextMutation.mutate(textImport);
+    }
   };
 
   const handleSave = () => {
@@ -272,7 +415,7 @@ Retorne um treino completo com estrutura clara de dias e exercícios, incluindo 
               Gerar Treino com IA
             </CardTitle>
             <p className="text-slate-400 text-sm mt-1">
-              A IA criará um treino completo personalizado
+              Crie treinos automaticamente ou importe de texto
             </p>
           </div>
           <Button variant="ghost" size="icon" onClick={onClose}>
@@ -282,7 +425,7 @@ Retorne um treino completo com estrutura clara de dias e exercícios, incluindo 
 
         <CardContent className="p-6">
           <AnimatePresence mode="wait">
-            {/* STEP 1: Configuração */}
+            {/* STEP 1: Modo e Configuração */}
             {step === 1 && (
               <motion.div
                 key="config"
@@ -291,125 +434,262 @@ Retorne um treino completo com estrutura clara de dias e exercícios, incluindo 
                 exit={{ opacity: 0, x: -20 }}
                 className="space-y-6"
               >
-                <div className="grid md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label className="text-slate-300">Título do Treino *</Label>
-                    <Input
-                      value={config.title}
-                      onChange={(e) => setConfig({ ...config, title: e.target.value })}
-                      className="bg-slate-800 border-slate-700 text-white"
-                      placeholder="Ex: Treino Feminino para Casa"
-                    />
+                {/* Tabs para escolher modo */}
+                <Tabs value={mode} onValueChange={setMode} className="w-full">
+                  <TabsList className="bg-slate-800 border border-slate-700 w-full grid grid-cols-2">
+                    <TabsTrigger value="auto" className="data-[state=active]:bg-purple-600">
+                      <Sparkles className="w-4 h-4 mr-2" />
+                      Geração Automática
+                    </TabsTrigger>
+                    <TabsTrigger value="text" className="data-[state=active]:bg-blue-600">
+                      <FileText className="w-4 h-4 mr-2" />
+                      Importar de Texto
+                    </TabsTrigger>
+                  </TabsList>
+                </Tabs>
+
+                {/* Modo Automático */}
+                {mode === "auto" && (
+                  <div className="space-y-4">
+                    <div className="grid md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label className="text-slate-300">Título do Treino *</Label>
+                        <Input
+                          value={config.title}
+                          onChange={(e) => setConfig({ ...config, title: e.target.value })}
+                          className="bg-slate-800 border-slate-700 text-white"
+                          placeholder="Ex: Treino Feminino para Casa"
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label className="text-slate-300">Público-Alvo *</Label>
+                        <Select value={config.gender} onValueChange={(v) => setConfig({ ...config, gender: v })}>
+                          <SelectTrigger className="bg-slate-800 border-slate-700 text-white">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="male">👨 Homens</SelectItem>
+                            <SelectItem value="female">👩 Mulheres</SelectItem>
+                            <SelectItem value="unisex">👥 Unisex</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label className="text-slate-300">Local de Treino *</Label>
+                        <Select value={config.location} onValueChange={(v) => setConfig({ ...config, location: v })}>
+                          <SelectTrigger className="bg-slate-800 border-slate-700 text-white">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="gym">🏋️ Academia</SelectItem>
+                            <SelectItem value="home">🏠 Casa</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label className="text-slate-300">Dificuldade *</Label>
+                        <Select value={config.difficulty} onValueChange={(v) => setConfig({ ...config, difficulty: v })}>
+                          <SelectTrigger className="bg-slate-800 border-slate-700 text-white">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="beginner">Iniciante</SelectItem>
+                            <SelectItem value="intermediate">Intermediário</SelectItem>
+                            <SelectItem value="advanced">Avançado</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label className="text-slate-300">Número de Dias *</Label>
+                        <Input
+                          type="number"
+                          min="1"
+                          max="7"
+                          value={config.numDays}
+                          onChange={(e) => setConfig({ ...config, numDays: parseInt(e.target.value) || 1 })}
+                          className="bg-slate-800 border-slate-700 text-white"
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label className="text-slate-300">Duração (min) *</Label>
+                        <Input
+                          type="number"
+                          value={config.duration}
+                          onChange={(e) => setConfig({ ...config, duration: parseInt(e.target.value) || 60 })}
+                          className="bg-slate-800 border-slate-700 text-white"
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label className="text-slate-300">Categoria *</Label>
+                        <Select value={config.category} onValueChange={(v) => setConfig({ ...config, category: v })}>
+                          <SelectTrigger className="bg-slate-800 border-slate-700 text-white">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="strength">Força</SelectItem>
+                            <SelectItem value="cardio">Cardio</SelectItem>
+                            <SelectItem value="hiit">HIIT</SelectItem>
+                            <SelectItem value="flexibility">Flexibilidade</SelectItem>
+                            <SelectItem value="full_body">Corpo Inteiro</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label className="text-slate-300">Notas Adicionais</Label>
+                      <Textarea
+                        value={config.additionalNotes}
+                        onChange={(e) => setConfig({ ...config, additionalNotes: e.target.value })}
+                        className="bg-slate-800 border-slate-700 text-white h-24"
+                        placeholder="Ex: Foco em glúteos, evitar exercícios de impacto..."
+                      />
+                    </div>
+
+                    <div className="p-4 bg-blue-900/20 border border-blue-800/50 rounded-lg">
+                      <h4 className="text-blue-400 font-semibold mb-2">🤖 A IA irá:</h4>
+                      <ul className="text-slate-300 text-sm space-y-1">
+                        <li>✅ Usar os {existingExercises.length} exercícios já cadastrados</li>
+                        <li>✅ Criar novos exercícios se necessário</li>
+                        <li>✅ Incluir cardio no final de cada dia</li>
+                        <li>✅ Adaptar para {config.gender === 'male' ? 'homens' : config.gender === 'female' ? 'mulheres' : 'unisex'}</li>
+                        <li>✅ Otimizar para treino em {config.location === 'gym' ? 'academia' : 'casa'}</li>
+                      </ul>
+                    </div>
                   </div>
+                )}
 
-                  <div className="space-y-2">
-                    <Label className="text-slate-300">Público-Alvo *</Label>
-                    <Select value={config.gender} onValueChange={(v) => setConfig({ ...config, gender: v })}>
-                      <SelectTrigger className="bg-slate-800 border-slate-700 text-white">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="male">👨 Homens</SelectItem>
-                        <SelectItem value="female">👩 Mulheres</SelectItem>
-                        <SelectItem value="unisex">👥 Unisex</SelectItem>
-                      </SelectContent>
-                    </Select>
+                {/* Modo Importar de Texto */}
+                {mode === "text" && (
+                  <div className="space-y-4">
+                    <div className="p-4 bg-blue-900/20 border border-blue-800/50 rounded-lg">
+                      <h4 className="text-blue-400 font-semibold mb-2">📋 Como usar:</h4>
+                      <ul className="text-slate-300 text-sm space-y-1">
+                        <li>1. Cole seu treino no formato de lista abaixo</li>
+                        <li>2. A IA identificará dias, exercícios, séries e repetições</li>
+                        <li>3. Exercícios conhecidos serão linkados automaticamente</li>
+                        <li>4. Novos exercícios serão criados se necessário</li>
+                        <li>5. Cardio será adicionado ao final de cada dia</li>
+                      </ul>
+                    </div>
+
+                    <div className="grid md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label className="text-slate-300">Título do Treino *</Label>
+                        <Input
+                          value={textImport.title}
+                          onChange={(e) => setTextImport({ ...textImport, title: e.target.value })}
+                          className="bg-slate-800 border-slate-700 text-white"
+                          placeholder="Ex: Push Pull Legs"
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label className="text-slate-300">Categoria *</Label>
+                        <Select value={textImport.category} onValueChange={(v) => setTextImport({ ...textImport, category: v })}>
+                          <SelectTrigger className="bg-slate-800 border-slate-700 text-white">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="strength">Força</SelectItem>
+                            <SelectItem value="cardio">Cardio</SelectItem>
+                            <SelectItem value="hiit">HIIT</SelectItem>
+                            <SelectItem value="flexibility">Flexibilidade</SelectItem>
+                            <SelectItem value="full_body">Corpo Inteiro</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label className="text-slate-300">Dificuldade *</Label>
+                        <Select value={textImport.difficulty} onValueChange={(v) => setTextImport({ ...textImport, difficulty: v })}>
+                          <SelectTrigger className="bg-slate-800 border-slate-700 text-white">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="beginner">Iniciante</SelectItem>
+                            <SelectItem value="intermediate">Intermediário</SelectItem>
+                            <SelectItem value="advanced">Avançado</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label className="text-slate-300">Local *</Label>
+                        <Select value={textImport.location} onValueChange={(v) => setTextImport({ ...textImport, location: v })}>
+                          <SelectTrigger className="bg-slate-800 border-slate-700 text-white">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="gym">🏋️ Academia</SelectItem>
+                            <SelectItem value="home">🏠 Casa</SelectItem>
+                            <SelectItem value="both">Ambos</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label className="text-slate-300">Duração (min)</Label>
+                        <Input
+                          type="number"
+                          value={textImport.duration}
+                          onChange={(e) => setTextImport({ ...textImport, duration: parseInt(e.target.value) || 60 })}
+                          className="bg-slate-800 border-slate-700 text-white"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label className="text-slate-300">Descrição (opcional)</Label>
+                      <Input
+                        value={textImport.description}
+                        onChange={(e) => setTextImport({ ...textImport, description: e.target.value })}
+                        className="bg-slate-800 border-slate-700 text-white"
+                        placeholder="Descrição do treino"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label className="text-slate-300">Cole o Treino Aqui *</Label>
+                      <Textarea
+                        value={textImport.workoutText}
+                        onChange={(e) => setTextImport({ ...textImport, workoutText: e.target.value })}
+                        className="bg-slate-800 border-slate-700 text-white font-mono text-sm"
+                        rows={15}
+                        placeholder={`Exemplo:
+
+Dia 1 - Push
+Supino reto: 4x10 (90s)
+Supino inclinado: 3x12 (60s)
+Desenvolvimento com halteres: 4x10 (90s)
+Tríceps na polia: 3x15 (45s)
+
+Dia 2 - Pull
+Barra fixa: 4x8 (120s)
+Remada curvada: 4x10 (90s)
+Pulldown: 3x12 (60s)
+Rosca direta: 3x12 (60s)`}
+                      />
+                      <p className="text-slate-500 text-xs">
+                        💡 Dica: Seja claro na estrutura (Dia X, nome do exercício, séries×reps, descanso)
+                      </p>
+                    </div>
                   </div>
-
-                  <div className="space-y-2">
-                    <Label className="text-slate-300">Local de Treino *</Label>
-                    <Select value={config.location} onValueChange={(v) => setConfig({ ...config, location: v })}>
-                      <SelectTrigger className="bg-slate-800 border-slate-700 text-white">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="gym">🏋️ Academia</SelectItem>
-                        <SelectItem value="home">🏠 Casa</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label className="text-slate-300">Dificuldade *</Label>
-                    <Select value={config.difficulty} onValueChange={(v) => setConfig({ ...config, difficulty: v })}>
-                      <SelectTrigger className="bg-slate-800 border-slate-700 text-white">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="beginner">Iniciante</SelectItem>
-                        <SelectItem value="intermediate">Intermediário</SelectItem>
-                        <SelectItem value="advanced">Avançado</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label className="text-slate-300">Número de Dias *</Label>
-                    <Input
-                      type="number"
-                      min="1"
-                      max="7"
-                      value={config.numDays}
-                      onChange={(e) => setConfig({ ...config, numDays: parseInt(e.target.value) || 1 })}
-                      className="bg-slate-800 border-slate-700 text-white"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label className="text-slate-300">Duração (min) *</Label>
-                    <Input
-                      type="number"
-                      value={config.duration}
-                      onChange={(e) => setConfig({ ...config, duration: parseInt(e.target.value) || 60 })}
-                      className="bg-slate-800 border-slate-700 text-white"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label className="text-slate-300">Categoria *</Label>
-                    <Select value={config.category} onValueChange={(v) => setConfig({ ...config, category: v })}>
-                      <SelectTrigger className="bg-slate-800 border-slate-700 text-white">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="strength">Força</SelectItem>
-                        <SelectItem value="cardio">Cardio</SelectItem>
-                        <SelectItem value="hiit">HIIT</SelectItem>
-                        <SelectItem value="flexibility">Flexibilidade</SelectItem>
-                        <SelectItem value="full_body">Corpo Inteiro</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label className="text-slate-300">Notas Adicionais</Label>
-                  <Textarea
-                    value={config.additionalNotes}
-                    onChange={(e) => setConfig({ ...config, additionalNotes: e.target.value })}
-                    className="bg-slate-800 border-slate-700 text-white h-24"
-                    placeholder="Ex: Foco em glúteos, evitar exercícios de impacto, incluir alongamentos..."
-                  />
-                </div>
-
-                <div className="p-4 bg-blue-900/20 border border-blue-800/50 rounded-lg">
-                  <h4 className="text-blue-400 font-semibold mb-2">🤖 A IA irá:</h4>
-                  <ul className="text-slate-300 text-sm space-y-1">
-                    <li>✅ Usar os {existingExercises.length} exercícios já cadastrados</li>
-                    <li>✅ Criar novos exercícios se necessário</li>
-                    <li>✅ Incluir cardio no final de cada dia</li>
-                    <li>✅ Adaptar para {config.gender === 'male' ? 'homens' : config.gender === 'female' ? 'mulheres' : 'unisex'}</li>
-                    <li>✅ Otimizar para treino em {config.location === 'gym' ? 'academia' : 'casa'}</li>
-                  </ul>
-                </div>
+                )}
 
                 <Button
                   onClick={handleGenerate}
-                  disabled={!config.title}
+                  disabled={mode === "auto" ? !config.title : !textImport.title || !textImport.workoutText}
                   className="w-full bg-purple-600 hover:bg-purple-700 h-14 text-lg font-semibold"
                 >
                   <Sparkles className="w-5 h-5 mr-2" />
-                  Gerar Treino com IA
+                  {mode === "auto" ? "Gerar Treino com IA" : "Processar e Estruturar"}
                 </Button>
               </motion.div>
             )}
@@ -423,14 +703,18 @@ Retorne um treino completo com estrutura clara de dias e exercícios, incluindo 
                 className="flex flex-col items-center justify-center py-16"
               >
                 <Loader2 className="w-16 h-16 text-purple-400 animate-spin mb-6" />
-                <h3 className="text-2xl font-bold text-white mb-2">Gerando Treino...</h3>
+                <h3 className="text-2xl font-bold text-white mb-2">
+                  {mode === "auto" ? "Gerando Treino..." : "Processando Treino..."}
+                </h3>
                 <p className="text-slate-400 text-center max-w-md">
-                  A IA está analisando {existingExercises.length} exercícios e criando o treino perfeito para você...
+                  {mode === "auto" 
+                    ? `A IA está analisando ${existingExercises.length} exercícios e criando o treino perfeito...`
+                    : "A IA está estruturando seu treino e identificando os exercícios..."}
                 </p>
               </motion.div>
             )}
 
-            {/* STEP 3: Preview e Salvar */}
+            {/* STEP 3: Preview - mantém o mesmo do código anterior */}
             {step === 3 && generatedWorkout && (
               <motion.div
                 key="preview"
