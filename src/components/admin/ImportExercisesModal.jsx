@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -141,7 +142,7 @@ export default function ImportExercisesModal({ onClose }) {
                 <Button
                   onClick={() => setStep(1)}
                   variant="outline"
-                  className="flex-1 border-slate-700 text-slate-300"
+                  className="flex-1 bg-slate-800 border-slate-600 text-slate-200 hover:bg-slate-700 hover:text-white"
                 >
                   Voltar
                 </Button>
@@ -219,7 +220,7 @@ export default function ImportExercisesModal({ onClose }) {
                 <Button
                   onClick={() => setStep(2)}
                   variant="outline"
-                  className="flex-1 border-slate-700 text-slate-300"
+                  className="flex-1 bg-slate-800 border-slate-600 text-slate-200 hover:bg-slate-700 hover:text-white"
                 >
                   Voltar
                 </Button>

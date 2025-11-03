@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -100,7 +101,7 @@ export default function AdminExercises({ exercises = [] }) {
               <Button
                 onClick={() => setShowImport(true)}
                 variant="outline"
-                className="border-slate-700 text-slate-300 hover:bg-slate-800"
+                className="bg-purple-900/20 border-purple-700 text-purple-400 hover:bg-purple-900/40 hover:text-purple-300"
               >
                 <Upload className="w-4 h-4 mr-2" />
                 Importar
@@ -149,7 +150,7 @@ export default function AdminExercises({ exercises = [] }) {
                             variant="ghost"
                             size="icon"
                             onClick={() => handleEdit(exercise)}
-                            className="h-8 w-8 text-slate-400 hover:text-white"
+                            className="h-8 w-8 bg-blue-900/20 text-blue-400 hover:bg-blue-900/40 hover:text-blue-300"
                           >
                             <Edit2 className="w-4 h-4" />
                           </Button>
@@ -157,7 +158,7 @@ export default function AdminExercises({ exercises = [] }) {
                             variant="ghost"
                             size="icon"
                             onClick={() => handleDelete(exercise.id)}
-                            className="h-8 w-8 text-red-400 hover:text-red-300"
+                            className="h-8 w-8 bg-red-900/20 text-red-400 hover:bg-red-900/40 hover:text-red-300"
                           >
                             <Trash2 className="w-4 h-4" />
                           </Button>

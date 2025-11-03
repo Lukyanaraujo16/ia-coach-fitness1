@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -120,7 +121,11 @@ export default function AdminUsers({ users = [] }) {
                     <TableCell>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="sm" className="text-slate-400">
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="bg-slate-800 border border-slate-700 text-slate-200 hover:bg-slate-700 hover:text-white"
+                          >
                             Ações
                           </Button>
                         </DropdownMenuTrigger>

@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -105,7 +106,7 @@ export default function AdminNutrition({ plans = [] }) {
                       size="icon"
                       variant="ghost"
                       onClick={() => handleEdit(plan)}
-                      className="text-blue-400 hover:text-blue-300 hover:bg-blue-900/30"
+                      className="bg-blue-900/20 text-blue-400 hover:bg-blue-900/40 hover:text-blue-300"
                     >
                       <Edit2 className="w-4 h-4" />
                     </Button>
@@ -113,7 +114,7 @@ export default function AdminNutrition({ plans = [] }) {
                       size="icon"
                       variant="ghost"
                       onClick={() => handleDelete(plan.id)}
-                      className="text-red-400 hover:text-red-300 hover:bg-red-900/30"
+                      className="bg-red-900/20 text-red-400 hover:bg-red-900/40 hover:text-red-300"
                     >
                       <Trash2 className="w-4 h-4" />
                     </Button>

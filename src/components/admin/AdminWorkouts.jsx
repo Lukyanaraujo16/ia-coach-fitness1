@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -7,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Plus, Edit2, Trash2, Lock } from "lucide-react";
 import WorkoutFormModal from "./WorkoutFormModal";
 
-export default function AdminWorkouts({ workouts = [] }) {
+export default function AdminWorkouts({ workouts = [], exercises = [] }) {
   const [showForm, setShowForm] = useState(false);
   const [editingWorkout, setEditingWorkout] = useState(null);
   const queryClient = useQueryClient();
@@ -42,6 +43,14 @@ export default function AdminWorkouts({ workouts = [] }) {
     hiit: "bg-purple-500/20 text-purple-400",
     flexibility: "bg-green-500/20 text-green-400",
     full_body: "bg-blue-500/20 text-blue-400",
+  };
+
+  const categoryLabels = {
+    strength: "Força",
+    cardio: "Cardio",
+    hiit: "HIIT",
+    flexibility: "Flexibilidade",
+    full_body: "Corpo Inteiro",
   };
 
   return (
@@ -80,13 +89,14 @@ export default function AdminWorkouts({ workouts = [] }) {
                   
                   <div className="flex flex-wrap gap-2 mb-3">
                     <Badge className={categoryColors[workout.category]}>
-                      {workout.category}
+                      {categoryLabels[workout.category] || workout.category}
                     </Badge>
                     <Badge variant="outline" className="text-slate-400 border-slate-600">
-                      {workout.difficulty}
+                      {workout.difficulty === 'beginner' ? 'Iniciante' : 
+                       workout.difficulty === 'intermediate' ? 'Intermediário' : 'Avançado'}
                     </Badge>
                     <Badge variant="outline" className="text-slate-400 border-slate-600">
-                      {workout.duration_minutes}min
+                      {workout.days?.length || 0} dias
                     </Badge>
                   </div>
 
@@ -95,7 +105,7 @@ export default function AdminWorkouts({ workouts = [] }) {
                       variant="outline"
                       size="sm"
                       onClick={() => handleEdit(workout)}
-                      className="flex-1 border-slate-600 text-slate-300 hover:bg-slate-700"
+                      className="flex-1 bg-blue-900/20 border-blue-700 text-blue-400 hover:bg-blue-900/40 hover:text-blue-300"
                     >
                       <Edit2 className="w-4 h-4 mr-2" />
                       Editar
@@ -104,7 +114,7 @@ export default function AdminWorkouts({ workouts = [] }) {
                       variant="outline"
                       size="sm"
                       onClick={() => handleDelete(workout.id)}
-                      className="flex-1 border-red-900/50 text-red-400 hover:bg-red-950/50"
+                      className="flex-1 bg-red-900/20 border-red-700 text-red-400 hover:bg-red-900/40 hover:text-red-300"
                     >
                       <Trash2 className="w-4 h-4 mr-2" />
                       Excluir
@@ -126,6 +136,7 @@ export default function AdminWorkouts({ workouts = [] }) {
       {showForm && (
         <WorkoutFormModal
           workout={editingWorkout}
+          exercises={exercises}
           onClose={handleCloseForm}
         />
       )}

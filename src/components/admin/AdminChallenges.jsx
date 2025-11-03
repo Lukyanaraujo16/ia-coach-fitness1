@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -116,7 +117,7 @@ export default function AdminChallenges({ challenges = [] }) {
                       variant="outline"
                       size="sm"
                       onClick={() => handleToggleActive(challenge)}
-                      className="border-slate-600 text-slate-300 hover:bg-slate-700"
+                      className="bg-slate-800 border-slate-600 text-slate-200 hover:bg-slate-700 hover:text-white"
                     >
                       {challenge.is_active ? 'Desativar' : 'Ativar'}
                     </Button>
@@ -124,7 +125,7 @@ export default function AdminChallenges({ challenges = [] }) {
                       variant="outline"
                       size="sm"
                       onClick={() => handleEdit(challenge)}
-                      className="border-slate-600 text-slate-300 hover:bg-slate-700"
+                      className="bg-blue-900/20 border-blue-700 text-blue-400 hover:bg-blue-900/40 hover:text-blue-300"
                     >
                       <Edit2 className="w-4 h-4 mr-2" />
                       Editar
@@ -133,7 +134,7 @@ export default function AdminChallenges({ challenges = [] }) {
                       variant="outline"
                       size="sm"
                       onClick={() => handleDelete(challenge.id)}
-                      className="border-red-900/50 text-red-400 hover:bg-red-950/50"
+                      className="bg-red-900/20 border-red-700 text-red-400 hover:bg-red-900/40 hover:text-red-300"
                     >
                       <Trash2 className="w-4 h-4 mr-2" />
                       Excluir
