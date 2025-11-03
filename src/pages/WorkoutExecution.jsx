@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
@@ -336,7 +337,7 @@ export default function WorkoutExecution() {
         <Button
           onClick={handleSkipExercise}
           variant="outline"
-          className="flex-1 border-slate-700 text-slate-300 py-6"
+          className="flex-1 bg-slate-800 border-slate-600 text-slate-200 hover:bg-slate-700 hover:text-white py-6"
         >
           Pular Exercício
         </Button>

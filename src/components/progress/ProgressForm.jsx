@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -47,7 +48,7 @@ export default function ProgressForm({ onSubmit, onCancel, isLoading }) {
       <Card className="bg-slate-900/50 border-slate-800">
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle className="text-white">Novo Registro</CardTitle>
-          <Button variant="ghost" size="icon" onClick={onCancel}>
+          <Button variant="ghost" size="icon" onClick={onCancel} className="text-slate-400 hover:text-white hover:bg-slate-800">
             <X className="w-5 h-5" />
           </Button>
         </CardHeader>
@@ -157,7 +158,7 @@ export default function ProgressForm({ onSubmit, onCancel, isLoading }) {
                 type="button"
                 variant="outline"
                 onClick={onCancel}
-                className="flex-1 border-slate-700 text-slate-300 hover:bg-slate-800"
+                className="flex-1 bg-slate-800 border-slate-600 text-slate-200 hover:bg-slate-700 hover:text-white"
               >
                 Cancelar
               </Button>

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
@@ -239,7 +240,7 @@ export default function Profile() {
       <div className="space-y-3">
         <Button
           variant="outline"
-          className="w-full justify-start border-slate-800 text-slate-300 hover:bg-slate-800"
+          className="w-full justify-start bg-slate-800 border-slate-700 text-slate-200 hover:bg-slate-700 hover:text-white"
         >
           <Settings className="w-5 h-5 mr-3" />
           Configurações
@@ -247,7 +248,7 @@ export default function Profile() {
         <Button
           variant="outline"
           onClick={handleLogout}
-          className="w-full justify-start border-slate-800 text-slate-300 hover:bg-slate-800"
+          className="w-full justify-start bg-slate-800 border-slate-700 text-slate-200 hover:bg-slate-700 hover:text-white"
         >
           <LogOut className="w-5 h-5 mr-3" />
           Sair da Conta
@@ -255,7 +256,7 @@ export default function Profile() {
         <Button
           variant="outline"
           onClick={handleDeleteAccount}
-          className="w-full justify-start border-red-900/50 text-red-400 hover:bg-red-950/50"
+          className="w-full justify-start bg-red-900/20 border-red-800/50 text-red-400 hover:bg-red-900/40 hover:text-red-300"
         >
           <Trash2 className="w-5 h-5 mr-3" />
           Cancelar Conta
@@ -288,7 +289,7 @@ export default function Profile() {
                 <Button
                   variant="outline"
                   onClick={() => setShowDeleteConfirm(false)}
-                  className="flex-1 border-slate-700 text-slate-300"
+                  className="flex-1 bg-slate-800 border-slate-600 text-slate-200 hover:bg-slate-700 hover:text-white"
                 >
                   Cancelar
                 </Button>

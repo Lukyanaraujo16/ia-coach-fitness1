@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -20,6 +21,7 @@ export default function CalorieCounter() {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [adjustmentRequest, setAdjustmentRequest] = useState("");
   const [showAdjustment, setShowAdjustment] = useState(false);
+  const [showPhotoOptions, setShowPhotoOptions] = useState(false); // New state variable
   const queryClient = useQueryClient();
 
   const mealTypes = {
@@ -37,6 +39,7 @@ export default function CalorieCounter() {
       setPreviewUrl(URL.createObjectURL(file));
       setAnalysisResult(null);
       setShowAdjustment(false);
+      setShowPhotoOptions(false); // Reset photo options visibility
     }
   };
 
@@ -160,6 +163,7 @@ Seja o mais preciso possível com base nas quantidades típicas se não foram es
       setNotes("");
       setAdjustmentRequest("");
       setShowAdjustment(false);
+      setShowPhotoOptions(false); // Reset photo options visibility
       alert("Refeição salva com sucesso! 🎉");
     },
   });
@@ -195,7 +199,7 @@ Seja o mais preciso possível com base nas quantidades típicas se não foram es
         </CardHeader>
         <CardContent className="space-y-4">
           {/* Mode Selector */}
-          <Tabs value={inputMode} onValueChange={setInputMode} className="w-full">
+          <Tabs value={inputMode} onValueChange={(value) => { setInputMode(value); setShowPhotoOptions(false); setSelectedFile(null); setPreviewUrl(null); setMealDescription(""); setAnalysisResult(null); }} className="w-full">
             <TabsList className="bg-slate-800 border border-slate-700 w-full grid grid-cols-2">
               <TabsTrigger value="photo" className="data-[state=active]:bg-green-600">
                 <Camera className="w-4 h-4 mr-2" />
@@ -208,26 +212,66 @@ Seja o mais preciso possível com base nas quantidades típicas se não foram es
             </TabsList>
           </Tabs>
 
-          {/* Photo Input */}
-          {inputMode === "photo" && !previewUrl && (
-            <label className="block">
-              <div className="border-2 border-dashed border-slate-700 rounded-xl p-12 text-center cursor-pointer hover:border-green-600 transition-all duration-300">
-                <Upload className="w-12 h-12 text-slate-500 mx-auto mb-4" />
-                <p className="text-slate-300 font-medium mb-1">
-                  Clique para tirar/escolher foto
-                </p>
-                <p className="text-slate-500 text-sm">
-                  Capture sua refeição ou selecione da galeria
-                </p>
-              </div>
-              <input
-                type="file"
-                accept="image/*"
-                capture="environment"
-                onChange={handleFileSelect}
-                className="hidden"
-              />
-            </label>
+          {/* Photo Input - Escolha entre Câmera ou Galeria */}
+          {inputMode === "photo" && !previewUrl && !showPhotoOptions && (
+            <div className="space-y-3">
+              <Button
+                onClick={() => setShowPhotoOptions(true)}
+                className="w-full h-32 border-2 border-dashed border-slate-700 bg-transparent hover:border-green-600 hover:bg-slate-800/50 transition-all duration-300"
+              >
+                <div className="text-center">
+                  <Upload className="w-12 h-12 text-slate-500 mx-auto mb-3" />
+                  <p className="text-slate-300 font-medium mb-1">
+                    Adicionar Foto da Refeição
+                  </p>
+                  <p className="text-slate-500 text-sm">
+                    Tire uma foto ou escolha da galeria
+                  </p>
+                </div>
+              </Button>
+            </div>
+          )}
+
+          {/* Opções de Foto */}
+          {inputMode === "photo" && showPhotoOptions && !previewUrl && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="grid grid-cols-2 gap-3"
+            >
+              <label className="cursor-pointer">
+                <Card className="bg-slate-800 border-slate-700 hover:border-green-600 hover:bg-slate-700 transition-all">
+                  <CardContent className="p-6 text-center">
+                    <Camera className="w-10 h-10 text-green-400 mx-auto mb-3" />
+                    <p className="text-white font-medium mb-1">Câmera</p>
+                    <p className="text-slate-400 text-xs">Tirar foto agora</p>
+                  </CardContent>
+                </Card>
+                <input
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
+                  onChange={handleFileSelect}
+                  className="hidden"
+                />
+              </label>
+
+              <label className="cursor-pointer">
+                <Card className="bg-slate-800 border-slate-700 hover:border-green-600 hover:bg-slate-700 transition-all">
+                  <CardContent className="p-6 text-center">
+                    <Upload className="w-10 h-10 text-blue-400 mx-auto mb-3" />
+                    <p className="text-white font-medium mb-1">Galeria</p>
+                    <p className="text-slate-400 text-xs">Escolher foto</p>
+                  </CardContent>
+                </Card>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleFileSelect}
+                  className="hidden"
+                />
+              </label>
+            </motion.div>
           )}
 
           {/* Photo Preview */}
@@ -241,18 +285,40 @@ Seja o mais preciso possível com base nas quantidades típicas se não foram es
                 alt="Preview"
                 className="w-full h-64 object-cover rounded-xl"
               />
-              <div className="flex gap-2 mt-4">
-                <label className="flex-1">
-                  <Button variant="outline" className="w-full border-slate-700" asChild>
+              <div className="grid grid-cols-2 gap-2 mt-4">
+                <label>
+                  <Button 
+                    variant="outline" 
+                    className="w-full bg-slate-800 border-slate-600 text-slate-200 hover:bg-slate-700 hover:text-white" 
+                    asChild
+                  >
                     <span>
                       <Camera className="w-4 h-4 mr-2" />
-                      Trocar Foto
+                      Nova Foto
                     </span>
                   </Button>
                   <input
                     type="file"
                     accept="image/*"
                     capture="environment"
+                    onChange={handleFileSelect}
+                    className="hidden"
+                  />
+                </label>
+                <label>
+                  <Button 
+                    variant="outline" 
+                    className="w-full bg-slate-800 border-slate-600 text-slate-200 hover:bg-slate-700 hover:text-white" 
+                    asChild
+                  >
+                    <span>
+                      <Upload className="w-4 h-4 mr-2" />
+                      Galeria
+                    </span>
+                  </Button>
+                  <input
+                    type="file"
+                    accept="image/*"
                     onChange={handleFileSelect}
                     className="hidden"
                   />
@@ -400,7 +466,7 @@ Seja o mais preciso possível com base nas quantidades típicas se não foram es
                   <Button
                     variant="outline"
                     onClick={() => setShowAdjustment(true)}
-                    className="w-full border-blue-700 text-blue-400 hover:bg-blue-900/30"
+                    className="w-full bg-blue-900/20 border-blue-700 text-blue-400 hover:bg-blue-800/30 hover:text-blue-300"
                   >
                     <RefreshCw className="w-4 h-4 mr-2" />
                     A IA identificou tudo corretamente?
@@ -424,7 +490,7 @@ Seja o mais preciso possível com base nas quantidades típicas se não foram es
                           setShowAdjustment(false);
                           setAdjustmentRequest("");
                         }}
-                        className="flex-1 border-slate-700"
+                        className="flex-1 bg-slate-800 border-slate-600 text-slate-200 hover:bg-slate-700 hover:text-white"
                       >
                         Cancelar
                       </Button>
@@ -480,8 +546,9 @@ Seja o mais preciso possível com base nas quantidades típicas se não foram es
                       setSelectedFile(null);
                       setMealDescription("");
                       setShowAdjustment(false);
+                      setShowPhotoOptions(false); // Reset photo options visibility
                     }}
-                    className="flex-1 border-slate-700 text-slate-300"
+                    className="flex-1 bg-slate-800 border-slate-600 text-slate-200 hover:bg-slate-700 hover:text-white"
                   >
                     Cancelar
                   </Button>

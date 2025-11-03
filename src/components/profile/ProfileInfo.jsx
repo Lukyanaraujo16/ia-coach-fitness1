@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useMutation } from "@tanstack/react-query";
@@ -59,7 +60,7 @@ export default function ProfileInfo({ user, setUser }) {
             variant="ghost"
             size="icon"
             onClick={() => setIsEditing(true)}
-            className="text-slate-400 hover:text-white"
+            className="text-blue-400 hover:text-blue-300 hover:bg-blue-900/20"
           >
             <Edit2 className="w-4 h-4" />
           </Button>
@@ -68,7 +69,7 @@ export default function ProfileInfo({ user, setUser }) {
             variant="ghost"
             size="icon"
             onClick={() => setIsEditing(false)}
-            className="text-slate-400 hover:text-white"
+            className="text-slate-400 hover:text-white hover:bg-slate-800"
           >
             <X className="w-4 h-4" />
           </Button>
