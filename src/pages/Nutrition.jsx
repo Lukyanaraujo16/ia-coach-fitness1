@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -16,15 +15,19 @@ export default function Nutrition() {
   const [activeTab, setActiveTab] = useState("counter");
   const [user, setUser] = useState(null);
   const [showGoalsModal, setShowGoalsModal] = useState(false);
-  const queryClient = useQueryClient(); // Initialize useQueryClient
+  const [isLoadingUser, setIsLoadingUser] = useState(true);
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     const loadUser = async () => {
       try {
+        setIsLoadingUser(true);
         const currentUser = await base44.auth.me();
         setUser(currentUser);
       } catch (error) {
         console.error("Error loading user:", error);
+      } finally {
+        setIsLoadingUser(false);
       }
     };
     loadUser();
@@ -34,29 +37,41 @@ export default function Nutrition() {
     queryKey: ['meal-logs', user?.email],
     queryFn: async () => {
       if (!user?.email) return [];
-      const allLogs = await base44.entities.MealLog.list('-date');
-      return allLogs.filter(log => log.created_by === user.email);
+      try {
+        const allLogs = await base44.entities.MealLog.list('-date');
+        return (allLogs || []).filter(log => log.created_by === user.email);
+      } catch (error) {
+        console.error("Error loading meal logs:", error);
+        return [];
+      }
     },
-    enabled: !!user?.email,
+    enabled: !!user?.email && !isLoadingUser,
   });
 
   const { data: nutritionPlans = [] } = useQuery({
     queryKey: ['nutrition-plans'],
-    queryFn: () => base44.entities.NutritionPlan.list(),
+    queryFn: async () => {
+      try {
+        return await base44.entities.NutritionPlan.list();
+      } catch (error) {
+        console.error("Error loading nutrition plans:", error);
+        return [];
+      }
+    },
+    enabled: !isLoadingUser,
   });
 
-  // Handler for when goals are saved in the modal
   const handleGoalsSaved = async () => {
     setShowGoalsModal(false);
-    // Recarregar dados do usuário
-    const updatedUser = await base44.auth.me();
-    setUser(updatedUser);
-    // Invalidar queries relacionadas para recalcular metas
-    queryClient.invalidateQueries(['meal-logs', user?.email]);
-    // Optionally invalidate any other queries that depend on user goals if they exist
+    try {
+      const updatedUser = await base44.auth.me();
+      setUser(updatedUser);
+      queryClient.invalidateQueries(['meal-logs']);
+    } catch (error) {
+      console.error("Error reloading user:", error);
+    }
   };
 
-  // Calcular calorias e macros de hoje - usando data local
   const getLocalDate = () => {
     const today = new Date();
     const year = today.getFullYear();
@@ -65,20 +80,26 @@ export default function Nutrition() {
     return `${year}-${month}-${day}`;
   };
 
+  if (isLoadingUser) {
+    return (
+      <div className="py-6 flex items-center justify-center min-h-[400px]">
+        <p className="text-slate-400">Carregando...</p>
+      </div>
+    );
+  }
+
   const today = getLocalDate();
-  const todayMeals = mealLogs.filter(log => log.date === today && log.analysis_complete);
+  const todayMeals = (mealLogs || []).filter(log => log.date === today && log.analysis_complete);
   const todayCalories = todayMeals.reduce((sum, log) => sum + (log.total_calories || 0), 0);
   const todayProtein = todayMeals.reduce((sum, log) => sum + (log.macros?.protein || 0), 0);
   const todayCarbs = todayMeals.reduce((sum, log) => sum + (log.macros?.carbs || 0), 0);
   const todayFat = todayMeals.reduce((sum, log) => sum + (log.macros?.fat || 0), 0);
 
-  // Meta diária (do usuário ou default)
   const calorieGoal = user?.daily_calorie_goal || 2000;
   const proteinPercentage = user?.macro_protein_percentage || 30;
   const carbsPercentage = user?.macro_carbs_percentage || 40;
   const fatPercentage = user?.macro_fat_percentage || 30;
   
-  // Calcular metas de macros em gramas (baseado na meta de calorias e porcentagens)
   const proteinGoal = Math.round((calorieGoal * (proteinPercentage / 100)) / 4);
   const carbsGoal = Math.round((calorieGoal * (carbsPercentage / 100)) / 4);
   const fatGoal = Math.round((calorieGoal * (fatPercentage / 100)) / 9);
@@ -92,7 +113,6 @@ export default function Nutrition() {
         </p>
       </div>
 
-      {/* Today's Summary */}
       <Card className="bg-gradient-to-br from-green-900/30 to-emerald-900/20 border-green-800/50">
         <CardHeader>
           <div className="flex items-center justify-between">
@@ -112,7 +132,6 @@ export default function Nutrition() {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {/* Calorias */}
             <div>
               <div className="flex items-center justify-between mb-2">
                 <span className="text-slate-300 text-sm">Calorias</span>
@@ -128,7 +147,6 @@ export default function Nutrition() {
               </div>
             </div>
 
-            {/* Proteínas */}
             <div>
               <div className="flex items-center justify-between mb-2">
                 <span className="text-slate-300 text-sm">Proteínas ({proteinPercentage}%)</span>
@@ -144,7 +162,6 @@ export default function Nutrition() {
               </div>
             </div>
 
-            {/* Carboidratos */}
             <div>
               <div className="flex items-center justify-between mb-2">
                 <span className="text-slate-300 text-sm">Carboidratos ({carbsPercentage}%)</span>
@@ -160,7 +177,6 @@ export default function Nutrition() {
               </div>
             </div>
 
-            {/* Gorduras */}
             <div>
               <div className="flex items-center justify-between mb-2">
                 <span className="text-slate-300 text-sm">Gorduras ({fatPercentage}%)</span>
@@ -179,7 +195,6 @@ export default function Nutrition() {
         </CardContent>
       </Card>
 
-      {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="bg-slate-900/50 border border-slate-800 w-full grid grid-cols-4">
           <TabsTrigger value="counter" className="data-[state=active]:bg-green-600">
@@ -201,13 +216,11 @@ export default function Nutrition() {
         </TabsList>
       </Tabs>
 
-      {/* Content */}
       {activeTab === "counter" && <CalorieCounter />}
       {activeTab === "stats" && <NutritionStats mealLogs={mealLogs} calorieGoal={calorieGoal} />}
       {activeTab === "history" && <MealHistory mealLogs={mealLogs} />}
       {activeTab === "plans" && <NutritionPlans plans={nutritionPlans} user={user} />}
 
-      {/* Goals Modal */}
       {showGoalsModal && (
         <NutritionGoalsModal
           user={user}

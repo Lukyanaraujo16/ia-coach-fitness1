@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { Link, useLocation } from "react-router-dom";
@@ -8,14 +7,18 @@ import { Home, Dumbbell, TrendingUp, Users, User, Crown, Shield, Apple } from "l
 export default function Layout({ children, currentPageName }) {
   const location = useLocation();
   const [user, setUser] = useState(null);
+  const [isLoadingUser, setIsLoadingUser] = useState(true);
 
   useEffect(() => {
     const loadUser = async () => {
       try {
+        setIsLoadingUser(true);
         const currentUser = await base44.auth.me();
         setUser(currentUser);
       } catch (error) {
         console.error("Error loading user:", error);
+      } finally {
+        setIsLoadingUser(false);
       }
     };
     loadUser();
@@ -25,14 +28,13 @@ export default function Layout({ children, currentPageName }) {
     { name: "Home", path: createPageUrl("Home"), icon: Home },
     { name: "Treinos", path: createPageUrl("Workouts"), icon: Dumbbell },
     { name: "Nutrição", path: createPageUrl("Nutrition"), icon: Apple },
-    { name: "IA Coach", path: createPageUrl("AICoach"), icon: Users }, // Changed to a temporary icon
+    { name: "IA Coach", path: createPageUrl("AICoach"), icon: Users },
     { name: "Progresso", path: createPageUrl("Progress"), icon: TrendingUp },
     { name: "Comunidade", path: createPageUrl("Community"), icon: Users },
     { name: "Perfil", path: createPageUrl("Profile"), icon: User },
   ];
 
-  // Adiciona item Admin se for admin
-  if (user?.role === 'admin') {
+  if (!isLoadingUser && user?.role === 'admin') {
     navigationItems.push({
       name: "Admin",
       path: createPageUrl("Admin"),
@@ -40,7 +42,6 @@ export default function Layout({ children, currentPageName }) {
     });
   }
 
-  // Esconder navegação durante execução de treino
   const isWorkoutExecution = currentPageName === "WorkoutExecution";
 
   return (
@@ -54,7 +55,6 @@ export default function Layout({ children, currentPageName }) {
         }
       `}</style>
 
-      {/* Header - Escondido durante execução de treino */}
       {!isWorkoutExecution && (
         <header className="fixed top-0 left-0 right-0 z-50 bg-slate-950/80 backdrop-blur-xl border-b border-slate-800/50">
           <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
@@ -64,23 +64,23 @@ export default function Layout({ children, currentPageName }) {
               </div>
               <h1 className="text-xl font-bold text-white">FitTrack+</h1>
             </div>
-            <Link to={createPageUrl("Subscription")}>
-              <button className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 text-white rounded-full text-sm font-medium transition-all duration-300 shadow-lg shadow-blue-900/50">
-                <Crown className="w-4 h-4" />
-                Premium
-              </button>
-            </Link>
+            {!isLoadingUser && (
+              <Link to={createPageUrl("Subscription")}>
+                <button className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 text-white rounded-full text-sm font-medium transition-all duration-300 shadow-lg shadow-blue-900/50">
+                  <Crown className="w-4 h-4" />
+                  Premium
+                </button>
+              </Link>
+            )}
           </div>
         </header>
       )}
 
-      {/* Main Content */}
       <main className={!isWorkoutExecution ? 'pt-20 max-w-7xl mx-auto px-4' : ''}>
         {children}
       </main>
 
-      {/* Bottom Navigation - Escondido durante execução de treino */}
-      {!isWorkoutExecution && (
+      {!isWorkoutExecution && !isLoadingUser && (
         <nav className="fixed bottom-0 left-0 right-0 bg-slate-950/95 backdrop-blur-xl border-t border-slate-800/50 z-50">
           <div className="max-w-7xl mx-auto">
             <div className="flex overflow-x-auto scrollbar-hide py-2 px-2">
