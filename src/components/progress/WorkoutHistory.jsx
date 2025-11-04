@@ -1,3 +1,4 @@
+
 import React from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
@@ -39,7 +40,7 @@ export default function WorkoutHistory({ logs = [] }) {
             <div className="flex items-start justify-between gap-4">
               <div className="flex-1">
                 <h4 className="text-white font-semibold mb-2">{log.workout_title}</h4>
-                <div className="flex flex-wrap gap-4 text-sm text-slate-400">
+                <div className="flex flex-wrap gap-4 text-sm text-slate-400 mb-2">
                   <div className="flex items-center gap-1">
                     <Calendar className="w-4 h-4" />
                     <span>{new Date(log.date).toLocaleDateString('pt-BR')}</span>
@@ -55,6 +56,46 @@ export default function WorkoutHistory({ logs = [] }) {
                     </div>
                   )}
                 </div>
+
+                {/* Mostrar exercícios com carga */}
+                {log.exercises_completed && log.exercises_completed.length > 0 && (
+                  <div className="mt-3 space-y-2">
+                    {log.exercises_completed.slice(0, 3).map((ex, idx) => {
+                      const maxWeight = ex.sets_completed?.reduce((max, set) => 
+                        set.weight_used > max ? set.weight_used : max, 0
+                      ) || 0;
+                      
+                      return (
+                        <div key={idx} className="bg-slate-800/50 rounded p-2 text-xs">
+                          <div className="flex items-center justify-between">
+                            <span className="text-slate-300">{ex.exercise_name}</span>
+                            {maxWeight > 0 && (
+                              <span className="text-blue-400 font-semibold">
+                                {maxWeight}kg
+                              </span>
+                            )}
+                          </div>
+                          {ex.sets_completed && ex.sets_completed.length > 0 && (
+                            <div className="flex flex-wrap gap-x-1 mt-1">
+                              {ex.sets_completed.map((set, setIdx) => (
+                                <span key={setIdx} className="text-slate-500 text-xs">
+                                  {set.reps_completed}x{set.weight_used > 0 ? `@${set.weight_used}kg` : ''}
+                                  {setIdx < ex.sets_completed.length - 1 ? ',' : ''}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                    {log.exercises_completed.length > 3 && (
+                      <p className="text-slate-500 text-xs">
+                        +{log.exercises_completed.length - 3} exercícios
+                      </p>
+                    )}
+                  </div>
+                )}
+
                 {log.notes && (
                   <p className="text-slate-500 text-sm mt-2">{log.notes}</p>
                 )}

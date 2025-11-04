@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft, Play, Pause, SkipForward, CheckCircle, Plus, Minus, AlertTriangle, Trophy, Clock, Zap, X, Lightbulb } from "lucide-react";
+import { ArrowLeft, Play, Pause, SkipForward, CheckCircle, Plus, Minus, AlertTriangle, Trophy, Clock, Zap, X, Lightbulb, Weight } from "lucide-react";
 import { motion } from "framer-motion";
 
 export default function WorkoutExecution() {
@@ -21,6 +21,7 @@ export default function WorkoutExecution() {
   const [workout, setWorkout] = useState(null);
   const [currentDay, setCurrentDay] = useState(null);
   const [currentExerciseIndex, setCurrentExerciseIndex] = useState(0);
+  const [exercisesData, setExercisesData] = useState([]); // New state for exercise data
   const [skippedExercises, setSkippedExercises] = useState([]);
   const [restTime, setRestTime] = useState(60);
   const [isResting, setIsResting] = useState(false);
@@ -52,6 +53,23 @@ export default function WorkoutExecution() {
         if (foundWorkout?.days) {
           const day = foundWorkout.days.find(d => d.day_number === dayNumber);
           setCurrentDay(day);
+          
+          // Inicializar dados dos exercícios
+          if (day?.exercises) {
+            const initialData = day.exercises.map(ex => ({
+              exercise_id: ex.exercise_id || '',
+              exercise_name: ex.exercise_name,
+              exercise_category: ex.exercise_category || '',
+              sets_completed: ex.sets.map((set, idx) => ({
+                set_number: idx + 1,
+                reps_completed: 0,
+                weight_used: 0,
+                notes: ''
+              }))
+            }));
+            setExercisesData(initialData);
+          }
+          
           if (day?.exercises?.[0]?.sets?.[0]?.rest_seconds) {
             const firstRest = day.exercises[0].sets[0].rest_seconds;
             setRestTime(firstRest);
@@ -109,6 +127,14 @@ export default function WorkoutExecution() {
       setEndTime(new Date());
     },
   });
+
+  const updateSetData = (exerciseIndex, setIndex, field, value) => {
+    const newData = [...exercisesData];
+    if (newData[exerciseIndex] && newData[exerciseIndex].sets_completed[setIndex]) {
+      newData[exerciseIndex].sets_completed[setIndex][field] = value;
+      setExercisesData(newData);
+    }
+  };
 
   // Nova função para gerar dicas de IA
   const generateAITips = async (exercise) => {
@@ -191,7 +217,7 @@ Seja direto, prático e motivador.`;
       const nextExercise = currentDay.exercises[currentExerciseIndex + 1];
       setCurrentExerciseIndex(currentExerciseIndex + 1);
       if (nextExercise?.sets?.[0]?.rest_seconds) {
-        const nextRest = nextExercise.sets[0].sets?.[0]?.rest_seconds; // Corrected: access from set, not exercise
+        const nextRest = nextExercise.sets[0].rest_seconds; // Corrected: access from set, not exercise
         setRestTime(nextRest);
         setTimeRemaining(nextRest);
       }
@@ -221,12 +247,16 @@ Seja direto, prático e motivador.`;
       ? Math.round((endTime - startTime) / 1000 / 60)
       : workout.duration_minutes;
 
+    // Filtrar exercícios completados (não pulados)
+    const completedExercises = exercisesData.filter((_, idx) => !skippedExercises.includes(idx));
+
     createWorkoutLogMutation.mutate({
       workout_id: workout.id,
       workout_title: `${workout.title} - Dia ${dayNumber}`,
       date: localDate,
       duration_minutes: durationMinutes,
       calories_burned: caloriesInput ? parseInt(caloriesInput) : undefined,
+      exercises_completed: completedExercises, // Added exercises_completed
       notes: skippedExercises.length > 0 ? `${skippedExercises.length} exercícios pulados` : "",
     });
   };
@@ -516,36 +546,61 @@ Seja direto, prático e motivador.`;
         </div>
       )}
 
-      {/* Séries - Área Rolável */}
+      {/* Séries - Área Rolável COM INPUTS DE PESO */}
       <div className="flex-1 overflow-y-auto px-3 py-2" style={{ minHeight: 0 }}>
-        <div className="space-y-1.5 pb-2">
+        <div className="space-y-2 pb-2">
           {currentExercise?.sets?.map((set, index) => (
             <div
               key={index}
-              className="w-full p-2 rounded-lg border-2 border-slate-700 bg-slate-800/50"
+              className="w-full p-3 rounded-lg border-2 border-slate-700 bg-slate-800/50"
             >
-              <div className="space-y-1.5">
-                <span className="text-white font-bold text-xs">Série {index + 1}</span>
-                
-                <div className="grid grid-cols-3 gap-1.5 text-xs">
-                  {/* Fazer (Times) - PRIMEIRO */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-white font-bold text-sm">Série {index + 1}</span>
                   {set.times > 1 && (
-                    <div className="bg-yellow-900/30 rounded px-1.5 py-1">
-                      <p className="text-yellow-400 text-xs">Fazer</p>
-                      <p className="text-yellow-300 font-bold text-sm">{set.times}x</p>
-                    </div>
+                    <span className="text-yellow-400 text-xs font-bold bg-yellow-900/30 px-2 py-1 rounded">
+                      Fazer {set.times}x
+                    </span>
                   )}
-                  
-                  {/* Reps - SEGUNDO */}
-                  <div className="bg-slate-900/50 rounded px-1.5 py-1">
+                </div>
+                
+                {/* Info da Série */}
+                <div className="grid grid-cols-2 gap-2 text-xs mb-2">
+                  <div className="bg-slate-900/50 rounded px-2 py-1">
                     <p className="text-slate-400 text-xs">Reps</p>
                     <p className="text-white font-bold text-sm">{set.reps}</p>
                   </div>
-                  
-                  {/* Descanso - TERCEIRO */}
-                  <div className="bg-slate-900/50 rounded px-1.5 py-1">
+                  <div className="bg-slate-900/50 rounded px-2 py-1">
                     <p className="text-slate-400 text-xs">Descanso</p>
                     <p className="text-purple-400 font-bold text-sm">{set.rest_seconds}s</p>
+                  </div>
+                </div>
+
+                {/* Registro de Peso e Reps */}
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="space-y-1">
+                    <Label className="text-slate-300 text-xs flex items-center gap-1">
+                      <Weight className="w-3 h-3" />
+                      Carga (kg)
+                    </Label>
+                    <Input
+                      type="number"
+                      step="0.5"
+                      value={exercisesData[currentExerciseIndex]?.sets_completed[index]?.weight_used || ''}
+                      onChange={(e) => updateSetData(currentExerciseIndex, index, 'weight_used', parseFloat(e.target.value) || 0)}
+                      placeholder="Ex: 20"
+                      className="bg-slate-700 border-slate-600 text-white h-10 text-sm"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-slate-300 text-xs">Reps Feitas</Label>
+                    <Input
+                      type="number"
+                      value={exercisesData[currentExerciseIndex]?.sets_completed[index]?.reps_completed || ''}
+                      onChange={(e) => updateSetData(currentExerciseIndex, index, 'reps_completed', parseInt(e.target.value) || 0)}
+                      placeholder="Ex: 12"
+                      className="bg-slate-700 border-slate-600 text-white h-10 text-sm"
+                    />
                   </div>
                 </div>
                 

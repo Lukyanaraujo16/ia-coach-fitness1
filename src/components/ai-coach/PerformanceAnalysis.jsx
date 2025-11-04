@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -15,12 +16,23 @@ export default function PerformanceAnalysis({ user, workoutLogs, currentWorkout 
     try {
       // Preparar dados para análise
       const recentLogs = workoutLogs.slice(0, 10);
+      
+      // Extrair dados de progressão de carga
+      const weightProgressionData = recentLogs.flatMap(log => 
+        (log.exercises_completed || []).map(ex => ({
+          data: log.date,
+          exercicio: ex.exercise_name,
+          cargas: ex.sets_completed?.map(s => s.weight_used).filter(w => w > 0) || []
+        }))
+      ).filter(ex => ex.cargas.length > 0);
+
       const logsData = recentLogs.map(log => ({
         data: log.date,
         treino: log.workout_title,
         duracao: log.duration_minutes,
         calorias: log.calories_burned,
         dificuldade: log.difficulty_rating,
+        exercicios_com_carga: (log.exercises_completed || []).length
       }));
 
       const prompt = `Você é um treinador experiente analisando o desempenho de um atleta.
@@ -36,14 +48,20 @@ ${currentWorkout ? `- ${currentWorkout.title} (${currentWorkout.days?.length} di
 **Histórico Recente (últimos 10 treinos):**
 ${JSON.stringify(logsData, null, 2)}
 
+**Progressão de Cargas (detalhado):**
+${weightProgressionData.length > 0 ? JSON.stringify(weightProgressionData, null, 2) : 'Nenhum dado de carga registrado'}
+
 **Análise Solicitada:**
 Forneça uma análise detalhada em formato JSON com:
 
-1. **pontos_fortes**: Lista de 3 pontos positivos observados
+1. **pontos_fortes**: Lista de 3 pontos positivos observados (considere evolução de carga se houver dados)
 2. **areas_melhoria**: Lista de 3 áreas que precisam atenção
-3. **sugestoes_treino**: Lista de 3 sugestões específicas para melhorar (pode incluir aumento de carga, mudança de exercícios, etc)
+3. **sugestoes_treino**: Lista de 3-4 sugestões específicas para melhorar:
+   - Se houver dados de carga, inclua sugestões ESPECÍFICAS de progressão (ex: "Aumente 2,5kg no supino reto no próximo treino")
+   - Se não houver dados de carga, incentive o registro e sugira cargas iniciais apropriadas
+   - Inclua mudanças de exercícios, volume, frequência se relevante
 4. **motivacao**: Mensagem motivacional personalizada
-5. **proximos_passos**: 3 ações concretas para os próximos treinos`;
+5. **proximos_passos**: 3 ações concretas para os próximos treinos (seja específico com números e cargas quando possível)`;
 
       const response = await base44.integrations.Core.InvokeLLM({
         prompt: prompt,
