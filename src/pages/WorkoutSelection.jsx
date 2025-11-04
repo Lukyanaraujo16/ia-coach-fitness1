@@ -33,15 +33,12 @@ export default function WorkoutSelection() {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [selectedWorkout, setSelectedWorkout] = useState(null);
-
-  const { data: workouts = [], isLoading } = useQuery({
-    queryKey: ['workouts'],
-    queryFn: () => base44.entities.Workout.list(),
-  });
+  const [isLoadingUser, setIsLoadingUser] = useState(true);
 
   useEffect(() => {
     const loadUser = async () => {
       try {
+        setIsLoadingUser(true);
         const currentUser = await base44.auth.me();
         setUser(currentUser);
         
@@ -50,15 +47,24 @@ export default function WorkoutSelection() {
         }
       } catch (error) {
         console.error("Error loading user:", error);
+      } finally {
+        setIsLoadingUser(false);
       }
     };
     loadUser();
   }, [navigate]);
 
-  const filteredWorkouts = workouts.filter(workout => {
-    const matchesLevel = workout.difficulty === user?.fitness_level;
-    const matchesLocation = workout.training_location === user?.training_location || workout.training_location === 'both';
-    return matchesLevel && matchesLocation;
+  const { data: workouts = [], isLoading: loadingWorkouts } = useQuery({
+    queryKey: ['workouts'],
+    queryFn: async () => {
+      try {
+        return await base44.entities.Workout.list();
+      } catch (error) {
+        console.error("Error loading workouts:", error);
+        return [];
+      }
+    },
+    enabled: !isLoadingUser,
   });
 
   const handleSelectWorkout = async () => {
@@ -80,13 +86,19 @@ export default function WorkoutSelection() {
     navigate(createPageUrl("WorkoutDetail") + `?id=${workout.id}&from=selection`);
   };
 
-  if (isLoading || !user) {
+  if (isLoadingUser || loadingWorkouts) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 flex items-center justify-center">
         <p className="text-slate-400">Carregando...</p>
       </div>
     );
   }
+
+  const filteredWorkouts = (workouts || []).filter(workout => {
+    const matchesLevel = workout.difficulty === user?.fitness_level;
+    const matchesLocation = workout.training_location === user?.training_location || workout.training_location === 'both';
+    return matchesLevel && matchesLocation;
+  });
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 px-4 py-12">
@@ -100,10 +112,10 @@ export default function WorkoutSelection() {
           </p>
           <div className="flex flex-wrap justify-center gap-2 mt-4">
             <Badge variant="outline" className="text-slate-300 border-slate-700">
-              Nível: {difficultyLabels[user.fitness_level]}
+              Nível: {difficultyLabels[user?.fitness_level] || 'Não definido'}
             </Badge>
             <Badge variant="outline" className="text-slate-300 border-slate-700">
-              Local: {locationLabels[user.training_location]}
+              Local: {locationLabels[user?.training_location] || 'Não definido'}
             </Badge>
           </div>
         </div>
