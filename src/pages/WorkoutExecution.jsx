@@ -167,7 +167,10 @@ Seja direto, prático e motivador.`;
       setAiTips(response);
       setShowAITips(true);
     } catch (error) {
-      console.error("Error generating AI tips:", error);
+      // Silenciar completamente todos os erros, incluindo abort
+      if (!error.message?.includes('abort')) {
+        console.error("Error generating AI tips:", error);
+      }
     }
   };
 

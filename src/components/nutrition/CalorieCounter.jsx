@@ -134,8 +134,11 @@ Seja o mais preciso possível com base nas quantidades típicas se não foram es
       setAdjustmentRequest("");
       setShowAdjustment(false);
     } catch (error) {
-      console.error("Erro ao analisar:", error);
-      alert("Erro ao analisar. Tente novamente.");
+      // Silenciar erros de abort completamente
+      if (!error.message?.includes('abort')) {
+        console.error("Erro ao analisar:", error);
+        alert("Erro ao analisar. Tente novamente.");
+      }
     } finally {
       setIsAnalyzing(false);
     }

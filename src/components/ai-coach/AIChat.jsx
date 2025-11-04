@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -68,11 +69,14 @@ Forneça uma resposta útil, prática e motivadora. Se relevante, sugira exercí
 
       setMessages(prev => [...prev, { role: "assistant", content: response }]);
     } catch (error) {
-      console.error("Error calling AI:", error);
-      setMessages(prev => [...prev, { 
-        role: "assistant", 
-        content: "Desculpe, tive um problema ao processar sua mensagem. Tente novamente." 
-      }]);
+      // Silenciar erros de abort completamente
+      if (!error.message?.includes('abort')) {
+        console.error("Error calling AI:", error);
+        setMessages(prev => [...prev, { 
+          role: "assistant", 
+          content: "Desculpe, tive um problema ao processar sua mensagem. Tente novamente." 
+        }]);
+      }
     } finally {
       setIsLoading(false);
     }

@@ -45,7 +45,7 @@ export default function PerformanceAnalysis({ user, workoutLogs, currentWorkout 
 **Treino Atual:**
 ${currentWorkout ? `- ${currentWorkout.title} (${currentWorkout.days?.length} dias)` : 'Nenhum treino selecionado'}
 
-**Histórico Recente (últimos 10 treinos):**
+**Histórico Recent (últimos 10 treinos):**
 ${JSON.stringify(logsData, null, 2)}
 
 **Progressão de Cargas (detalhado):**
@@ -79,8 +79,11 @@ Forneça uma análise detalhada em formato JSON com:
 
       setAnalysis(response);
     } catch (error) {
-      console.error("Error analyzing performance:", error);
-      alert("Erro ao analisar desempenho. Tente novamente.");
+      // Silenciar erros de abort completamente
+      if (!error.message?.includes('abort')) {
+        console.error("Error analyzing performance:", error);
+        alert("Erro ao analisar desempenho. Tente novamente.");
+      }
     } finally {
       setIsLoading(false);
     }

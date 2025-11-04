@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
@@ -124,8 +125,11 @@ Seja preciso com base na quantidade informada.
       });
 
     } catch (error) {
-      console.error("Erro ao adicionar alimento:", error);
-      alert("Erro ao adicionar alimento. Tente novamente.");
+      // Silenciar erros de abort completamente
+      if (!error.message?.includes('abort')) {
+        console.error("Erro ao adicionar alimento:", error);
+        alert("Erro ao adicionar alimento. Tente novamente.");
+      }
     } finally {
       setIsAnalyzing(false);
     }

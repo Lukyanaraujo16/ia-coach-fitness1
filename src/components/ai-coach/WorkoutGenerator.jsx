@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -154,8 +155,11 @@ IMPORTANTE:
 
       setGeneratedWorkout(response);
     } catch (error) {
-      console.error("Error generating workout:", error);
-      alert("Erro ao gerar treino. Tente novamente.");
+      // Silenciar erros de abort completamente
+      if (!error.message?.includes('abort')) {
+        console.error("Error generating workout:", error);
+        alert("Erro ao gerar treino. Tente novamente.");
+      }
     } finally {
       setIsGenerating(false);
     }
