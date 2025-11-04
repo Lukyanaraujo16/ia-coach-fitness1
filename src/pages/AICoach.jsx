@@ -14,14 +14,18 @@ import WorkoutGenerator from "../components/ai-coach/WorkoutGenerator";
 export default function AICoach() {
   const [activeTab, setActiveTab] = useState("chat");
   const [user, setUser] = useState(null);
+  const [isLoadingUser, setIsLoadingUser] = useState(true);
 
   useEffect(() => {
     const loadUser = async () => {
       try {
+        setIsLoadingUser(true);
         const currentUser = await base44.auth.me();
         setUser(currentUser);
       } catch (error) {
         console.error("Error loading user:", error);
+      } finally {
+        setIsLoadingUser(false);
       }
     };
     loadUser();
@@ -31,23 +35,41 @@ export default function AICoach() {
     queryKey: ['workout-logs', user?.email],
     queryFn: async () => {
       if (!user?.email) return [];
-      const allLogs = await base44.entities.WorkoutLog.list('-date');
-      return allLogs.filter(log => log.created_by === user.email);
+      try {
+        const allLogs = await base44.entities.WorkoutLog.list('-date');
+        return (allLogs || []).filter(log => log.created_by === user.email);
+      } catch (error) {
+        console.error("Error loading workout logs:", error);
+        return [];
+      }
     },
-    enabled: !!user?.email,
+    enabled: !!user?.email && !isLoadingUser,
   });
 
   const { data: selectedWorkout } = useQuery({
     queryKey: ['selected-workout', user?.selected_workout_id],
     queryFn: async () => {
       if (!user?.selected_workout_id) return null;
-      const workouts = await base44.entities.Workout.list();
-      return workouts.find(w => w.id === user.selected_workout_id);
+      try {
+        const workouts = await base44.entities.Workout.list();
+        return (workouts || []).find(w => w.id === user.selected_workout_id);
+      } catch (error) {
+        console.error("Error loading workout:", error);
+        return null;
+      }
     },
-    enabled: !!user?.selected_workout_id,
+    enabled: !!user?.selected_workout_id && !isLoadingUser,
   });
 
   const isPremium = user?.subscription_status === 'premium';
+
+  if (isLoadingUser) {
+    return (
+      <div className="py-6 flex items-center justify-center min-h-[400px]">
+        <p className="text-slate-400">Carregando...</p>
+      </div>
+    );
+  }
 
   if (!isPremium) {
     return (
@@ -99,7 +121,6 @@ export default function AICoach() {
 
   return (
     <div className="py-6 space-y-6">
-      {/* Header */}
       <div className="space-y-3">
         <div className="flex items-center gap-3">
           <div className="w-12 h-12 bg-gradient-to-br from-purple-600 to-blue-600 rounded-2xl flex items-center justify-center">
@@ -112,7 +133,6 @@ export default function AICoach() {
         </div>
       </div>
 
-      {/* Welcome Card */}
       <Card className="bg-gradient-to-br from-purple-900/30 to-blue-900/30 border-purple-700/50">
         <CardContent className="p-6">
           <div className="flex items-start gap-4">
@@ -132,7 +152,6 @@ export default function AICoach() {
         </CardContent>
       </Card>
 
-      {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="bg-slate-900/50 border border-slate-800 w-full grid grid-cols-3">
           <TabsTrigger value="chat" className="data-[state=active]:bg-purple-600">
@@ -150,7 +169,6 @@ export default function AICoach() {
         </TabsList>
       </Tabs>
 
-      {/* Content */}
       {activeTab === "chat" && <AIChat user={user} />}
       {activeTab === "analysis" && (
         <PerformanceAnalysis 
