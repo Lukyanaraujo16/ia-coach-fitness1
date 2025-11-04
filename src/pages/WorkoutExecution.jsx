@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { base44 } from "@/api/base44Client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
@@ -40,6 +40,7 @@ export default function WorkoutExecution() {
   const [aiSuggestion, setAiSuggestion] = useState(null);
   const [workoutLogs, setWorkoutLogs] = useState([]);
   const [isAnalyzingPerformance, setIsAnalyzingPerformance] = useState(false);
+  const abortControllerRef = useRef(null);
 
   const isPremium = user?.subscription_status === 'premium';
 
@@ -71,7 +72,7 @@ export default function WorkoutExecution() {
               exercise_category: ex.exercise_category || '',
               sets_completed: ex.sets.map((set, idx) => ({
                 set_number: idx + 1,
-                reps_completed: parseInt(set.reps) || 0, // Usar reps da série
+                reps_completed: parseInt(set.reps) || 0,
                 weight_used: 0,
                 notes: ''
               }))
@@ -90,20 +91,37 @@ export default function WorkoutExecution() {
     loadWorkout();
   }, [workoutId, dayNumber]);
 
-  // Análise automática ao mudar de exercício - COM DELAY E PROTEÇÃO
-  const currentExercise = currentDay?.exercises?.[currentExerciseIndex];
+  // Análise automática ao mudar de exercício - COM ABORT CONTROLLER
   useEffect(() => {
-    if (!currentExercise || !isPremium || workoutLogs.length === 0 || isAnalyzingPerformance) {
+    const currentExercise = currentDay?.exercises?.[currentExerciseIndex];
+    
+    if (!currentExercise || !isPremium || workoutLogs.length === 0) {
       return;
     }
 
-    // Delay de 500ms para evitar análises quando usuário muda rápido de exercício
-    const timer = setTimeout(() => {
-      analyzeExercisePerformance(currentExercise);
-    }, 500);
+    // Cancelar análise anterior se existir
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
 
-    return () => clearTimeout(timer);
-  }, [currentExerciseIndex]); // Apenas currentExerciseIndex como dependência
+    // Criar novo abort controller
+    abortControllerRef.current = new AbortController();
+    const signal = abortControllerRef.current.signal;
+
+    // Delay de 800ms para evitar análises quando usuário muda rápido
+    const timer = setTimeout(() => {
+      if (!signal.aborted) {
+        analyzeExercisePerformance(currentExercise, signal);
+      }
+    }, 800);
+
+    return () => {
+      clearTimeout(timer);
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
+  }, [currentExerciseIndex, isPremium, workoutLogs.length, currentDay]);
 
 
   // Timer com controle baseado em timestamp real
@@ -131,14 +149,20 @@ export default function WorkoutExecution() {
     };
   }, [isResting, restStartTime, restTime]);
 
-  const analyzeExercisePerformance = async (exercise) => {
-    if (!exercise || !isPremium || workoutLogs.length === 0 || isAnalyzingPerformance) {
+  const analyzeExercisePerformance = async (exercise, signal) => {
+    if (!exercise || isAnalyzingPerformance) {
       return;
     }
 
     setIsAnalyzingPerformance(true);
     
     try {
+      // Verificar se foi abortado antes de começar
+      if (signal?.aborted) {
+        setIsAnalyzingPerformance(false);
+        return;
+      }
+
       // Encontrar histórico deste exercício
       const exerciseHistory = workoutLogs
         .flatMap(log => log.exercises_completed || [])
@@ -150,6 +174,12 @@ export default function WorkoutExecution() {
         setAiSuggestion(null);
         setIsAnalyzingPerformance(false);
         return; 
+      }
+
+      // Verificar novamente antes da chamada à API
+      if (signal?.aborted) {
+        setIsAnalyzingPerformance(false);
+        return;
       }
 
       // Analisar progressão de carga
@@ -186,7 +216,7 @@ Se houver uma sugestão importante (aumentar carga, mudar estratégia, parabéns
 
 Se NÃO houver sugestão relevante, retorne: {"show_suggestion": false}
 
-IMPORTANTE: Só mostre sugestão se for realmente relevante. Não seja repetitivo.`;
+IMPORTE: Só mostre sugestão se for realmente relevante. Não seja repetitivo.`;
 
       const response = await base44.integrations.Core.InvokeLLM({
         prompt: prompt,
@@ -202,6 +232,12 @@ IMPORTANTE: Só mostre sugestão se for realmente relevante. Não seja repetitiv
         }
       });
 
+      // Verificar se foi abortado após a chamada
+      if (signal?.aborted) {
+        setIsAnalyzingPerformance(false);
+        return;
+      }
+
       if (response.show_suggestion) {
         setAiSuggestion(response);
         setShowAISuggestion(true);
@@ -210,9 +246,9 @@ IMPORTANTE: Só mostre sugestão se for realmente relevante. Não seja repetitiv
         setAiSuggestion(null);
       }
     } catch (error) {
-      // Ignorar erros de abort - são esperados quando usuário muda rápido de exercício
-      if (error.message?.includes('aborted') || error.message?.includes('abort')) {
-        console.log("Análise cancelada (usuário mudou de exercício)");
+      // Silenciosamente ignorar erros de abort
+      if (error.message?.includes('aborted') || error.message?.includes('abort') || error.name === 'AbortError') {
+        // Não fazer nada - é esperado
       } else {
         console.error("Error analyzing performance:", error);
       }
@@ -296,7 +332,7 @@ Seja direto, prático e motivador.`;
     );
   }
 
-  // const currentExercise = currentDay.exercises?.[currentExerciseIndex]; // Moved up for useEffect dependency
+  const currentExercise = currentDay.exercises?.[currentExerciseIndex];
   const isLastExercise = currentExerciseIndex === (currentDay.exercises?.length || 0) - 1;
 
   const handleStartRest = () => {
