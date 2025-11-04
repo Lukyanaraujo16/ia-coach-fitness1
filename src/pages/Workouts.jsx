@@ -7,30 +7,52 @@ import { Search, Lock } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import WorkoutCard from "../components/workouts/WorkoutCard";
 import ExerciseLibrary from "../components/workouts/ExerciseLibrary";
+import { Link } from "react-router-dom";
+import { createPageUrl } from "@/utils";
+import { Button } from "@/components/ui/button";
 
 export default function Workouts() {
   const [activeTab, setActiveTab] = useState("workouts");
   const [searchQuery, setSearchQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [user, setUser] = useState(null);
+  const [isLoadingUser, setIsLoadingUser] = useState(true);
 
   const { data: workouts = [], isLoading: loadingWorkouts } = useQuery({
     queryKey: ['workouts'],
-    queryFn: () => base44.entities.Workout.list(),
+    queryFn: async () => {
+      try {
+        return await base44.entities.Workout.list();
+      } catch (error) {
+        console.error("Error loading workouts:", error);
+        return [];
+      }
+    },
   });
 
   const { data: exercises = [], isLoading: loadingExercises } = useQuery({
     queryKey: ['exercises'],
-    queryFn: () => base44.entities.Exercise.list(),
+    queryFn: async () => {
+      try {
+        return await base44.entities.Exercise.list();
+      } catch (error) {
+        console.error("Error loading exercises:", error);
+        return [];
+      }
+    },
   });
 
   useEffect(() => {
     const loadUser = async () => {
       try {
+        setIsLoadingUser(true);
         const currentUser = await base44.auth.me();
         setUser(currentUser);
       } catch (error) {
         console.error("Error loading user:", error);
+        setUser(null);
+      } finally {
+        setIsLoadingUser(false);
       }
     };
     loadUser();
@@ -62,7 +84,7 @@ export default function Workouts() {
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <h2 className="text-3xl font-bold text-white">Treinos</h2>
-          {!isPremium && (
+          {!isLoadingUser && !isPremium && (
             <div className="flex items-center gap-2 text-yellow-400 text-sm">
               <Lock className="w-4 h-4" />
               <span>5/{workouts.length} treinos disponíveis</span>
@@ -95,7 +117,7 @@ export default function Workouts() {
 
         {/* Category Filter for Workouts */}
         {activeTab === "workouts" && (
-          <div className="flex gap-2 overflow-x-auto pb-2">
+          <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
             {categories.map((cat) => (
               <button
                 key={cat.value}
@@ -131,7 +153,7 @@ export default function Workouts() {
           </div>
           
           {/* Locked Workouts Preview */}
-          {!isPremium && workouts.length > 5 && (
+          {!isLoadingUser && !isPremium && workouts.length > 5 && (
             <Card className="bg-slate-900/30 border-slate-800 relative overflow-hidden">
               <div className="absolute inset-0 bg-gradient-to-r from-blue-900/20 to-purple-900/20 backdrop-blur-sm" />
               <CardContent className="relative p-8 text-center">
@@ -142,9 +164,11 @@ export default function Workouts() {
                 <p className="text-slate-300 mb-4">
                   Desbloqueie acesso completo a todos os treinos e funcionalidades
                 </p>
-                <a href={`/page/Subscription`} className="inline-block px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white rounded-lg font-semibold">
-                  Assinar Premium
-                </a>
+                <Link to={createPageUrl("Subscription")}>
+                  <Button className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white px-6 py-3 rounded-lg font-semibold">
+                    Assinar Premium
+                  </Button>
+                </Link>
               </CardContent>
             </Card>
           )}
