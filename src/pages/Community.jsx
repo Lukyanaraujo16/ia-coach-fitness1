@@ -1,48 +1,24 @@
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import CreatePostForm from "../components/community/CreatePostForm";
 import PostCard from "../components/community/PostCard";
+import { useUser } from "../components/UserContext";
 
 export default function Community() {
   const [showForm, setShowForm] = useState(false);
   const [editingPost, setEditingPost] = useState(null);
-  const [user, setUser] = useState(null);
+  const { user, loading } = useUser();
   const queryClient = useQueryClient();
-  const hasLoadedUser = useRef(false);
 
   const { data: posts = [], isLoading } = useQuery({
     queryKey: ['community-posts'],
     queryFn: () => base44.entities.CommunityPost.list('-created_date'),
-    staleTime: 30000,
+    staleTime: 60000,
   });
-
-  useEffect(() => {
-    let mounted = true;
-    
-    const loadUser = async () => {
-      if (hasLoadedUser.current || !mounted) return;
-      
-      try {
-        const currentUser = await base44.auth.me();
-        if (!mounted) return;
-        
-        hasLoadedUser.current = true;
-        setUser(currentUser);
-      } catch (error) {
-        console.error("Error loading user:", error);
-      }
-    };
-    
-    loadUser();
-    
-    return () => {
-      mounted = false;
-    };
-  }, []);
 
   const createPostMutation = useMutation({
     mutationFn: (data) => {
@@ -108,7 +84,13 @@ export default function Community() {
     });
   };
 
-  const isInitialUserLoading = user === null && !hasLoadedUser.current;
+  if (loading) {
+    return (
+      <div className="py-6">
+        <p className="text-slate-400 text-center">Carregando...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="py-6 space-y-6">
@@ -143,7 +125,7 @@ export default function Community() {
       )}
 
       <div className="space-y-4">
-        {isLoading || isInitialUserLoading ? (
+        {isLoading ? (
           <p className="text-slate-400 text-center py-12">Carregando posts...</p>
         ) : posts.length > 0 ? (
           posts.map((post) => (

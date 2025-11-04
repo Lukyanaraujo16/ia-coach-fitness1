@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Clock, Zap, Lock, CheckCircle } from "lucide-react";
 import { motion } from "framer-motion";
+import { useUser } from "../components/UserContext"; // Correct path as per outline
 
 const categoryLabels = {
   strength: "Força",
@@ -34,32 +35,33 @@ const difficultyLabels = {
 export default function WorkoutDetail() {
   const navigate = useNavigate();
   const [workout, setWorkout] = useState(null);
-  const [user, setUser] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const { user, loading } = useUser(); // Using useUser hook for user data and loading
+  const [isLoadingWorkout, setIsLoadingWorkout] = useState(true); // New state for workout-specific loading
   const urlParams = new URLSearchParams(window.location.search);
   const workoutId = urlParams.get('id');
   const fromSelection = urlParams.get('from') === 'selection';
 
   useEffect(() => {
-    const loadData = async () => {
+    const loadWorkout = async () => {
+      if (!workoutId) {
+        setIsLoadingWorkout(false); // No workout ID, so nothing to load
+        return;
+      }
+      
       try {
-        setIsLoading(true);
-        const currentUser = await base44.auth.me();
-        setUser(currentUser);
-
-        if (workoutId) {
-          const workouts = await base44.entities.Workout.list();
-          const foundWorkout = workouts.find(w => w.id === workoutId);
-          setWorkout(foundWorkout);
-        }
+        setIsLoadingWorkout(true);
+        // We only fetch the workout here, user data is handled by useUser
+        const workouts = await base44.entities.Workout.list();
+        const foundWorkout = workouts.find(w => w.id === workoutId);
+        setWorkout(foundWorkout);
       } catch (error) {
         console.error("Error loading workout:", error);
       } finally {
-        setIsLoading(false);
+        setIsLoadingWorkout(false);
       }
     };
-    loadData();
-  }, [workoutId]);
+    loadWorkout();
+  }, [workoutId]); // Dependency on workoutId
 
   const isPremium = user?.subscription_status === 'premium';
   const isLocked = workout?.is_premium && !isPremium;
@@ -91,7 +93,8 @@ export default function WorkoutDetail() {
     }
   };
 
-  if (isLoading) {
+  // Combined loading state for user and workout
+  if (loading || isLoadingWorkout) {
     return (
       <div className="py-6">
         <p className="text-slate-400 text-center">Carregando...</p>

@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useRef } from "react";
+import React from "react";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { Link, useNavigate } from "react-router-dom";
@@ -7,6 +7,7 @@ import { createPageUrl } from "@/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Clock, Zap, TrendingUp, CheckCircle, Calendar } from "lucide-react";
+import { useUser } from "../UserContext";
 
 const difficultyLabels = {
   beginner: "Iniciante",
@@ -16,11 +17,7 @@ const difficultyLabels = {
 
 export default function NextWorkoutCard() {
   const navigate = useNavigate();
-  const [user, setUser] = useState(null);
-
-  useEffect(() => {
-    base44.auth.me().then(setUser).catch(console.error);
-  }, []);
+  const { user } = useUser();
 
   const { data: workout } = useQuery({
     queryKey: ['selected-workout', user?.selected_workout_id],
@@ -30,6 +27,7 @@ export default function NextWorkoutCard() {
       return workouts.find(w => w.id === user.selected_workout_id);
     },
     enabled: !!user?.selected_workout_id,
+    staleTime: 60000,
   });
 
   if (!user?.selected_workout_id || !workout) {

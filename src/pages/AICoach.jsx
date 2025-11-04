@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -11,62 +11,37 @@ import { createPageUrl } from "@/utils";
 import PerformanceAnalysis from "../components/ai-coach/PerformanceAnalysis";
 import AIChat from "../components/ai-coach/AIChat";
 import WorkoutGenerator from "../components/ai-coach/WorkoutGenerator";
+import { useUser } from "../components/UserContext"; // New import
 
 export default function AICoach() {
   const [activeTab, setActiveTab] = useState("chat");
-  const [user, setUser] = useState(null);
-  const hasLoadedUser = useRef(false);
-
-  useEffect(() => {
-    let mounted = true;
-    
-    const loadUser = async () => {
-      if (hasLoadedUser.current || !mounted) return;
-      
-      try {
-        const currentUser = await base44.auth.me();
-        if (!mounted) return;
-        
-        hasLoadedUser.current = true;
-        setUser(currentUser);
-      } catch (error) {
-        console.error("Error loading user:", error);
-      }
-    };
-    
-    loadUser();
-    
-    return () => {
-      mounted = false;
-    };
-  }, []);
-
-  const userEmail = user?.email;
-  const workoutId = user?.selected_workout_id;
+  const { user, loading } = useUser(); // Replaced useState and useEffect for user
 
   const { data: workoutLogs = [] } = useQuery({
-    queryKey: ['workout-logs', userEmail],
+    queryKey: ['workout-logs'], // Updated queryKey
     queryFn: async () => {
+      if (!user?.email) return []; // Added check for user.email
       const allLogs = await base44.entities.WorkoutLog.list('-date');
-      return allLogs.filter(log => log.created_by === userEmail);
+      return allLogs.filter(log => log.created_by === user.email);
     },
-    enabled: Boolean(userEmail),
-    staleTime: 30000,
+    enabled: !!user, // Updated enabled condition
+    staleTime: 60000, // Updated staleTime
   });
 
   const { data: selectedWorkout } = useQuery({
-    queryKey: ['selected-workout', workoutId],
+    queryKey: ['selected-workout', user?.selected_workout_id], // Updated queryKey
     queryFn: async () => {
+      if (!user?.selected_workout_id) return null; // Added check for user.selected_workout_id
       const workouts = await base44.entities.Workout.list();
-      return workouts.find(w => w.id === workoutId);
+      return workouts.find(w => w.id === user.selected_workout_id);
     },
-    enabled: Boolean(workoutId),
+    enabled: !!user?.selected_workout_id, // Updated enabled condition
     staleTime: 60000,
   });
 
   const isPremium = user?.subscription_status === 'premium';
 
-  if (!user) {
+  if (loading) { // Replaced if (!user) with if (loading)
     return (
       <div className="py-6">
         <p className="text-slate-400 text-center">Carregando...</p>
