@@ -3,7 +3,7 @@ import React, { useEffect, useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { Link, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { Home, Dumbbell, TrendingUp, Users, User, Crown, Shield, Apple } from "lucide-react";
+import { Home, Dumbbell, TrendingUp, Users, User, Crown, Shield, Apple, Sparkles } from "lucide-react";
 
 export default function Layout({ children, currentPageName }) {
   const location = useLocation();
@@ -29,6 +29,15 @@ export default function Layout({ children, currentPageName }) {
     { name: "Comunidade", path: createPageUrl("Community"), icon: Users },
     { name: "Perfil", path: createPageUrl("Profile"), icon: User },
   ];
+
+  // Adiciona item AI Coach se for premium
+  if (user?.subscription_status === 'premium') {
+    navigationItems.splice(5, 0, {
+      name: "Coach IA",
+      path: createPageUrl("AICoach"),
+      icon: Sparkles,
+    });
+  }
 
   // Adiciona item Admin se for admin
   if (user?.role === 'admin') {
