@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate } from "react-router-dom";
@@ -17,59 +17,72 @@ export default function Home() {
   const queryClient = useQueryClient();
   const [user, setUser] = useState(null);
   const [challengeInput, setChallengeInput] = useState("");
-  const [checkedOnboarding, setCheckedOnboarding] = useState(false); // New state variable
+  const hasCheckedOnboarding = useRef(false);
 
   useEffect(() => {
+    let mounted = true;
+    
     const loadUser = async () => {
+      if (!mounted) return;
+      
       try {
         const currentUser = await base44.auth.me();
+        if (!mounted) return;
+        
         setUser(currentUser);
         
-        // Só redireciona se realmente não tem fitness_goal E ainda não checou
-        if (!currentUser.fitness_goal && !checkedOnboarding) {
-          setCheckedOnboarding(true); // Mark as checked
+        if (!currentUser.fitness_goal && !hasCheckedOnboarding.current) {
+          hasCheckedOnboarding.current = true;
           navigate(createPageUrl("Onboarding"));
         }
       } catch (error) {
         console.error("Error loading user:", error);
       }
     };
+    
     loadUser();
-  }, []); // Removed navigate from dependencies as suggested. `checkedOnboarding` is updated internally within the effect.
+    
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  const userEmail = user?.email;
 
   const { data: workoutLogs = [] } = useQuery({
-    queryKey: ['workout-logs', user?.email],
+    queryKey: ['workout-logs', userEmail],
     queryFn: async () => {
-      if (!user?.email) return [];
       const allLogs = await base44.entities.WorkoutLog.list('-date');
-      return allLogs.filter(log => log.created_by === user.email);
+      return allLogs.filter(log => log.created_by === userEmail);
     },
-    enabled: !!user?.email,
+    enabled: Boolean(userEmail),
+    staleTime: 30000,
   });
 
   const { data: progressEntries = [] } = useQuery({
-    queryKey: ['progress-entries', user?.email],
+    queryKey: ['progress-entries', userEmail],
     queryFn: async () => {
-      if (!user?.email) return [];
       const allEntries = await base44.entities.ProgressEntry.list('-date', 1);
-      return allEntries.filter(entry => entry.created_by === user.email);
+      return allEntries.filter(entry => entry.created_by === userEmail);
     },
-    enabled: !!user?.email,
+    enabled: Boolean(userEmail),
+    staleTime: 30000,
   });
 
   const { data: challenges = [] } = useQuery({
     queryKey: ['challenges'],
     queryFn: () => base44.entities.Challenge.list('-created_date'),
+    staleTime: 60000,
   });
 
   const { data: challengeProgress = [] } = useQuery({
-    queryKey: ['challenge-progress', user?.email],
+    queryKey: ['challenge-progress', userEmail],
     queryFn: async () => {
-      if (!user?.email) return [];
       const allProgress = await base44.entities.ChallengeProgress.list();
-      return allProgress.filter(p => p.created_by === user.email);
+      return allProgress.filter(p => p.created_by === userEmail);
     },
-    enabled: !!user?.email,
+    enabled: Boolean(userEmail),
+    staleTime: 30000,
   });
 
   const activeChallenge = challenges.find(c => c.is_active);

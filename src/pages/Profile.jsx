@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { base44 } from "@/api/base44Client";
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -18,42 +18,53 @@ export default function Profile() {
   const [isEditingName, setIsEditingName] = useState(false);
   const [newName, setNewName] = useState("");
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
+  const hasLoadedUser = useRef(false);
+
+  const workoutId = user?.selected_workout_id;
 
   const { data: selectedWorkout } = useQuery({
-    queryKey: ['selected-workout', user?.selected_workout_id],
+    queryKey: ['selected-workout', workoutId],
     queryFn: async () => {
-      if (!user?.selected_workout_id) return null;
       const workouts = await base44.entities.Workout.list();
-      return workouts.find(w => w.id === user.selected_workout_id);
+      return workouts.find(w => w.id === workoutId);
     },
-    enabled: !!user?.selected_workout_id,
+    enabled: Boolean(workoutId),
+    staleTime: 60000,
   });
 
   const { data: posts = [] } = useQuery({
-    queryKey: ['user-posts'],
+    queryKey: ['user-posts', user?.email],
     queryFn: async () => {
-      if (!user) return [];
       const allPosts = await base44.entities.CommunityPost.list();
       return allPosts.filter(p => p.created_by === user.email);
     },
-    enabled: !!user,
+    enabled: Boolean(user?.email),
+    staleTime: 30000,
   });
 
   useEffect(() => {
+    let mounted = true;
+    
     const loadUser = async () => {
+      if (hasLoadedUser.current || !mounted) return;
+      
       try {
-        setIsLoading(true);
         const currentUser = await base44.auth.me();
+        if (!mounted) return;
+        
+        hasLoadedUser.current = true;
         setUser(currentUser);
         setNewName(currentUser.full_name || "");
       } catch (error) {
         console.error("Error loading user:", error);
-      } finally {
-        setIsLoading(false);
       }
     };
+    
     loadUser();
+    
+    return () => {
+      mounted = false;
+    };
   }, []);
 
   const updateNameMutation = useMutation({
@@ -128,7 +139,7 @@ export default function Profile() {
 
   const isPremium = user?.subscription_status === 'premium';
 
-  if (isLoading) {
+  if (!user) {
     return (
       <div className="py-6">
         <p className="text-slate-400 text-center">Carregando...</p>

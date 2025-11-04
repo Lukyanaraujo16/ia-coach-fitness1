@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -16,36 +16,48 @@ export default function Nutrition() {
   const [activeTab, setActiveTab] = useState("counter");
   const [user, setUser] = useState(null);
   const [showGoalsModal, setShowGoalsModal] = useState(false);
-  const [isLoadingUser, setIsLoadingUser] = useState(true);
+  const hasLoadedUser = useRef(false);
 
   useEffect(() => {
+    let mounted = true;
+    
     const loadUser = async () => {
+      if (hasLoadedUser.current || !mounted) return;
+      
       try {
-        setIsLoadingUser(true);
         const currentUser = await base44.auth.me();
+        if (!mounted) return;
+        
+        hasLoadedUser.current = true;
         setUser(currentUser);
       } catch (error) {
         console.error("Error loading user:", error);
-      } finally {
-        setIsLoadingUser(false);
       }
     };
+    
     loadUser();
-  }, []); // Array vazio
+    
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  const userEmail = user?.email;
 
   const { data: mealLogs = [] } = useQuery({
-    queryKey: ['meal-logs', user?.email],
+    queryKey: ['meal-logs', userEmail],
     queryFn: async () => {
-      if (!user?.email) return [];
       const allLogs = await base44.entities.MealLog.list('-date');
-      return allLogs.filter(log => log.created_by === user.email);
+      return allLogs.filter(log => log.created_by === userEmail);
     },
-    enabled: !!user?.email && !isLoadingUser, // Only enabled if user is loaded and not null
+    enabled: Boolean(userEmail),
+    staleTime: 30000,
   });
 
   const { data: nutritionPlans = [] } = useQuery({
     queryKey: ['nutrition-plans'],
     queryFn: () => base44.entities.NutritionPlan.list(),
+    staleTime: 60000,
   });
 
   // Calcular calorias e macros de hoje - usando data local

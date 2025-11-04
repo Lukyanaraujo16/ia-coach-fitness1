@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -15,46 +15,58 @@ import WorkoutGenerator from "../components/ai-coach/WorkoutGenerator";
 export default function AICoach() {
   const [activeTab, setActiveTab] = useState("chat");
   const [user, setUser] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const hasLoadedUser = useRef(false);
 
   useEffect(() => {
+    let mounted = true;
+    
     const loadUser = async () => {
+      if (hasLoadedUser.current || !mounted) return;
+      
       try {
-        setIsLoading(true);
         const currentUser = await base44.auth.me();
+        if (!mounted) return;
+        
+        hasLoadedUser.current = true;
         setUser(currentUser);
       } catch (error) {
         console.error("Error loading user:", error);
-      } finally {
-        setIsLoading(false);
       }
     };
+    
     loadUser();
+    
+    return () => {
+      mounted = false;
+    };
   }, []);
 
+  const userEmail = user?.email;
+  const workoutId = user?.selected_workout_id;
+
   const { data: workoutLogs = [] } = useQuery({
-    queryKey: ['workout-logs', user?.email],
+    queryKey: ['workout-logs', userEmail],
     queryFn: async () => {
-      if (!user?.email) return [];
       const allLogs = await base44.entities.WorkoutLog.list('-date');
-      return allLogs.filter(log => log.created_by === user.email);
+      return allLogs.filter(log => log.created_by === userEmail);
     },
-    enabled: !!user?.email,
+    enabled: Boolean(userEmail),
+    staleTime: 30000,
   });
 
   const { data: selectedWorkout } = useQuery({
-    queryKey: ['selected-workout', user?.selected_workout_id],
+    queryKey: ['selected-workout', workoutId],
     queryFn: async () => {
-      if (!user?.selected_workout_id) return null;
       const workouts = await base44.entities.Workout.list();
-      return workouts.find(w => w.id === user.selected_workout_id);
+      return workouts.find(w => w.id === workoutId);
     },
-    enabled: !!user?.selected_workout_id,
+    enabled: Boolean(workoutId),
+    staleTime: 60000,
   });
 
   const isPremium = user?.subscription_status === 'premium';
 
-  if (isLoading) {
+  if (!user) {
     return (
       <div className="py-6">
         <p className="text-slate-400 text-center">Carregando...</p>

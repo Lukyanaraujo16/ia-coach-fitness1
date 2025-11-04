@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -14,42 +14,55 @@ export default function Progress() {
   const [activeTab, setActiveTab] = useState("weight");
   const [showForm, setShowForm] = useState(false);
   const [user, setUser] = useState(null);
-  const [isLoadingUser, setIsLoadingUser] = useState(true);
   const queryClient = useQueryClient();
+  const hasLoadedUser = useRef(false);
 
   useEffect(() => {
+    let mounted = true;
+    
     const loadUser = async () => {
+      if (hasLoadedUser.current || !mounted) return;
+      
       try {
-        setIsLoadingUser(true);
         const currentUser = await base44.auth.me();
+        if (!mounted) return;
+        
+        hasLoadedUser.current = true;
         setUser(currentUser);
       } catch (error) {
         console.error("Error loading user:", error);
-      } finally {
-        setIsLoadingUser(false);
       }
     };
+    
     loadUser();
+    
+    return () => {
+      mounted = false;
+    };
   }, []);
 
+  const userEmail = user?.email;
+
   const { data: progressEntries = [] } = useQuery({
-    queryKey: ['progress-entries', user?.email],
+    queryKey: ['progress-entries', userEmail],
     queryFn: async () => {
-      if (!user?.email) return [];
+      if (!userEmail) return [];
       const allEntries = await base44.entities.ProgressEntry.list('-date');
-      return allEntries.filter(entry => entry.created_by === user.email);
+      return allEntries.filter(entry => entry.created_by === userEmail);
     },
-    enabled: !!user?.email && !isLoadingUser,
+    enabled: Boolean(userEmail),
+    staleTime: 30000,
   });
 
   const { data: workoutLogs = [] } = useQuery({
-    queryKey: ['workout-logs', user?.email],
+    queryKey: ['workout-logs', userEmail],
     queryFn: async () => {
-      if (!user?.email) return [];
+      if (!userEmail) return [];
       const allLogs = await base44.entities.WorkoutLog.list('-date');
-      return allLogs.filter(log => log.created_by === user.email);
+      return allLogs.filter(log => log.created_by === userEmail);
     },
-    enabled: !!user?.email && !isLoadingUser,
+    enabled: Boolean(userEmail),
+    staleTime: 30000,
   });
 
   const createProgressMutation = useMutation({

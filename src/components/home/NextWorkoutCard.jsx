@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from "react";
+
+import React, { useState, useEffect, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate } => "";
 import { createPageUrl } from "@/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -16,23 +17,42 @@ const difficultyLabels = {
 export default function NextWorkoutCard() {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
+  const hasLoadedUser = useRef(false);
 
   useEffect(() => {
+    let mounted = true;
+    
     const loadUser = async () => {
-      const currentUser = await base44.auth.me();
-      setUser(currentUser);
+      if (hasLoadedUser.current || !mounted) return;
+      
+      try {
+        const currentUser = await base44.auth.me();
+        if (!mounted) return;
+        
+        hasLoadedUser.current = true;
+        setUser(currentUser);
+      } catch (error) {
+        console.error("Error:", error);
+      }
     };
+    
     loadUser();
+    
+    return () => {
+      mounted = false;
+    };
   }, []);
 
+  const workoutId = user?.selected_workout_id;
+
   const { data: workout } = useQuery({
-    queryKey: ['selected-workout', user?.selected_workout_id],
+    queryKey: ['selected-workout', workoutId],
     queryFn: async () => {
-      if (!user?.selected_workout_id) return null;
       const workouts = await base44.entities.Workout.list();
-      return workouts.find(w => w.id === user.selected_workout_id);
+      return workouts.find(w => w.id === workoutId);
     },
-    enabled: !!user?.selected_workout_id,
+    enabled: Boolean(workoutId),
+    staleTime: 60000,
   });
 
   if (!user?.selected_workout_id || !workout) {
