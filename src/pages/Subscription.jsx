@@ -1,24 +1,27 @@
-
-import React from "react";
+import React, { useState, useEffect } from "react";
+import { base44 } from "@/api/base44Client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Check, Crown, Sparkles, Zap, Lock, Users, BarChart, HeartPulse } from "lucide-react";
 import { motion } from "framer-motion";
-import { useUser } from "../components/UserContext";
 
 export default function Subscription() {
-  const { user, loading } = useUser();
+  const [user, setUser] = useState(null);
+
+  useEffect(() => {
+    const loadUser = async () => {
+      try {
+        const currentUser = await base44.auth.me();
+        setUser(currentUser);
+      } catch (error) {
+        console.error("Error loading user:", error);
+      }
+    };
+    loadUser();
+  }, []);
 
   const isPremium = user?.subscription_status === 'premium';
-
-  if (loading) {
-    return (
-      <div className="py-6">
-        <p className="text-slate-400 text-center">Carregando...</p>
-      </div>
-    );
-  }
 
   const features = [
     { icon: Zap, text: "Acesso ilimitado a todos os treinos", premium: false },

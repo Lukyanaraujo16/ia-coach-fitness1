@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,14 +10,13 @@ import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import ProfileStats from "../components/profile/ProfileStats";
 import ProfileInfo from "../components/profile/ProfileInfo";
-import { useUser } from "../components/UserContext";
 
 export default function Profile() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { user, loading, setUser } = useUser();
+  const [user, setUser] = useState(null);
   const [isEditingName, setIsEditingName] = useState(false);
-  const [newName, setNewName] = useState(user?.full_name || "");
+  const [newName, setNewName] = useState("");
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   const { data: selectedWorkout } = useQuery({
@@ -28,23 +27,35 @@ export default function Profile() {
       return workouts.find(w => w.id === user.selected_workout_id);
     },
     enabled: !!user?.selected_workout_id,
-    staleTime: 60000,
   });
 
   const { data: posts = [] } = useQuery({
-    queryKey: ['user-posts', user?.email],
+    queryKey: ['user-posts'],
     queryFn: async () => {
-      if (!user?.email) return [];
+      if (!user) return [];
       const allPosts = await base44.entities.CommunityPost.list();
       return allPosts.filter(p => p.created_by === user.email);
     },
-    enabled: !!user?.email,
-    staleTime: 60000,
+    enabled: !!user,
   });
+
+  useEffect(() => {
+    const loadUser = async () => {
+      try {
+        const currentUser = await base44.auth.me();
+        setUser(currentUser);
+        setNewName(currentUser.full_name || "");
+      } catch (error) {
+        console.error("Error loading user:", error);
+      }
+    };
+    loadUser();
+  }, []);
 
   const updateNameMutation = useMutation({
     mutationFn: async (name) => {
       await base44.auth.updateMe({ full_name: name });
+      // Recarregar os dados do usuário após atualizar
       const updatedUser = await base44.auth.me();
       return updatedUser;
     },
@@ -113,14 +124,6 @@ export default function Profile() {
 
   const isPremium = user?.subscription_status === 'premium';
 
-  if (loading) {
-    return (
-      <div className="py-6">
-        <p className="text-slate-400 text-center">Carregando...</p>
-      </div>
-    );
-  }
-
   return (
     <div className="py-6 space-y-6">
       {/* Profile Header */}
@@ -164,7 +167,7 @@ export default function Profile() {
               ) : (
                 <div className="flex items-center gap-2 mb-1">
                   <h2 className="text-2xl font-bold text-white">
-                    {user?.full_name || 'Usuário'}
+                    {user?.full_name || 'Carregando...'}
                   </h2>
                   <Button
                     size="icon"

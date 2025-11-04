@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -11,28 +11,37 @@ import NutritionStats from "../components/nutrition/NutritionStats";
 import MealHistory from "../components/nutrition/MealHistory";
 import NutritionPlans from "../components/nutrition/NutritionPlans";
 import NutritionGoalsModal from "../components/nutrition/NutritionGoalsModal";
-import { useUser } from "../components/UserContext";
 
 export default function Nutrition() {
   const [activeTab, setActiveTab] = useState("counter");
+  const [user, setUser] = useState(null);
   const [showGoalsModal, setShowGoalsModal] = useState(false);
-  const { user, loading } = useUser(); // Using the new useUser hook
+
+  useEffect(() => {
+    const loadUser = async () => {
+      try {
+        const currentUser = await base44.auth.me();
+        setUser(currentUser);
+      } catch (error) {
+        console.error("Error loading user:", error);
+      }
+    };
+    loadUser();
+  }, []);
 
   const { data: mealLogs = [] } = useQuery({
-    queryKey: ['meal-logs', user?.email], // Changed queryKey to include user.email for better caching
+    queryKey: ['meal-logs', user?.email],
     queryFn: async () => {
-      if (!user?.email) return []; // Ensure user email exists before fetching
+      if (!user?.email) return [];
       const allLogs = await base44.entities.MealLog.list('-date');
       return allLogs.filter(log => log.created_by === user.email);
     },
-    enabled: !!user, // Query is enabled only when a user object exists
-    staleTime: 60000,
+    enabled: !!user?.email,
   });
 
   const { data: nutritionPlans = [] } = useQuery({
     queryKey: ['nutrition-plans'],
     queryFn: () => base44.entities.NutritionPlan.list(),
-    staleTime: 60000,
   });
 
   // Calcular calorias e macros de hoje - usando data local
@@ -61,14 +70,6 @@ export default function Nutrition() {
   const proteinGoal = Math.round((calorieGoal * (proteinPercentage / 100)) / 4);
   const carbsGoal = Math.round((calorieGoal * (carbsPercentage / 100)) / 4);
   const fatGoal = Math.round((calorieGoal * (fatPercentage / 100)) / 9);
-
-  if (loading) {
-    return (
-      <div className="py-6">
-        <p className="text-slate-400 text-center">Carregando...</p>
-      </div>
-    );
-  }
 
   return (
     <div className="py-6 space-y-6">

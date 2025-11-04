@@ -1,23 +1,37 @@
-import React from "react";
+
+import React, { useEffect, useState } from "react";
+import { base44 } from "@/api/base44Client";
 import { Link, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Home, Dumbbell, TrendingUp, Users, User, Crown, Shield, Apple } from "lucide-react";
-import { UserProvider, useUser } from "./components/UserContext";
 
-function LayoutContent({ children, currentPageName }) {
+export default function Layout({ children, currentPageName }) {
   const location = useLocation();
-  const { user } = useUser();
+  const [user, setUser] = useState(null);
+
+  useEffect(() => {
+    const loadUser = async () => {
+      try {
+        const currentUser = await base44.auth.me();
+        setUser(currentUser);
+      } catch (error) {
+        console.error("Error loading user:", error);
+      }
+    };
+    loadUser();
+  }, []);
 
   const navigationItems = [
     { name: "Home", path: createPageUrl("Home"), icon: Home },
     { name: "Treinos", path: createPageUrl("Workouts"), icon: Dumbbell },
     { name: "Nutrição", path: createPageUrl("Nutrition"), icon: Apple },
-    { name: "IA Coach", path: createPageUrl("AICoach"), icon: Users },
+    { name: "IA Coach", path: createPageUrl("AICoach"), icon: Users }, // Changed to a temporary icon
     { name: "Progresso", path: createPageUrl("Progress"), icon: TrendingUp },
     { name: "Comunidade", path: createPageUrl("Community"), icon: Users },
     { name: "Perfil", path: createPageUrl("Profile"), icon: User },
   ];
 
+  // Adiciona item Admin se for admin
   if (user?.role === 'admin') {
     navigationItems.push({
       name: "Admin",
@@ -26,6 +40,7 @@ function LayoutContent({ children, currentPageName }) {
     });
   }
 
+  // Esconder navegação durante execução de treino
   const isWorkoutExecution = currentPageName === "WorkoutExecution";
 
   return (
@@ -37,15 +52,9 @@ function LayoutContent({ children, currentPageName }) {
           --bg-dark: #0A0A0A;
           --bg-card: #1A1A1A;
         }
-        .scrollbar-hide::-webkit-scrollbar {
-          display: none;
-        }
-        .scrollbar-hide {
-          -ms-overflow-style: none;
-          scrollbar-width: none;
-        }
       `}</style>
 
+      {/* Header - Escondido durante execução de treino */}
       {!isWorkoutExecution && (
         <header className="fixed top-0 left-0 right-0 z-50 bg-slate-950/80 backdrop-blur-xl border-b border-slate-800/50">
           <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
@@ -65,10 +74,12 @@ function LayoutContent({ children, currentPageName }) {
         </header>
       )}
 
+      {/* Main Content */}
       <main className={!isWorkoutExecution ? 'pt-20 max-w-7xl mx-auto px-4' : ''}>
         {children}
       </main>
 
+      {/* Bottom Navigation - Escondido durante execução de treino */}
       {!isWorkoutExecution && (
         <nav className="fixed bottom-0 left-0 right-0 bg-slate-950/95 backdrop-blur-xl border-t border-slate-800/50 z-50">
           <div className="max-w-7xl mx-auto">
@@ -95,14 +106,16 @@ function LayoutContent({ children, currentPageName }) {
           </div>
         </nav>
       )}
-    </div>
-  );
-}
 
-export default function Layout({ children, currentPageName }) {
-  return (
-    <UserProvider>
-      <LayoutContent children={children} currentPageName={currentPageName} />
-    </UserProvider>
+      <style>{`
+        .scrollbar-hide::-webkit-scrollbar {
+          display: none;
+        }
+        .scrollbar-hide {
+          -ms-overflow-style: none;
+          scrollbar-width: none;
+        }
+      `}</style>
+    </div>
   );
 }

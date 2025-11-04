@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
@@ -34,7 +33,6 @@ export default function WorkoutSelection() {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [selectedWorkout, setSelectedWorkout] = useState(null);
-  const [checkedUser, setCheckedUser] = useState(false); // Added state
 
   const { data: workouts = [], isLoading } = useQuery({
     queryKey: ['workouts'],
@@ -47,21 +45,15 @@ export default function WorkoutSelection() {
         const currentUser = await base44.auth.me();
         setUser(currentUser);
         
-        // Só redireciona se já tem treino selecionado E ainda não checou
-        if (currentUser.selected_workout_id && !checkedUser) {
-          setCheckedUser(true); // Mark as checked to prevent re-navigation
-          navigate(createPageUrl("Home"), { replace: true });
+        if (currentUser.selected_workout_id) {
+          navigate(createPageUrl("Home"));
         }
       } catch (error) {
         console.error("Error loading user:", error);
       }
     };
-    
-    // Only load user if not already checked to prevent infinite loop or unnecessary calls
-    if (!checkedUser) {
-      loadUser();
-    }
-  }, []); // Array vazio - só executa uma vez
+    loadUser();
+  }, [navigate]);
 
   const filteredWorkouts = workouts.filter(workout => {
     const matchesLevel = workout.difficulty === user?.fitness_level;
@@ -88,7 +80,7 @@ export default function WorkoutSelection() {
     navigate(createPageUrl("WorkoutDetail") + `?id=${workout.id}&from=selection`);
   };
 
-  if (isLoading || !user || !checkedUser) { // Include checkedUser in loading state to prevent flickering
+  if (isLoading || !user) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 flex items-center justify-center">
         <p className="text-slate-400">Carregando...</p>

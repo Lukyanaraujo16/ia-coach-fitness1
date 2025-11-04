@@ -1,5 +1,4 @@
-
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -8,25 +7,34 @@ import { Search, Lock } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import WorkoutCard from "../components/workouts/WorkoutCard";
 import ExerciseLibrary from "../components/workouts/ExerciseLibrary";
-import { useUser } from "../components/UserContext";
 
 export default function Workouts() {
   const [activeTab, setActiveTab] = useState("workouts");
   const [searchQuery, setSearchQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
-  const { user } = useUser();
+  const [user, setUser] = useState(null);
 
   const { data: workouts = [], isLoading: loadingWorkouts } = useQuery({
     queryKey: ['workouts'],
     queryFn: () => base44.entities.Workout.list(),
-    staleTime: 60000,
   });
 
   const { data: exercises = [], isLoading: loadingExercises } = useQuery({
     queryKey: ['exercises'],
     queryFn: () => base44.entities.Exercise.list(),
-    staleTime: 60000,
   });
+
+  useEffect(() => {
+    const loadUser = async () => {
+      try {
+        const currentUser = await base44.auth.me();
+        setUser(currentUser);
+      } catch (error) {
+        console.error("Error loading user:", error);
+      }
+    };
+    loadUser();
+  }, []);
 
   const isPremium = user?.subscription_status === 'premium';
 

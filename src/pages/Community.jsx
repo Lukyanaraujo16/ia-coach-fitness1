@@ -1,24 +1,33 @@
-
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import CreatePostForm from "../components/community/CreatePostForm";
 import PostCard from "../components/community/PostCard";
-import { useUser } from "../components/UserContext";
 
 export default function Community() {
   const [showForm, setShowForm] = useState(false);
   const [editingPost, setEditingPost] = useState(null);
-  const { user, loading } = useUser();
+  const [user, setUser] = useState(null);
   const queryClient = useQueryClient();
 
   const { data: posts = [], isLoading } = useQuery({
     queryKey: ['community-posts'],
     queryFn: () => base44.entities.CommunityPost.list('-created_date'),
-    staleTime: 60000,
   });
+
+  useEffect(() => {
+    const loadUser = async () => {
+      try {
+        const currentUser = await base44.auth.me();
+        setUser(currentUser);
+      } catch (error) {
+        console.error("Error loading user:", error);
+      }
+    };
+    loadUser();
+  }, []);
 
   const createPostMutation = useMutation({
     mutationFn: (data) => {
@@ -83,14 +92,6 @@ export default function Community() {
       likedBy: post.liked_by || [],
     });
   };
-
-  if (loading) {
-    return (
-      <div className="py-6">
-        <p className="text-slate-400 text-center">Carregando...</p>
-      </div>
-    );
-  }
 
   return (
     <div className="py-6 space-y-6">

@@ -1,5 +1,4 @@
-
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -9,34 +8,43 @@ import WeightChart from "../components/progress/WeightChart";
 import ProgressForm from "../components/progress/ProgressForm";
 import WorkoutHistory from "../components/progress/WorkoutHistory";
 import ProgressPhotos from "../components/progress/ProgressPhotos";
-import { useUser } from "../components/UserContext";
 
 export default function Progress() {
   const [activeTab, setActiveTab] = useState("weight");
   const [showForm, setShowForm] = useState(false);
-  const { user, loading } = useUser();
+  const [user, setUser] = useState(null);
   const queryClient = useQueryClient();
 
+  useEffect(() => {
+    const loadUser = async () => {
+      try {
+        const currentUser = await base44.auth.me();
+        setUser(currentUser);
+      } catch (error) {
+        console.error("Error loading user:", error);
+      }
+    };
+    loadUser();
+  }, []);
+
   const { data: progressEntries = [] } = useQuery({
-    queryKey: ['progress-entries'],
+    queryKey: ['progress-entries', user?.email],
     queryFn: async () => {
       if (!user?.email) return [];
       const allEntries = await base44.entities.ProgressEntry.list('-date');
       return allEntries.filter(entry => entry.created_by === user.email);
     },
-    enabled: !!user,
-    staleTime: 60000,
+    enabled: !!user?.email,
   });
 
   const { data: workoutLogs = [] } = useQuery({
-    queryKey: ['workout-logs'],
+    queryKey: ['workout-logs', user?.email],
     queryFn: async () => {
       if (!user?.email) return [];
       const allLogs = await base44.entities.WorkoutLog.list('-date');
       return allLogs.filter(log => log.created_by === user.email);
     },
-    enabled: !!user,
-    staleTime: 60000,
+    enabled: !!user?.email,
   });
 
   const createProgressMutation = useMutation({
@@ -50,14 +58,6 @@ export default function Progress() {
   const handleSubmitProgress = (data) => {
     createProgressMutation.mutate(data);
   };
-
-  if (loading) {
-    return (
-      <div className="py-6">
-        <p className="text-slate-400 text-center">Carregando...</p>
-      </div>
-    );
-  }
 
   return (
     <div className="py-6 space-y-6">
