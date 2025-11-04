@@ -1,9 +1,12 @@
-
 import React, { useState } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { base44 } from "@/api/base44Client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Coffee, Sun, Cookie, Moon, Zap, ChevronDown, ChevronUp } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Coffee, Sun, Cookie, Moon, Zap, ChevronDown, ChevronUp, Edit2, Plus, Save, X, Loader2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 const mealIcons = {
@@ -24,6 +27,109 @@ const mealLabels = {
 
 export default function MealHistory({ mealLogs = [] }) {
   const [expandedMeal, setExpandedMeal] = useState(null);
+  const [editingMeal, setEditingMeal] = useState(null);
+  const [newFoodName, setNewFoodName] = useState("");
+  const [newFoodQuantity, setNewFoodQuantity] = useState("");
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const queryClient = useQueryClient();
+
+  const updateMealMutation = useMutation({
+    mutationFn: ({ mealId, data }) => base44.entities.MealLog.update(mealId, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['meal-logs']);
+      setEditingMeal(null);
+      setNewFoodName("");
+      setNewFoodQuantity("");
+    },
+  });
+
+  // Obter data de hoje no formato local
+  const getTodayDate = () => {
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  const todayDate = getTodayDate();
+
+  // Verificar se uma refeição é de hoje
+  const isTodayMeal = (mealDate) => {
+    return mealDate === todayDate;
+  };
+
+  const handleAddFoodItem = async (meal) => {
+    if (!newFoodName.trim() || !newFoodQuantity.trim()) {
+      alert("Preencha o nome e a quantidade do alimento");
+      return;
+    }
+
+    setIsAnalyzing(true);
+
+    try {
+      // Usar IA para estimar as calorias e macros do novo item
+      const analysis = await base44.integrations.Core.InvokeLLM({
+        prompt: `
+Analise o seguinte alimento e forneça informações nutricionais:
+- Alimento: ${newFoodName}
+- Quantidade: ${newFoodQuantity}
+
+Calcule:
+- Calorias
+- Proteínas (g)
+- Carboidratos (g)
+- Gorduras (g)
+
+Seja preciso com base na quantidade informada.
+`,
+        response_json_schema: {
+          type: "object",
+          properties: {
+            calories: { type: "number" },
+            protein: { type: "number" },
+            carbs: { type: "number" },
+            fat: { type: "number" }
+          }
+        }
+      });
+
+      // Criar novo item
+      const newItem = {
+        name: newFoodName,
+        quantity: newFoodQuantity,
+        calories: analysis.calories
+      };
+
+      // Atualizar lista de alimentos
+      const updatedFoodItems = [...meal.food_items, newItem];
+
+      // Recalcular totais
+      const newTotalCalories = meal.total_calories + analysis.calories;
+      const newMacros = {
+        protein: meal.macros.protein + analysis.protein,
+        carbs: meal.macros.carbs + analysis.carbs,
+        fat: meal.macros.fat + analysis.fat,
+        fiber: meal.macros.fiber // Mantém o mesmo
+      };
+
+      // Atualizar no banco
+      updateMealMutation.mutate({
+        mealId: meal.id,
+        data: {
+          food_items: updatedFoodItems,
+          total_calories: newTotalCalories,
+          macros: newMacros
+        }
+      });
+
+    } catch (error) {
+      console.error("Erro ao adicionar alimento:", error);
+      alert("Erro ao adicionar alimento. Tente novamente.");
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
 
   // Agrupar por data
   const groupedByDate = mealLogs.reduce((acc, log) => {
@@ -58,9 +164,9 @@ export default function MealHistory({ mealLogs = [] }) {
       {sortedDates.map((date) => {
         const meals = groupedByDate[date];
         const totalCalories = meals.reduce((sum, m) => sum + (m.total_calories || 0), 0);
+        const isToday = isTodayMeal(date);
         
-        // Usar data local para formatação
-        const dateObj = new Date(date + 'T12:00:00'); // Adicionar meio-dia para evitar problema de fuso
+        const dateObj = new Date(date + 'T12:00:00');
         const formattedDate = dateObj.toLocaleDateString('pt-BR', {
           weekday: 'long',
           day: '2-digit',
@@ -72,7 +178,14 @@ export default function MealHistory({ mealLogs = [] }) {
             <CardContent className="p-4">
               <div className="flex items-center justify-between mb-4">
                 <div>
-                  <p className="text-white font-semibold capitalize">{formattedDate}</p>
+                  <div className="flex items-center gap-2">
+                    <p className="text-white font-semibold capitalize">{formattedDate}</p>
+                    {isToday && (
+                      <Badge className="bg-green-600/20 text-green-400 text-xs">
+                        Hoje
+                      </Badge>
+                    )}
+                  </div>
                   <p className="text-slate-400 text-sm">{meals.length} refeições</p>
                 </div>
                 <div className="text-right">
@@ -85,6 +198,7 @@ export default function MealHistory({ mealLogs = [] }) {
                 {meals.map((meal) => {
                   const Icon = mealIcons[meal.meal_type] || Cookie;
                   const isExpanded = expandedMeal === meal.id;
+                  const isEditing = editingMeal === meal.id;
 
                   return (
                     <div
@@ -168,7 +282,19 @@ export default function MealHistory({ mealLogs = [] }) {
 
                               {/* Food Items */}
                               <div>
-                                <p className="text-slate-400 text-xs mb-2">Alimentos:</p>
+                                <div className="flex items-center justify-between mb-2">
+                                  <p className="text-slate-400 text-xs">Alimentos:</p>
+                                  {isToday && !isEditing && (
+                                    <Button
+                                      size="sm"
+                                      onClick={() => setEditingMeal(meal.id)}
+                                      className="bg-blue-600/20 border border-blue-600/30 text-blue-400 hover:bg-blue-600/30 h-7 text-xs"
+                                    >
+                                      <Edit2 className="w-3 h-3 mr-1" />
+                                      Editar
+                                    </Button>
+                                  )}
+                                </div>
                                 <div className="space-y-1">
                                   {meal.food_items?.map((item, idx) => (
                                     <div
@@ -185,6 +311,70 @@ export default function MealHistory({ mealLogs = [] }) {
                                   ))}
                                 </div>
                               </div>
+
+                              {/* Edit Form */}
+                              {isEditing && isToday && (
+                                <motion.div
+                                  initial={{ opacity: 0, y: -10 }}
+                                  animate={{ opacity: 1, y: 0 }}
+                                  className="p-3 bg-blue-900/20 border border-blue-800/50 rounded-lg space-y-3"
+                                >
+                                  <p className="text-blue-400 text-sm font-semibold">
+                                    ➕ Adicionar Item
+                                  </p>
+                                  <div className="space-y-2">
+                                    <div>
+                                      <Label className="text-slate-300 text-xs">Nome do Alimento</Label>
+                                      <Input
+                                        value={newFoodName}
+                                        onChange={(e) => setNewFoodName(e.target.value)}
+                                        placeholder="Ex: Ovo cozido"
+                                        className="bg-slate-800 border-slate-700 text-white h-10"
+                                      />
+                                    </div>
+                                    <div>
+                                      <Label className="text-slate-300 text-xs">Quantidade</Label>
+                                      <Input
+                                        value={newFoodQuantity}
+                                        onChange={(e) => setNewFoodQuantity(e.target.value)}
+                                        placeholder="Ex: 2 unidades"
+                                        className="bg-slate-800 border-slate-700 text-white h-10"
+                                      />
+                                    </div>
+                                  </div>
+                                  <div className="flex gap-2">
+                                    <Button
+                                      variant="outline"
+                                      onClick={() => {
+                                        setEditingMeal(null);
+                                        setNewFoodName("");
+                                        setNewFoodQuantity("");
+                                      }}
+                                      className="flex-1 bg-slate-800 border-slate-600 text-slate-200 h-10"
+                                    >
+                                      <X className="w-4 h-4 mr-1" />
+                                      Cancelar
+                                    </Button>
+                                    <Button
+                                      onClick={() => handleAddFoodItem(meal)}
+                                      disabled={isAnalyzing || updateMealMutation.isPending}
+                                      className="flex-1 bg-blue-600 hover:bg-blue-700 h-10"
+                                    >
+                                      {isAnalyzing || updateMealMutation.isPending ? (
+                                        <>
+                                          <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+                                          Analisando...
+                                        </>
+                                      ) : (
+                                        <>
+                                          <Plus className="w-4 h-4 mr-1" />
+                                          Adicionar
+                                        </>
+                                      )}
+                                    </Button>
+                                  </div>
+                                </motion.div>
+                              )}
 
                               {/* Notes */}
                               {meal.notes && (
