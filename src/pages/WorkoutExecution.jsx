@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -8,7 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft, Play, Pause, SkipForward, CheckCircle, Plus, Minus, AlertTriangle, Trophy, Clock, Zap } from "lucide-react";
+import { ArrowLeft, Play, Pause, SkipForward, CheckCircle, Plus, Minus, AlertTriangle, Trophy, Clock, Zap, X } from "lucide-react";
 import { motion } from "framer-motion";
 
 export default function WorkoutExecution() {
@@ -24,10 +23,12 @@ export default function WorkoutExecution() {
   const [skippedExercises, setSkippedExercises] = useState([]);
   const [restTime, setRestTime] = useState(60);
   const [isResting, setIsResting] = useState(false);
+  const [restStartTime, setRestStartTime] = useState(null);
   const [timeRemaining, setTimeRemaining] = useState(60);
   const [showCaloriesInput, setShowCaloriesInput] = useState(false);
   const [caloriesInput, setCaloriesInput] = useState("");
   const [showSkipWarning, setShowSkipWarning] = useState(false);
+  const [showExitConfirm, setShowExitConfirm] = useState(false);
   const [user, setUser] = useState(null);
   const [startTime, setStartTime] = useState(null);
   const [endTime, setEndTime] = useState(null);
@@ -57,17 +58,30 @@ export default function WorkoutExecution() {
     loadWorkout();
   }, [workoutId, dayNumber]);
 
+  // Timer com controle baseado em timestamp real
   useEffect(() => {
     let interval;
-    if (isResting && timeRemaining > 0) {
+    
+    if (isResting && restStartTime) {
       interval = setInterval(() => {
-        setTimeRemaining(prev => prev - 1);
-      }, 1000);
-    } else if (timeRemaining === 0) {
-      setIsResting(false);
+        const now = Date.now();
+        const elapsed = Math.floor((now - restStartTime) / 1000);
+        const remaining = restTime - elapsed;
+        
+        if (remaining <= 0) {
+          setTimeRemaining(0);
+          setIsResting(false);
+          setRestStartTime(null);
+        } else {
+          setTimeRemaining(remaining);
+        }
+      }, 100); // Atualiza a cada 100ms para mais precisão
     }
-    return () => clearInterval(interval);
-  }, [isResting, timeRemaining]);
+    
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [isResting, restStartTime, restTime]);
 
   const createWorkoutLogMutation = useMutation({
     mutationFn: (data) => base44.entities.WorkoutLog.create(data),
@@ -104,10 +118,28 @@ export default function WorkoutExecution() {
 
   const handleStartRest = () => {
     setIsResting(true);
+    setRestStartTime(Date.now());
+    setTimeRemaining(restTime);
+  };
+
+  const handlePauseRest = () => {
+    if (isResting && restStartTime) {
+      // Calcula quanto tempo já passou
+      const now = Date.now();
+      const elapsed = Math.floor((now - restStartTime) / 1000);
+      const remaining = restTime - elapsed;
+      
+      // Atualiza o restTime para ser o tempo restante
+      setRestTime(Math.max(remaining, 0));
+      setTimeRemaining(Math.max(remaining, 0));
+      setIsResting(false);
+      setRestStartTime(null);
+    }
   };
 
   const handleNextExercise = () => {
     setIsResting(false);
+    setRestStartTime(null);
     
     if (isLastExercise) {
       if (skippedExercises.length > 0) {
@@ -119,7 +151,7 @@ export default function WorkoutExecution() {
       const nextExercise = currentDay.exercises[currentExerciseIndex + 1];
       setCurrentExerciseIndex(currentExerciseIndex + 1);
       if (nextExercise?.sets?.[0]?.rest_seconds) {
-        const nextRest = nextExercise.sets[0].rest_seconds; // Corrected path
+        const nextRest = nextExercise.sets[0].rest_seconds;
         setRestTime(nextRest);
         setTimeRemaining(nextRest);
       }
@@ -147,7 +179,7 @@ export default function WorkoutExecution() {
 
     const durationMinutes = endTime && startTime 
       ? Math.round((endTime - startTime) / 1000 / 60)
-      : workout.duration_minutes; // Fallback if endTime/startTime not set
+      : workout.duration_minutes;
 
     createWorkoutLogMutation.mutate({
       workout_id: workout.id,
@@ -160,12 +192,58 @@ export default function WorkoutExecution() {
   };
 
   const adjustRestTime = (delta) => {
-    const newTime = Math.max(30, restTime + delta); // Minimum 30 seconds
+    const newTime = Math.max(30, restTime + delta);
     setRestTime(newTime);
-    if (!isResting) { // Only update time remaining if not currently resting
+    if (!isResting) {
       setTimeRemaining(newTime);
     }
   };
+
+  const handleExitWorkout = () => {
+    setShowExitConfirm(true);
+  };
+
+  const confirmExitWorkout = () => {
+    navigate(createPageUrl("WorkoutDetail") + `?id=${workoutId}`);
+  };
+
+  // Exit Confirmation Modal
+  if (showExitConfirm) {
+    return (
+      <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[70] flex items-center justify-center p-4">
+        <Card className="bg-slate-900 border-slate-800 max-w-md w-full">
+          <CardContent className="p-6 text-center space-y-4">
+            <div className="w-16 h-16 bg-orange-600/20 rounded-full flex items-center justify-center mx-auto">
+              <AlertTriangle className="w-8 h-8 text-orange-400" />
+            </div>
+            <div>
+              <h3 className="text-xl font-bold text-white mb-2">
+                Interromper Treino?
+              </h3>
+              <p className="text-slate-400 text-sm">
+                Você realmente deseja sair do treino? Seu progresso não será salvo.
+              </p>
+            </div>
+            <div className="flex gap-3">
+              <Button
+                variant="outline"
+                onClick={() => setShowExitConfirm(false)}
+                className="flex-1 bg-slate-800 border-slate-600 text-slate-200 hover:bg-slate-700"
+              >
+                Continuar Treino
+              </Button>
+              <Button
+                onClick={confirmExitWorkout}
+                className="flex-1 bg-orange-600 hover:bg-orange-700"
+              >
+                Sair
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   // Skip Warning Modal
   if (showSkipWarning) {
@@ -299,10 +377,10 @@ export default function WorkoutExecution() {
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => navigate(createPageUrl("WorkoutDetail") + `?id=${workoutId}`)}
+            onClick={handleExitWorkout}
             className="text-slate-400 hover:text-white h-8 w-8"
           >
-            <ArrowLeft className="w-5 h-5" />
+            <X className="w-5 h-5" />
           </Button>
           <div className="text-center">
             <p className="text-slate-400 text-xs">Dia {dayNumber}</p>
@@ -411,7 +489,7 @@ export default function WorkoutExecution() {
             </Button>
           ) : (
             <Button
-              onClick={() => setIsResting(false)}
+              onClick={handlePauseRest}
               variant="outline"
               className="w-full border-slate-700 text-slate-300 h-8 text-xs"
             >
@@ -422,7 +500,7 @@ export default function WorkoutExecution() {
         </div>
       </div>
 
-      {/* Botões Fixos no Bottom - Z-INDEX ALTO */}
+      {/* Botões Fixos no Bottom */}
       <div className="flex-shrink-0 bg-slate-900/95 backdrop-blur-sm border-t border-slate-800 px-3 py-3 safe-area-inset-bottom">
         <div className="flex gap-2">
           <Button
