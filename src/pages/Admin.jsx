@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
@@ -13,61 +12,74 @@ import AdminExercises from "../components/admin/AdminExercises";
 import AdminChallenges from "../components/admin/AdminChallenges";
 import AdminMetrics from "../components/admin/AdminMetrics";
 import AdminCommunity from "../components/admin/AdminCommunity";
-import AdminNutrition from "../components/admin/AdminNutrition"; // Added import
+import AdminNutrition from "../components/admin/AdminNutrition";
 
 export default function Admin() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("metrics");
   const [user, setUser] = useState(null);
-
-  const { data: users = [] } = useQuery({
-    queryKey: ['all-users'],
-    queryFn: () => base44.entities.User.list(),
-  });
-
-  const { data: workouts = [] } = useQuery({
-    queryKey: ['all-workouts'],
-    queryFn: () => base44.entities.Workout.list(),
-  });
-
-  const { data: exercises = [] } = useQuery({
-    queryKey: ['all-exercises'],
-    queryFn: () => base44.entities.Exercise.list(),
-  });
-
-  const { data: challenges = [] } = useQuery({
-    queryKey: ['all-challenges'],
-    queryFn: () => base44.entities.Challenge.list(),
-  });
-
-  const { data: posts = [] } = useQuery({
-    queryKey: ['all-posts'],
-    queryFn: () => base44.entities.CommunityPost.list('-created_date'),
-  });
-
-  const { data: nutritionPlans = [] } = useQuery({ // Added new query
-    queryKey: ['all-nutrition-plans'],
-    queryFn: () => base44.entities.NutritionPlan.list(),
-  });
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
 
   useEffect(() => {
     const loadUser = async () => {
       try {
         const currentUser = await base44.auth.me();
-        setUser(currentUser);
         
         if (currentUser.role !== 'admin') {
           navigate(createPageUrl("Home"));
+          return;
         }
+        
+        setUser(currentUser);
       } catch (error) {
         console.error("Error loading user:", error);
         navigate(createPageUrl("Home"));
+      } finally {
+        setIsCheckingAuth(false);
       }
     };
     loadUser();
   }, [navigate]);
 
-  if (!user || user.role !== 'admin') {
+  // Só faz queries se o usuário for admin
+  const { data: users = [] } = useQuery({
+    queryKey: ['all-users'],
+    queryFn: () => base44.entities.User.list(),
+    enabled: !!user && user.role === 'admin',
+  });
+
+  const { data: workouts = [] } = useQuery({
+    queryKey: ['all-workouts'],
+    queryFn: () => base44.entities.Workout.list(),
+    enabled: !!user && user.role === 'admin',
+  });
+
+  const { data: exercises = [] } = useQuery({
+    queryKey: ['all-exercises'],
+    queryFn: () => base44.entities.Exercise.list(),
+    enabled: !!user && user.role === 'admin',
+  });
+
+  const { data: challenges = [] } = useQuery({
+    queryKey: ['all-challenges'],
+    queryFn: () => base44.entities.Challenge.list(),
+    enabled: !!user && user.role === 'admin',
+  });
+
+  const { data: posts = [] } = useQuery({
+    queryKey: ['all-posts'],
+    queryFn: () => base44.entities.CommunityPost.list('-created_date'),
+    enabled: !!user && user.role === 'admin',
+  });
+
+  const { data: nutritionPlans = [] } = useQuery({
+    queryKey: ['all-nutrition-plans'],
+    queryFn: () => base44.entities.NutritionPlan.list(),
+    enabled: !!user && user.role === 'admin',
+  });
+
+  // Early return se ainda está checando ou não é admin
+  if (isCheckingAuth || !user || user.role !== 'admin') {
     return (
       <div className="py-6">
         <p className="text-slate-400 text-center">Verificando permissões...</p>
@@ -152,7 +164,7 @@ export default function Admin() {
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="bg-slate-900/50 border border-slate-800 w-full grid grid-cols-3 md:grid-cols-7 gap-2"> {/* Changed grid-cols to 7 */}
+        <TabsList className="bg-slate-900/50 border border-slate-800 w-full grid grid-cols-3 md:grid-cols-7 gap-2">
           <TabsTrigger value="metrics" className="data-[state=active]:bg-blue-600">
             Métricas
           </TabsTrigger>
@@ -165,7 +177,7 @@ export default function Admin() {
           <TabsTrigger value="exercises" className="data-[state=active]:bg-blue-600">
             Exercícios
           </TabsTrigger>
-          <TabsTrigger value="nutrition" className="data-[state=active]:bg-blue-600"> {/* Added new tab trigger */}
+          <TabsTrigger value="nutrition" className="data-[state=active]:bg-blue-600">
             Nutrição
           </TabsTrigger>
           <TabsTrigger value="challenges" className="data-[state=active]:bg-blue-600">
@@ -182,7 +194,7 @@ export default function Admin() {
       {activeTab === "users" && <AdminUsers users={users} />}
       {activeTab === "workouts" && <AdminWorkouts workouts={workouts} exercises={exercises} />}
       {activeTab === "exercises" && <AdminExercises exercises={exercises} />}
-      {activeTab === "nutrition" && <AdminNutrition plans={nutritionPlans} />} {/* Added new content component */}
+      {activeTab === "nutrition" && <AdminNutrition plans={nutritionPlans} />}
       {activeTab === "challenges" && <AdminChallenges challenges={challenges} />}
       {activeTab === "community" && <AdminCommunity posts={posts} />}
     </div>
