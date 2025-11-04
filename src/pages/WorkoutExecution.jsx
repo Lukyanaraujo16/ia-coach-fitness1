@@ -119,7 +119,7 @@ export default function WorkoutExecution() {
       const nextExercise = currentDay.exercises[currentExerciseIndex + 1];
       setCurrentExerciseIndex(currentExerciseIndex + 1);
       if (nextExercise?.sets?.[0]?.rest_seconds) {
-        const nextRest = nextExercise.sets[0].rest_seconds;
+        const nextRest = nextExercise.sets[0].sets?.[0]?.rest_seconds; // Corrected path
         setRestTime(nextRest);
         setTimeRemaining(nextRest);
       }
@@ -147,7 +147,7 @@ export default function WorkoutExecution() {
 
     const durationMinutes = endTime && startTime 
       ? Math.round((endTime - startTime) / 1000 / 60)
-      : workout.duration_minutes;
+      : workout.duration_minutes; // Fallback if endTime/startTime not set
 
     createWorkoutLogMutation.mutate({
       workout_id: workout.id,
@@ -160,9 +160,9 @@ export default function WorkoutExecution() {
   };
 
   const adjustRestTime = (delta) => {
-    const newTime = Math.max(30, restTime + delta);
+    const newTime = Math.max(30, restTime + delta); // Minimum 30 seconds
     setRestTime(newTime);
-    if (!isResting) {
+    if (!isResting) { // Only update time remaining if not currently resting
       setTimeRemaining(newTime);
     }
   };
@@ -292,75 +292,73 @@ export default function WorkoutExecution() {
   }
 
   return (
-    <div className="h-screen flex flex-col bg-gradient-to-b from-slate-950 to-slate-900 overflow-hidden">
+    <div className="fixed inset-0 flex flex-col bg-gradient-to-b from-slate-950 to-slate-900">
       {/* Header Fixo */}
-      <div className="bg-slate-900/95 backdrop-blur-sm border-b border-slate-800 px-3 py-3 flex-shrink-0">
+      <div className="flex-shrink-0 bg-slate-900/95 backdrop-blur-sm border-b border-slate-800 px-3 py-2.5">
         <div className="flex items-center justify-between">
           <Button
             variant="ghost"
             size="icon"
             onClick={() => navigate(createPageUrl("WorkoutDetail") + `?id=${workoutId}`)}
-            className="text-slate-400 hover:text-white h-9 w-9"
+            className="text-slate-400 hover:text-white h-8 w-8"
           >
             <ArrowLeft className="w-5 h-5" />
           </Button>
           <div className="text-center">
             <p className="text-slate-400 text-xs">Dia {dayNumber}</p>
-            <p className="text-white font-bold text-sm">
+            <p className="text-white font-bold text-xs">
               Exercício {currentExerciseIndex + 1}/{currentDay.exercises?.length || 0}
             </p>
           </div>
-          <div className="w-9" />
+          <div className="w-8" />
         </div>
       </div>
 
       {/* Nome do Exercício - Fixo */}
-      <div className="text-center px-3 py-2 border-b border-slate-800 flex-shrink-0">
-        <h2 className="text-lg font-bold text-white leading-tight">
+      <div className="flex-shrink-0 text-center px-3 py-2 border-b border-slate-800 bg-slate-900/50">
+        <h2 className="text-base font-bold text-white leading-tight">
           {currentExercise?.exercise_name}
         </h2>
         {currentExercise?.notes && (
-          <p className="text-slate-400 text-xs mt-1">💡 {currentExercise.notes}</p>
+          <p className="text-slate-400 text-xs mt-0.5">💡 {currentExercise.notes}</p>
         )}
       </div>
 
       {/* Séries - Área Rolável */}
-      <div className="flex-1 overflow-y-auto px-3 py-2">
-        <div className="space-y-2">
+      <div className="flex-1 overflow-y-auto px-3 py-2" style={{ minHeight: 0 }}>
+        <div className="space-y-1.5">
           {currentExercise?.sets?.map((set, index) => (
             <div
               key={index}
-              className="w-full p-2.5 rounded-lg border-2 border-slate-700 bg-slate-800/50"
+              className="w-full p-2 rounded-lg border-2 border-slate-700 bg-slate-800/50"
             >
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-white font-bold text-sm">Série {index + 1}</span>
-                </div>
+              <div className="space-y-1.5">
+                <span className="text-white font-bold text-xs">Série {index + 1}</span>
                 
-                <div className="grid grid-cols-3 gap-2 text-sm">
+                <div className="grid grid-cols-3 gap-1.5 text-xs">
                   {/* Fazer (Times) - PRIMEIRO */}
                   {set.times > 1 && (
-                    <div className="bg-yellow-900/30 rounded px-2 py-1">
+                    <div className="bg-yellow-900/30 rounded px-1.5 py-1">
                       <p className="text-yellow-400 text-xs">Fazer</p>
                       <p className="text-yellow-300 font-bold text-sm">{set.times}x</p>
                     </div>
                   )}
                   
                   {/* Reps - SEGUNDO */}
-                  <div className="bg-slate-900/50 rounded px-2 py-1">
+                  <div className="bg-slate-900/50 rounded px-1.5 py-1">
                     <p className="text-slate-400 text-xs">Reps</p>
                     <p className="text-white font-bold text-sm">{set.reps}</p>
                   </div>
                   
                   {/* Descanso - TERCEIRO */}
-                  <div className="bg-slate-900/50 rounded px-2 py-1">
+                  <div className="bg-slate-900/50 rounded px-1.5 py-1">
                     <p className="text-slate-400 text-xs">Descanso</p>
                     <p className="text-purple-400 font-bold text-sm">{set.rest_seconds}s</p>
                   </div>
                 </div>
                 
                 {set.notes && (
-                  <div className="bg-orange-900/30 border border-orange-700/50 rounded p-2">
+                  <div className="bg-orange-900/30 border border-orange-700/50 rounded p-1.5">
                     <p className="text-orange-400 text-xs font-semibold mb-0.5">📌 Atenção:</p>
                     <p className="text-orange-200 text-xs leading-relaxed">{set.notes}</p>
                   </div>
@@ -372,16 +370,16 @@ export default function WorkoutExecution() {
       </div>
 
       {/* Timer de Descanso - Fixo */}
-      <div className="bg-slate-900/95 backdrop-blur-sm border-t border-slate-800 px-3 py-2 flex-shrink-0">
-        <div className="bg-gradient-to-br from-purple-900/30 to-blue-900/30 border border-purple-700/50 rounded-lg p-2.5">
+      <div className="flex-shrink-0 bg-slate-900/95 backdrop-blur-sm border-t border-slate-800 px-3 py-2">
+        <div className="bg-gradient-to-br from-purple-900/30 to-blue-900/30 border border-purple-700/50 rounded-lg p-2">
           <div className="text-center">
-            <p className="text-slate-300 text-xs mb-1">Descanso</p>
+            <p className="text-slate-300 text-xs mb-0.5">Descanso</p>
             <div className="text-3xl font-bold text-white mb-1">
               {Math.floor(timeRemaining / 60)}:{(timeRemaining % 60).toString().padStart(2, '0')}
             </div>
             
             {!isResting && (
-              <div className="flex items-center justify-center gap-2 mb-2">
+              <div className="flex items-center justify-center gap-2 mb-1.5">
                 <Button
                   variant="outline"
                   size="icon"
@@ -406,18 +404,18 @@ export default function WorkoutExecution() {
           {!isResting ? (
             <Button
               onClick={handleStartRest}
-              className="w-full bg-purple-600 hover:bg-purple-700 h-9 text-sm"
+              className="w-full bg-purple-600 hover:bg-purple-700 h-8 text-xs"
             >
-              <Play className="w-3 h-3 mr-2" />
+              <Play className="w-3 h-3 mr-1" />
               Iniciar Descanso
             </Button>
           ) : (
             <Button
               onClick={() => setIsResting(false)}
               variant="outline"
-              className="w-full border-slate-700 text-slate-300 h-9 text-sm"
+              className="w-full border-slate-700 text-slate-300 h-8 text-xs"
             >
-              <Pause className="w-3 h-3 mr-2" />
+              <Pause className="w-3 h-3 mr-1" />
               Pausar
             </Button>
           )}
@@ -425,18 +423,18 @@ export default function WorkoutExecution() {
       </div>
 
       {/* Botões Fixos no Bottom */}
-      <div className="bg-slate-900/95 backdrop-blur-sm border-t border-slate-800 px-3 py-2 flex-shrink-0">
+      <div className="flex-shrink-0 bg-slate-900/95 backdrop-blur-sm border-t border-slate-800 px-3 py-2">
         <div className="flex gap-2">
           <Button
             onClick={handleSkipExercise}
             variant="outline"
-            className="flex-1 bg-slate-800 border-slate-600 text-slate-200 h-10 text-sm"
+            className="flex-1 bg-slate-800 border-slate-600 text-slate-200 h-10 text-xs"
           >
             Pular
           </Button>
           <Button
             onClick={handleNextExercise}
-            className="flex-1 bg-blue-600 hover:bg-blue-700 text-white h-10 font-semibold text-sm"
+            className="flex-1 bg-blue-600 hover:bg-blue-700 text-white h-10 font-semibold text-xs"
           >
             {isLastExercise ? (
               <>
