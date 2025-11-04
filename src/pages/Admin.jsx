@@ -5,7 +5,7 @@ import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
-import { Users, DollarSign, Dumbbell, Crown, MessageSquare } from "lucide-react";
+import { Users, DollarSign, Dumbbell, Crown } from "lucide-react";
 import AdminUsers from "../components/admin/AdminUsers";
 import AdminWorkouts from "../components/admin/AdminWorkouts";
 import AdminExercises from "../components/admin/AdminExercises";
@@ -19,70 +19,137 @@ export default function Admin() {
   const [activeTab, setActiveTab] = useState("metrics");
   const [user, setUser] = useState(null);
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
+  const [authError, setAuthError] = useState(false);
 
   useEffect(() => {
+    let isMounted = true;
+    
     const loadUser = async () => {
       try {
         const currentUser = await base44.auth.me();
         
+        if (!isMounted) return;
+        
         if (currentUser.role !== 'admin') {
+          console.log("User is not admin, redirecting to Home");
           navigate(createPageUrl("Home"));
           return;
         }
         
         setUser(currentUser);
+        setAuthError(false);
       } catch (error) {
+        if (!isMounted) return;
+        
+        // Ignorar erros de abort
+        if (error.message?.includes('abort') || error.name === 'AbortError') {
+          console.log("Request aborted, component unmounting");
+          return;
+        }
+        
         console.error("Error loading user:", error);
-        navigate(createPageUrl("Home"));
+        setAuthError(true);
+        
+        // Apenas redirecionar se for erro real de autenticação
+        if (error.message?.includes('auth') || error.message?.includes('401')) {
+          navigate(createPageUrl("Home"));
+        }
       } finally {
-        setIsCheckingAuth(false);
+        if (isMounted) {
+          setIsCheckingAuth(false);
+        }
       }
     };
+    
     loadUser();
+    
+    return () => {
+      isMounted = false;
+    };
   }, [navigate]);
 
-  // Só faz queries se o usuário for admin
+  // Só faz queries se o usuário for admin confirmado
   const { data: users = [] } = useQuery({
     queryKey: ['all-users'],
     queryFn: () => base44.entities.User.list(),
-    enabled: !!user && user.role === 'admin',
+    enabled: !!user && user.role === 'admin' && !isCheckingAuth,
+    retry: 1,
   });
 
   const { data: workouts = [] } = useQuery({
     queryKey: ['all-workouts'],
     queryFn: () => base44.entities.Workout.list(),
-    enabled: !!user && user.role === 'admin',
+    enabled: !!user && user.role === 'admin' && !isCheckingAuth,
+    retry: 1,
   });
 
   const { data: exercises = [] } = useQuery({
     queryKey: ['all-exercises'],
     queryFn: () => base44.entities.Exercise.list(),
-    enabled: !!user && user.role === 'admin',
+    enabled: !!user && user.role === 'admin' && !isCheckingAuth,
+    retry: 1,
   });
 
   const { data: challenges = [] } = useQuery({
     queryKey: ['all-challenges'],
     queryFn: () => base44.entities.Challenge.list(),
-    enabled: !!user && user.role === 'admin',
+    enabled: !!user && user.role === 'admin' && !isCheckingAuth,
+    retry: 1,
   });
 
   const { data: posts = [] } = useQuery({
     queryKey: ['all-posts'],
     queryFn: () => base44.entities.CommunityPost.list('-created_date'),
-    enabled: !!user && user.role === 'admin',
+    enabled: !!user && user.role === 'admin' && !isCheckingAuth,
+    retry: 1,
   });
 
   const { data: nutritionPlans = [] } = useQuery({
     queryKey: ['all-nutrition-plans'],
     queryFn: () => base44.entities.NutritionPlan.list(),
-    enabled: !!user && user.role === 'admin',
+    enabled: !!user && user.role === 'admin' && !isCheckingAuth,
+    retry: 1,
   });
 
-  // Early return se ainda está checando ou não é admin
-  if (isCheckingAuth || !user || user.role !== 'admin') {
+  // Mostrar loading ou erro
+  if (isCheckingAuth) {
     return (
       <div className="py-6">
         <p className="text-slate-400 text-center">Verificando permissões...</p>
+      </div>
+    );
+  }
+
+  if (authError && !user) {
+    return (
+      <div className="py-6">
+        <Card className="bg-slate-900/50 border-slate-800 max-w-md mx-auto">
+          <CardContent className="p-6 text-center">
+            <p className="text-red-400 mb-4">Erro ao carregar dados do usuário</p>
+            <button
+              onClick={() => window.location.reload()}
+              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg"
+            >
+              Tentar Novamente
+            </button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className="py-6">
+        <p className="text-slate-400 text-center">Carregando...</p>
+      </div>
+    );
+  }
+
+  if (user.role !== 'admin') {
+    return (
+      <div className="py-6">
+        <p className="text-slate-400 text-center">Acesso negado</p>
       </div>
     );
   }
