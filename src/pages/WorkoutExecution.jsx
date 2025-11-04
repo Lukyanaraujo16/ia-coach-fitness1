@@ -39,6 +39,7 @@ export default function WorkoutExecution() {
   const [showAISuggestion, setShowAISuggestion] = useState(false);
   const [aiSuggestion, setAiSuggestion] = useState(null);
   const [workoutLogs, setWorkoutLogs] = useState([]);
+  const [isAnalyzingPerformance, setIsAnalyzingPerformance] = useState(false);
 
   const isPremium = user?.subscription_status === 'premium';
 
@@ -50,7 +51,7 @@ export default function WorkoutExecution() {
         setStartTime(new Date());
         
         // Carregar histórico de treinos para análise
-        const allLogs = await base44.entities.WorkoutLog.list('-date'); // Assuming '-date' sorts by date descending
+        const allLogs = await base44.entities.WorkoutLog.list('-date');
         const userLogs = allLogs.filter(log => log.created_by === currentUser.email);
         setWorkoutLogs(userLogs);
         
@@ -89,13 +90,20 @@ export default function WorkoutExecution() {
     loadWorkout();
   }, [workoutId, dayNumber]);
 
-  // Análise automática ao mudar de exercício
-  const currentExercise = currentDay?.exercises?.[currentExerciseIndex]; // Define currentExercise here for the useEffect below
+  // Análise automática ao mudar de exercício - COM DELAY E PROTEÇÃO
+  const currentExercise = currentDay?.exercises?.[currentExerciseIndex];
   useEffect(() => {
-    if (currentExercise && isPremium && workoutLogs.length > 0) {
-      analyzeExercisePerformance(currentExercise);
+    if (!currentExercise || !isPremium || workoutLogs.length === 0 || isAnalyzingPerformance) {
+      return;
     }
-  }, [currentExerciseIndex, currentExercise, isPremium, workoutLogs]);
+
+    // Delay de 500ms para evitar análises quando usuário muda rápido de exercício
+    const timer = setTimeout(() => {
+      analyzeExercisePerformance(currentExercise);
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [currentExerciseIndex]); // Apenas currentExerciseIndex como dependência
 
 
   // Timer com controle baseado em timestamp real
@@ -124,33 +132,38 @@ export default function WorkoutExecution() {
   }, [isResting, restStartTime, restTime]);
 
   const analyzeExercisePerformance = async (exercise) => {
-    if (!exercise || !isPremium || !workoutLogs.length) return;
-    
-    // Encontrar histórico deste exercício
-    const exerciseHistory = workoutLogs
-      .flatMap(log => log.exercises_completed || [])
-      .filter(ex => ex.exercise_name === exercise.exercise_name)
-      .slice(0, 5); // Últimos 5 registros
-
-    if (exerciseHistory.length < 2) {
-      setShowAISuggestion(false); 
-      setAiSuggestion(null);
-      return; 
+    if (!exercise || !isPremium || workoutLogs.length === 0 || isAnalyzingPerformance) {
+      return;
     }
 
-    // Analisar progressão de carga
-    const recentWeights = exerciseHistory.map(ex => {
-      const maxWeight = ex.sets_completed?.reduce((max, set) => 
-        set.weight_used > max ? set.weight_used : max, 0
-      ) || 0;
-      return maxWeight;
-    });
-
-    const lastWeight = recentWeights[0];
-    const hasProgressedRecently = recentWeights[0] > recentWeights[1];
-    const isStagnant = recentWeights.slice(0, 3).every(w => w === lastWeight && w > 0);
-
+    setIsAnalyzingPerformance(true);
+    
     try {
+      // Encontrar histórico deste exercício
+      const exerciseHistory = workoutLogs
+        .flatMap(log => log.exercises_completed || [])
+        .filter(ex => ex.exercise_name === exercise.exercise_name)
+        .slice(0, 5); // Últimos 5 registros
+
+      if (exerciseHistory.length < 2) {
+        setShowAISuggestion(false); 
+        setAiSuggestion(null);
+        setIsAnalyzingPerformance(false);
+        return; 
+      }
+
+      // Analisar progressão de carga
+      const recentWeights = exerciseHistory.map(ex => {
+        const maxWeight = ex.sets_completed?.reduce((max, set) => 
+          set.weight_used > max ? set.weight_used : max, 0
+        ) || 0;
+        return maxWeight;
+      });
+
+      const lastWeight = recentWeights[0];
+      const hasProgressedRecently = recentWeights[0] > recentWeights[1];
+      const isStagnant = recentWeights.slice(0, 3).every(w => w === lastWeight && w > 0);
+
       const prompt = `Você é um personal trainer analisando o desempenho de um atleta no exercício "${exercise.exercise_name}".
 
 **Histórico de cargas (últimas 5 execuções):**
@@ -197,9 +210,16 @@ IMPORTANTE: Só mostre sugestão se for realmente relevante. Não seja repetitiv
         setAiSuggestion(null);
       }
     } catch (error) {
-      console.error("Error analyzing performance:", error);
+      // Ignorar erros de abort - são esperados quando usuário muda rápido de exercício
+      if (error.message?.includes('aborted') || error.message?.includes('abort')) {
+        console.log("Análise cancelada (usuário mudou de exercício)");
+      } else {
+        console.error("Error analyzing performance:", error);
+      }
       setShowAISuggestion(false);
       setAiSuggestion(null);
+    } finally {
+      setIsAnalyzingPerformance(false);
     }
   };
 
