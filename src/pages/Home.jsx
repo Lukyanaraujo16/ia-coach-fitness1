@@ -1,8 +1,8 @@
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Calendar, Flame, Trophy, TrendingUp, ChevronRight, Zap, Target, Crown } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,16 +11,12 @@ import { Input } from "@/components/ui/input";
 import StatsCard from "../components/home/StatsCard";
 import QuickActionCard from "../components/home/QuickActionCard";
 import NextWorkoutCard from "../components/home/NextWorkoutCard";
+import { useUser } from "../components/UserContext";
 
 export default function Home() {
-  const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const [user, setUser] = useState(null);
   const [challengeInput, setChallengeInput] = useState("");
-
-  useEffect(() => {
-    base44.auth.me().then(setUser).catch(console.error);
-  }, []);
+  const { user, loading } = useUser();
 
   const { data: workoutLogs = [] } = useQuery({
     queryKey: ['workout-logs'],
@@ -30,6 +26,7 @@ export default function Home() {
       return allLogs.filter(log => log.created_by === user.email);
     },
     enabled: !!user,
+    staleTime: 60000,
   });
 
   const { data: progressEntries = [] } = useQuery({
@@ -40,11 +37,13 @@ export default function Home() {
       return allEntries.filter(entry => entry.created_by === user.email);
     },
     enabled: !!user,
+    staleTime: 60000,
   });
 
   const { data: challenges = [] } = useQuery({
     queryKey: ['challenges'],
     queryFn: () => base44.entities.Challenge.list('-created_date'),
+    staleTime: 60000,
   });
 
   const { data: challengeProgress = [] } = useQuery({
@@ -55,6 +54,7 @@ export default function Home() {
       return allProgress.filter(p => p.created_by === user.email);
     },
     enabled: !!user,
+    staleTime: 60000,
   });
 
   const activeChallenge = challenges.find(c => c.is_active);
@@ -113,7 +113,7 @@ export default function Home() {
     ? Math.min(((userProgress?.current_progress || 0) / activeChallenge.target) * 100, 100)
     : 0;
 
-  if (!user) {
+  if (loading || !user) {
     return (
       <div className="py-6">
         <p className="text-slate-400 text-center">Carregando...</p>

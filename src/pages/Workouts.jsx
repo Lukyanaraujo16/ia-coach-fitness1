@@ -8,13 +8,13 @@ import { Search, Lock } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import WorkoutCard from "../components/workouts/WorkoutCard";
 import ExerciseLibrary from "../components/workouts/ExerciseLibrary";
+import { useUser } from "../components/UserContext";
 
 export default function Workouts() {
   const [activeTab, setActiveTab] = useState("workouts");
   const [searchQuery, setSearchQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
-  const [user, setUser] = useState(null);
-  const hasLoadedUser = useRef(false);
+  const { user } = useUser();
 
   const { data: workouts = [], isLoading: loadingWorkouts } = useQuery({
     queryKey: ['workouts'],
@@ -27,30 +27,6 @@ export default function Workouts() {
     queryFn: () => base44.entities.Exercise.list(),
     staleTime: 60000,
   });
-
-  useEffect(() => {
-    let mounted = true;
-    
-    const loadUser = async () => {
-      if (hasLoadedUser.current || !mounted) return;
-      
-      try {
-        const currentUser = await base44.auth.me();
-        if (!mounted) return;
-        
-        hasLoadedUser.current = true;
-        setUser(currentUser);
-      } catch (error) {
-        console.error("Error loading user:", error);
-      }
-    };
-    
-    loadUser();
-    
-    return () => {
-      mounted = false;
-    };
-  }, []);
 
   const isPremium = user?.subscription_status === 'premium';
 

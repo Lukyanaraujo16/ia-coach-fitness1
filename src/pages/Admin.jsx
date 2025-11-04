@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -12,46 +12,49 @@ import AdminChallenges from "../components/admin/AdminChallenges";
 import AdminMetrics from "../components/admin/AdminMetrics";
 import AdminCommunity from "../components/admin/AdminCommunity";
 import AdminNutrition from "../components/admin/AdminNutrition";
+import { useUser } from "../components/UserContext";
 
 export default function Admin() {
   const [activeTab, setActiveTab] = useState("metrics");
-  const [user, setUser] = useState(null);
+  const { user, loading } = useUser();
 
   const { data: users = [] } = useQuery({
     queryKey: ['all-users'],
     queryFn: () => base44.entities.User.list(),
+    staleTime: 60000,
   });
 
   const { data: workouts = [] } = useQuery({
     queryKey: ['all-workouts'],
     queryFn: () => base44.entities.Workout.list(),
+    staleTime: 60000,
   });
 
   const { data: exercises = [] } = useQuery({
     queryKey: ['all-exercises'],
     queryFn: () => base44.entities.Exercise.list(),
+    staleTime: 60000,
   });
 
   const { data: challenges = [] } = useQuery({
     queryKey: ['all-challenges'],
     queryFn: () => base44.entities.Challenge.list(),
+    staleTime: 60000,
   });
 
   const { data: posts = [] } = useQuery({
     queryKey: ['all-posts'],
     queryFn: () => base44.entities.CommunityPost.list('-created_date'),
+    staleTime: 60000,
   });
 
   const { data: nutritionPlans = [] } = useQuery({
     queryKey: ['all-nutrition-plans'],
     queryFn: () => base44.entities.NutritionPlan.list(),
+    staleTime: 60000,
   });
 
-  useEffect(() => {
-    base44.auth.me().then(setUser).catch(console.error);
-  }, []);
-
-  if (!user) {
+  if (loading || !user) {
     return (
       <div className="py-6">
         <p className="text-slate-400 text-center">Carregando...</p>
