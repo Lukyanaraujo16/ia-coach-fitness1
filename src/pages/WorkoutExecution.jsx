@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
-import { useMutation, useQueryClient } from "@tanstack/react-query"; // Corrected import: @tantml:react-query -> @tanstack/react-query
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -42,11 +42,11 @@ export default function WorkoutExecution() {
   const [showVideoAnalysis, setShowVideoAnalysis] = useState(false);
   const [videoAnalysis, setVideoAnalysis] = useState(null);
   const [isAnalyzingVideo, setIsAnalyzingVideo] = useState(false);
-  const [videoFile, setVideoFile] = useState(null);
+  // Removed: const [videoFile, setVideoFile] = useState(null);
 
   const isPremium = user?.subscription_status === 'premium';
-  const currentExercise = currentDay?.exercises?.[currentExerciseIndex]; // Moved here
-  const isLastExercise = currentExerciseIndex === (currentDay?.exercises?.length || 0) - 1; // Moved here
+  const currentExercise = currentDay?.exercises?.[currentExerciseIndex];
+  const isLastExercise = currentExerciseIndex === (currentDay?.exercises?.length || 0) - 1;
 
   useEffect(() => {
     const loadWorkout = async () => {
@@ -56,7 +56,6 @@ export default function WorkoutExecution() {
           setUser(currentUser);
           setStartTime(new Date());
           
-          // Carregar histórico de treinos para análise
           const allLogs = await base44.entities.WorkoutLog.list('-date');
           const userLogs = allLogs.filter(log => log.created_by === currentUser.email);
           setWorkoutLogs(userLogs);
@@ -69,7 +68,6 @@ export default function WorkoutExecution() {
             const day = foundWorkout.days.find(d => d.day_number === dayNumber);
             setCurrentDay(day);
             
-            // Inicializar dados dos exercícios (apenas peso)
             if (day?.exercises) {
               const initialData = day.exercises.map(ex => ({
                 exercise_id: ex.exercise_id || '',
@@ -99,15 +97,12 @@ export default function WorkoutExecution() {
     loadWorkout();
   }, [workoutId, dayNumber]);
 
-  // Análise automática ao mudar de exercício - SIMPLIFICADA
   useEffect(() => {
-    // Only analyze if currentExercise is defined, user is premium, workout logs exist, and it's not the very first exercise (to prevent analysis on initial load)
-    if (currentExercise && isPremium && workoutLogs.length > 0 && currentExerciseIndex > 0) {
+    if (currentExercise && isPremium && workoutLogs.length >= 2 && currentExerciseIndex > 0) {
       analyzeExercisePerformance(currentExercise);
     }
-  }, [currentExerciseIndex]); // Simplified dependency array
+  }, [currentExerciseIndex]);
 
-  // Timer com controle baseado em timestamp real
   useEffect(() => {
     let interval;
     
@@ -133,19 +128,17 @@ export default function WorkoutExecution() {
   }, [isResting, restStartTime, restTime]);
 
   const analyzeExercisePerformance = async (exercise) => {
-    // Added initial checks for performance analysis
     if (!exercise || !isPremium || workoutLogs.length < 2) {
-      setShowAISuggestion(false);
+      setShowAISuggestion(false); // Make sure to reset it if conditions are not met
       setAiSuggestion(null);
       return;
     }
     
     try {
-      // Encontrar histórico deste exercício
       const exerciseHistory = workoutLogs
         .flatMap(log => log.exercises_completed || [])
         .filter(ex => ex.exercise_name === exercise.exercise_name)
-        .slice(0, 5); // Últimos 5 registros
+        .slice(0, 5);
 
       if (exerciseHistory.length < 2) {
         setShowAISuggestion(false); 
@@ -153,7 +146,6 @@ export default function WorkoutExecution() {
         return; 
       }
 
-      // Analisar progressão de carga
       const recentWeights = exerciseHistory.map(ex => {
         const maxWeight = ex.sets_completed?.reduce((max, set) => 
           set.weight_used > max ? set.weight_used : max, 0
@@ -212,7 +204,6 @@ IMPORTANTE: Só mostre sugestão se for realmente relevante. Não seja repetitiv
       }
     } catch (error) {
       console.error("Error analyzing performance:", error);
-      // Removed redundant setShowAISuggestion(false); setAiSuggestion(null); as they are handled in the if (response.show_suggestion) block
     }
   };
 
@@ -246,7 +237,6 @@ IMPORTANTE: Só mostre sugestão se for realmente relevante. Não seja repetitiv
     }
   };
 
-  // Nova função para gerar dicas de IA
   const generateAITips = async (exercise) => {
     if (!exercise || !isPremium) return;
     
@@ -285,27 +275,22 @@ Seja direto, prático e motivador.`;
     const file = event.target.files[0];
     if (!file) return;
 
-    // Validar tamanho (1 minuto ~= 10-50MB dependendo da qualidade)
-    const maxSize = 50 * 1024 * 1024; // 50MB
+    const maxSize = 50 * 1024 * 1024;
     if (file.size > maxSize) {
       alert("O vídeo deve ter no máximo 50MB (aproximadamente 1 minuto)");
       return;
     }
 
-    // Validar tipo
     if (!file.type.startsWith('video/')) {
       alert("Por favor, envie um arquivo de vídeo válido");
       return;
     }
 
-    setVideoFile(file);
     setIsAnalyzingVideo(true);
 
     try {
-      // 1. Upload do vídeo
       const { file_url } = await base44.integrations.Core.UploadFile({ file });
 
-      // 2. Análise com IA
       const exerciseName = currentExercise.exercise_name;
       const exerciseCategory = currentExercise.exercise_category || 'geral';
 
@@ -387,17 +372,9 @@ Analise o vídeo e forneça feedback DETALHADO e PRÁTICO em formato JSON.
       alert("Erro ao analisar vídeo. Tente novamente.");
     } finally {
       setIsAnalyzingVideo(false);
-      setVideoFile(null);
+      // Removed: setVideoFile(null);
     }
   };
-
-  if (!workout || !currentDay) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-slate-950 to-slate-900">
-        <p className="text-slate-400">Carregando treino...</p>
-      </div>
-    );
-  }
 
   const handleStartRest = () => {
     setIsResting(true);
@@ -407,12 +384,10 @@ Analise o vídeo e forneça feedback DETALHADO e PRÁTICO em formato JSON.
 
   const handlePauseRest = () => {
     if (isResting && restStartTime) {
-      // Calcula quanto tempo já passou
       const now = Date.now();
       const elapsed = Math.floor((now - restStartTime) / 1000);
       const remaining = restTime - elapsed;
       
-      // Atualiza o restTime para ser o tempo restante
       setRestTime(Math.max(remaining, 0));
       setTimeRemaining(Math.max(remaining, 0));
       setIsResting(false);
@@ -423,8 +398,8 @@ Analise o vídeo e forneça feedback DETALHADO e PRÁTICO em formato JSON.
   const handleNextExercise = () => {
     setIsResting(false);
     setRestStartTime(null);
-    setShowAISuggestion(false); // Close AI suggestion when moving to next exercise
-    setAiSuggestion(null); // Clear suggestion
+    setShowAISuggestion(false);
+    setAiSuggestion(null);
 
     if (isLastExercise) {
       if (skippedExercises.length > 0) {
@@ -466,7 +441,6 @@ Analise o vídeo e forneça feedback DETALHADO e PRÁTICO em formato JSON.
       ? Math.round((endTime - startTime) / 1000 / 60)
       : workout.duration_minutes;
 
-    // Filtrar exercícios completados (não pulados)
     const completedExercises = exercisesData.filter((_, idx) => !skippedExercises.includes(idx));
 
     createWorkoutLogMutation.mutate({
@@ -495,6 +469,14 @@ Analise o vídeo e forneça feedback DETALHADO e PRÁTICO em formato JSON.
   const confirmExitWorkout = () => {
     navigate(createPageUrl("WorkoutDetail") + `?id=${workoutId}`);
   };
+
+  if (!workout || !currentDay) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-slate-950 to-slate-900">
+        <p className="text-slate-400">Carregando treino...</p>
+      </div>
+    );
+  }
 
   // Exit Confirmation Modal
   if (showExitConfirm) {
@@ -697,7 +679,7 @@ Analise o vídeo e forneça feedback DETALHADO e PRÁTICO em formato JSON.
                     disabled={isAnalyzingVideo}
                     className="text-green-400 hover:text-green-300 h-8 w-8"
                     onClick={(e) => {
-                      if (isAnalyzingVideo) e.preventDefault();
+                      if (isAnalyzingVideo) e.preventDefault(); // Prevent default click if analyzing
                     }}
                   >
                     {isAnalyzingVideo ? (
