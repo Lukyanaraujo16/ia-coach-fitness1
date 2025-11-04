@@ -25,6 +25,7 @@ export default function Layout({ children, currentPageName }) {
     { name: "Home", path: createPageUrl("Home"), icon: Home },
     { name: "Treinos", path: createPageUrl("Workouts"), icon: Dumbbell },
     { name: "Nutrição", path: createPageUrl("Nutrition"), icon: Apple },
+    { name: "IA Coach", path: createPageUrl("AICoach"), icon: Users }, // Changed to a temporary icon
     { name: "Progresso", path: createPageUrl("Progress"), icon: TrendingUp },
     { name: "Comunidade", path: createPageUrl("Community"), icon: Users },
     { name: "Perfil", path: createPageUrl("Profile"), icon: User },

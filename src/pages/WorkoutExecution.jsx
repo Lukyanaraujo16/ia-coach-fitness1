@@ -1,13 +1,14 @@
+
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft, Play, Pause, SkipForward, CheckCircle, Plus, Minus, AlertTriangle, Trophy, Clock, Zap, X } from "lucide-react";
+import { ArrowLeft, Play, Pause, SkipForward, CheckCircle, Plus, Minus, AlertTriangle, Trophy, Clock, Zap, X, Lightbulb } from "lucide-react";
 import { motion } from "framer-motion";
 
 export default function WorkoutExecution() {
@@ -32,6 +33,10 @@ export default function WorkoutExecution() {
   const [user, setUser] = useState(null);
   const [startTime, setStartTime] = useState(null);
   const [endTime, setEndTime] = useState(null);
+  const [showAITips, setShowAITips] = useState(false);
+  const [aiTips, setAiTips] = useState(null);
+
+  const isPremium = user?.subscription_status === 'premium';
 
   useEffect(() => {
     const loadWorkout = async () => {
@@ -105,6 +110,41 @@ export default function WorkoutExecution() {
     },
   });
 
+  // Nova função para gerar dicas de IA
+  const generateAITips = async (exercise) => {
+    if (!exercise || !isPremium) return;
+    
+    try {
+      const prompt = `Você é um personal trainer. Forneça dicas rápidas e práticas sobre o exercício "${exercise.exercise_name}".
+
+Responda em JSON com:
+{
+  "dicas_execucao": ["dica 1", "dica 2", "dica 3"],
+  "erros_comuns": ["erro 1", "erro 2"],
+  "dica_rapida": "Uma frase motivacional sobre o exercício"
+}
+
+Seja direto, prático e motivador.`;
+
+      const response = await base44.integrations.Core.InvokeLLM({
+        prompt: prompt,
+        response_json_schema: {
+          type: "object",
+          properties: {
+            dicas_execucao: { type: "array", items: { type: "string" } },
+            erros_comuns: { type: "array", items: { type: "string" } },
+            dica_rapida: { type: "string" }
+          }
+        }
+      });
+
+      setAiTips(response);
+      setShowAITips(true);
+    } catch (error) {
+      console.error("Error generating AI tips:", error);
+    }
+  };
+
   if (!workout || !currentDay) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -151,7 +191,7 @@ export default function WorkoutExecution() {
       const nextExercise = currentDay.exercises[currentExerciseIndex + 1];
       setCurrentExerciseIndex(currentExerciseIndex + 1);
       if (nextExercise?.sets?.[0]?.rest_seconds) {
-        const nextRest = nextExercise.sets[0].rest_seconds;
+        const nextRest = nextExercise.sets[0].sets?.[0]?.rest_seconds; // Corrected: access from set, not exercise
         setRestTime(nextRest);
         setTimeRemaining(nextRest);
       }
@@ -388,7 +428,19 @@ export default function WorkoutExecution() {
               Exercício {currentExerciseIndex + 1}/{currentDay.exercises?.length || 0}
             </p>
           </div>
-          <div className="w-8" />
+          {/* Botão de Dicas IA */}
+          {user && isPremium ? (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => generateAITips(currentExercise)}
+              className="text-purple-400 hover:text-purple-300 h-8 w-8"
+            >
+              <Lightbulb className="w-5 h-5" />
+            </Button>
+          ) : (
+            <div className="w-8" />
+          )}
         </div>
       </div>
 
@@ -401,6 +453,68 @@ export default function WorkoutExecution() {
           <p className="text-slate-400 text-xs mt-0.5">💡 {currentExercise.notes}</p>
         )}
       </div>
+
+      {/* AI Tips Modal */}
+      {showAITips && aiTips && (
+        <div className="absolute inset-0 bg-black/80 backdrop-blur-sm z-[70] flex items-center justify-center p-4" onClick={() => setShowAITips(false)}>
+          <motion.div
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            onClick={(e) => e.stopPropagation()}
+            className="max-w-md w-full"
+          >
+            <Card className="bg-slate-900 border-purple-700/50">
+              <CardHeader>
+                <CardTitle className="text-white flex items-center gap-2">
+                  <Lightbulb className="w-5 h-5 text-yellow-400" />
+                  Dicas do Treinador IA
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {/* Dicas de Execução */}
+                <div>
+                  <h4 className="text-green-400 font-semibold mb-2 text-sm">✓ Como Executar:</h4>
+                  <ul className="space-y-1">
+                    {aiTips.dicas_execucao?.map((dica, index) => (
+                      <li key={index} className="text-slate-300 text-xs flex items-start gap-2">
+                        <span className="text-green-400 mt-0.5">•</span>
+                        <span>{dica}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                {/* Erros Comuns */}
+                <div>
+                  <h4 className="text-orange-400 font-semibold mb-2 text-sm">⚠️ Evite:</h4>
+                  <ul className="space-y-1">
+                    {aiTips.erros_comuns?.map((erro, index) => (
+                      <li key={index} className="text-slate-300 text-xs flex items-start gap-2">
+                        <span className="text-orange-400 mt-0.5">•</span>
+                        <span>{erro}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                {/* Dica Rápida */}
+                <div className="bg-purple-900/30 border border-purple-700/50 rounded-lg p-3">
+                  <p className="text-purple-300 text-sm italic text-center">
+                    💪 {aiTips.dica_rapida}
+                  </p>
+                </div>
+
+                <Button
+                  onClick={() => setShowAITips(false)}
+                  className="w-full bg-purple-600 hover:bg-purple-700"
+                >
+                  Entendi!
+                </Button>
+              </CardContent>
+            </Card>
+          </motion.div>
+        </div>
+      )}
 
       {/* Séries - Área Rolável */}
       <div className="flex-1 overflow-y-auto px-3 py-2" style={{ minHeight: 0 }}>
