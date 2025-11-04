@@ -45,50 +45,50 @@ export default function WorkoutExecution() {
 
   useEffect(() => {
     const loadWorkout = async () => {
-      if (workoutId) {
-        const currentUser = await base44.auth.me();
-        setUser(currentUser);
-        setStartTime(new Date());
+      if (!workoutId) return; // Added guard clause
+      
+      const currentUser = await base44.auth.me();
+      setUser(currentUser);
+      setStartTime(new Date());
+      
+      // Carregar histórico de treinos para análise
+      const allLogs = await base44.entities.WorkoutLog.list('-date'); // Assuming '-date' sorts by date descending
+      const userLogs = allLogs.filter(log => log.created_by === currentUser.email);
+      setWorkoutLogs(userLogs);
+      
+      const workouts = await base44.entities.Workout.list();
+      const foundWorkout = workouts.find(w => w.id === workoutId);
+      setWorkout(foundWorkout);
+      
+      if (foundWorkout?.days) {
+        const day = foundWorkout.days.find(d => d.day_number === dayNumber);
+        setCurrentDay(day);
         
-        // Carregar histórico de treinos para análise
-        const allLogs = await base44.entities.WorkoutLog.list('-date'); // Assuming '-date' sorts by date descending
-        const userLogs = allLogs.filter(log => log.created_by === currentUser.email);
-        setWorkoutLogs(userLogs);
+        // Inicializar dados dos exercícios (apenas peso)
+        if (day?.exercises) {
+          const initialData = day.exercises.map(ex => ({
+            exercise_id: ex.exercise_id || '',
+            exercise_name: ex.exercise_name,
+            exercise_category: ex.exercise_category || '',
+            sets_completed: ex.sets.map((set, idx) => ({
+              set_number: idx + 1,
+              reps_completed: parseInt(set.reps) || 0, // Usar reps da série
+              weight_used: 0,
+              notes: ''
+            }))
+          }));
+          setExercisesData(initialData);
+        }
         
-        const workouts = await base44.entities.Workout.list();
-        const foundWorkout = workouts.find(w => w.id === workoutId);
-        setWorkout(foundWorkout);
-        
-        if (foundWorkout?.days) {
-          const day = foundWorkout.days.find(d => d.day_number === dayNumber);
-          setCurrentDay(day);
-          
-          // Inicializar dados dos exercícios (apenas peso)
-          if (day?.exercises) {
-            const initialData = day.exercises.map(ex => ({
-              exercise_id: ex.exercise_id || '',
-              exercise_name: ex.exercise_name,
-              exercise_category: ex.exercise_category || '',
-              sets_completed: ex.sets.map((set, idx) => ({
-                set_number: idx + 1,
-                reps_completed: parseInt(set.reps) || 0, // Usar reps da série
-                weight_used: 0,
-                notes: ''
-              }))
-            }));
-            setExercisesData(initialData);
-          }
-          
-          if (day?.exercises?.[0]?.sets?.[0]?.rest_seconds) {
-            const firstRest = day.exercises[0].sets[0].rest_seconds;
-            setRestTime(firstRest);
-            setTimeRemaining(firstRest);
-          }
+        if (day?.exercises?.[0]?.sets?.[0]?.rest_seconds) {
+          const firstRest = day.exercises[0].sets[0].rest_seconds;
+          setRestTime(firstRest);
+          setTimeRemaining(firstRest);
         }
       }
     };
     loadWorkout();
-  }, [workoutId, dayNumber]);
+  }, []); // Dependency array changed to empty
 
   // Análise automática ao mudar de exercício - COM DEBOUNCE
   const currentExercise = currentDay?.exercises?.[currentExerciseIndex];

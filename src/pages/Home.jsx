@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate } from "react-router-dom";
@@ -17,72 +17,44 @@ export default function Home() {
   const queryClient = useQueryClient();
   const [user, setUser] = useState(null);
   const [challengeInput, setChallengeInput] = useState("");
-  const hasCheckedOnboarding = useRef(false);
 
   useEffect(() => {
-    let mounted = true;
-    
-    const loadUser = async () => {
-      if (!mounted) return;
-      
-      try {
-        const currentUser = await base44.auth.me();
-        if (!mounted) return;
-        
-        setUser(currentUser);
-        
-        if (!currentUser.fitness_goal && !hasCheckedOnboarding.current) {
-          hasCheckedOnboarding.current = true;
-          navigate(createPageUrl("Onboarding"));
-        }
-      } catch (error) {
-        console.error("Error loading user:", error);
-      }
-    };
-    
-    loadUser();
-    
-    return () => {
-      mounted = false;
-    };
+    base44.auth.me().then(setUser).catch(console.error);
   }, []);
 
-  const userEmail = user?.email;
-
   const { data: workoutLogs = [] } = useQuery({
-    queryKey: ['workout-logs', userEmail],
+    queryKey: ['workout-logs'],
     queryFn: async () => {
+      if (!user?.email) return [];
       const allLogs = await base44.entities.WorkoutLog.list('-date');
-      return allLogs.filter(log => log.created_by === userEmail);
+      return allLogs.filter(log => log.created_by === user.email);
     },
-    enabled: Boolean(userEmail),
-    staleTime: 30000,
+    enabled: !!user,
   });
 
   const { data: progressEntries = [] } = useQuery({
-    queryKey: ['progress-entries', userEmail],
+    queryKey: ['progress-entries'],
     queryFn: async () => {
+      if (!user?.email) return [];
       const allEntries = await base44.entities.ProgressEntry.list('-date', 1);
-      return allEntries.filter(entry => entry.created_by === userEmail);
+      return allEntries.filter(entry => entry.created_by === user.email);
     },
-    enabled: Boolean(userEmail),
-    staleTime: 30000,
+    enabled: !!user,
   });
 
   const { data: challenges = [] } = useQuery({
     queryKey: ['challenges'],
     queryFn: () => base44.entities.Challenge.list('-created_date'),
-    staleTime: 60000,
   });
 
   const { data: challengeProgress = [] } = useQuery({
-    queryKey: ['challenge-progress', userEmail],
+    queryKey: ['challenge-progress'],
     queryFn: async () => {
+      if (!user?.email) return [];
       const allProgress = await base44.entities.ChallengeProgress.list();
-      return allProgress.filter(p => p.created_by === userEmail);
+      return allProgress.filter(p => p.created_by === user.email);
     },
-    enabled: Boolean(userEmail),
-    staleTime: 30000,
+    enabled: !!user,
   });
 
   const activeChallenge = challenges.find(c => c.is_active);
@@ -140,6 +112,14 @@ export default function Home() {
   const challengePercentage = activeChallenge 
     ? Math.min(((userProgress?.current_progress || 0) / activeChallenge.target) * 100, 100)
     : 0;
+
+  if (!user) {
+    return (
+      <div className="py-6">
+        <p className="text-slate-400 text-center">Carregando...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="py-6 space-y-6">
