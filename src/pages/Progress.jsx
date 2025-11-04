@@ -13,15 +13,19 @@ export default function Progress() {
   const [activeTab, setActiveTab] = useState("weight");
   const [showForm, setShowForm] = useState(false);
   const [user, setUser] = useState(null);
+  const [isLoadingUser, setIsLoadingUser] = useState(true);
   const queryClient = useQueryClient();
 
   useEffect(() => {
     const loadUser = async () => {
       try {
+        setIsLoadingUser(true);
         const currentUser = await base44.auth.me();
         setUser(currentUser);
       } catch (error) {
         console.error("Error loading user:", error);
+      } finally {
+        setIsLoadingUser(false);
       }
     };
     loadUser();
@@ -31,20 +35,30 @@ export default function Progress() {
     queryKey: ['progress-entries', user?.email],
     queryFn: async () => {
       if (!user?.email) return [];
-      const allEntries = await base44.entities.ProgressEntry.list('-date');
-      return allEntries.filter(entry => entry.created_by === user.email);
+      try {
+        const allEntries = await base44.entities.ProgressEntry.list('-date');
+        return (allEntries || []).filter(entry => entry.created_by === user.email);
+      } catch (error) {
+        console.error("Error loading progress entries:", error);
+        return [];
+      }
     },
-    enabled: !!user?.email,
+    enabled: !!user?.email && !isLoadingUser,
   });
 
   const { data: workoutLogs = [] } = useQuery({
     queryKey: ['workout-logs', user?.email],
     queryFn: async () => {
       if (!user?.email) return [];
-      const allLogs = await base44.entities.WorkoutLog.list('-date');
-      return allLogs.filter(log => log.created_by === user.email);
+      try {
+        const allLogs = await base44.entities.WorkoutLog.list('-date');
+        return (allLogs || []).filter(log => log.created_by === user.email);
+      } catch (error) {
+        console.error("Error loading workout logs:", error);
+        return [];
+      }
     },
-    enabled: !!user?.email,
+    enabled: !!user?.email && !isLoadingUser,
   });
 
   const createProgressMutation = useMutation({
@@ -74,7 +88,6 @@ export default function Progress() {
         )}
       </div>
 
-      {/* Form */}
       {showForm && (
         <ProgressForm
           onSubmit={handleSubmitProgress}
@@ -83,7 +96,6 @@ export default function Progress() {
         />
       )}
 
-      {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="bg-slate-900/50 border border-slate-800 w-full">
           <TabsTrigger value="weight" className="flex-1 data-[state=active]:bg-blue-600">
@@ -98,7 +110,6 @@ export default function Progress() {
         </TabsList>
       </Tabs>
 
-      {/* Content */}
       {activeTab === "weight" && <WeightChart data={progressEntries} />}
       {activeTab === "workouts" && <WorkoutHistory logs={workoutLogs} />}
       {activeTab === "photos" && <ProgressPhotos entries={progressEntries} />}

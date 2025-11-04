@@ -10,20 +10,31 @@ export default function Community() {
   const [showForm, setShowForm] = useState(false);
   const [editingPost, setEditingPost] = useState(null);
   const [user, setUser] = useState(null);
+  const [isLoadingUser, setIsLoadingUser] = useState(true);
   const queryClient = useQueryClient();
 
   const { data: posts = [], isLoading } = useQuery({
     queryKey: ['community-posts'],
-    queryFn: () => base44.entities.CommunityPost.list('-created_date'),
+    queryFn: async () => {
+      try {
+        return await base44.entities.CommunityPost.list('-created_date');
+      } catch (error) {
+        console.error("Error loading posts:", error);
+        return [];
+      }
+    },
   });
 
   useEffect(() => {
     const loadUser = async () => {
       try {
+        setIsLoadingUser(true);
         const currentUser = await base44.auth.me();
         setUser(currentUser);
       } catch (error) {
         console.error("Error loading user:", error);
+      } finally {
+        setIsLoadingUser(false);
       }
     };
     loadUser();
@@ -126,7 +137,7 @@ export default function Community() {
       )}
 
       <div className="space-y-4">
-        {isLoading ? (
+        {isLoading || isLoadingUser ? (
           <p className="text-slate-400 text-center py-12">Carregando posts...</p>
         ) : posts.length > 0 ? (
           posts.map((post) => (
