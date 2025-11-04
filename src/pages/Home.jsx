@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate } from "react-router-dom";
@@ -17,37 +17,20 @@ export default function Home() {
   const queryClient = useQueryClient();
   const [user, setUser] = useState(null);
   const [challengeInput, setChallengeInput] = useState("");
-  const isMounted = useRef(true);
 
   useEffect(() => {
-    isMounted.current = true;
-    
     const loadUser = async () => {
       try {
         const currentUser = await base44.auth.me();
-        
-        if (!isMounted.current) return;
-        
         setUser(currentUser);
         if (!currentUser.fitness_goal) {
           navigate(createPageUrl("Onboarding"));
         }
       } catch (error) {
-        if (!isMounted.current) return;
-        
-        // Ignorar erros de abort
-        if (error.message?.includes('abort') || error.name === 'AbortError') {
-          return;
-        }
         console.error("Error loading user:", error);
       }
     };
-    
     loadUser();
-    
-    return () => {
-      isMounted.current = false;
-    };
   }, [navigate]);
 
   const { data: workoutLogs = [] } = useQuery({
@@ -58,8 +41,6 @@ export default function Home() {
       return allLogs.filter(log => log.created_by === user.email);
     },
     enabled: !!user?.email,
-    retry: 1,
-    staleTime: 30000,
   });
 
   const { data: progressEntries = [] } = useQuery({
@@ -70,15 +51,11 @@ export default function Home() {
       return allEntries.filter(entry => entry.created_by === user.email);
     },
     enabled: !!user?.email,
-    retry: 1,
-    staleTime: 30000,
   });
 
   const { data: challenges = [] } = useQuery({
     queryKey: ['challenges'],
     queryFn: () => base44.entities.Challenge.list('-created_date'),
-    retry: 1,
-    staleTime: 60000,
   });
 
   const { data: challengeProgress = [] } = useQuery({
@@ -89,8 +66,6 @@ export default function Home() {
       return allProgress.filter(p => p.created_by === user.email);
     },
     enabled: !!user?.email,
-    retry: 1,
-    staleTime: 30000,
   });
 
   const activeChallenge = challenges.find(c => c.is_active);
