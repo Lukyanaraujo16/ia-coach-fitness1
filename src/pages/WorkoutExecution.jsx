@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft, Play, Pause, SkipForward, CheckCircle, Plus, Minus, AlertTriangle, Trophy, Clock, Zap, X, Lightbulb, Weight, TrendingUp } from "lucide-react";
+import { Play, Pause, SkipForward, CheckCircle, Plus, Minus, AlertTriangle, Trophy, Clock, Zap, X, Lightbulb, Weight } from "lucide-react";
 import { motion } from "framer-motion";
 
 export default function WorkoutExecution() {
@@ -36,12 +36,6 @@ export default function WorkoutExecution() {
   const [endTime, setEndTime] = useState(null);
   const [showAITips, setShowAITips] = useState(false);
   const [aiTips, setAiTips] = useState(null);
-  const [showAISuggestion, setShowAISuggestion] = useState(false);
-  const [aiSuggestion, setAiSuggestion] = useState(null);
-  const [workoutLogs, setWorkoutLogs] = useState([]);
-  const [isAnalyzingPerformance, setIsAnalyzingPerformance] = useState(false);
-  const abortControllerRef = useRef(null);
-  const isFirstMount = useRef(true);
 
   const isPremium = user?.subscription_status === 'premium';
 
@@ -51,11 +45,6 @@ export default function WorkoutExecution() {
         const currentUser = await base44.auth.me();
         setUser(currentUser);
         setStartTime(new Date());
-        
-        // Carregar histórico de treinos para análise
-        const allLogs = await base44.entities.WorkoutLog.list('-date');
-        const userLogs = allLogs.filter(log => log.created_by === currentUser.email);
-        setWorkoutLogs(userLogs);
         
         const workouts = await base44.entities.Workout.list();
         const foundWorkout = workouts.find(w => w.id === workoutId);
@@ -92,57 +81,6 @@ export default function WorkoutExecution() {
     loadWorkout();
   }, [workoutId, dayNumber]);
 
-  // Análise automática ao mudar de exercício - OTIMIZADO
-  useEffect(() => {
-    // Pular análise na primeira montagem
-    if (isFirstMount.current) {
-      isFirstMount.current = false;
-      return;
-    }
-
-    const currentExercise = currentDay?.exercises?.[currentExerciseIndex];
-    
-    // Verificações mais rigorosas
-    if (!currentExercise || 
-        !isPremium || 
-        !workoutLogs || 
-        workoutLogs.length === 0 ||
-        !currentDay) {
-      return;
-    }
-
-    // Cancelar análise anterior se existir
-    if (abortControllerRef.current) {
-      try {
-        abortControllerRef.current.abort();
-      } catch (e) {
-        // Ignorar erro de abort
-      }
-    }
-
-    // Criar novo abort controller
-    const controller = new AbortController();
-    abortControllerRef.current = controller;
-
-    // Delay de 1 segundo para garantir estabilidade
-    const timer = setTimeout(() => {
-      if (!controller.signal.aborted) {
-        analyzeExercisePerformance(currentExercise, controller.signal).catch(() => {
-          // Ignorar silenciosamente qualquer erro
-        });
-      }
-    }, 1000);
-
-    return () => {
-      clearTimeout(timer);
-      try {
-        controller.abort();
-      } catch (e) {
-        // Ignorar erro de abort
-      }
-    };
-  }, [currentExerciseIndex]); // APENAS currentExerciseIndex
-
   // Timer com controle baseado em timestamp real
   useEffect(() => {
     let interval;
@@ -160,120 +98,13 @@ export default function WorkoutExecution() {
         } else {
           setTimeRemaining(remaining);
         }
-      }, 100); // Atualiza a cada 100ms para mais precisão
+      }, 100);
     }
     
     return () => {
       if (interval) clearInterval(interval);
     };
   }, [isResting, restStartTime, restTime]);
-
-  const analyzeExercisePerformance = async (exercise, signal) => {
-    // Verificações rigorosas no início
-    if (!exercise || 
-        isAnalyzingPerformance || 
-        !workoutLogs ||
-        workoutLogs.length === 0) {
-      return;
-    }
-
-    setIsAnalyzingPerformance(true);
-    
-    try {
-      // Verificar se foi abortado
-      if (signal?.aborted) {
-        setIsAnalyzingPerformance(false);
-        return;
-      }
-
-      // Encontrar histórico deste exercício
-      const exerciseHistory = workoutLogs
-        .flatMap(log => log.exercises_completed || [])
-        .filter(ex => ex && ex.exercise_name === exercise.exercise_name)
-        .slice(0, 5);
-
-      if (exerciseHistory.length < 2) {
-        setShowAISuggestion(false); 
-        setAiSuggestion(null);
-        setIsAnalyzingPerformance(false);
-        return; 
-      }
-
-      // Verificar novamente antes da chamada à API
-      if (signal?.aborted) {
-        setIsAnalyzingPerformance(false);
-        return;
-      }
-
-      // Analisar progressão de carga
-      const recentWeights = exerciseHistory.map(ex => {
-        const maxWeight = ex.sets_completed?.reduce((max, set) => 
-          set.weight_used > max ? set.weight_used : max, 0
-        ) || 0;
-        return maxWeight;
-      });
-
-      const lastWeight = recentWeights[0];
-      const hasProgressedRecently = recentWeights[0] > recentWeights[1];
-      const isStagnant = recentWeights.slice(0, 3).every(w => w === lastWeight && w > 0);
-
-      const prompt = `Você é um personal trainer analisando o desempenho de um atleta no exercício "${exercise.exercise_name}".
-
-**Histórico de cargas (últimas 5 execuções):**
-${recentWeights.map((w, i) => `${i + 1}. ${w}kg`).join('\n')}
-
-**Situação atual:**
-- Última carga: ${lastWeight}kg
-- Progrediu recentemente: ${hasProgressedRecently ? 'Sim' : 'Não'}
-- Está estagnado: ${isStagnant ? 'Sim (mesma carga há 3+ treinos)' : 'Não'}
-
-**Tarefa:**
-Se houver uma sugestão importante (aumentar carga, mudar estratégia, parabéns por progresso), retorne em JSON:
-{
-  "show_suggestion": true/false,
-  "type": "progress/stagnant/warning/congratulations",
-  "title": "Título curto e motivador",
-  "message": "Mensagem clara e específica (1-2 frases)",
-  "suggestion": "Ação específica a tomar"
-}
-
-Se NÃO houver sugestão relevante, retorne: {"show_suggestion": false}
-
-IMPORTANTE: Só mostre sugestão se for realmente relevante. Não seja repetitivo.`;
-
-      const response = await base44.integrations.Core.InvokeLLM({
-        prompt: prompt,
-        response_json_schema: {
-          type: "object",
-          properties: {
-            show_suggestion: { type: "boolean" },
-            type: { type: "string" },
-            title: { type: "string" },
-            message: { type: "string" },
-            suggestion: { type: "string" }
-          }
-        }
-      });
-
-      // Verificar se foi abortado após a chamada
-      if (signal?.aborted) {
-        setIsAnalyzingPerformance(false);
-        return;
-      }
-
-      if (response && response.show_suggestion) {
-        setAiSuggestion(response);
-        setShowAISuggestion(true);
-      } else {
-        setShowAISuggestion(false);
-        setAiSuggestion(null);
-      }
-    } catch (error) {
-      // Completamente silencioso - não loga nada
-    } finally {
-      setIsAnalyzingPerformance(false);
-    }
-  };
 
   const createWorkoutLogMutation = useMutation({
     mutationFn: (data) => base44.entities.WorkoutLog.create(data),
@@ -305,7 +136,7 @@ IMPORTANTE: Só mostre sugestão se for realmente relevante. Não seja repetitiv
     }
   };
 
-  // Nova função para gerar dicas de IA
+  // Função para gerar dicas de IA (apenas manual)
   const generateAITips = async (exercise) => {
     if (!exercise || !isPremium) return;
     
@@ -359,12 +190,10 @@ Seja direto, prático e motivador.`;
 
   const handlePauseRest = () => {
     if (isResting && restStartTime) {
-      // Calcula quanto tempo já passou
       const now = Date.now();
       const elapsed = Math.floor((now - restStartTime) / 1000);
       const remaining = restTime - elapsed;
       
-      // Atualiza o restTime para ser o tempo restante
       setRestTime(Math.max(remaining, 0));
       setTimeRemaining(Math.max(remaining, 0));
       setIsResting(false);
@@ -375,8 +204,6 @@ Seja direto, prático e motivador.`;
   const handleNextExercise = () => {
     setIsResting(false);
     setRestStartTime(null);
-    setShowAISuggestion(false); // Close AI suggestion when moving to next exercise
-    setAiSuggestion(null); // Clear suggestion
 
     if (isLastExercise) {
       if (skippedExercises.length > 0) {
@@ -418,7 +245,6 @@ Seja direto, prático e motivador.`;
       ? Math.round((endTime - startTime) / 1000 / 60)
       : workout.duration_minutes;
 
-    // Filtrar exercícios completados (não pulados)
     const completedExercises = exercisesData.filter((_, idx) => !skippedExercises.includes(idx));
 
     createWorkoutLogMutation.mutate({
@@ -629,7 +455,6 @@ Seja direto, prático e motivador.`;
               Exercício {currentExerciseIndex + 1}/{currentDay.exercises?.length || 0}
             </p>
           </div>
-          {/* Botão de Dicas IA */}
           {user && isPremium ? (
             <Button
               variant="ghost"
@@ -654,57 +479,6 @@ Seja direto, prático e motivador.`;
           <p className="text-slate-400 text-xs mt-0.5">💡 {currentExercise.notes}</p>
         )}
       </div>
-
-      {/* AI Suggestion Modal (Automático) */}
-      {showAISuggestion && aiSuggestion && (
-        <div className="absolute inset-0 bg-black/80 backdrop-blur-sm z-[70] flex items-center justify-center p-4" onClick={() => setShowAISuggestion(false)}>
-          <motion.div
-            initial={{ scale: 0.9, opacity: 0, y: 20 }}
-            animate={{ scale: 1, opacity: 1, y: 0 }}
-            onClick={(e) => e.stopPropagation()}
-            className="max-w-md w-full"
-          >
-            <Card className={`bg-slate-900 border-2 ${
-              aiSuggestion.type === 'congratulations' ? 'border-green-600' :
-              aiSuggestion.type === 'stagnant' ? 'border-orange-600' :
-              aiSuggestion.type === 'warning' ? 'border-red-600' :
-              'border-blue-600'
-            }`}>
-              <CardHeader>
-                <CardTitle className="text-white flex items-center gap-2">
-                  {aiSuggestion.type === 'congratulations' && <Trophy className="w-5 h-5 text-green-400" />}
-                  {aiSuggestion.type === 'stagnant' && <TrendingUp className="w-5 h-5 text-orange-400" />}
-                  {aiSuggestion.type === 'warning' && <AlertTriangle className="w-5 h-5 text-red-400" />}
-                  {aiSuggestion.type === 'progress' && <Zap className="w-5 h-5 text-blue-400" />}
-                  {aiSuggestion.title}
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <p className="text-slate-300 text-sm leading-relaxed">
-                  {aiSuggestion.message}
-                </p>
-
-                <div className={`p-3 rounded-lg ${
-                  aiSuggestion.type === 'congratulations' ? 'bg-green-900/30 border border-green-700/50' :
-                  aiSuggestion.type === 'stagnant' ? 'bg-orange-900/30 border border-orange-700/50' :
-                  aiSuggestion.type === 'warning' ? 'bg-red-900/30 border border-red-700/50' :
-                  'bg-blue-900/30 border border-blue-700/50'
-                }`}>
-                  <p className="text-white text-sm font-semibold mb-1">💡 Sugestão:</p>
-                  <p className="text-slate-200 text-sm">{aiSuggestion.suggestion}</p>
-                </div>
-
-                <Button
-                  onClick={() => setShowAISuggestion(false)}
-                  className="w-full bg-blue-600 hover:bg-blue-700"
-                >
-                  Entendi, vamos lá!
-                </Button>
-              </CardContent>
-            </Card>
-          </motion.div>
-        </div>
-      )}
 
       {/* AI Tips Modal */}
       {showAITips && aiTips && (
