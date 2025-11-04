@@ -6,8 +6,13 @@ import { Trophy, Flame, Target } from "lucide-react";
 
 export default function ProfileStats({ user }) {
   const { data: workoutLogs = [] } = useQuery({
-    queryKey: ['user-workout-logs'],
-    queryFn: () => base44.entities.WorkoutLog.list('-date'),
+    queryKey: ['user-workout-logs', user?.email],
+    queryFn: async () => {
+      if (!user?.email) return [];
+      const allLogs = await base44.entities.WorkoutLog.list('-date');
+      return allLogs.filter(log => log.created_by === user.email);
+    },
+    enabled: !!user?.email,
   });
 
   const totalWorkouts = workoutLogs.length;
