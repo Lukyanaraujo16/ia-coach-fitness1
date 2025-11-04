@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -180,17 +181,18 @@ export default function WorkoutExecution() {
       ? Math.round((endTime - startTime) / 1000 / 60)
       : workout.duration_minutes;
 
-    // Preparar dados dos exercícios com pesos
-    const exercisesCompleted = currentDay.exercises
-      ?.filter((_, idx) => !skippedExercises.includes(idx))
-      .map((exercise, idx) => {
-        const weights = exerciseWeights[idx] || [];
-        return {
+    // Preparar dados dos exercícios com peso máximo
+    const exercisesCompleted = [];
+    currentDay.exercises?.forEach((exercise, originalIdx) => {
+      if (!skippedExercises.includes(originalIdx)) {
+        const maxWeight = exerciseWeights[originalIdx];
+        exercisesCompleted.push({
           exercise_name: exercise.exercise_name,
           sets_completed: exercise.sets?.length || 0,
-          weights: weights.filter(w => w && w > 0),
-        };
-      });
+          max_weight: maxWeight && maxWeight > 0 ? maxWeight : undefined,
+        });
+      }
+    });
 
     createWorkoutLogMutation.mutate({
       workout_id: workout.id,
@@ -219,17 +221,14 @@ export default function WorkoutExecution() {
     navigate(createPageUrl("WorkoutDetail") + `?id=${workoutId}`);
   };
 
-  const handleWeightChange = (setIndex, value) => {
-    const weights = exerciseWeights[currentExerciseIndex] || [];
-    const newWeights = [...weights];
-    newWeights[setIndex] = value ? parseFloat(value) : "";
+  const handleWeightChange = (value) => {
     setExerciseWeights({
       ...exerciseWeights,
-      [currentExerciseIndex]: newWeights,
+      [currentExerciseIndex]: value ? parseFloat(value) : "",
     });
   };
 
-  const currentExerciseWeights = exerciseWeights[currentExerciseIndex] || [];
+  const currentExerciseWeight = exerciseWeights[currentExerciseIndex] || "";
 
   // Exit Confirmation Modal
   if (showExitConfirm) {
@@ -470,45 +469,19 @@ export default function WorkoutExecution() {
 
       {/* Registro de Peso - Fixo */}
       <div className="flex-shrink-0 bg-slate-900/95 backdrop-blur-sm border-t border-slate-800 px-3 py-2">
-        <div className="bg-gradient-to-br from-blue-900/30 to-cyan-900/30 border border-blue-700/50 rounded-lg p-2">
-          <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center gap-2">
-              <Weight className="w-4 h-4 text-blue-400" />
-              <span className="text-slate-300 text-xs font-semibold">Carga Usada (kg)</span>
-            </div>
+        <div className="bg-gradient-to-br from-blue-900/30 to-cyan-900/30 border border-blue-700/50 rounded-lg p-2.5">
+          <div className="flex items-center gap-2 mb-2">
+            <Weight className="w-4 h-4 text-blue-400" />
+            <span className="text-slate-300 text-xs font-semibold">Carga Máxima (kg)</span>
           </div>
-          <div className="grid grid-cols-3 gap-1.5">
-            {currentExercise?.sets?.slice(0, 3).map((set, idx) => (
-              <div key={idx} className="space-y-1">
-                <label className="text-slate-400 text-xs">Série {idx + 1}</label>
-                <Input
-                  type="number"
-                  step="0.5"
-                  placeholder="0"
-                  value={currentExerciseWeights[idx] || ""}
-                  onChange={(e) => handleWeightChange(idx, e.target.value)}
-                  className="bg-slate-800 border-slate-700 text-white text-center h-8 text-sm"
-                />
-              </div>
-            ))}
-          </div>
-          {currentExercise?.sets?.length > 3 && (
-            <div className="grid grid-cols-3 gap-1.5 mt-1.5">
-              {currentExercise.sets.slice(3, 6).map((set, idx) => (
-                <div key={idx + 3} className="space-y-1">
-                  <label className="text-slate-400 text-xs">Série {idx + 4}</label>
-                  <Input
-                    type="number"
-                    step="0.5"
-                    placeholder="0"
-                    value={currentExerciseWeights[idx + 3] || ""}
-                    onChange={(e) => handleWeightChange(idx + 3, e.target.value)}
-                    className="bg-slate-800 border-slate-700 text-white text-center h-8 text-sm"
-                  />
-                </div>
-              ))}
-            </div>
-          )}
+          <Input
+            type="number"
+            step="0.5"
+            placeholder="Ex: 40"
+            value={currentExerciseWeight}
+            onChange={(e) => handleWeightChange(e.target.value)}
+            className="bg-slate-800 border-slate-700 text-white text-center h-10 text-base font-semibold"
+          />
         </div>
       </div>
 
