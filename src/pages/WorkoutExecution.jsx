@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -351,7 +352,7 @@ export default function WorkoutExecution() {
   const progress = ((currentSetIndex + 1) / totalSets) * 100;
 
   return (
-    <div className="py-6 space-y-6">
+    <div className="py-4 px-3 space-y-4 max-w-2xl mx-auto">
       <div className="flex items-center justify-between">
         <Button
           variant="ghost"
@@ -363,7 +364,7 @@ export default function WorkoutExecution() {
         </Button>
         <div className="text-center">
           <p className="text-slate-400 text-sm">Dia {dayNumber}</p>
-          <p className="text-white font-bold">
+          <p className="text-white font-bold text-sm">
             Exercício {currentExerciseIndex + 1}/{currentDay.exercises?.length || 0}
           </p>
         </div>
@@ -372,20 +373,20 @@ export default function WorkoutExecution() {
 
       {/* Current Exercise */}
       <Card className="bg-slate-900/50 border-slate-800">
-        <CardContent className="p-6 space-y-4">
+        <CardContent className="p-4 space-y-3">
           <div>
-            <h2 className="text-2xl font-bold text-white mb-2">
+            <h2 className="text-xl font-bold text-white mb-1 leading-tight">
               {currentExercise?.exercise_name}
             </h2>
             {currentExercise?.notes && (
-              <p className="text-slate-400 text-sm">💡 {currentExercise.notes}</p>
+              <p className="text-slate-400 text-sm leading-relaxed">💡 {currentExercise.notes}</p>
             )}
           </div>
 
           {/* Progress Bar das Séries */}
           <div className="space-y-2">
             <div className="flex items-center justify-between text-sm">
-              <span className="text-slate-400">Progresso das Séries</span>
+              <span className="text-slate-400">Progresso</span>
               <span className="text-blue-400 font-semibold">
                 {currentSetIndex + 1}/{totalSets}
               </span>
@@ -398,50 +399,69 @@ export default function WorkoutExecution() {
             </div>
           </div>
 
-          {/* Série Atual em Destaque */}
+          {/* Série Atual em Destaque - OTIMIZADO MOBILE */}
           <Card className="bg-gradient-to-br from-blue-900/30 to-purple-900/30 border-blue-700/50">
             <CardContent className="p-4">
-              <div className="flex items-center justify-between mb-3">
-                <h3 className="text-white font-bold text-lg">
-                  Série {currentSetIndex + 1} de {totalSets}
-                </h3>
-                {currentSet?.times > 1 && (
-                  <span className="text-blue-400 text-sm font-medium">
-                    {currentSet.times}x
-                  </span>
-                )}
-              </div>
+              <h3 className="text-white font-bold text-lg mb-3 text-center">
+                Série {currentSetIndex + 1} de {totalSets}
+              </h3>
               
-              <div className="space-y-3">
+              <div className="space-y-2">
+                {/* VEZES - DESTAQUE PRINCIPAL */}
+                {currentSet?.times > 1 && (
+                  <div className="bg-yellow-900/30 border-2 border-yellow-600/50 rounded-lg p-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-yellow-400 font-semibold text-sm">🔄 Fazer</span>
+                      <span className="text-yellow-300 font-bold text-3xl">
+                        {currentSet.times}x
+                      </span>
+                    </div>
+                    <p className="text-yellow-400/70 text-xs mt-1 text-center">
+                      Repetir esta série {currentSet.times} vezes
+                    </p>
+                  </div>
+                )}
+
                 {/* Repetições */}
-                <div className="flex items-center justify-between p-3 bg-slate-900/50 rounded-lg">
-                  <span className="text-slate-300 text-sm">Repetições</span>
-                  <span className="text-white font-bold text-2xl">{currentSet?.reps}</span>
+                <div className="bg-slate-900/50 rounded-lg p-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-slate-300 font-medium">Repetições</span>
+                    <span className="text-white font-bold text-3xl">{currentSet?.reps}</span>
+                  </div>
                 </div>
 
                 {/* Descanso */}
-                <div className="flex items-center justify-between p-3 bg-slate-900/50 rounded-lg">
-                  <span className="text-slate-300 text-sm">Descanso</span>
-                  <span className="text-purple-400 font-bold text-xl">
-                    {currentSet?.rest_seconds}s
-                  </span>
+                <div className="bg-slate-900/50 rounded-lg p-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-slate-300 font-medium">Descanso</span>
+                    <span className="text-purple-400 font-bold text-2xl">
+                      {currentSet?.rest_seconds}s
+                    </span>
+                  </div>
                 </div>
 
-                {/* Observações da Série */}
+                {/* Observações da Série - SEMPRE VISÍVEL */}
                 {currentSet?.notes && (
-                  <div className="p-3 bg-yellow-900/20 border border-yellow-800/50 rounded-lg">
-                    <p className="text-yellow-400 text-sm font-medium mb-1">📌 Observação:</p>
-                    <p className="text-slate-300 text-sm">{currentSet.notes}</p>
+                  <div className="bg-orange-900/30 border-2 border-orange-600/50 rounded-lg p-3">
+                    <div className="flex items-start gap-2">
+                      <span className="text-orange-400 text-lg flex-shrink-0">📌</span>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-orange-400 font-semibold text-xs mb-1">Atenção:</p>
+                        <p className="text-orange-200 text-sm leading-relaxed break-words">
+                          {currentSet.notes}
+                        </p>
+                      </div>
+                    </div>
                   </div>
                 )}
               </div>
             </CardContent>
           </Card>
 
-          {/* Lista de Todas as Séries (Preview) */}
+          {/* Lista de Todas as Séries - GRID RESPONSIVO */}
           <div className="space-y-2">
             <h4 className="text-slate-400 text-sm font-semibold">Todas as Séries:</h4>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
               {currentExercise?.sets?.map((set, index) => (
                 <div
                   key={index}
@@ -460,12 +480,13 @@ export default function WorkoutExecution() {
                   }`}>
                     Série {index + 1}
                   </p>
-                  <p className={`font-bold ${
+                  <p className={`font-bold text-sm ${
                     index === currentSetIndex ? 'text-white' : 
                     index < currentSetIndex ? 'text-green-300' : 
                     'text-slate-400'
                   }`}>
-                    {set.times > 1 && `${set.times}x `}{set.reps} reps
+                    {set.times > 1 && <span className="text-yellow-400">{set.times}x </span>}
+                    {set.reps}
                   </p>
                   {index < currentSetIndex && (
                     <CheckCircle className="w-4 h-4 text-green-400 mx-auto mt-1" />
@@ -477,31 +498,31 @@ export default function WorkoutExecution() {
         </CardContent>
       </Card>
 
-      {/* Rest Timer */}
+      {/* Rest Timer - COMPACTO */}
       <Card className="bg-gradient-to-br from-purple-900/30 to-blue-900/30 border-purple-700/50">
-        <CardContent className="p-6 space-y-4">
+        <CardContent className="p-4 space-y-3">
           <div className="text-center">
-            <p className="text-slate-300 mb-2">Tempo de Descanso</p>
-            <div className="text-6xl font-bold text-white mb-4">
+            <p className="text-slate-300 text-sm mb-1">Descanso</p>
+            <div className="text-5xl font-bold text-white mb-2">
               {Math.floor(timeRemaining / 60)}:{(timeRemaining % 60).toString().padStart(2, '0')}
             </div>
             
             {!isResting && (
-              <div className="flex items-center justify-center gap-3 mb-4">
+              <div className="flex items-center justify-center gap-2 mb-2">
                 <Button
                   variant="outline"
                   size="icon"
                   onClick={() => adjustRestTime(-30)}
-                  className="border-slate-700 text-slate-300"
+                  className="border-slate-700 text-slate-300 h-9 w-9"
                 >
                   <Minus className="w-4 h-4" />
                 </Button>
-                <span className="text-slate-300 text-sm">{restTime}s</span>
+                <span className="text-slate-300 text-sm min-w-[60px] text-center">{restTime}s</span>
                 <Button
                   variant="outline"
                   size="icon"
                   onClick={() => adjustRestTime(30)}
-                  className="border-slate-700 text-slate-300"
+                  className="border-slate-700 text-slate-300 h-9 w-9"
                 >
                   <Plus className="w-4 h-4" />
                 </Button>
@@ -512,7 +533,7 @@ export default function WorkoutExecution() {
           {!isResting ? (
             <Button
               onClick={handleStartRest}
-              className="w-full bg-purple-600 hover:bg-purple-700 py-6"
+              className="w-full bg-purple-600 hover:bg-purple-700 h-12"
             >
               <Play className="w-5 h-5 mr-2" />
               Iniciar Descanso
@@ -521,7 +542,7 @@ export default function WorkoutExecution() {
             <Button
               onClick={() => setIsResting(false)}
               variant="outline"
-              className="w-full border-slate-700 text-slate-300 py-6"
+              className="w-full border-slate-700 text-slate-300 h-12"
             >
               <Pause className="w-5 h-5 mr-2" />
               Pausar
@@ -530,35 +551,35 @@ export default function WorkoutExecution() {
         </CardContent>
       </Card>
 
-      {/* Action Buttons */}
-      <div className="flex gap-3">
+      {/* Action Buttons - COMPACTOS */}
+      <div className="flex gap-2 pb-4">
         <Button
           onClick={handleSkipExercise}
           variant="outline"
-          className="flex-1 bg-slate-800 border-slate-600 text-slate-200 hover:bg-slate-700 hover:text-white py-6"
+          className="flex-1 bg-slate-800 border-slate-600 text-slate-200 hover:bg-slate-700 hover:text-white h-12 text-sm"
         >
-          Pular Exercício
+          Pular
         </Button>
         <Button
           onClick={handleNextSet}
-          className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-6 font-semibold"
+          className="flex-1 bg-blue-600 hover:bg-blue-700 text-white h-12 font-semibold text-sm"
         >
           {isLastSet ? (
             isLastExercise ? (
               <>
-                <CheckCircle className="w-5 h-5 mr-2" />
+                <CheckCircle className="w-4 h-4 mr-1" />
                 Finalizar
               </>
             ) : (
               <>
-                <SkipForward className="w-5 h-5 mr-2" />
+                <SkipForward className="w-4 h-4 mr-1" />
                 Próximo
               </>
             )
           ) : (
             <>
-              <CheckCircle className="w-5 h-5 mr-2" />
-              Concluir Série
+              <CheckCircle className="w-4 h-4 mr-1" />
+              Concluir
             </>
           )}
         </Button>
