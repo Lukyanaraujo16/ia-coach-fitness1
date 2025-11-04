@@ -7,7 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft, Play, Pause, SkipForward, CheckCircle, Plus, Minus, AlertTriangle, Trophy, Clock, Zap, Circle } from "lucide-react";
+import { ArrowLeft, Play, Pause, SkipForward, CheckCircle, Plus, Minus, AlertTriangle, Trophy, Clock, Zap } from "lucide-react";
 import { motion } from "framer-motion";
 
 export default function WorkoutExecution() {
@@ -20,7 +20,6 @@ export default function WorkoutExecution() {
   const [workout, setWorkout] = useState(null);
   const [currentDay, setCurrentDay] = useState(null);
   const [currentExerciseIndex, setCurrentExerciseIndex] = useState(0);
-  const [completedSets, setCompletedSets] = useState([]);
   const [skippedExercises, setSkippedExercises] = useState([]);
   const [restTime, setRestTime] = useState(60);
   const [isResting, setIsResting] = useState(false);
@@ -101,23 +100,6 @@ export default function WorkoutExecution() {
 
   const currentExercise = currentDay.exercises?.[currentExerciseIndex];
   const isLastExercise = currentExerciseIndex === (currentDay.exercises?.length || 0) - 1;
-  const allSetsComplete = completedSets.length === (currentExercise?.sets?.length || 0);
-
-  const toggleSetComplete = (setIndex) => {
-    if (completedSets.includes(setIndex)) {
-      setCompletedSets(completedSets.filter(i => i !== setIndex));
-    } else {
-      setCompletedSets([...completedSets, setIndex]);
-      
-      // Auto-start descanso quando completa uma série
-      const set = currentExercise.sets[setIndex];
-      if (set?.rest_seconds && !isResting) {
-        setRestTime(set.rest_seconds);
-        setTimeRemaining(set.rest_seconds);
-        setIsResting(true);
-      }
-    }
-  };
 
   const handleStartRest = () => {
     setIsResting(true);
@@ -125,7 +107,6 @@ export default function WorkoutExecution() {
 
   const handleNextExercise = () => {
     setIsResting(false);
-    setCompletedSets([]);
     
     if (isLastExercise) {
       if (skippedExercises.length > 0) {
@@ -342,64 +323,49 @@ export default function WorkoutExecution() {
           )}
         </div>
 
-        {/* Todas as Séries */}
+        {/* Todas as Séries - Apenas Informativo */}
         <Card className="bg-slate-900/50 border-slate-800">
           <CardContent className="p-3 space-y-2">
             {currentExercise?.sets?.map((set, index) => (
-              <button
+              <div
                 key={index}
-                onClick={() => toggleSetComplete(index)}
-                className={`w-full text-left p-3 rounded-lg border-2 transition-all ${
-                  completedSets.includes(index)
-                    ? 'border-green-600 bg-green-600/20'
-                    : 'border-slate-700 bg-slate-800/50'
-                }`}
+                className="w-full p-3 rounded-lg border-2 border-slate-700 bg-slate-800/50"
               >
-                <div className="flex items-start gap-3">
-                  <div className="flex-shrink-0 mt-0.5">
-                    {completedSets.includes(index) ? (
-                      <CheckCircle className="w-6 h-6 text-green-400" />
-                    ) : (
-                      <Circle className="w-6 h-6 text-slate-500" />
-                    )}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-white font-bold">Série {index + 1}</span>
                   </div>
                   
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-2">
-                      <span className="text-white font-bold">Série {index + 1}</span>
-                      {set.times > 1 && (
-                        <span className="text-yellow-400 text-sm font-bold">
-                          {set.times}x
-                        </span>
-                      )}
-                    </div>
-                    
-                    <div className="grid grid-cols-3 gap-2 text-sm">
-                      <div className="bg-slate-900/50 rounded px-2 py-1">
-                        <p className="text-slate-400 text-xs">Reps</p>
-                        <p className="text-white font-bold">{set.reps}</p>
-                      </div>
-                      <div className="bg-slate-900/50 rounded px-2 py-1">
-                        <p className="text-slate-400 text-xs">Descanso</p>
-                        <p className="text-purple-400 font-bold">{set.rest_seconds}s</p>
-                      </div>
-                      {set.times > 1 && (
-                        <div className="bg-yellow-900/30 rounded px-2 py-1">
-                          <p className="text-yellow-400 text-xs">Fazer</p>
-                          <p className="text-yellow-300 font-bold">{set.times}x</p>
-                        </div>
-                      )}
-                    </div>
-                    
-                    {set.notes && (
-                      <div className="mt-2 bg-orange-900/30 border border-orange-700/50 rounded p-2">
-                        <p className="text-orange-400 text-xs font-semibold mb-0.5">📌 Atenção:</p>
-                        <p className="text-orange-200 text-xs">{set.notes}</p>
+                  <div className="grid grid-cols-3 gap-2 text-sm">
+                    {/* Fazer (Times) - PRIMEIRO */}
+                    {set.times > 1 && (
+                      <div className="bg-yellow-900/30 rounded px-2 py-1">
+                        <p className="text-yellow-400 text-xs">Fazer</p>
+                        <p className="text-yellow-300 font-bold">{set.times}x</p>
                       </div>
                     )}
+                    
+                    {/* Reps - SEGUNDO */}
+                    <div className="bg-slate-900/50 rounded px-2 py-1">
+                      <p className="text-slate-400 text-xs">Reps</p>
+                      <p className="text-white font-bold">{set.reps}</p>
+                    </div>
+                    
+                    {/* Descanso - TERCEIRO */}
+                    <div className="bg-slate-900/50 rounded px-2 py-1">
+                      <p className="text-slate-400 text-xs">Descanso</p>
+                      <p className="text-purple-400 font-bold">{set.rest_seconds}s</p>
+                    </div>
                   </div>
+                  
+                  {set.notes && (
+                    <div className="mt-2 bg-orange-900/30 border border-orange-700/50 rounded p-2">
+                      <p className="text-orange-400 text-xs font-semibold mb-0.5">📌 Atenção:</p>
+                      <p className="text-orange-200 text-xs">{set.notes}</p>
+                    </div>
+                  )}
                 </div>
-              </button>
+              </div>
             ))}
           </CardContent>
         </Card>
@@ -459,7 +425,7 @@ export default function WorkoutExecution() {
       </div>
 
       {/* Botões Fixos no Bottom */}
-      <div className="bg-slate-900/95 backdrop-blur-sm border-t border-slate-800 px-3 py-3 space-y-2">
+      <div className="bg-slate-900/95 backdrop-blur-sm border-t border-slate-800 px-3 py-3">
         <div className="flex gap-2">
           <Button
             onClick={handleSkipExercise}
@@ -470,8 +436,7 @@ export default function WorkoutExecution() {
           </Button>
           <Button
             onClick={handleNextExercise}
-            disabled={!allSetsComplete}
-            className="flex-1 bg-blue-600 hover:bg-blue-700 text-white h-12 font-semibold text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex-1 bg-blue-600 hover:bg-blue-700 text-white h-12 font-semibold text-sm"
           >
             {isLastExercise ? (
               <>
@@ -486,11 +451,6 @@ export default function WorkoutExecution() {
             )}
           </Button>
         </div>
-        {!allSetsComplete && (
-          <p className="text-center text-yellow-400 text-xs">
-            Complete todas as séries para avançar
-          </p>
-        )}
       </div>
     </div>
   );
