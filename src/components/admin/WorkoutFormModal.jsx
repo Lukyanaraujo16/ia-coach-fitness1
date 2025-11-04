@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -42,6 +42,36 @@ export default function WorkoutFormModal({ workout, exercises, onClose }) {
       ],
     }
   );
+
+  // Prevenir scroll do body quando o modal principal está aberto
+  useEffect(() => {
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, []);
+
+  // Prevenir scroll do body e scroll para o topo quando o modal de bulk add abre/fecha
+  useEffect(() => {
+    if (showBulkAdd) {
+      document.body.style.overflow = 'hidden';
+      document.body.style.position = 'fixed';
+      document.body.style.width = '100%';
+      document.body.style.top = '0'; // Isso fará a janela saltar para o topo
+    } else {
+      document.body.style.overflow = 'unset';
+      document.body.style.position = 'unset';
+      document.body.style.width = 'unset';
+      document.body.style.top = 'unset';
+    }
+    
+    return () => {
+      document.body.style.overflow = 'unset';
+      document.body.style.position = 'unset';
+      document.body.style.width = 'unset';
+      document.body.style.top = 'unset';
+    };
+  }, [showBulkAdd]);
 
   const createWorkoutMutation = useMutation({
     mutationFn: (data) => {
@@ -107,7 +137,14 @@ export default function WorkoutFormModal({ workout, exercises, onClose }) {
     setBulkSearchQuery("");
     setBulkAddStep(1);
     setBulkSetsConfig([{ times: 3, reps: "10-12", rest_seconds: 60, notes: "" }]);
-    setShowBulkAdd(true);
+    
+    // Scroll para o topo antes de abrir o modal
+    window.scrollTo({ top: 0, behavior: 'instant' });
+    
+    // Pequeno delay para garantir que o scroll aconteceu antes do modal ser renderizado
+    setTimeout(() => {
+      setShowBulkAdd(true);
+    }, 50);
   };
 
   const toggleExerciseSelection = (exerciseId) => {
@@ -617,10 +654,13 @@ export default function WorkoutFormModal({ workout, exercises, onClose }) {
 
       {/* Modal de Múltiplos Exercícios */}
       {showBulkAdd && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[110] flex items-start justify-center p-4 overflow-y-auto">
-          <div className="w-full max-w-2xl my-4 md:my-8">
-            <Card className="bg-slate-900 border-slate-800 w-full">
-              <CardHeader className="border-b border-slate-800 p-4 sticky top-0 bg-slate-900 z-10">
+        <div 
+          className="fixed inset-0 bg-black/90 backdrop-blur-sm z-[120] flex items-center justify-center p-4"
+          style={{ top: 0, left: 0, right: 0, bottom: 0 }} // Ensure it covers the whole screen
+        >
+          <div className="w-full max-w-2xl h-[90vh] flex flex-col"> {/* Use h-[90vh] and flex-col here */}
+            <Card className="bg-slate-900 border-slate-800 w-full h-full flex flex-col"> {/* Make Card a flex column */}
+              <CardHeader className="border-b border-slate-800 p-4 flex-shrink-0"> {/* flex-shrink-0 for header */}
                 <div className="flex items-center justify-between gap-3">
                   <CardTitle className="text-white text-base">
                     {bulkAddStep === 1 ? "Selecionar Exercícios" : "Configurar Séries"}
@@ -650,7 +690,7 @@ export default function WorkoutFormModal({ workout, exercises, onClose }) {
 
               {bulkAddStep === 1 ? (
                 <>
-                  <CardContent className="p-4 max-h-[60vh] overflow-y-auto">
+                  <CardContent className="p-4 overflow-y-auto flex-1"> {/* flex-1 and overflow-y-auto for scrollable content */}
                     <div className="space-y-3">
                       <div className="relative">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
@@ -702,7 +742,7 @@ export default function WorkoutFormModal({ workout, exercises, onClose }) {
                       </div>
                     </div>
                   </CardContent>
-                  <div className="border-t border-slate-800 p-3 bg-slate-900 sticky bottom-0">
+                  <div className="border-t border-slate-800 p-3 bg-slate-900 flex-shrink-0"> {/* flex-shrink-0 for footer */}
                     <div className="flex gap-2">
                       <Button
                         type="button"
@@ -726,7 +766,7 @@ export default function WorkoutFormModal({ workout, exercises, onClose }) {
                 </>
               ) : (
                 <>
-                  <CardContent className="p-4 max-h-[60vh] overflow-y-auto">
+                  <CardContent className="p-4 overflow-y-auto flex-1"> {/* flex-1 and overflow-y-auto for scrollable content */}
                     <div className="space-y-3">
                       <div className="bg-blue-900/20 border border-blue-800/50 rounded-lg p-3 sticky top-0 bg-slate-900 z-10">
                         <p className="text-blue-400 text-xs font-medium mb-1">
@@ -822,7 +862,7 @@ export default function WorkoutFormModal({ workout, exercises, onClose }) {
                       </div>
                     </div>
                   </CardContent>
-                  <div className="border-t border-slate-800 p-3 bg-slate-900 sticky bottom-0">
+                  <div className="border-t border-slate-800 p-3 bg-slate-900 flex-shrink-0"> {/* flex-shrink-0 for footer */}
                     <div className="flex gap-2">
                       <Button
                         type="button"
