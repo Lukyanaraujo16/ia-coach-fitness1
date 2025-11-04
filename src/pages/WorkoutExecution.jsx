@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -291,9 +292,9 @@ export default function WorkoutExecution() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-b from-slate-950 to-slate-900">
+    <div className="h-screen flex flex-col bg-gradient-to-b from-slate-950 to-slate-900 overflow-hidden">
       {/* Header Fixo */}
-      <div className="bg-slate-900/95 backdrop-blur-sm border-b border-slate-800 px-3 py-3 sticky top-0 z-10">
+      <div className="bg-slate-900/95 backdrop-blur-sm border-b border-slate-800 px-3 py-3 flex-shrink-0">
         <div className="flex items-center justify-between">
           <Button
             variant="ghost"
@@ -313,130 +314,129 @@ export default function WorkoutExecution() {
         </div>
       </div>
 
-      {/* Conteúdo Principal - Rolável */}
-      <div className="flex-1 overflow-y-auto px-3 py-3 space-y-3">
-        {/* Nome do Exercício */}
-        <div className="text-center">
-          <h2 className="text-xl font-bold text-white mb-1">{currentExercise?.exercise_name}</h2>
-          {currentExercise?.notes && (
-            <p className="text-slate-400 text-sm">💡 {currentExercise.notes}</p>
-          )}
-        </div>
+      {/* Nome do Exercício - Fixo */}
+      <div className="text-center px-3 py-2 border-b border-slate-800 flex-shrink-0">
+        <h2 className="text-lg font-bold text-white leading-tight">
+          {currentExercise?.exercise_name}
+        </h2>
+        {currentExercise?.notes && (
+          <p className="text-slate-400 text-xs mt-1">💡 {currentExercise.notes}</p>
+        )}
+      </div>
 
-        {/* Todas as Séries - Apenas Informativo */}
-        <Card className="bg-slate-900/50 border-slate-800">
-          <CardContent className="p-3 space-y-2">
-            {currentExercise?.sets?.map((set, index) => (
-              <div
-                key={index}
-                className="w-full p-3 rounded-lg border-2 border-slate-700 bg-slate-800/50"
-              >
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-white font-bold">Série {index + 1}</span>
-                  </div>
-                  
-                  <div className="grid grid-cols-3 gap-2 text-sm">
-                    {/* Fazer (Times) - PRIMEIRO */}
-                    {set.times > 1 && (
-                      <div className="bg-yellow-900/30 rounded px-2 py-1">
-                        <p className="text-yellow-400 text-xs">Fazer</p>
-                        <p className="text-yellow-300 font-bold">{set.times}x</p>
-                      </div>
-                    )}
-                    
-                    {/* Reps - SEGUNDO */}
-                    <div className="bg-slate-900/50 rounded px-2 py-1">
-                      <p className="text-slate-400 text-xs">Reps</p>
-                      <p className="text-white font-bold">{set.reps}</p>
-                    </div>
-                    
-                    {/* Descanso - TERCEIRO */}
-                    <div className="bg-slate-900/50 rounded px-2 py-1">
-                      <p className="text-slate-400 text-xs">Descanso</p>
-                      <p className="text-purple-400 font-bold">{set.rest_seconds}s</p>
-                    </div>
-                  </div>
-                  
-                  {set.notes && (
-                    <div className="mt-2 bg-orange-900/30 border border-orange-700/50 rounded p-2">
-                      <p className="text-orange-400 text-xs font-semibold mb-0.5">📌 Atenção:</p>
-                      <p className="text-orange-200 text-xs">{set.notes}</p>
+      {/* Séries - Área Rolável */}
+      <div className="flex-1 overflow-y-auto px-3 py-2">
+        <div className="space-y-2">
+          {currentExercise?.sets?.map((set, index) => (
+            <div
+              key={index}
+              className="w-full p-2.5 rounded-lg border-2 border-slate-700 bg-slate-800/50"
+            >
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-white font-bold text-sm">Série {index + 1}</span>
+                </div>
+                
+                <div className="grid grid-cols-3 gap-2 text-sm">
+                  {/* Fazer (Times) - PRIMEIRO */}
+                  {set.times > 1 && (
+                    <div className="bg-yellow-900/30 rounded px-2 py-1">
+                      <p className="text-yellow-400 text-xs">Fazer</p>
+                      <p className="text-yellow-300 font-bold text-sm">{set.times}x</p>
                     </div>
                   )}
+                  
+                  {/* Reps - SEGUNDO */}
+                  <div className="bg-slate-900/50 rounded px-2 py-1">
+                    <p className="text-slate-400 text-xs">Reps</p>
+                    <p className="text-white font-bold text-sm">{set.reps}</p>
+                  </div>
+                  
+                  {/* Descanso - TERCEIRO */}
+                  <div className="bg-slate-900/50 rounded px-2 py-1">
+                    <p className="text-slate-400 text-xs">Descanso</p>
+                    <p className="text-purple-400 font-bold text-sm">{set.rest_seconds}s</p>
+                  </div>
                 </div>
+                
+                {set.notes && (
+                  <div className="bg-orange-900/30 border border-orange-700/50 rounded p-2">
+                    <p className="text-orange-400 text-xs font-semibold mb-0.5">📌 Atenção:</p>
+                    <p className="text-orange-200 text-xs leading-relaxed">{set.notes}</p>
+                  </div>
+                )}
               </div>
-            ))}
-          </CardContent>
-        </Card>
-
-        {/* Timer de Descanso */}
-        <Card className="bg-gradient-to-br from-purple-900/30 to-blue-900/30 border-purple-700/50">
-          <CardContent className="p-3">
-            <div className="text-center">
-              <p className="text-slate-300 text-sm mb-1">Descanso</p>
-              <div className="text-4xl font-bold text-white mb-2">
-                {Math.floor(timeRemaining / 60)}:{(timeRemaining % 60).toString().padStart(2, '0')}
-              </div>
-              
-              {!isResting && (
-                <div className="flex items-center justify-center gap-2 mb-2">
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={() => adjustRestTime(-30)}
-                    className="border-slate-700 text-slate-300 h-8 w-8"
-                  >
-                    <Minus className="w-4 h-4" />
-                  </Button>
-                  <span className="text-slate-300 text-sm min-w-[50px]">{restTime}s</span>
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={() => adjustRestTime(30)}
-                    className="border-slate-700 text-slate-300 h-8 w-8"
-                  >
-                    <Plus className="w-4 h-4" />
-                  </Button>
-                </div>
-              )}
             </div>
+          ))}
+        </div>
+      </div>
 
-            {!isResting ? (
-              <Button
-                onClick={handleStartRest}
-                className="w-full bg-purple-600 hover:bg-purple-700 h-11"
-              >
-                <Play className="w-4 h-4 mr-2" />
-                Iniciar Descanso
-              </Button>
-            ) : (
-              <Button
-                onClick={() => setIsResting(false)}
-                variant="outline"
-                className="w-full border-slate-700 text-slate-300 h-11"
-              >
-                <Pause className="w-4 h-4 mr-2" />
-                Pausar
-              </Button>
+      {/* Timer de Descanso - Fixo */}
+      <div className="bg-slate-900/95 backdrop-blur-sm border-t border-slate-800 px-3 py-2 flex-shrink-0">
+        <div className="bg-gradient-to-br from-purple-900/30 to-blue-900/30 border border-purple-700/50 rounded-lg p-2.5">
+          <div className="text-center">
+            <p className="text-slate-300 text-xs mb-1">Descanso</p>
+            <div className="text-3xl font-bold text-white mb-1">
+              {Math.floor(timeRemaining / 60)}:{(timeRemaining % 60).toString().padStart(2, '0')}
+            </div>
+            
+            {!isResting && (
+              <div className="flex items-center justify-center gap-2 mb-2">
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => adjustRestTime(-30)}
+                  className="border-slate-700 text-slate-300 h-7 w-7"
+                >
+                  <Minus className="w-3 h-3" />
+                </Button>
+                <span className="text-slate-300 text-xs min-w-[40px]">{restTime}s</span>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => adjustRestTime(30)}
+                  className="border-slate-700 text-slate-300 h-7 w-7"
+                >
+                  <Plus className="w-3 h-3" />
+                </Button>
+              </div>
             )}
-          </CardContent>
-        </Card>
+          </div>
+
+          {!isResting ? (
+            <Button
+              onClick={handleStartRest}
+              className="w-full bg-purple-600 hover:bg-purple-700 h-9 text-sm"
+            >
+              <Play className="w-3 h-3 mr-2" />
+              Iniciar Descanso
+            </Button>
+          ) : (
+            <Button
+              onClick={() => setIsResting(false)}
+              variant="outline"
+              className="w-full border-slate-700 text-slate-300 h-9 text-sm"
+            >
+              <Pause className="w-3 h-3 mr-2" />
+              Pausar
+            </Button>
+          )}
+        </div>
       </div>
 
       {/* Botões Fixos no Bottom */}
-      <div className="bg-slate-900/95 backdrop-blur-sm border-t border-slate-800 px-3 py-3">
+      <div className="bg-slate-900/95 backdrop-blur-sm border-t border-slate-800 px-3 py-2 flex-shrink-0">
         <div className="flex gap-2">
           <Button
             onClick={handleSkipExercise}
             variant="outline"
-            className="flex-1 bg-slate-800 border-slate-600 text-slate-200 h-12 text-sm"
+            className="flex-1 bg-slate-800 border-slate-600 text-slate-200 h-10 text-sm"
           >
-            Pular Exercício
+            Pular
           </Button>
           <Button
             onClick={handleNextExercise}
-            className="flex-1 bg-blue-600 hover:bg-blue-700 text-white h-12 font-semibold text-sm"
+            className="flex-1 bg-blue-600 hover:bg-blue-700 text-white h-10 font-semibold text-sm"
           >
             {isLastExercise ? (
               <>
