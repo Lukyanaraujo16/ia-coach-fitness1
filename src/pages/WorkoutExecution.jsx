@@ -7,7 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft, Play, Pause, SkipForward, CheckCircle, Plus, Minus, AlertTriangle, Trophy, Clock, Zap, X } from "lucide-react";
+import { ArrowLeft, Play, Pause, SkipForward, CheckCircle, Plus, Minus, AlertTriangle, Trophy, Clock, Zap, X, Weight } from "lucide-react";
 import { motion } from "framer-motion";
 
 export default function WorkoutExecution() {
@@ -32,6 +32,7 @@ export default function WorkoutExecution() {
   const [user, setUser] = useState(null);
   const [startTime, setStartTime] = useState(null);
   const [endTime, setEndTime] = useState(null);
+  const [exerciseWeights, setExerciseWeights] = useState({});
 
   useEffect(() => {
     const loadWorkout = async () => {
@@ -75,7 +76,7 @@ export default function WorkoutExecution() {
         } else {
           setTimeRemaining(remaining);
         }
-      }, 100); // Atualiza a cada 100ms para mais precisão
+      }, 100);
     }
     
     return () => {
@@ -124,12 +125,10 @@ export default function WorkoutExecution() {
 
   const handlePauseRest = () => {
     if (isResting && restStartTime) {
-      // Calcula quanto tempo já passou
       const now = Date.now();
       const elapsed = Math.floor((now - restStartTime) / 1000);
       const remaining = restTime - elapsed;
       
-      // Atualiza o restTime para ser o tempo restante
       setRestTime(Math.max(remaining, 0));
       setTimeRemaining(Math.max(remaining, 0));
       setIsResting(false);
@@ -181,6 +180,18 @@ export default function WorkoutExecution() {
       ? Math.round((endTime - startTime) / 1000 / 60)
       : workout.duration_minutes;
 
+    // Preparar dados dos exercícios com pesos
+    const exercisesCompleted = currentDay.exercises
+      ?.filter((_, idx) => !skippedExercises.includes(idx))
+      .map((exercise, idx) => {
+        const weights = exerciseWeights[idx] || [];
+        return {
+          exercise_name: exercise.exercise_name,
+          sets_completed: exercise.sets?.length || 0,
+          weights: weights.filter(w => w && w > 0),
+        };
+      });
+
     createWorkoutLogMutation.mutate({
       workout_id: workout.id,
       workout_title: `${workout.title} - Dia ${dayNumber}`,
@@ -188,6 +199,7 @@ export default function WorkoutExecution() {
       duration_minutes: durationMinutes,
       calories_burned: caloriesInput ? parseInt(caloriesInput) : undefined,
       notes: skippedExercises.length > 0 ? `${skippedExercises.length} exercícios pulados` : "",
+      exercises_completed: exercisesCompleted,
     });
   };
 
@@ -206,6 +218,18 @@ export default function WorkoutExecution() {
   const confirmExitWorkout = () => {
     navigate(createPageUrl("WorkoutDetail") + `?id=${workoutId}`);
   };
+
+  const handleWeightChange = (setIndex, value) => {
+    const weights = exerciseWeights[currentExerciseIndex] || [];
+    const newWeights = [...weights];
+    newWeights[setIndex] = value ? parseFloat(value) : "";
+    setExerciseWeights({
+      ...exerciseWeights,
+      [currentExerciseIndex]: newWeights,
+    });
+  };
+
+  const currentExerciseWeights = exerciseWeights[currentExerciseIndex] || [];
 
   // Exit Confirmation Modal
   if (showExitConfirm) {
@@ -414,7 +438,6 @@ export default function WorkoutExecution() {
                 <span className="text-white font-bold text-xs">Série {index + 1}</span>
                 
                 <div className="grid grid-cols-3 gap-1.5 text-xs">
-                  {/* Fazer (Times) - PRIMEIRO */}
                   {set.times > 1 && (
                     <div className="bg-yellow-900/30 rounded px-1.5 py-1">
                       <p className="text-yellow-400 text-xs">Fazer</p>
@@ -422,13 +445,11 @@ export default function WorkoutExecution() {
                     </div>
                   )}
                   
-                  {/* Reps - SEGUNDO */}
                   <div className="bg-slate-900/50 rounded px-1.5 py-1">
                     <p className="text-slate-400 text-xs">Reps</p>
                     <p className="text-white font-bold text-sm">{set.reps}</p>
                   </div>
                   
-                  {/* Descanso - TERCEIRO */}
                   <div className="bg-slate-900/50 rounded px-1.5 py-1">
                     <p className="text-slate-400 text-xs">Descanso</p>
                     <p className="text-purple-400 font-bold text-sm">{set.rest_seconds}s</p>
@@ -444,6 +465,50 @@ export default function WorkoutExecution() {
               </div>
             </div>
           ))}
+        </div>
+      </div>
+
+      {/* Registro de Peso - Fixo */}
+      <div className="flex-shrink-0 bg-slate-900/95 backdrop-blur-sm border-t border-slate-800 px-3 py-2">
+        <div className="bg-gradient-to-br from-blue-900/30 to-cyan-900/30 border border-blue-700/50 rounded-lg p-2">
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-2">
+              <Weight className="w-4 h-4 text-blue-400" />
+              <span className="text-slate-300 text-xs font-semibold">Carga Usada (kg)</span>
+            </div>
+          </div>
+          <div className="grid grid-cols-3 gap-1.5">
+            {currentExercise?.sets?.slice(0, 3).map((set, idx) => (
+              <div key={idx} className="space-y-1">
+                <label className="text-slate-400 text-xs">Série {idx + 1}</label>
+                <Input
+                  type="number"
+                  step="0.5"
+                  placeholder="0"
+                  value={currentExerciseWeights[idx] || ""}
+                  onChange={(e) => handleWeightChange(idx, e.target.value)}
+                  className="bg-slate-800 border-slate-700 text-white text-center h-8 text-sm"
+                />
+              </div>
+            ))}
+          </div>
+          {currentExercise?.sets?.length > 3 && (
+            <div className="grid grid-cols-3 gap-1.5 mt-1.5">
+              {currentExercise.sets.slice(3, 6).map((set, idx) => (
+                <div key={idx + 3} className="space-y-1">
+                  <label className="text-slate-400 text-xs">Série {idx + 4}</label>
+                  <Input
+                    type="number"
+                    step="0.5"
+                    placeholder="0"
+                    value={currentExerciseWeights[idx + 3] || ""}
+                    onChange={(e) => handleWeightChange(idx + 3, e.target.value)}
+                    className="bg-slate-800 border-slate-700 text-white text-center h-8 text-sm"
+                  />
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 
