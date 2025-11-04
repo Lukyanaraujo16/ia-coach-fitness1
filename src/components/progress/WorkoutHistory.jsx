@@ -61,28 +61,35 @@ export default function WorkoutHistory({ logs = [] }) {
                 {log.exercises_completed && log.exercises_completed.length > 0 && (
                   <div className="mt-3 space-y-2">
                     {log.exercises_completed.slice(0, 3).map((ex, idx) => {
-                      const maxWeight = ex.sets_completed?.reduce((max, set) => 
-                        set.weight_used > max ? set.weight_used : max, 0
-                      ) || 0;
+                      const weights = ex.sets_completed?.map(s => s.weight_used).filter(w => w > 0) || [];
+                      const maxWeight = Math.max(...weights, 0);
+                      const avgWeight = weights.length > 0 ? (weights.reduce((a, b) => a + b, 0) / weights.length).toFixed(1) : 0;
                       
                       return (
                         <div key={idx} className="bg-slate-800/50 rounded p-2 text-xs">
-                          <div className="flex items-center justify-between">
-                            <span className="text-slate-300">{ex.exercise_name}</span>
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="text-slate-300 font-medium">{ex.exercise_name}</span>
                             {maxWeight > 0 && (
-                              <span className="text-blue-400 font-semibold">
+                              <span className="text-blue-400 font-semibold flex items-center gap-1">
+                                <span className="text-slate-500 text-xs">máx</span>
                                 {maxWeight}kg
                               </span>
                             )}
                           </div>
-                          {ex.sets_completed && ex.sets_completed.length > 0 && (
-                            <div className="flex flex-wrap gap-x-1 mt-1">
-                              {ex.sets_completed.map((set, setIdx) => (
-                                <span key={setIdx} className="text-slate-500 text-xs">
-                                  {set.reps_completed}x{set.weight_used > 0 ? `@${set.weight_used}kg` : ''}
-                                  {setIdx < ex.sets_completed.length - 1 ? ',' : ''}
+                          {weights.length > 0 && (
+                            <div className="flex items-center gap-2">
+                              <div className="flex gap-1">
+                                {weights.map((weight, setIdx) => (
+                                  <span key={setIdx} className="px-1.5 py-0.5 bg-slate-700 rounded text-xs text-slate-300">
+                                    {weight}kg
+                                  </span>
+                                ))}
+                              </div>
+                              {weights.length > 1 && (
+                                <span className="text-slate-500 text-xs">
+                                  (média: {avgWeight}kg)
                                 </span>
-                              ))}
+                              )}
                             </div>
                           )}
                         </div>

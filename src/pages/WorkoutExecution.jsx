@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft, Play, Pause, SkipForward, CheckCircle, Plus, Minus, AlertTriangle, Trophy, Clock, Zap, X, Lightbulb, Weight } from "lucide-react";
+import { ArrowLeft, Play, Pause, SkipForward, CheckCircle, Plus, Minus, AlertTriangle, Trophy, Clock, Zap, X, Lightbulb, Weight, TrendingUp } from "lucide-react";
 import { motion } from "framer-motion";
 
 export default function WorkoutExecution() {
@@ -21,7 +21,7 @@ export default function WorkoutExecution() {
   const [workout, setWorkout] = useState(null);
   const [currentDay, setCurrentDay] = useState(null);
   const [currentExerciseIndex, setCurrentExerciseIndex] = useState(0);
-  const [exercisesData, setExercisesData] = useState([]); // New state for exercise data
+  const [exercisesData, setExercisesData] = useState([]);
   const [skippedExercises, setSkippedExercises] = useState([]);
   const [restTime, setRestTime] = useState(60);
   const [isResting, setIsResting] = useState(false);
@@ -36,6 +36,9 @@ export default function WorkoutExecution() {
   const [endTime, setEndTime] = useState(null);
   const [showAITips, setShowAITips] = useState(false);
   const [aiTips, setAiTips] = useState(null);
+  const [showAISuggestion, setShowAISuggestion] = useState(false);
+  const [aiSuggestion, setAiSuggestion] = useState(null);
+  const [workoutLogs, setWorkoutLogs] = useState([]);
 
   const isPremium = user?.subscription_status === 'premium';
 
@@ -46,6 +49,11 @@ export default function WorkoutExecution() {
         setUser(currentUser);
         setStartTime(new Date());
         
+        // Carregar histórico de treinos para análise
+        const allLogs = await base44.entities.WorkoutLog.list('-date'); // Assuming '-date' sorts by date descending
+        const userLogs = allLogs.filter(log => log.created_by === currentUser.email);
+        setWorkoutLogs(userLogs);
+        
         const workouts = await base44.entities.Workout.list();
         const foundWorkout = workouts.find(w => w.id === workoutId);
         setWorkout(foundWorkout);
@@ -54,7 +62,7 @@ export default function WorkoutExecution() {
           const day = foundWorkout.days.find(d => d.day_number === dayNumber);
           setCurrentDay(day);
           
-          // Inicializar dados dos exercícios
+          // Inicializar dados dos exercícios (apenas peso)
           if (day?.exercises) {
             const initialData = day.exercises.map(ex => ({
               exercise_id: ex.exercise_id || '',
@@ -62,7 +70,7 @@ export default function WorkoutExecution() {
               exercise_category: ex.exercise_category || '',
               sets_completed: ex.sets.map((set, idx) => ({
                 set_number: idx + 1,
-                reps_completed: 0,
+                reps_completed: parseInt(set.reps) || 0, // Usar reps da série
                 weight_used: 0,
                 notes: ''
               }))
@@ -80,6 +88,15 @@ export default function WorkoutExecution() {
     };
     loadWorkout();
   }, [workoutId, dayNumber]);
+
+  // Análise automática ao mudar de exercício
+  const currentExercise = currentDay?.exercises?.[currentExerciseIndex]; // Define currentExercise here for the useEffect below
+  useEffect(() => {
+    if (currentExercise && isPremium && workoutLogs.length > 0) {
+      analyzeExercisePerformance(currentExercise);
+    }
+  }, [currentExerciseIndex, currentExercise, isPremium, workoutLogs]);
+
 
   // Timer com controle baseado em timestamp real
   useEffect(() => {
@@ -105,6 +122,86 @@ export default function WorkoutExecution() {
       if (interval) clearInterval(interval);
     };
   }, [isResting, restStartTime, restTime]);
+
+  const analyzeExercisePerformance = async (exercise) => {
+    if (!exercise || !isPremium || !workoutLogs.length) return;
+    
+    // Encontrar histórico deste exercício
+    const exerciseHistory = workoutLogs
+      .flatMap(log => log.exercises_completed || [])
+      .filter(ex => ex.exercise_name === exercise.exercise_name)
+      .slice(0, 5); // Últimos 5 registros
+
+    if (exerciseHistory.length < 2) {
+      setShowAISuggestion(false); 
+      setAiSuggestion(null);
+      return; 
+    }
+
+    // Analisar progressão de carga
+    const recentWeights = exerciseHistory.map(ex => {
+      const maxWeight = ex.sets_completed?.reduce((max, set) => 
+        set.weight_used > max ? set.weight_used : max, 0
+      ) || 0;
+      return maxWeight;
+    });
+
+    const lastWeight = recentWeights[0];
+    const hasProgressedRecently = recentWeights[0] > recentWeights[1];
+    const isStagnant = recentWeights.slice(0, 3).every(w => w === lastWeight && w > 0);
+
+    try {
+      const prompt = `Você é um personal trainer analisando o desempenho de um atleta no exercício "${exercise.exercise_name}".
+
+**Histórico de cargas (últimas 5 execuções):**
+${recentWeights.map((w, i) => `${i + 1}. ${w}kg`).join('\n')}
+
+**Situação atual:**
+- Última carga: ${lastWeight}kg
+- Progrediu recentemente: ${hasProgressedRecently ? 'Sim' : 'Não'}
+- Está estagnado: ${isStagnant ? 'Sim (mesma carga há 3+ treinos)' : 'Não'}
+
+**Tarefa:**
+Se houver uma sugestão importante (aumentar carga, mudar estratégia, parabéns por progresso), retorne em JSON:
+{
+  "show_suggestion": true/false,
+  "type": "progress/stagnant/warning/congratulations",
+  "title": "Título curto e motivador",
+  "message": "Mensagem clara e específica (1-2 frases)",
+  "suggestion": "Ação específica a tomar"
+}
+
+Se NÃO houver sugestão relevante, retorne: {"show_suggestion": false}
+
+IMPORTANTE: Só mostre sugestão se for realmente relevante. Não seja repetitivo.`;
+
+      const response = await base44.integrations.Core.InvokeLLM({
+        prompt: prompt,
+        response_json_schema: {
+          type: "object",
+          properties: {
+            show_suggestion: { type: "boolean" },
+            type: { type: "string" },
+            title: { type: "string" },
+            message: { type: "string" },
+            suggestion: { type: "string" }
+          }
+        }
+      });
+
+      if (response.show_suggestion) {
+        setAiSuggestion(response);
+        setShowAISuggestion(true);
+      } else {
+        setShowAISuggestion(false);
+        setAiSuggestion(null);
+      }
+    } catch (error) {
+      console.error("Error analyzing performance:", error);
+      setShowAISuggestion(false);
+      setAiSuggestion(null);
+    }
+  };
 
   const createWorkoutLogMutation = useMutation({
     mutationFn: (data) => base44.entities.WorkoutLog.create(data),
@@ -179,7 +276,7 @@ Seja direto, prático e motivador.`;
     );
   }
 
-  const currentExercise = currentDay.exercises?.[currentExerciseIndex];
+  // const currentExercise = currentDay.exercises?.[currentExerciseIndex]; // Moved up for useEffect dependency
   const isLastExercise = currentExerciseIndex === (currentDay.exercises?.length || 0) - 1;
 
   const handleStartRest = () => {
@@ -206,7 +303,9 @@ Seja direto, prático e motivador.`;
   const handleNextExercise = () => {
     setIsResting(false);
     setRestStartTime(null);
-    
+    setShowAISuggestion(false); // Close AI suggestion when moving to next exercise
+    setAiSuggestion(null); // Clear suggestion
+
     if (isLastExercise) {
       if (skippedExercises.length > 0) {
         setShowSkipWarning(true);
@@ -217,7 +316,7 @@ Seja direto, prático e motivador.`;
       const nextExercise = currentDay.exercises[currentExerciseIndex + 1];
       setCurrentExerciseIndex(currentExerciseIndex + 1);
       if (nextExercise?.sets?.[0]?.rest_seconds) {
-        const nextRest = nextExercise.sets[0].rest_seconds; // Corrected: access from set, not exercise
+        const nextRest = nextExercise.sets[0].rest_seconds; 
         setRestTime(nextRest);
         setTimeRemaining(nextRest);
       }
@@ -256,7 +355,7 @@ Seja direto, prático e motivador.`;
       date: localDate,
       duration_minutes: durationMinutes,
       calories_burned: caloriesInput ? parseInt(caloriesInput) : undefined,
-      exercises_completed: completedExercises, // Added exercises_completed
+      exercises_completed: completedExercises,
       notes: skippedExercises.length > 0 ? `${skippedExercises.length} exercícios pulados` : "",
     });
   };
@@ -484,6 +583,57 @@ Seja direto, prático e motivador.`;
         )}
       </div>
 
+      {/* AI Suggestion Modal (Automático) */}
+      {showAISuggestion && aiSuggestion && (
+        <div className="absolute inset-0 bg-black/80 backdrop-blur-sm z-[70] flex items-center justify-center p-4" onClick={() => setShowAISuggestion(false)}>
+          <motion.div
+            initial={{ scale: 0.9, opacity: 0, y: 20 }}
+            animate={{ scale: 1, opacity: 1, y: 0 }}
+            onClick={(e) => e.stopPropagation()}
+            className="max-w-md w-full"
+          >
+            <Card className={`bg-slate-900 border-2 ${
+              aiSuggestion.type === 'congratulations' ? 'border-green-600' :
+              aiSuggestion.type === 'stagnant' ? 'border-orange-600' :
+              aiSuggestion.type === 'warning' ? 'border-red-600' :
+              'border-blue-600'
+            }`}>
+              <CardHeader>
+                <CardTitle className="text-white flex items-center gap-2">
+                  {aiSuggestion.type === 'congratulations' && <Trophy className="w-5 h-5 text-green-400" />}
+                  {aiSuggestion.type === 'stagnant' && <TrendingUp className="w-5 h-5 text-orange-400" />}
+                  {aiSuggestion.type === 'warning' && <AlertTriangle className="w-5 h-5 text-red-400" />}
+                  {aiSuggestion.type === 'progress' && <Zap className="w-5 h-5 text-blue-400" />}
+                  {aiSuggestion.title}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <p className="text-slate-300 text-sm leading-relaxed">
+                  {aiSuggestion.message}
+                </p>
+
+                <div className={`p-3 rounded-lg ${
+                  aiSuggestion.type === 'congratulations' ? 'bg-green-900/30 border border-green-700/50' :
+                  aiSuggestion.type === 'stagnant' ? 'bg-orange-900/30 border border-orange-700/50' :
+                  aiSuggestion.type === 'warning' ? 'bg-red-900/30 border border-red-700/50' :
+                  'bg-blue-900/30 border border-blue-700/50'
+                }`}>
+                  <p className="text-white text-sm font-semibold mb-1">💡 Sugestão:</p>
+                  <p className="text-slate-200 text-sm">{aiSuggestion.suggestion}</p>
+                </div>
+
+                <Button
+                  onClick={() => setShowAISuggestion(false)}
+                  className="w-full bg-blue-600 hover:bg-blue-700"
+                >
+                  Entendi, vamos lá!
+                </Button>
+              </CardContent>
+            </Card>
+          </motion.div>
+        </div>
+      )}
+
       {/* AI Tips Modal */}
       {showAITips && aiTips && (
         <div className="absolute inset-0 bg-black/80 backdrop-blur-sm z-[70] flex items-center justify-center p-4" onClick={() => setShowAITips(false)}>
@@ -546,7 +696,7 @@ Seja direto, prático e motivador.`;
         </div>
       )}
 
-      {/* Séries - Área Rolável COM INPUTS DE PESO */}
+      {/* Séries - Área Rolável APENAS COM PESO */}
       <div className="flex-1 overflow-y-auto px-3 py-2" style={{ minHeight: 0 }}>
         <div className="space-y-2 pb-2">
           {currentExercise?.sets?.map((set, index) => (
@@ -567,7 +717,7 @@ Seja direto, prático e motivador.`;
                 {/* Info da Série */}
                 <div className="grid grid-cols-2 gap-2 text-xs mb-2">
                   <div className="bg-slate-900/50 rounded px-2 py-1">
-                    <p className="text-slate-400 text-xs">Reps</p>
+                    <p className="text-slate-400 text-xs">Repetições</p>
                     <p className="text-white font-bold text-sm">{set.reps}</p>
                   </div>
                   <div className="bg-slate-900/50 rounded px-2 py-1">
@@ -576,32 +726,20 @@ Seja direto, prático e motivador.`;
                   </div>
                 </div>
 
-                {/* Registro de Peso e Reps */}
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="space-y-1">
-                    <Label className="text-slate-300 text-xs flex items-center gap-1">
-                      <Weight className="w-3 h-3" />
-                      Carga (kg)
-                    </Label>
-                    <Input
-                      type="number"
-                      step="0.5"
-                      value={exercisesData[currentExerciseIndex]?.sets_completed[index]?.weight_used || ''}
-                      onChange={(e) => updateSetData(currentExerciseIndex, index, 'weight_used', parseFloat(e.target.value) || 0)}
-                      placeholder="Ex: 20"
-                      className="bg-slate-700 border-slate-600 text-white h-10 text-sm"
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <Label className="text-slate-300 text-xs">Reps Feitas</Label>
-                    <Input
-                      type="number"
-                      value={exercisesData[currentExerciseIndex]?.sets_completed[index]?.reps_completed || ''}
-                      onChange={(e) => updateSetData(currentExerciseIndex, index, 'reps_completed', parseInt(e.target.value) || 0)}
-                      placeholder="Ex: 12"
-                      className="bg-slate-700 border-slate-600 text-white h-10 text-sm"
-                    />
-                  </div>
+                {/* Registro APENAS de Peso */}
+                <div className="space-y-1">
+                  <Label className="text-slate-300 text-sm flex items-center gap-1">
+                    <Weight className="w-4 h-4" />
+                    Carga Utilizada (kg)
+                  </Label>
+                  <Input
+                    type="number"
+                    step="0.5"
+                    value={exercisesData[currentExerciseIndex]?.sets_completed[index]?.weight_used || ''}
+                    onChange={(e) => updateSetData(currentExerciseIndex, index, 'weight_used', parseFloat(e.target.value) || 0)}
+                    placeholder="Ex: 20"
+                    className="bg-slate-700 border-slate-600 text-white h-12 text-base text-center font-semibold"
+                  />
                 </div>
                 
                 {set.notes && (
