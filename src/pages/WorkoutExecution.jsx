@@ -1,13 +1,14 @@
+
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Play, Pause, SkipForward, CheckCircle, Plus, Minus, AlertTriangle, Trophy, Clock, Zap, X, Weight } from "lucide-react";
+import { ArrowLeft, Play, Pause, SkipForward, CheckCircle, Plus, Minus, AlertTriangle, Trophy, Clock, Zap, X, Lightbulb, Weight, TrendingUp } from "lucide-react";
 import { motion } from "framer-motion";
 
 export default function WorkoutExecution() {
@@ -33,85 +34,71 @@ export default function WorkoutExecution() {
   const [user, setUser] = useState(null);
   const [startTime, setStartTime] = useState(null);
   const [endTime, setEndTime] = useState(null);
-  const [isLoadingData, setIsLoadingData] = useState(true);
-  const [loadError, setLoadError] = useState(null);
+  const [showAITips, setShowAITips] = useState(false);
+  const [aiTips, setAiTips] = useState(null);
+  const [showAISuggestion, setShowAISuggestion] = useState(false);
+  const [aiSuggestion, setAiSuggestion] = useState(null);
+  const [workoutLogs, setWorkoutLogs] = useState([]);
 
-  const currentExercise = currentDay?.exercises?.[currentExerciseIndex];
-  const isLastExercise = currentExerciseIndex === (currentDay?.exercises?.length || 0) - 1;
+  const isPremium = user?.subscription_status === 'premium';
 
   useEffect(() => {
     const loadWorkout = async () => {
-      if (!workoutId) {
-        setLoadError("ID do treino não encontrado");
-        setIsLoadingData(false);
-        return;
-      }
-
-      try {
-        setIsLoadingData(true);
-        setLoadError(null);
-
+      if (workoutId) {
         const currentUser = await base44.auth.me();
-        if (!currentUser) {
-          throw new Error("Usuário não encontrado");
-        }
         setUser(currentUser);
         setStartTime(new Date());
         
+        // Carregar histórico de treinos para análise
+        const allLogs = await base44.entities.WorkoutLog.list('-date'); // Assuming '-date' sorts by date descending
+        const userLogs = allLogs.filter(log => log.created_by === currentUser.email);
+        setWorkoutLogs(userLogs);
+        
         const workouts = await base44.entities.Workout.list();
-        if (!workouts || workouts.length === 0) {
-          throw new Error("Nenhum treino disponível");
-        }
-
         const foundWorkout = workouts.find(w => w.id === workoutId);
-        if (!foundWorkout) {
-          throw new Error("Treino não encontrado");
-        }
         setWorkout(foundWorkout);
         
-        if (!foundWorkout.days || foundWorkout.days.length === 0) {
-          throw new Error("Treino sem dias configurados");
-        }
-
-        const day = foundWorkout.days.find(d => d.day_number === dayNumber);
-        if (!day) {
-          throw new Error(`Dia ${dayNumber} não encontrado no treino`);
-        }
-        setCurrentDay(day);
-        
-        if (day.exercises && day.exercises.length > 0) {
-          const initialData = day.exercises.map(ex => ({
-            exercise_id: ex.exercise_id || '',
-            exercise_name: ex.exercise_name || 'Exercício',
-            exercise_category: ex.exercise_category || '',
-            sets_completed: (ex.sets || []).map((set, idx) => ({
-              set_number: idx + 1,
-              reps_completed: parseInt(set.reps) || 0,
-              weight_used: 0,
-              notes: ''
-            }))
-          }));
-          setExercisesData(initialData);
-
-          if (day.exercises[0]?.sets?.[0]?.rest_seconds) {
+        if (foundWorkout?.days) {
+          const day = foundWorkout.days.find(d => d.day_number === dayNumber);
+          setCurrentDay(day);
+          
+          // Inicializar dados dos exercícios (apenas peso)
+          if (day?.exercises) {
+            const initialData = day.exercises.map(ex => ({
+              exercise_id: ex.exercise_id || '',
+              exercise_name: ex.exercise_name,
+              exercise_category: ex.exercise_category || '',
+              sets_completed: ex.sets.map((set, idx) => ({
+                set_number: idx + 1,
+                reps_completed: parseInt(set.reps) || 0, // Usar reps da série
+                weight_used: 0,
+                notes: ''
+              }))
+            }));
+            setExercisesData(initialData);
+          }
+          
+          if (day?.exercises?.[0]?.sets?.[0]?.rest_seconds) {
             const firstRest = day.exercises[0].sets[0].rest_seconds;
             setRestTime(firstRest);
             setTimeRemaining(firstRest);
           }
-        } else {
-          throw new Error("Nenhum exercício encontrado para este dia");
         }
-
-        setIsLoadingData(false);
-      } catch (error) {
-        console.error("Error loading workout:", error);
-        setLoadError(error.message || "Erro ao carregar treino");
-        setIsLoadingData(false);
       }
     };
     loadWorkout();
   }, [workoutId, dayNumber]);
 
+  // Análise automática ao mudar de exercício
+  const currentExercise = currentDay?.exercises?.[currentExerciseIndex]; // Define currentExercise here for the useEffect below
+  useEffect(() => {
+    if (currentExercise && isPremium && workoutLogs.length > 0) {
+      analyzeExercisePerformance(currentExercise);
+    }
+  }, [currentExerciseIndex, currentExercise, isPremium, workoutLogs]);
+
+
+  // Timer com controle baseado em timestamp real
   useEffect(() => {
     let interval;
     
@@ -128,7 +115,7 @@ export default function WorkoutExecution() {
         } else {
           setTimeRemaining(remaining);
         }
-      }, 100);
+      }, 100); // Atualiza a cada 100ms para mais precisão
     }
     
     return () => {
@@ -136,55 +123,161 @@ export default function WorkoutExecution() {
     };
   }, [isResting, restStartTime, restTime]);
 
-  const createWorkoutLogMutation = useMutation({
-    mutationFn: async (data) => {
-      try {
-        return await base44.entities.WorkoutLog.create(data);
-      } catch (error) {
-        console.error("Error creating workout log:", error);
-        throw error;
-      }
-    },
-    onSuccess: async () => {
-      try {
-        queryClient.invalidateQueries(['workout-logs']);
-        
-        const completedDays = user?.completed_workout_days || [];
-        if (!completedDays.includes(dayNumber)) {
-          completedDays.push(dayNumber);
-        }
-        
-        const totalDays = workout?.days?.length || 1;
-        const nextDay = dayNumber >= totalDays ? 1 : dayNumber + 1;
-        
-        await base44.auth.updateMe({
-          current_workout_day: nextDay,
-          completed_workout_days: completedDays,
-        });
-        
-        navigate(createPageUrl("Home"));
-      } catch (error) {
-        console.error("Error updating user progress:", error);
-        navigate(createPageUrl("Home"));
-      }
-    },
-    onError: (error) => {
-      console.error("Mutation error:", error);
-      alert("Erro ao salvar treino. Tente novamente.");
+  const analyzeExercisePerformance = async (exercise) => {
+    if (!exercise || !isPremium || !workoutLogs.length) return;
+    
+    // Encontrar histórico deste exercício
+    const exerciseHistory = workoutLogs
+      .flatMap(log => log.exercises_completed || [])
+      .filter(ex => ex.exercise_name === exercise.exercise_name)
+      .slice(0, 5); // Últimos 5 registros
+
+    if (exerciseHistory.length < 2) {
+      setShowAISuggestion(false); 
+      setAiSuggestion(null);
+      return; 
     }
+
+    // Analisar progressão de carga
+    const recentWeights = exerciseHistory.map(ex => {
+      const maxWeight = ex.sets_completed?.reduce((max, set) => 
+        set.weight_used > max ? set.weight_used : max, 0
+      ) || 0;
+      return maxWeight;
+    });
+
+    const lastWeight = recentWeights[0];
+    const hasProgressedRecently = recentWeights[0] > recentWeights[1];
+    const isStagnant = recentWeights.slice(0, 3).every(w => w === lastWeight && w > 0);
+
+    try {
+      const prompt = `Você é um personal trainer analisando o desempenho de um atleta no exercício "${exercise.exercise_name}".
+
+**Histórico de cargas (últimas 5 execuções):**
+${recentWeights.map((w, i) => `${i + 1}. ${w}kg`).join('\n')}
+
+**Situação atual:**
+- Última carga: ${lastWeight}kg
+- Progrediu recentemente: ${hasProgressedRecently ? 'Sim' : 'Não'}
+- Está estagnado: ${isStagnant ? 'Sim (mesma carga há 3+ treinos)' : 'Não'}
+
+**Tarefa:**
+Se houver uma sugestão importante (aumentar carga, mudar estratégia, parabéns por progresso), retorne em JSON:
+{
+  "show_suggestion": true/false,
+  "type": "progress/stagnant/warning/congratulations",
+  "title": "Título curto e motivador",
+  "message": "Mensagem clara e específica (1-2 frases)",
+  "suggestion": "Ação específica a tomar"
+}
+
+Se NÃO houver sugestão relevante, retorne: {"show_suggestion": false}
+
+IMPORTANTE: Só mostre sugestão se for realmente relevante. Não seja repetitivo.`;
+
+      const response = await base44.integrations.Core.InvokeLLM({
+        prompt: prompt,
+        response_json_schema: {
+          type: "object",
+          properties: {
+            show_suggestion: { type: "boolean" },
+            type: { type: "string" },
+            title: { type: "string" },
+            message: { type: "string" },
+            suggestion: { type: "string" }
+          }
+        }
+      });
+
+      if (response.show_suggestion) {
+        setAiSuggestion(response);
+        setShowAISuggestion(true);
+      } else {
+        setShowAISuggestion(false);
+        setAiSuggestion(null);
+      }
+    } catch (error) {
+      console.error("Error analyzing performance:", error);
+      setShowAISuggestion(false);
+      setAiSuggestion(null);
+    }
+  };
+
+  const createWorkoutLogMutation = useMutation({
+    mutationFn: (data) => base44.entities.WorkoutLog.create(data),
+    onSuccess: async () => {
+      queryClient.invalidateQueries(['workout-logs']);
+      
+      const completedDays = user?.completed_workout_days || [];
+      if (!completedDays.includes(dayNumber)) {
+        completedDays.push(dayNumber);
+      }
+      
+      const totalDays = workout?.days?.length || 1;
+      const nextDay = dayNumber >= totalDays ? 1 : dayNumber + 1;
+      
+      await base44.auth.updateMe({
+        current_workout_day: nextDay,
+        completed_workout_days: completedDays,
+      });
+      
+      setEndTime(new Date());
+    },
   });
 
   const updateSetData = (exerciseIndex, setIndex, field, value) => {
-    try {
-      const newData = [...exercisesData];
-      if (newData[exerciseIndex]?.sets_completed?.[setIndex]) {
-        newData[exerciseIndex].sets_completed[setIndex][field] = value;
-        setExercisesData(newData);
-      }
-    } catch (error) {
-      console.error("Error updating set data:", error);
+    const newData = [...exercisesData];
+    if (newData[exerciseIndex] && newData[exerciseIndex].sets_completed[setIndex]) {
+      newData[exerciseIndex].sets_completed[setIndex][field] = value;
+      setExercisesData(newData);
     }
   };
+
+  // Nova função para gerar dicas de IA
+  const generateAITips = async (exercise) => {
+    if (!exercise || !isPremium) return;
+    
+    try {
+      const prompt = `Você é um personal trainer. Forneça dicas rápidas e práticas sobre o exercício "${exercise.exercise_name}".
+
+Responda em JSON com:
+{
+  "dicas_execucao": ["dica 1", "dica 2", "dica 3"],
+  "erros_comuns": ["erro 1", "erro 2"],
+  "dica_rapida": "Uma frase motivacional sobre o exercício"
+}
+
+Seja direto, prático e motivador.`;
+
+      const response = await base44.integrations.Core.InvokeLLM({
+        prompt: prompt,
+        response_json_schema: {
+          type: "object",
+          properties: {
+            dicas_execucao: { type: "array", items: { type: "string" } },
+            erros_comuns: { type: "array", items: { type: "string" } },
+            dica_rapida: { type: "string" }
+          }
+        }
+      });
+
+      setAiTips(response);
+      setShowAITips(true);
+    } catch (error) {
+      console.error("Error generating AI tips:", error);
+    }
+  };
+
+  if (!workout || !currentDay) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p className="text-slate-400">Carregando...</p>
+      </div>
+    );
+  }
+
+  // const currentExercise = currentDay.exercises?.[currentExerciseIndex]; // Moved up for useEffect dependency
+  const isLastExercise = currentExerciseIndex === (currentDay.exercises?.length || 0) - 1;
 
   const handleStartRest = () => {
     setIsResting(true);
@@ -194,10 +287,12 @@ export default function WorkoutExecution() {
 
   const handlePauseRest = () => {
     if (isResting && restStartTime) {
+      // Calcula quanto tempo já passou
       const now = Date.now();
       const elapsed = Math.floor((now - restStartTime) / 1000);
       const remaining = restTime - elapsed;
       
+      // Atualiza o restTime para ser o tempo restante
       setRestTime(Math.max(remaining, 0));
       setTimeRemaining(Math.max(remaining, 0));
       setIsResting(false);
@@ -208,19 +303,20 @@ export default function WorkoutExecution() {
   const handleNextExercise = () => {
     setIsResting(false);
     setRestStartTime(null);
+    setShowAISuggestion(false); // Close AI suggestion when moving to next exercise
+    setAiSuggestion(null); // Clear suggestion
 
     if (isLastExercise) {
       if (skippedExercises.length > 0) {
         setShowSkipWarning(true);
       } else {
-        setEndTime(new Date());
         setShowCaloriesInput(true);
       }
     } else {
       const nextExercise = currentDay.exercises[currentExerciseIndex + 1];
       setCurrentExerciseIndex(currentExerciseIndex + 1);
       if (nextExercise?.sets?.[0]?.rest_seconds) {
-        const nextRest = nextExercise.sets[0].rest_seconds;
+        const nextRest = nextExercise.sets[0].rest_seconds; 
         setRestTime(nextRest);
         setTimeRemaining(nextRest);
       }
@@ -236,37 +332,32 @@ export default function WorkoutExecution() {
 
   const handleFinishWithSkipped = () => {
     setShowSkipWarning(false);
-    setEndTime(new Date());
     setShowCaloriesInput(true);
   };
 
   const handleFinishWorkout = () => {
-    try {
-      const today = new Date();
-      const year = today.getFullYear();
-      const month = String(today.getMonth() + 1).padStart(2, '0');
-      const day = String(today.getDate()).padStart(2, '0');
-      const localDate = `${year}-${month}-${day}`;
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+    const localDate = `${year}-${month}-${day}`;
 
-      const durationMinutes = endTime && startTime 
-        ? Math.round((endTime - startTime) / 1000 / 60)
-        : workout.duration_minutes;
+    const durationMinutes = endTime && startTime 
+      ? Math.round((endTime - startTime) / 1000 / 60)
+      : workout.duration_minutes;
 
-      const completedExercises = exercisesData.filter((_, idx) => !skippedExercises.includes(idx));
+    // Filtrar exercícios completados (não pulados)
+    const completedExercises = exercisesData.filter((_, idx) => !skippedExercises.includes(idx));
 
-      createWorkoutLogMutation.mutate({
-        workout_id: workout.id,
-        workout_title: `${workout.title} - Dia ${dayNumber}`,
-        date: localDate,
-        duration_minutes: durationMinutes,
-        calories_burned: caloriesInput ? parseInt(caloriesInput) : undefined,
-        exercises_completed: completedExercises,
-        notes: skippedExercises.length > 0 ? `${skippedExercises.length} exercícios pulados` : "",
-      });
-    } catch (error) {
-      console.error("Error finishing workout:", error);
-      alert("Erro ao finalizar treino. Tente novamente.");
-    }
+    createWorkoutLogMutation.mutate({
+      workout_id: workout.id,
+      workout_title: `${workout.title} - Dia ${dayNumber}`,
+      date: localDate,
+      duration_minutes: durationMinutes,
+      calories_burned: caloriesInput ? parseInt(caloriesInput) : undefined,
+      exercises_completed: completedExercises,
+      notes: skippedExercises.length > 0 ? `${skippedExercises.length} exercícios pulados` : "",
+    });
   };
 
   const adjustRestTime = (delta) => {
@@ -285,43 +376,6 @@ export default function WorkoutExecution() {
     navigate(createPageUrl("WorkoutDetail") + `?id=${workoutId}`);
   };
 
-  // Loading state
-  if (isLoadingData) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-slate-950 to-slate-900">
-        <div className="text-center">
-          <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-slate-400">Carregando treino...</p>
-        </div>
-      </div>
-    );
-  }
-
-  // Error state
-  if (loadError) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-slate-950 to-slate-900 p-4">
-        <Card className="bg-slate-900 border-slate-800 max-w-md w-full">
-          <CardContent className="p-6 text-center space-y-4">
-            <div className="w-16 h-16 bg-red-600/20 rounded-full flex items-center justify-center mx-auto">
-              <AlertTriangle className="w-8 h-8 text-red-400" />
-            </div>
-            <div>
-              <h3 className="text-xl font-bold text-white mb-2">Erro ao Carregar</h3>
-              <p className="text-slate-400 text-sm">{loadError}</p>
-            </div>
-            <Button
-              onClick={() => navigate(createPageUrl("Home"))}
-              className="w-full bg-blue-600 hover:bg-blue-700"
-            >
-              Voltar para Home
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
   // Exit Confirmation Modal
   if (showExitConfirm) {
     return (
@@ -332,7 +386,9 @@ export default function WorkoutExecution() {
               <AlertTriangle className="w-8 h-8 text-orange-400" />
             </div>
             <div>
-              <h3 className="text-xl font-bold text-white mb-2">Interromper Treino?</h3>
+              <h3 className="text-xl font-bold text-white mb-2">
+                Interromper Treino?
+              </h3>
               <p className="text-slate-400 text-sm">
                 Você realmente deseja sair do treino? Seu progresso não será salvo.
               </p>
@@ -361,7 +417,7 @@ export default function WorkoutExecution() {
   // Skip Warning Modal
   if (showSkipWarning) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-b from-slate-950 to-slate-900">
+      <div className="min-h-screen flex items-center justify-center p-4">
         <Card className="bg-slate-900/50 border-slate-800 max-w-md w-full">
           <CardContent className="p-6 text-center space-y-4">
             <div className="w-16 h-16 bg-orange-600/20 rounded-full flex items-center justify-center mx-auto">
@@ -412,7 +468,7 @@ export default function WorkoutExecution() {
     const randomMessage = motivationalMessages[Math.floor(Math.random() * motivationalMessages.length)];
 
     return (
-      <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-b from-slate-950 to-slate-900">
+      <div className="min-h-screen flex items-center justify-center p-4">
         <motion.div
           initial={{ scale: 0.8, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
@@ -478,6 +534,10 @@ export default function WorkoutExecution() {
     );
   }
 
+  if (showCaloriesInput && !endTime) {
+    setEndTime(new Date());
+  }
+
   return (
     <div className="fixed inset-0 flex flex-col bg-gradient-to-b from-slate-950 to-slate-900 z-[60]">
       {/* Header Fixo */}
@@ -494,24 +554,149 @@ export default function WorkoutExecution() {
           <div className="text-center">
             <p className="text-slate-400 text-xs">Dia {dayNumber}</p>
             <p className="text-white font-bold text-xs">
-              Exercício {currentExerciseIndex + 1}/{currentDay?.exercises?.length || 0}
+              Exercício {currentExerciseIndex + 1}/{currentDay.exercises?.length || 0}
             </p>
           </div>
-          <div className="w-8" />
+          {/* Botão de Dicas IA */}
+          {user && isPremium ? (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => generateAITips(currentExercise)}
+              className="text-purple-400 hover:text-purple-300 h-8 w-8"
+            >
+              <Lightbulb className="w-5 h-5" />
+            </Button>
+          ) : (
+            <div className="w-8" />
+          )}
         </div>
       </div>
 
       {/* Nome do Exercício - Fixo */}
       <div className="flex-shrink-0 text-center px-3 py-2 border-b border-slate-800 bg-slate-900/50">
         <h2 className="text-base font-bold text-white leading-tight">
-          {currentExercise?.exercise_name || 'Exercício'}
+          {currentExercise?.exercise_name}
         </h2>
         {currentExercise?.notes && (
           <p className="text-slate-400 text-xs mt-0.5">💡 {currentExercise.notes}</p>
         )}
       </div>
 
-      {/* Séries - Área Rolável */}
+      {/* AI Suggestion Modal (Automático) */}
+      {showAISuggestion && aiSuggestion && (
+        <div className="absolute inset-0 bg-black/80 backdrop-blur-sm z-[70] flex items-center justify-center p-4" onClick={() => setShowAISuggestion(false)}>
+          <motion.div
+            initial={{ scale: 0.9, opacity: 0, y: 20 }}
+            animate={{ scale: 1, opacity: 1, y: 0 }}
+            onClick={(e) => e.stopPropagation()}
+            className="max-w-md w-full"
+          >
+            <Card className={`bg-slate-900 border-2 ${
+              aiSuggestion.type === 'congratulations' ? 'border-green-600' :
+              aiSuggestion.type === 'stagnant' ? 'border-orange-600' :
+              aiSuggestion.type === 'warning' ? 'border-red-600' :
+              'border-blue-600'
+            }`}>
+              <CardHeader>
+                <CardTitle className="text-white flex items-center gap-2">
+                  {aiSuggestion.type === 'congratulations' && <Trophy className="w-5 h-5 text-green-400" />}
+                  {aiSuggestion.type === 'stagnant' && <TrendingUp className="w-5 h-5 text-orange-400" />}
+                  {aiSuggestion.type === 'warning' && <AlertTriangle className="w-5 h-5 text-red-400" />}
+                  {aiSuggestion.type === 'progress' && <Zap className="w-5 h-5 text-blue-400" />}
+                  {aiSuggestion.title}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <p className="text-slate-300 text-sm leading-relaxed">
+                  {aiSuggestion.message}
+                </p>
+
+                <div className={`p-3 rounded-lg ${
+                  aiSuggestion.type === 'congratulations' ? 'bg-green-900/30 border border-green-700/50' :
+                  aiSuggestion.type === 'stagnant' ? 'bg-orange-900/30 border border-orange-700/50' :
+                  aiSuggestion.type === 'warning' ? 'bg-red-900/30 border border-red-700/50' :
+                  'bg-blue-900/30 border border-blue-700/50'
+                }`}>
+                  <p className="text-white text-sm font-semibold mb-1">💡 Sugestão:</p>
+                  <p className="text-slate-200 text-sm">{aiSuggestion.suggestion}</p>
+                </div>
+
+                <Button
+                  onClick={() => setShowAISuggestion(false)}
+                  className="w-full bg-blue-600 hover:bg-blue-700"
+                >
+                  Entendi, vamos lá!
+                </Button>
+              </CardContent>
+            </Card>
+          </motion.div>
+        </div>
+      )}
+
+      {/* AI Tips Modal */}
+      {showAITips && aiTips && (
+        <div className="absolute inset-0 bg-black/80 backdrop-blur-sm z-[70] flex items-center justify-center p-4" onClick={() => setShowAITips(false)}>
+          <motion.div
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            onClick={(e) => e.stopPropagation()}
+            className="max-w-md w-full"
+          >
+            <Card className="bg-slate-900 border-purple-700/50">
+              <CardHeader>
+                <CardTitle className="text-white flex items-center gap-2">
+                  <Lightbulb className="w-5 h-5 text-yellow-400" />
+                  Dicas do Treinador IA
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {/* Dicas de Execução */}
+                <div>
+                  <h4 className="text-green-400 font-semibold mb-2 text-sm">✓ Como Executar:</h4>
+                  <ul className="space-y-1">
+                    {aiTips.dicas_execucao?.map((dica, index) => (
+                      <li key={index} className="text-slate-300 text-xs flex items-start gap-2">
+                        <span className="text-green-400 mt-0.5">•</span>
+                        <span>{dica}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                {/* Erros Comuns */}
+                <div>
+                  <h4 className="text-orange-400 font-semibold mb-2 text-sm">⚠️ Evite:</h4>
+                  <ul className="space-y-1">
+                    {aiTips.erros_comuns?.map((erro, index) => (
+                      <li key={index} className="text-slate-300 text-xs flex items-start gap-2">
+                        <span className="text-orange-400 mt-0.5">•</span>
+                        <span>{erro}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                {/* Dica Rápida */}
+                <div className="bg-purple-900/30 border border-purple-700/50 rounded-lg p-3">
+                  <p className="text-purple-300 text-sm italic text-center">
+                    💪 {aiTips.dica_rapida}
+                  </p>
+                </div>
+
+                <Button
+                  onClick={() => setShowAITips(false)}
+                  className="w-full bg-purple-600 hover:bg-purple-700"
+                >
+                  Entendi!
+                </Button>
+              </CardContent>
+            </Card>
+          </motion.div>
+        </div>
+      )}
+
+      {/* Séries - Área Rolável APENAS COM PESO */}
       <div className="flex-1 overflow-y-auto px-3 py-2" style={{ minHeight: 0 }}>
         <div className="space-y-2 pb-2">
           {currentExercise?.sets?.map((set, index) => (
@@ -541,7 +726,7 @@ export default function WorkoutExecution() {
                   </div>
                 </div>
 
-                {/* Registro de Peso */}
+                {/* Registro APENAS de Peso */}
                 <div className="space-y-1">
                   <Label className="text-slate-300 text-sm flex items-center gap-1">
                     <Weight className="w-4 h-4" />
@@ -550,7 +735,7 @@ export default function WorkoutExecution() {
                   <Input
                     type="number"
                     step="0.5"
-                    value={exercisesData[currentExerciseIndex]?.sets_completed?.[index]?.weight_used || ''}
+                    value={exercisesData[currentExerciseIndex]?.sets_completed[index]?.weight_used || ''}
                     onChange={(e) => updateSetData(currentExerciseIndex, index, 'weight_used', parseFloat(e.target.value) || 0)}
                     placeholder="Ex: 20"
                     className="bg-slate-700 border-slate-600 text-white h-12 text-base text-center font-semibold"
@@ -623,7 +808,7 @@ export default function WorkoutExecution() {
       </div>
 
       {/* Botões Fixos no Bottom */}
-      <div className="flex-shrink-0 bg-slate-900/95 backdrop-blur-sm border-t border-slate-800 px-3 py-3">
+      <div className="flex-shrink-0 bg-slate-900/95 backdrop-blur-sm border-t border-slate-800 px-3 py-3 safe-area-inset-bottom">
         <div className="flex gap-2">
           <Button
             onClick={handleSkipExercise}

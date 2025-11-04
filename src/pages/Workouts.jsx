@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
@@ -8,9 +7,6 @@ import { Search, Lock } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import WorkoutCard from "../components/workouts/WorkoutCard";
 import ExerciseLibrary from "../components/workouts/ExerciseLibrary";
-import { Link } from "react-router-dom";
-import { createPageUrl } from "@/utils";
-import { Button } from "@/components/ui/button"; // Assuming Button is a shadcn/ui component
 
 export default function Workouts() {
   const [activeTab, setActiveTab] = useState("workouts");
@@ -146,11 +142,9 @@ export default function Workouts() {
                 <p className="text-slate-300 mb-4">
                   Desbloqueie acesso completo a todos os treinos e funcionalidades
                 </p>
-                <Link to={createPageUrl("Subscription")}>
-                  <Button className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white px-6 py-3 rounded-lg font-semibold">
-                    Assinar Premium
-                  </Button>
-                </Link>
+                <a href={`/page/Subscription`} className="inline-block px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white rounded-lg font-semibold">
+                  Assinar Premium
+                </a>
               </CardContent>
             </Card>
           )}
