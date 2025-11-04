@@ -41,6 +41,7 @@ export default function WorkoutExecution() {
   const [workoutLogs, setWorkoutLogs] = useState([]);
   const [isAnalyzingPerformance, setIsAnalyzingPerformance] = useState(false);
   const abortControllerRef = useRef(null);
+  const isFirstMount = useRef(true);
 
   const isPremium = user?.subscription_status === 'premium';
 
@@ -91,38 +92,56 @@ export default function WorkoutExecution() {
     loadWorkout();
   }, [workoutId, dayNumber]);
 
-  // Análise automática ao mudar de exercício - COM ABORT CONTROLLER
+  // Análise automática ao mudar de exercício - OTIMIZADO
   useEffect(() => {
+    // Pular análise na primeira montagem
+    if (isFirstMount.current) {
+      isFirstMount.current = false;
+      return;
+    }
+
     const currentExercise = currentDay?.exercises?.[currentExerciseIndex];
     
-    if (!currentExercise || !isPremium || workoutLogs.length === 0) {
+    // Verificações mais rigorosas
+    if (!currentExercise || 
+        !isPremium || 
+        !workoutLogs || 
+        workoutLogs.length === 0 ||
+        !currentDay) {
       return;
     }
 
     // Cancelar análise anterior se existir
     if (abortControllerRef.current) {
-      abortControllerRef.current.abort();
+      try {
+        abortControllerRef.current.abort();
+      } catch (e) {
+        // Ignorar erro de abort
+      }
     }
 
     // Criar novo abort controller
-    abortControllerRef.current = new AbortController();
-    const signal = abortControllerRef.current.signal;
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
 
-    // Delay de 800ms para evitar análises quando usuário muda rápido
+    // Delay de 1 segundo para garantir estabilidade
     const timer = setTimeout(() => {
-      if (!signal.aborted) {
-        analyzeExercisePerformance(currentExercise, signal);
+      if (!controller.signal.aborted) {
+        analyzeExercisePerformance(currentExercise, controller.signal).catch(() => {
+          // Ignorar silenciosamente qualquer erro
+        });
       }
-    }, 800);
+    }, 1000);
 
     return () => {
       clearTimeout(timer);
-      if (abortControllerRef.current) {
-        abortControllerRef.current.abort();
+      try {
+        controller.abort();
+      } catch (e) {
+        // Ignorar erro de abort
       }
     };
-  }, [currentExerciseIndex, isPremium, workoutLogs.length, currentDay]);
-
+  }, [currentExerciseIndex]); // APENAS currentExerciseIndex
 
   // Timer com controle baseado em timestamp real
   useEffect(() => {
@@ -150,14 +169,18 @@ export default function WorkoutExecution() {
   }, [isResting, restStartTime, restTime]);
 
   const analyzeExercisePerformance = async (exercise, signal) => {
-    if (!exercise || isAnalyzingPerformance) {
+    // Verificações rigorosas no início
+    if (!exercise || 
+        isAnalyzingPerformance || 
+        !workoutLogs ||
+        workoutLogs.length === 0) {
       return;
     }
 
     setIsAnalyzingPerformance(true);
     
     try {
-      // Verificar se foi abortado antes de começar
+      // Verificar se foi abortado
       if (signal?.aborted) {
         setIsAnalyzingPerformance(false);
         return;
@@ -166,8 +189,8 @@ export default function WorkoutExecution() {
       // Encontrar histórico deste exercício
       const exerciseHistory = workoutLogs
         .flatMap(log => log.exercises_completed || [])
-        .filter(ex => ex.exercise_name === exercise.exercise_name)
-        .slice(0, 5); // Últimos 5 registros
+        .filter(ex => ex && ex.exercise_name === exercise.exercise_name)
+        .slice(0, 5);
 
       if (exerciseHistory.length < 2) {
         setShowAISuggestion(false); 
@@ -216,7 +239,7 @@ Se houver uma sugestão importante (aumentar carga, mudar estratégia, parabéns
 
 Se NÃO houver sugestão relevante, retorne: {"show_suggestion": false}
 
-IMPORTE: Só mostre sugestão se for realmente relevante. Não seja repetitivo.`;
+IMPORTANTE: Só mostre sugestão se for realmente relevante. Não seja repetitivo.`;
 
       const response = await base44.integrations.Core.InvokeLLM({
         prompt: prompt,
@@ -238,7 +261,7 @@ IMPORTE: Só mostre sugestão se for realmente relevante. Não seja repetitivo.`
         return;
       }
 
-      if (response.show_suggestion) {
+      if (response && response.show_suggestion) {
         setAiSuggestion(response);
         setShowAISuggestion(true);
       } else {
@@ -246,14 +269,7 @@ IMPORTE: Só mostre sugestão se for realmente relevante. Não seja repetitivo.`
         setAiSuggestion(null);
       }
     } catch (error) {
-      // Silenciosamente ignorar erros de abort
-      if (error.message?.includes('aborted') || error.message?.includes('abort') || error.name === 'AbortError') {
-        // Não fazer nada - é esperado
-      } else {
-        console.error("Error analyzing performance:", error);
-      }
-      setShowAISuggestion(false);
-      setAiSuggestion(null);
+      // Completamente silencioso - não loga nada
     } finally {
       setIsAnalyzingPerformance(false);
     }
