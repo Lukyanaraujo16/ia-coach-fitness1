@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { Link, useLocation } from "react-router-dom";
@@ -38,8 +39,11 @@ export default function Layout({ children, currentPageName }) {
     });
   }
 
+  // Esconder navegação durante execução de treino
+  const isWorkoutExecution = currentPageName === "WorkoutExecution";
+
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 pb-20">
+    <div className={`min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 ${!isWorkoutExecution ? 'pb-20' : ''}`}>
       <style>{`
         :root {
           --primary: #1E40AF;
@@ -49,54 +53,58 @@ export default function Layout({ children, currentPageName }) {
         }
       `}</style>
 
-      {/* Header */}
-      <header className="fixed top-0 left-0 right-0 z-50 bg-slate-950/80 backdrop-blur-xl border-b border-slate-800/50">
-        <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-blue-800 rounded-xl flex items-center justify-center shadow-lg shadow-blue-900/50">
-              <Dumbbell className="w-5 h-5 text-white" />
+      {/* Header - Escondido durante execução de treino */}
+      {!isWorkoutExecution && (
+        <header className="fixed top-0 left-0 right-0 z-50 bg-slate-950/80 backdrop-blur-xl border-b border-slate-800/50">
+          <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-blue-800 rounded-xl flex items-center justify-center shadow-lg shadow-blue-900/50">
+                <Dumbbell className="w-5 h-5 text-white" />
+              </div>
+              <h1 className="text-xl font-bold text-white">FitTrack+</h1>
             </div>
-            <h1 className="text-xl font-bold text-white">FitTrack+</h1>
+            <Link to={createPageUrl("Subscription")}>
+              <button className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 text-white rounded-full text-sm font-medium transition-all duration-300 shadow-lg shadow-blue-900/50">
+                <Crown className="w-4 h-4" />
+                Premium
+              </button>
+            </Link>
           </div>
-          <Link to={createPageUrl("Subscription")}>
-            <button className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 text-white rounded-full text-sm font-medium transition-all duration-300 shadow-lg shadow-blue-900/50">
-              <Crown className="w-4 h-4" />
-              Premium
-            </button>
-          </Link>
-        </div>
-      </header>
+        </header>
+      )}
 
       {/* Main Content */}
-      <main className="pt-20 max-w-7xl mx-auto px-4">
+      <main className={!isWorkoutExecution ? 'pt-20 max-w-7xl mx-auto px-4' : ''}>
         {children}
       </main>
 
-      {/* Bottom Navigation - Rolável no mobile */}
-      <nav className="fixed bottom-0 left-0 right-0 bg-slate-950/95 backdrop-blur-xl border-t border-slate-800/50 z-50">
-        <div className="max-w-7xl mx-auto">
-          <div className="flex overflow-x-auto scrollbar-hide py-2 px-2">
-            {navigationItems.map((item) => {
-              const isActive = location.pathname === item.path;
-              const Icon = item.icon;
-              return (
-                <Link
-                  key={item.name}
-                  to={item.path}
-                  className={`flex flex-col items-center gap-1 px-4 py-2 rounded-xl transition-all duration-300 whitespace-nowrap flex-shrink-0 ${
-                    isActive
-                      ? "bg-blue-600/20 text-blue-400"
-                      : "text-slate-400 hover:text-slate-300"
-                  }`}
-                >
-                  <Icon className={`w-5 h-5 ${isActive ? "scale-110" : ""}`} />
-                  <span className="text-xs font-medium">{item.name}</span>
-                </Link>
-              );
-            })}
+      {/* Bottom Navigation - Escondido durante execução de treino */}
+      {!isWorkoutExecution && (
+        <nav className="fixed bottom-0 left-0 right-0 bg-slate-950/95 backdrop-blur-xl border-t border-slate-800/50 z-50">
+          <div className="max-w-7xl mx-auto">
+            <div className="flex overflow-x-auto scrollbar-hide py-2 px-2">
+              {navigationItems.map((item) => {
+                const isActive = location.pathname === item.path;
+                const Icon = item.icon;
+                return (
+                  <Link
+                    key={item.name}
+                    to={item.path}
+                    className={`flex flex-col items-center gap-1 px-4 py-2 rounded-xl transition-all duration-300 whitespace-nowrap flex-shrink-0 ${
+                      isActive
+                        ? "bg-blue-600/20 text-blue-400"
+                        : "text-slate-400 hover:text-slate-300"
+                    }`}
+                  >
+                    <Icon className={`w-5 h-5 ${isActive ? "scale-110" : ""}`} />
+                    <span className="text-xs font-medium">{item.name}</span>
+                  </Link>
+                );
+              })}
+            </div>
           </div>
-        </div>
-      </nav>
+        </nav>
+      )}
 
       <style>{`
         .scrollbar-hide::-webkit-scrollbar {

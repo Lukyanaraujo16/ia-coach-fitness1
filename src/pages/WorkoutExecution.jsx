@@ -119,7 +119,7 @@ export default function WorkoutExecution() {
       const nextExercise = currentDay.exercises[currentExerciseIndex + 1];
       setCurrentExerciseIndex(currentExerciseIndex + 1);
       if (nextExercise?.sets?.[0]?.rest_seconds) {
-        const nextRest = nextExercise.sets[0].sets?.[0]?.rest_seconds; // Corrected path
+        const nextRest = nextExercise.sets[0].rest_seconds; // Corrected path
         setRestTime(nextRest);
         setTimeRemaining(nextRest);
       }
@@ -292,7 +292,7 @@ export default function WorkoutExecution() {
   }
 
   return (
-    <div className="fixed inset-0 flex flex-col bg-gradient-to-b from-slate-950 to-slate-900">
+    <div className="fixed inset-0 flex flex-col bg-gradient-to-b from-slate-950 to-slate-900 z-[60]">
       {/* Header Fixo */}
       <div className="flex-shrink-0 bg-slate-900/95 backdrop-blur-sm border-b border-slate-800 px-3 py-2.5">
         <div className="flex items-center justify-between">
@@ -326,7 +326,7 @@ export default function WorkoutExecution() {
 
       {/* Séries - Área Rolável */}
       <div className="flex-1 overflow-y-auto px-3 py-2" style={{ minHeight: 0 }}>
-        <div className="space-y-1.5">
+        <div className="space-y-1.5 pb-2">
           {currentExercise?.sets?.map((set, index) => (
             <div
               key={index}
@@ -422,19 +422,19 @@ export default function WorkoutExecution() {
         </div>
       </div>
 
-      {/* Botões Fixos no Bottom */}
-      <div className="flex-shrink-0 bg-slate-900/95 backdrop-blur-sm border-t border-slate-800 px-3 py-2">
+      {/* Botões Fixos no Bottom - Z-INDEX ALTO */}
+      <div className="flex-shrink-0 bg-slate-900/95 backdrop-blur-sm border-t border-slate-800 px-3 py-3 safe-area-inset-bottom">
         <div className="flex gap-2">
           <Button
             onClick={handleSkipExercise}
             variant="outline"
-            className="flex-1 bg-slate-800 border-slate-600 text-slate-200 h-10 text-xs"
+            className="flex-1 bg-slate-800 border-slate-600 text-slate-200 h-12 text-sm font-semibold"
           >
             Pular
           </Button>
           <Button
             onClick={handleNextExercise}
-            className="flex-1 bg-blue-600 hover:bg-blue-700 text-white h-10 font-semibold text-xs"
+            className="flex-1 bg-blue-600 hover:bg-blue-700 text-white h-12 font-semibold text-sm"
           >
             {isLastExercise ? (
               <>
