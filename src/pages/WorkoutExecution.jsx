@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -8,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft, Play, Pause, SkipForward, CheckCircle, Plus, Minus, AlertTriangle, Trophy, Clock, Zap, X, Lightbulb, Weight, TrendingUp, Video, Upload, Loader2 } from "lucide-react";
+import { ArrowLeft, Play, Pause, SkipForward, CheckCircle, Plus, Minus, AlertTriangle, Trophy, Clock, Zap, X, Lightbulb, Weight, TrendingUp, Video, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
 
 export default function WorkoutExecution() {
@@ -42,7 +41,6 @@ export default function WorkoutExecution() {
   const [showVideoAnalysis, setShowVideoAnalysis] = useState(false);
   const [videoAnalysis, setVideoAnalysis] = useState(null);
   const [isAnalyzingVideo, setIsAnalyzingVideo] = useState(false);
-  // Removed: const [videoFile, setVideoFile] = useState(null);
 
   const isPremium = user?.subscription_status === 'premium';
   const currentExercise = currentDay?.exercises?.[currentExerciseIndex];
@@ -98,12 +96,6 @@ export default function WorkoutExecution() {
   }, [workoutId, dayNumber]);
 
   useEffect(() => {
-    if (currentExercise && isPremium && workoutLogs.length >= 2 && currentExerciseIndex > 0) {
-      analyzeExercisePerformance(currentExercise);
-    }
-  }, [currentExerciseIndex]);
-
-  useEffect(() => {
     let interval;
     
     if (isResting && restStartTime) {
@@ -127,86 +119,6 @@ export default function WorkoutExecution() {
     };
   }, [isResting, restStartTime, restTime]);
 
-  const analyzeExercisePerformance = async (exercise) => {
-    if (!exercise || !isPremium || workoutLogs.length < 2) {
-      setShowAISuggestion(false); // Make sure to reset it if conditions are not met
-      setAiSuggestion(null);
-      return;
-    }
-    
-    try {
-      const exerciseHistory = workoutLogs
-        .flatMap(log => log.exercises_completed || [])
-        .filter(ex => ex.exercise_name === exercise.exercise_name)
-        .slice(0, 5);
-
-      if (exerciseHistory.length < 2) {
-        setShowAISuggestion(false); 
-        setAiSuggestion(null);
-        return; 
-      }
-
-      const recentWeights = exerciseHistory.map(ex => {
-        const maxWeight = ex.sets_completed?.reduce((max, set) => 
-          set.weight_used > max ? set.weight_used : max, 0
-        ) || 0;
-        return maxWeight;
-      });
-
-      const lastWeight = recentWeights[0];
-      const hasProgressedRecently = recentWeights[0] > recentWeights[1];
-      const isStagnant = recentWeights.slice(0, 3).every(w => w === lastWeight && w > 0);
-
-      const prompt = `Você é um personal trainer analisando o desempenho de um atleta no exercício "${exercise.exercise_name}".
-
-**Histórico de cargas (últimas 5 execuções):**
-${recentWeights.map((w, i) => `${i + 1}. ${w}kg`).join('\n')}
-
-**Situação atual:**
-- Última carga: ${lastWeight}kg
-- Progrediu recentemente: ${hasProgressedRecently ? 'Sim' : 'Não'}
-- Está estagnado: ${isStagnant ? 'Sim (mesma carga há 3+ treinos)' : 'Não'}
-
-**Tarefa:**
-Se houver uma sugestão importante (aumentar carga, mudar estratégia, parabéns por progresso), retorne em JSON:
-{
-  "show_suggestion": true/false,
-  "type": "progress/stagnant/warning/congratulations",
-  "title": "Título curto e motivador",
-  "message": "Mensagem clara e específica (1-2 frases)",
-  "suggestion": "Ação específica a tomar"
-}
-
-Se NÃO houver sugestão relevante, retorne: {"show_suggestion": false}
-
-IMPORTANTE: Só mostre sugestão se for realmente relevante. Não seja repetitivo.`;
-
-      const response = await base44.integrations.Core.InvokeLLM({
-        prompt: prompt,
-        response_json_schema: {
-          type: "object",
-          properties: {
-            show_suggestion: { type: "boolean" },
-            type: { type: "string" },
-            title: { type: "string" },
-            message: { type: "string" },
-            suggestion: { type: "string" }
-          }
-        }
-      });
-
-      if (response.show_suggestion) {
-        setAiSuggestion(response);
-        setShowAISuggestion(true);
-      } else {
-        setShowAISuggestion(false);
-        setAiSuggestion(null);
-      }
-    } catch (error) {
-      console.error("Error analyzing performance:", error);
-    }
-  };
-
   const createWorkoutLogMutation = useMutation({
     mutationFn: (data) => base44.entities.WorkoutLog.create(data),
     onSuccess: async () => {
@@ -225,7 +137,7 @@ IMPORTANTE: Só mostre sugestão se for realmente relevante. Não seja repetitiv
         completed_workout_days: completedDays,
       });
       
-      setEndTime(new Date());
+      navigate(createPageUrl("Home"));
     },
   });
 
@@ -234,145 +146,6 @@ IMPORTANTE: Só mostre sugestão se for realmente relevante. Não seja repetitiv
     if (newData[exerciseIndex] && newData[exerciseIndex].sets_completed[setIndex]) {
       newData[exerciseIndex].sets_completed[setIndex][field] = value;
       setExercisesData(newData);
-    }
-  };
-
-  const generateAITips = async (exercise) => {
-    if (!exercise || !isPremium) return;
-    
-    try {
-      const prompt = `Você é um personal trainer. Forneça dicas rápidas e práticas sobre o exercício "${exercise.exercise_name}".
-
-Responda em JSON com:
-{
-  "dicas_execucao": ["dica 1", "dica 2", "dica 3"],
-  "erros_comuns": ["erro 1", "erro 2"],
-  "dica_rapida": "Uma frase motivacional sobre o exercício"
-}
-
-Seja direto, prático e motivador.`;
-
-      const response = await base44.integrations.Core.InvokeLLM({
-        prompt: prompt,
-        response_json_schema: {
-          type: "object",
-          properties: {
-            dicas_execucao: { type: "array", items: { type: "string" } },
-            erros_comuns: { type: "array", items: { type: "string" } },
-            dica_rapida: { type: "string" }
-          }
-        }
-      });
-
-      setAiTips(response);
-      setShowAITips(true);
-    } catch (error) {
-      console.error("Error generating AI tips:", error);
-    }
-  };
-
-  const handleVideoUpload = async (event) => {
-    const file = event.target.files[0];
-    if (!file) return;
-
-    const maxSize = 50 * 1024 * 1024;
-    if (file.size > maxSize) {
-      alert("O vídeo deve ter no máximo 50MB (aproximadamente 1 minuto)");
-      return;
-    }
-
-    if (!file.type.startsWith('video/')) {
-      alert("Por favor, envie um arquivo de vídeo válido");
-      return;
-    }
-
-    setIsAnalyzingVideo(true);
-
-    try {
-      const { file_url } = await base44.integrations.Core.UploadFile({ file });
-
-      const exerciseName = currentExercise.exercise_name;
-      const exerciseCategory = currentExercise.exercise_category || 'geral';
-
-      const prompt = `Você é um personal trainer expert analisando um vídeo de execução do exercício "${exerciseName}" (categoria: ${exerciseCategory}).
-
-**Sua tarefa:**
-Analise o vídeo e forneça feedback DETALHADO e PRÁTICO em formato JSON.
-
-**Importante:**
-- Seja ESPECÍFICO sobre o que você vê
-- Forneça dicas ACIONÁVEIS e práticas
-- Identifique erros COMUNS para este exercício
-- Seja encorajador mas honesto
-
-**Formato de resposta (JSON):**
-{
-  "analise_geral": "Resumo da execução (2-3 frases)",
-  "pontos_positivos": [
-    "Aspecto positivo 1",
-    "Aspecto positivo 2"
-  ],
-  "erros_identificados": [
-    {
-      "erro": "Descrição do erro",
-      "impacto": "Por que isso é um problema",
-      "correcao": "Como corrigir especificamente"
-    }
-  ],
-  "dicas_postura": [
-    "Dica específica sobre postura 1",
-    "Dica específica sobre postura 2"
-  ],
-  "dicas_movimento": [
-    "Dica sobre trajetória/amplitude",
-    "Dica sobre ritmo/velocidade"
-  ],
-  "dicas_respiracao": "Como respirar durante o exercício",
-  "nota_execucao": número de 1-10,
-  "proximos_passos": "O que focar no próximo treino"
-}
-
-**Contexto do exercício "${exerciseName}":**
-- Erros comuns neste exercício
-- Pontos de atenção específicos
-- Técnica correta esperada`;
-
-      const response = await base44.integrations.Core.InvokeLLM({
-        prompt: prompt,
-        file_urls: [file_url],
-        response_json_schema: {
-          type: "object",
-          properties: {
-            analise_geral: { type: "string" },
-            pontos_positivos: { type: "array", items: { type: "string" } },
-            erros_identificados: {
-              type: "array",
-              items: {
-                type: "object",
-                properties: {
-                  erro: { type: "string" },
-                  impacto: { type: "string" },
-                  correcao: { type: "string" }
-                }
-              }
-            },
-            dicas_postura: { type: "array", items: { type: "string" } },
-            dicas_movimento: { type: "array", items: { type: "string" } },
-            dicas_respiracao: { type: "string" },
-            nota_execucao: { type: "number" },
-            proximos_passos: { type: "string" }
-          }
-        }
-      });
-
-      setVideoAnalysis(response);
-      setShowVideoAnalysis(true);
-    } catch (error) {
-      console.error("Error analyzing video:", error);
-      alert("Erro ao analisar vídeo. Tente novamente.");
-    } finally {
-      setIsAnalyzingVideo(false);
-      // Removed: setVideoFile(null);
     }
   };
 
@@ -405,13 +178,14 @@ Analise o vídeo e forneça feedback DETALHADO e PRÁTICO em formato JSON.
       if (skippedExercises.length > 0) {
         setShowSkipWarning(true);
       } else {
+        setEndTime(new Date());
         setShowCaloriesInput(true);
       }
     } else {
       const nextExercise = currentDay.exercises[currentExerciseIndex + 1];
       setCurrentExerciseIndex(currentExerciseIndex + 1);
       if (nextExercise?.sets?.[0]?.rest_seconds) {
-        const nextRest = nextExercise.sets[0].rest_seconds; 
+        const nextRest = nextExercise.sets[0].rest_seconds;
         setRestTime(nextRest);
         setTimeRemaining(nextRest);
       }
@@ -427,6 +201,7 @@ Analise o vídeo e forneça feedback DETALHADO e PRÁTICO em formato JSON.
 
   const handleFinishWithSkipped = () => {
     setShowSkipWarning(false);
+    setEndTime(new Date());
     setShowCaloriesInput(true);
   };
 
@@ -519,7 +294,7 @@ Analise o vídeo e forneça feedback DETALHADO e PRÁTICO em formato JSON.
   // Skip Warning Modal
   if (showSkipWarning) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4">
+      <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-b from-slate-950 to-slate-900">
         <Card className="bg-slate-900/50 border-slate-800 max-w-md w-full">
           <CardContent className="p-6 text-center space-y-4">
             <div className="w-16 h-16 bg-orange-600/20 rounded-full flex items-center justify-center mx-auto">
@@ -570,7 +345,7 @@ Analise o vídeo e forneça feedback DETALHADO e PRÁTICO em formato JSON.
     const randomMessage = motivationalMessages[Math.floor(Math.random() * motivationalMessages.length)];
 
     return (
-      <div className="min-h-screen flex items-center justify-center p-4">
+      <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-b from-slate-950 to-slate-900">
         <motion.div
           initial={{ scale: 0.8, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
@@ -636,10 +411,6 @@ Analise o vídeo e forneça feedback DETALHADO e PRÁTICO em formato JSON.
     );
   }
 
-  if (showCaloriesInput && !endTime) {
-    setEndTime(new Date());
-  }
-
   return (
     <div className="fixed inset-0 flex flex-col bg-gradient-to-b from-slate-950 to-slate-900 z-[60]">
       {/* Header Fixo */}
@@ -659,50 +430,7 @@ Analise o vídeo e forneça feedback DETALHADO e PRÁTICO em formato JSON.
               Exercício {currentExerciseIndex + 1}/{currentDay.exercises?.length || 0}
             </p>
           </div>
-          {/* Botões de Dicas IA */}
-          <div className="flex items-center gap-1">
-            {user && isPremium ? (
-              <>
-                {/* Botão de Análise de Vídeo */}
-                <label className="cursor-pointer">
-                  <input
-                    type="file"
-                    accept="video/*"
-                    capture="user"
-                    onChange={handleVideoUpload}
-                    disabled={isAnalyzingVideo}
-                    className="hidden"
-                  />
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    disabled={isAnalyzingVideo}
-                    className="text-green-400 hover:text-green-300 h-8 w-8"
-                    onClick={(e) => {
-                      if (isAnalyzingVideo) e.preventDefault(); // Prevent default click if analyzing
-                    }}
-                  >
-                    {isAnalyzingVideo ? (
-                      <Loader2 className="w-5 h-5 animate-spin" />
-                    ) : (
-                      <Video className="w-5 h-5" />
-                    )}
-                  </Button>
-                </label>
-                {/* Botão de Dicas Rápidas */}
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => generateAITips(currentExercise)}
-                  className="text-purple-400 hover:text-purple-300 h-8 w-8"
-                >
-                  <Lightbulb className="w-5 h-5" />
-                </Button>
-              </>
-            ) : (
-              <div className="w-8" />
-            )}
-          </div>
+          <div className="w-8" />
         </div>
       </div>
 
@@ -715,260 +443,6 @@ Analise o vídeo e forneça feedback DETALHADO e PRÁTICO em formato JSON.
           <p className="text-slate-400 text-xs mt-0.5">💡 {currentExercise.notes}</p>
         )}
       </div>
-
-      {/* AI Suggestion Modal (Automático) */}
-      {showAISuggestion && aiSuggestion && (
-        <div className="absolute inset-0 bg-black/80 backdrop-blur-sm z-[70] flex items-center justify-center p-4" onClick={() => setShowAISuggestion(false)}>
-          <motion.div
-            initial={{ scale: 0.9, opacity: 0, y: 20 }}
-            animate={{ scale: 1, opacity: 1, y: 0 }}
-            onClick={(e) => e.stopPropagation()}
-            className="max-w-md w-full"
-          >
-            <Card className={`bg-slate-900 border-2 ${
-              aiSuggestion.type === 'congratulations' ? 'border-green-600' :
-              aiSuggestion.type === 'stagnant' ? 'border-orange-600' :
-              aiSuggestion.type === 'warning' ? 'border-red-600' :
-              'border-blue-600'
-            }`}>
-              <CardHeader>
-                <CardTitle className="text-white flex items-center gap-2">
-                  {aiSuggestion.type === 'congratulations' && <Trophy className="w-5 h-5 text-green-400" />}
-                  {aiSuggestion.type === 'stagnant' && <TrendingUp className="w-5 h-5 text-orange-400" />}
-                  {aiSuggestion.type === 'warning' && <AlertTriangle className="w-5 h-5 text-red-400" />}
-                  {aiSuggestion.type === 'progress' && <Zap className="w-5 h-5 text-blue-400" />}
-                  {aiSuggestion.title}
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <p className="text-slate-300 text-sm leading-relaxed">
-                  {aiSuggestion.message}
-                </p>
-
-                <div className={`p-3 rounded-lg ${
-                  aiSuggestion.type === 'congratulations' ? 'bg-green-900/30 border border-green-700/50' :
-                  aiSuggestion.type === 'stagnant' ? 'bg-orange-900/30 border border-orange-700/50' :
-                  aiSuggestion.type === 'warning' ? 'bg-red-900/30 border border-red-700/50' :
-                  'bg-blue-900/30 border border-blue-700/50'
-                }`}>
-                  <p className="text-white text-sm font-semibold mb-1">💡 Sugestão:</p>
-                  <p className="text-200 text-sm">{aiSuggestion.suggestion}</p>
-                </div>
-
-                <Button
-                  onClick={() => setShowAISuggestion(false)}
-                  className="w-full bg-blue-600 hover:bg-blue-700"
-                >
-                  Entendi, vamos lá!
-                </Button>
-              </CardContent>
-            </Card>
-          </motion.div>
-        </div>
-      )}
-
-      {/* AI Tips Modal */}
-      {showAITips && aiTips && (
-        <div className="absolute inset-0 bg-black/80 backdrop-blur-sm z-[70] flex items-center justify-center p-4" onClick={() => setShowAITips(false)}>
-          <motion.div
-            initial={{ scale: 0.9, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            onClick={(e) => e.stopPropagation()}
-            className="max-w-md w-full"
-          >
-            <Card className="bg-slate-900 border-purple-700/50">
-              <CardHeader>
-                <CardTitle className="text-white flex items-center gap-2">
-                  <Lightbulb className="w-5 h-5 text-yellow-400" />
-                  Dicas do Treinador IA
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {/* Dicas de Execução */}
-                <div>
-                  <h4 className="text-green-400 font-semibold mb-2 text-sm">✓ Como Executar:</h4>
-                  <ul className="space-y-1">
-                    {aiTips.dicas_execucao?.map((dica, index) => (
-                      <li key={index} className="text-slate-300 text-xs flex items-start gap-2">
-                        <span className="text-green-400 mt-0.5">•</span>
-                        <span>{dica}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-
-                {/* Erros Comuns */}
-                <div>
-                  <h4 className="text-orange-400 font-semibold mb-2 text-sm">⚠️ Evite:</h4>
-                  <ul className="space-y-1">
-                    {aiTips.erros_comuns?.map((erro, index) => (
-                      <li key={index} className="text-slate-300 text-xs flex items-start gap-2">
-                        <span className="text-orange-400 mt-0.5">•</span>
-                        <span>{erro}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-
-                {/* Dica Rápida */}
-                <div className="bg-purple-900/30 border border-purple-700/50 rounded-lg p-3">
-                  <p className="text-purple-300 text-sm italic text-center">
-                    💪 {aiTips.dica_rapida}
-                  </p>
-                </div>
-
-                <Button
-                  onClick={() => setShowAITips(false)}
-                  className="w-full bg-purple-600 hover:bg-purple-700"
-                >
-                  Entendi!
-                </Button>
-              </CardContent>
-            </Card>
-          </motion.div>
-        </div>
-      )}
-
-      {/* Video Analysis Modal */}
-      {showVideoAnalysis && videoAnalysis && (
-        <div className="absolute inset-0 bg-black/80 backdrop-blur-sm z-[70] overflow-y-auto p-4">
-          <motion.div
-            initial={{ scale: 0.9, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            className="max-w-2xl mx-auto my-4"
-          >
-            <Card className="bg-slate-900 border-purple-700/50">
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-white flex items-center gap-2">
-                    <Video className="w-5 h-5 text-green-400" />
-                    Análise do Seu Vídeo
-                  </CardTitle>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => setShowVideoAnalysis(false)}
-                    className="text-slate-400 hover:text-white"
-                  >
-                    <X className="w-5 h-5" />
-                  </Button>
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {/* Nota de Execução */}
-                <div className="text-center py-4 bg-gradient-to-r from-purple-900/30 to-blue-900/30 rounded-lg border border-purple-700/50">
-                  <p className="text-slate-400 text-sm mb-1">Nota da Execução</p>
-                  <div className="flex items-center justify-center gap-2">
-                    <span className="text-5xl font-bold text-white">{videoAnalysis.nota_execucao}</span>
-                    <span className="text-3xl text-slate-500">/10</span>
-                  </div>
-                </div>
-
-                {/* Análise Geral */}
-                <div className="bg-slate-800/50 rounded-lg p-3">
-                  <h4 className="text-white font-semibold mb-2">📋 Análise Geral</h4>
-                  <p className="text-slate-300 text-sm leading-relaxed">{videoAnalysis.analise_geral}</p>
-                </div>
-
-                {/* Pontos Positivos */}
-                {videoAnalysis.pontos_positivos?.length > 0 && (
-                  <div className="bg-green-900/20 border border-green-700/50 rounded-lg p-3">
-                    <h4 className="text-green-400 font-semibold mb-2 flex items-center gap-2">
-                      <CheckCircle className="w-4 h-4" />
-                      Pontos Positivos
-                    </h4>
-                    <ul className="space-y-1">
-                      {videoAnalysis.pontos_positivos.map((ponto, idx) => (
-                        <li key={idx} className="text-green-300 text-sm flex items-start gap-2">
-                          <span className="text-green-400 mt-0.5">✓</span>
-                          <span>{ponto}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-
-                {/* Erros Identificados */}
-                {videoAnalysis.erros_identificados?.length > 0 && (
-                  <div className="space-y-2">
-                    <h4 className="text-orange-400 font-semibold flex items-center gap-2">
-                      <AlertTriangle className="w-4 h-4" />
-                      Erros Identificados e Correções
-                    </h4>
-                    {videoAnalysis.erros_identificados.map((erro, idx) => (
-                      <div key={idx} className="bg-orange-900/20 border border-orange-700/50 rounded-lg p-3">
-                        <p className="text-orange-300 font-semibold text-sm mb-1">❌ {erro.erro}</p>
-                        <p className="text-orange-200/80 text-xs mb-2 italic">Por que é problema: {erro.impacto}</p>
-                        <div className="bg-orange-800/30 rounded p-2 mt-2">
-                          <p className="text-orange-200 text-xs font-semibold mb-1">💡 Como corrigir:</p>
-                          <p className="text-orange-100 text-xs">{erro.correcao}</p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-                {/* Dicas de Postura */}
-                {videoAnalysis.dicas_postura?.length > 0 && (
-                  <div className="bg-blue-900/20 border border-blue-700/50 rounded-lg p-3">
-                    <h4 className="text-blue-400 font-semibold mb-2">🧍 Dicas de Postura</h4>
-                    <ul className="space-y-1">
-                      {videoAnalysis.dicas_postura.map((dica, idx) => (
-                        <li key={idx} className="text-blue-300 text-sm flex items-start gap-2">
-                          <span className="text-blue-400 mt-0.5">•</span>
-                          <span>{dica}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-
-                {/* Dicas de Movimento */}
-                {videoAnalysis.dicas_movimento?.length > 0 && (
-                  <div className="bg-purple-900/20 border border-purple-700/50 rounded-lg p-3">
-                    <h4 className="text-purple-400 font-semibold mb-2">🔄 Dicas de Movimento</h4>
-                    <ul className="space-y-1">
-                      {videoAnalysis.dicas_movimento.map((dica, idx) => (
-                        <li key={idx} className="text-purple-300 text-sm flex items-start gap-2">
-                          <span className="text-purple-400 mt-0.5">•</span>
-                          <span>{dica}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-
-                {/* Dicas de Respiração */}
-                {videoAnalysis.dicas_respiracao && (
-                  <div className="bg-cyan-900/20 border border-cyan-700/50 rounded-lg p-3">
-                    <h4 className="text-cyan-400 font-semibold mb-2">💨 Respiração</h4>
-                    <p className="text-cyan-300 text-sm">{videoAnalysis.dicas_respiracao}</p>
-                  </div>
-                )}
-
-                {/* Próximos Passos */}
-                {videoAnalysis.proximos_passos && (
-                  <div className="bg-gradient-to-r from-green-900/30 to-blue-900/30 border border-green-700/50 rounded-lg p-3">
-                    <h4 className="text-green-400 font-semibold mb-2">🎯 Próximos Passos</h4>
-                    <p className="text-green-300 text-sm">{videoAnalysis.proximos_passos}</p>
-                  </div>
-                )}
-
-                <Button
-                  onClick={() => setShowVideoAnalysis(false)}
-                  className="w-full bg-purple-600 hover:bg-purple-700"
-                >
-                  Entendi, Vamos Treinar!
-                </Button>
-
-                <p className="text-slate-500 text-xs text-center">
-                  🔒 Seu vídeo foi analisado e já foi excluído do servidor
-                </p>
-              </CardContent>
-            </Card>
-          </motion.div>
-        </div>
-      )}
 
       {/* Séries - Área Rolável APENAS COM PESO */}
       <div className="flex-1 overflow-y-auto px-3 py-2" style={{ minHeight: 0 }}>
@@ -1082,7 +556,7 @@ Analise o vídeo e forneça feedback DETALHADO e PRÁTICO em formato JSON.
       </div>
 
       {/* Botões Fixos no Bottom */}
-      <div className="flex-shrink-0 bg-slate-900/95 backdrop-blur-sm border-t border-slate-800 px-3 py-3 safe-area-inset-bottom">
+      <div className="flex-shrink-0 bg-slate-900/95 backdrop-blur-sm border-t border-slate-800 px-3 py-3">
         <div className="flex gap-2">
           <Button
             onClick={handleSkipExercise}
