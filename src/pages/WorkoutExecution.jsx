@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft, Play, Pause, SkipForward, CheckCircle, Plus, Minus, AlertTriangle, Trophy, Clock, Zap, X, Lightbulb, Weight, TrendingUp } from "lucide-react";
+import { ArrowLeft, Play, Pause, SkipForward, CheckCircle, Plus, Minus, AlertTriangle, Trophy, Clock, Zap, X, Lightbulb, Weight, TrendingUp, Video, Upload, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
 
 export default function WorkoutExecution() {
@@ -39,6 +39,10 @@ export default function WorkoutExecution() {
   const [showAISuggestion, setShowAISuggestion] = useState(false);
   const [aiSuggestion, setAiSuggestion] = useState(null);
   const [workoutLogs, setWorkoutLogs] = useState([]);
+  const [showVideoAnalysis, setShowVideoAnalysis] = useState(false);
+  const [videoAnalysis, setVideoAnalysis] = useState(null);
+  const [isAnalyzingVideo, setIsAnalyzingVideo] = useState(false);
+  const [videoFile, setVideoFile] = useState(null);
 
   const isPremium = user?.subscription_status === 'premium';
 
@@ -265,6 +269,116 @@ Seja direto, prático e motivador.`;
       setShowAITips(true);
     } catch (error) {
       console.error("Error generating AI tips:", error);
+    }
+  };
+
+  const handleVideoUpload = async (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    // Validar tamanho (1 minuto ~= 10-50MB dependendo da qualidade)
+    const maxSize = 50 * 1024 * 1024; // 50MB
+    if (file.size > maxSize) {
+      alert("O vídeo deve ter no máximo 50MB (aproximadamente 1 minuto)");
+      return;
+    }
+
+    // Validar tipo
+    if (!file.type.startsWith('video/')) {
+      alert("Por favor, envie um arquivo de vídeo válido");
+      return;
+    }
+
+    setVideoFile(file);
+    setIsAnalyzingVideo(true);
+
+    try {
+      // 1. Upload do vídeo
+      const { file_url } = await base44.integrations.Core.UploadFile({ file });
+
+      // 2. Análise com IA
+      const exerciseName = currentExercise.exercise_name;
+      const exerciseCategory = currentExercise.exercise_category || 'geral';
+
+      const prompt = `Você é um personal trainer expert analisando um vídeo de execução do exercício "${exerciseName}" (categoria: ${exerciseCategory}).
+
+**Sua tarefa:**
+Analise o vídeo e forneça feedback DETALHADO e PRÁTICO em formato JSON.
+
+**Importante:**
+- Seja ESPECÍFICO sobre o que você vê
+- Forneça dicas ACIONÁVEIS e práticas
+- Identifique erros COMUNS para este exercício
+- Seja encorajador mas honesto
+
+**Formato de resposta (JSON):**
+{
+  "analise_geral": "Resumo da execução (2-3 frases)",
+  "pontos_positivos": [
+    "Aspecto positivo 1",
+    "Aspecto positivo 2"
+  ],
+  "erros_identificados": [
+    {
+      "erro": "Descrição do erro",
+      "impacto": "Por que isso é um problema",
+      "correcao": "Como corrigir especificamente"
+    }
+  ],
+  "dicas_postura": [
+    "Dica específica sobre postura 1",
+    "Dica específica sobre postura 2"
+  ],
+  "dicas_movimento": [
+    "Dica sobre trajetória/amplitude",
+    "Dica sobre ritmo/velocidade"
+  ],
+  "dicas_respiracao": "Como respirar durante o exercício",
+  "nota_execucao": número de 1-10,
+  "proximos_passos": "O que focar no próximo treino"
+}
+
+**Contexto do exercício "${exerciseName}":**
+- Erros comuns neste exercício
+- Pontos de atenção específicos
+- Técnica correta esperada`;
+
+      const response = await base44.integrations.Core.InvokeLLM({
+        prompt: prompt,
+        file_urls: [file_url],
+        response_json_schema: {
+          type: "object",
+          properties: {
+            analise_geral: { type: "string" },
+            pontos_positivos: { type: "array", items: { type: "string" } },
+            erros_identificados: {
+              type: "array",
+              items: {
+                type: "object",
+                properties: {
+                  erro: { type: "string" },
+                  impacto: { type: "string" },
+                  correcao: { type: "string" }
+                }
+              }
+            },
+            dicas_postura: { type: "array", items: { type: "string" } },
+            dicas_movimento: { type: "array", items: { type: "string" } },
+            dicas_respiracao: { type: "string" },
+            nota_execucao: { type: "number" },
+            proximos_passos: { type: "string" }
+          }
+        }
+      });
+
+      setVideoAnalysis(response);
+      setShowVideoAnalysis(true);
+    } catch (error) {
+      console.error("Error analyzing video:", error);
+      alert("Erro ao analisar vídeo. Tente novamente.");
+    } finally {
+      setIsAnalyzingVideo(false);
+      setVideoFile(null);
     }
   };
 
@@ -557,19 +671,50 @@ Seja direto, prático e motivador.`;
               Exercício {currentExerciseIndex + 1}/{currentDay.exercises?.length || 0}
             </p>
           </div>
-          {/* Botão de Dicas IA */}
-          {user && isPremium ? (
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => generateAITips(currentExercise)}
-              className="text-purple-400 hover:text-purple-300 h-8 w-8"
-            >
-              <Lightbulb className="w-5 h-5" />
-            </Button>
-          ) : (
-            <div className="w-8" />
-          )}
+          {/* Botões de Dicas IA */}
+          <div className="flex items-center gap-1">
+            {user && isPremium ? (
+              <>
+                {/* Botão de Análise de Vídeo */}
+                <label className="cursor-pointer">
+                  <input
+                    type="file"
+                    accept="video/*"
+                    capture="user"
+                    onChange={handleVideoUpload}
+                    disabled={isAnalyzingVideo}
+                    className="hidden"
+                  />
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    disabled={isAnalyzingVideo}
+                    className="text-green-400 hover:text-green-300 h-8 w-8"
+                    onClick={(e) => {
+                      if (isAnalyzingVideo) e.preventDefault();
+                    }}
+                  >
+                    {isAnalyzingVideo ? (
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                    ) : (
+                      <Video className="w-5 h-5" />
+                    )}
+                  </Button>
+                </label>
+                {/* Botão de Dicas Rápidas */}
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => generateAITips(currentExercise)}
+                  className="text-purple-400 hover:text-purple-300 h-8 w-8"
+                >
+                  <Lightbulb className="w-5 h-5" />
+                </Button>
+              </>
+            ) : (
+              <div className="w-8" />
+            )}
+          </div>
         </div>
       </div>
 
@@ -690,6 +835,147 @@ Seja direto, prático e motivador.`;
                 >
                   Entendi!
                 </Button>
+              </CardContent>
+            </Card>
+          </motion.div>
+        </div>
+      )}
+
+      {/* Video Analysis Modal */}
+      {showVideoAnalysis && videoAnalysis && (
+        <div className="absolute inset-0 bg-black/80 backdrop-blur-sm z-[70] overflow-y-auto p-4">
+          <motion.div
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            className="max-w-2xl mx-auto my-4"
+          >
+            <Card className="bg-slate-900 border-purple-700/50">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-white flex items-center gap-2">
+                    <Video className="w-5 h-5 text-green-400" />
+                    Análise do Seu Vídeo
+                  </CardTitle>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setShowVideoAnalysis(false)}
+                    className="text-slate-400 hover:text-white"
+                  >
+                    <X className="w-5 h-5" />
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {/* Nota de Execução */}
+                <div className="text-center py-4 bg-gradient-to-r from-purple-900/30 to-blue-900/30 rounded-lg border border-purple-700/50">
+                  <p className="text-slate-400 text-sm mb-1">Nota da Execução</p>
+                  <div className="flex items-center justify-center gap-2">
+                    <span className="text-5xl font-bold text-white">{videoAnalysis.nota_execucao}</span>
+                    <span className="text-3xl text-slate-500">/10</span>
+                  </div>
+                </div>
+
+                {/* Análise Geral */}
+                <div className="bg-slate-800/50 rounded-lg p-3">
+                  <h4 className="text-white font-semibold mb-2">📋 Análise Geral</h4>
+                  <p className="text-slate-300 text-sm leading-relaxed">{videoAnalysis.analise_geral}</p>
+                </div>
+
+                {/* Pontos Positivos */}
+                {videoAnalysis.pontos_positivos?.length > 0 && (
+                  <div className="bg-green-900/20 border border-green-700/50 rounded-lg p-3">
+                    <h4 className="text-green-400 font-semibold mb-2 flex items-center gap-2">
+                      <CheckCircle className="w-4 h-4" />
+                      Pontos Positivos
+                    </h4>
+                    <ul className="space-y-1">
+                      {videoAnalysis.pontos_positivos.map((ponto, idx) => (
+                        <li key={idx} className="text-green-300 text-sm flex items-start gap-2">
+                          <span className="text-green-400 mt-0.5">✓</span>
+                          <span>{ponto}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {/* Erros Identificados */}
+                {videoAnalysis.erros_identificados?.length > 0 && (
+                  <div className="space-y-2">
+                    <h4 className="text-orange-400 font-semibold flex items-center gap-2">
+                      <AlertTriangle className="w-4 h-4" />
+                      Erros Identificados e Correções
+                    </h4>
+                    {videoAnalysis.erros_identificados.map((erro, idx) => (
+                      <div key={idx} className="bg-orange-900/20 border border-orange-700/50 rounded-lg p-3">
+                        <p className="text-orange-300 font-semibold text-sm mb-1">❌ {erro.erro}</p>
+                        <p className="text-orange-200/80 text-xs mb-2 italic">Por que é problema: {erro.impacto}</p>
+                        <div className="bg-orange-800/30 rounded p-2 mt-2">
+                          <p className="text-orange-200 text-xs font-semibold mb-1">💡 Como corrigir:</p>
+                          <p className="text-orange-100 text-xs">{erro.correcao}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Dicas de Postura */}
+                {videoAnalysis.dicas_postura?.length > 0 && (
+                  <div className="bg-blue-900/20 border border-blue-700/50 rounded-lg p-3">
+                    <h4 className="text-blue-400 font-semibold mb-2">🧍 Dicas de Postura</h4>
+                    <ul className="space-y-1">
+                      {videoAnalysis.dicas_postura.map((dica, idx) => (
+                        <li key={idx} className="text-blue-300 text-sm flex items-start gap-2">
+                          <span className="text-blue-400 mt-0.5">•</span>
+                          <span>{dica}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {/* Dicas de Movimento */}
+                {videoAnalysis.dicas_movimento?.length > 0 && (
+                  <div className="bg-purple-900/20 border border-purple-700/50 rounded-lg p-3">
+                    <h4 className="text-purple-400 font-semibold mb-2">🔄 Dicas de Movimento</h4>
+                    <ul className="space-y-1">
+                      {videoAnalysis.dicas_movimento.map((dica, idx) => (
+                        <li key={idx} className="text-purple-300 text-sm flex items-start gap-2">
+                          <span className="text-purple-400 mt-0.5">•</span>
+                          <span>{dica}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {/* Dicas de Respiração */}
+                {videoAnalysis.dicas_respiracao && (
+                  <div className="bg-cyan-900/20 border border-cyan-700/50 rounded-lg p-3">
+                    <h4 className="text-cyan-400 font-semibold mb-2">💨 Respiração</h4>
+                    <p className="text-cyan-300 text-sm">{videoAnalysis.dicas_respiracao}</p>
+                  </div>
+                )}
+
+                {/* Próximos Passos */}
+                {videoAnalysis.proximos_passos && (
+                  <div className="bg-gradient-to-r from-green-900/30 to-blue-900/30 border border-green-700/50 rounded-lg p-3">
+                    <h4 className="text-green-400 font-semibold mb-2">🎯 Próximos Passos</h4>
+                    <p className="text-green-300 text-sm">{videoAnalysis.proximos_passos}</p>
+                  </div>
+                )}
+
+                <Button
+                  onClick={() => setShowVideoAnalysis(false)}
+                  className="w-full bg-purple-600 hover:bg-purple-700"
+                >
+                  Entendi, Vamos Treinar!
+                </Button>
+
+                <p className="text-slate-500 text-xs text-center">
+                  🔒 Seu vídeo foi analisado e já foi excluído do servidor
+                </p>
               </CardContent>
             </Card>
           </motion.div>
