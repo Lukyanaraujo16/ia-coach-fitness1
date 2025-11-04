@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
@@ -6,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Coffee, Sun, Cookie, Moon, Zap, ChevronDown, ChevronUp, Edit2, Plus, Save, X, Loader2 } from "lucide-react";
+import { Coffee, Sun, Cookie, Moon, Zap, ChevronDown, ChevronUp, Edit2, Plus, Save, X, Loader2, Trash2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 const mealIcons = {
@@ -40,6 +41,13 @@ export default function MealHistory({ mealLogs = [] }) {
       setEditingMeal(null);
       setNewFoodName("");
       setNewFoodQuantity("");
+    },
+  });
+
+  const deleteMealMutation = useMutation({
+    mutationFn: (mealId) => base44.entities.MealLog.delete(mealId),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['meal-logs']);
     },
   });
 
@@ -131,6 +139,12 @@ Seja preciso com base na quantidade informada.
     }
   };
 
+  const handleDeleteMeal = (mealId, mealType) => {
+    if (confirm(`Tem certeza que deseja excluir esta refeição (${mealLabels[mealType]})?`)) {
+      deleteMealMutation.mutate(mealId);
+    }
+  };
+
   // Agrupar por data
   const groupedByDate = mealLogs.reduce((acc, log) => {
     if (!log.analysis_complete) return acc;
@@ -205,34 +219,45 @@ Seja preciso com base na quantidade informada.
                       key={meal.id}
                       className="bg-slate-800/50 rounded-lg overflow-hidden"
                     >
-                      <button
-                        onClick={() => setExpandedMeal(isExpanded ? null : meal.id)}
-                        className="w-full p-3 flex items-center justify-between hover:bg-slate-800/70 transition-all"
-                      >
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 bg-green-600/20 rounded-lg flex items-center justify-center">
-                            <Icon className="w-5 h-5 text-green-400" />
+                      <div className="flex items-center">
+                        <button
+                          onClick={() => setExpandedMeal(isExpanded ? null : meal.id)}
+                          className="flex-1 p-3 flex items-center justify-between hover:bg-slate-800/70 transition-all"
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 bg-green-600/20 rounded-lg flex items-center justify-center">
+                              <Icon className="w-5 h-5 text-green-400" />
+                            </div>
+                            <div className="text-left">
+                              <p className="text-white font-medium">
+                                {mealLabels[meal.meal_type]}
+                              </p>
+                              <p className="text-slate-400 text-sm">
+                                {meal.food_items?.length || 0} itens
+                              </p>
+                            </div>
                           </div>
-                          <div className="text-left">
-                            <p className="text-white font-medium">
-                              {mealLabels[meal.meal_type]}
+                          <div className="flex items-center gap-3">
+                            <p className="text-green-400 font-bold">
+                              {meal.total_calories} kcal
                             </p>
-                            <p className="text-slate-400 text-sm">
-                              {meal.food_items?.length || 0} itens
-                            </p>
+                            {isExpanded ? (
+                              <ChevronUp className="w-5 h-5 text-slate-400" />
+                            ) : (
+                              <ChevronDown className="w-5 h-5 text-slate-400" />
+                            )}
                           </div>
-                        </div>
-                        <div className="flex items-center gap-3">
-                          <p className="text-green-400 font-bold">
-                            {meal.total_calories} kcal
-                          </p>
-                          {isExpanded ? (
-                            <ChevronUp className="w-5 h-5 text-slate-400" />
-                          ) : (
-                            <ChevronDown className="w-5 h-5 text-slate-400" />
-                          )}
-                        </div>
-                      </button>
+                        </button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleDeleteMeal(meal.id, meal.meal_type)}
+                          disabled={deleteMealMutation.isPending}
+                          className="text-red-400 hover:text-red-300 hover:bg-red-950/50 mr-2"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
 
                       <AnimatePresence>
                         {isExpanded && (
