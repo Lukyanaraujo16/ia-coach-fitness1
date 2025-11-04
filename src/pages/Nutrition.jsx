@@ -16,14 +16,19 @@ export default function Nutrition() {
   const [activeTab, setActiveTab] = useState("counter");
   const [user, setUser] = useState(null);
   const [showGoalsModal, setShowGoalsModal] = useState(false);
+  const [isLoadingUser, setIsLoadingUser] = useState(true);
 
   useEffect(() => {
     const loadUser = async () => {
       try {
+        setIsLoadingUser(true);
         const currentUser = await base44.auth.me();
         setUser(currentUser);
       } catch (error) {
         console.error("Error loading user:", error);
+        setUser(null);
+      } finally {
+        setIsLoadingUser(false);
       }
     };
     loadUser();
@@ -33,15 +38,27 @@ export default function Nutrition() {
     queryKey: ['meal-logs', user?.email],
     queryFn: async () => {
       if (!user?.email) return [];
-      const allLogs = await base44.entities.MealLog.list('-date');
-      return allLogs.filter(log => log.created_by === user.email);
+      try {
+        const allLogs = await base44.entities.MealLog.list('-date');
+        return allLogs.filter(log => log.created_by === user.email);
+      } catch (error) {
+        console.error("Error loading meal logs:", error);
+        return [];
+      }
     },
-    enabled: !!user?.email,
+    enabled: !!user?.email && !isLoadingUser,
   });
 
   const { data: nutritionPlans = [] } = useQuery({
     queryKey: ['nutrition-plans'],
-    queryFn: () => base44.entities.NutritionPlan.list(),
+    queryFn: async () => {
+      try {
+        return await base44.entities.NutritionPlan.list();
+      } catch (error) {
+        console.error("Error loading nutrition plans:", error);
+        return [];
+      }
+    },
   });
 
   // Calcular calorias e macros de hoje - usando data local
@@ -70,6 +87,17 @@ export default function Nutrition() {
   const proteinGoal = Math.round((calorieGoal * (proteinPercentage / 100)) / 4);
   const carbsGoal = Math.round((calorieGoal * (carbsPercentage / 100)) / 4);
   const fatGoal = Math.round((calorieGoal * (fatPercentage / 100)) / 9);
+
+  if (isLoadingUser) {
+    return (
+      <div className="py-6 flex items-center justify-center min-h-[50vh]">
+        <div className="text-center">
+          <div className="w-12 h-12 border-4 border-green-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-slate-400">Carregando...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="py-6 space-y-6">
