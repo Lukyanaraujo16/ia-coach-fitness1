@@ -103,7 +103,8 @@ export default function WorkoutExecution() {
         completed_workout_days: completedDays,
       });
       
-      setEndTime(new Date());
+      // Navegar para Home após salvar
+      navigate(createPageUrl("Home"));
     },
   });
 
@@ -390,6 +391,7 @@ export default function WorkoutExecution() {
 
   if (showCaloriesInput && !endTime) {
     setEndTime(new Date());
+    return null;
   }
 
   return (

@@ -8,6 +8,7 @@ import WeightChart from "../components/progress/WeightChart";
 import ProgressForm from "../components/progress/ProgressForm";
 import WorkoutHistory from "../components/progress/WorkoutHistory";
 import ProgressPhotos from "../components/progress/ProgressPhotos";
+import ExerciseWeightProgress from "../components/progress/ExerciseWeightProgress";
 
 export default function Progress() {
   const [activeTab, setActiveTab] = useState("weight");
@@ -85,14 +86,17 @@ export default function Progress() {
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="bg-slate-900/50 border border-slate-800 w-full">
-          <TabsTrigger value="weight" className="flex-1 data-[state=active]:bg-blue-600">
+        <TabsList className="bg-slate-900/50 border border-slate-800 w-full grid grid-cols-4">
+          <TabsTrigger value="weight" className="data-[state=active]:bg-blue-600">
             Peso
           </TabsTrigger>
-          <TabsTrigger value="workouts" className="flex-1 data-[state=active]:bg-blue-600">
+          <TabsTrigger value="exercises" className="data-[state=active]:bg-blue-600">
+            Cargas
+          </TabsTrigger>
+          <TabsTrigger value="workouts" className="data-[state=active]:bg-blue-600">
             Treinos
           </TabsTrigger>
-          <TabsTrigger value="photos" className="flex-1 data-[state=active]:bg-blue-600">
+          <TabsTrigger value="photos" className="data-[state=active]:bg-blue-600">
             Fotos
           </TabsTrigger>
         </TabsList>
@@ -100,6 +104,7 @@ export default function Progress() {
 
       {/* Content */}
       {activeTab === "weight" && <WeightChart data={progressEntries} />}
+      {activeTab === "exercises" && <ExerciseWeightProgress logs={workoutLogs} />}
       {activeTab === "workouts" && <WorkoutHistory logs={workoutLogs} />}
       {activeTab === "photos" && <ProgressPhotos entries={progressEntries} />}
     </div>
