@@ -18,6 +18,7 @@ export default function Profile() {
   const [isEditingName, setIsEditingName] = useState(false);
   const [newName, setNewName] = useState("");
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   const { data: selectedWorkout } = useQuery({
     queryKey: ['selected-workout', user?.selected_workout_id],
@@ -42,11 +43,14 @@ export default function Profile() {
   useEffect(() => {
     const loadUser = async () => {
       try {
+        setIsLoading(true);
         const currentUser = await base44.auth.me();
         setUser(currentUser);
         setNewName(currentUser.full_name || "");
       } catch (error) {
         console.error("Error loading user:", error);
+      } finally {
+        setIsLoading(false);
       }
     };
     loadUser();
@@ -123,6 +127,14 @@ export default function Profile() {
   };
 
   const isPremium = user?.subscription_status === 'premium';
+
+  if (isLoading) {
+    return (
+      <div className="py-6">
+        <p className="text-slate-400 text-center">Carregando...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="py-6 space-y-6">

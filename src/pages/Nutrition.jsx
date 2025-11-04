@@ -16,18 +16,22 @@ export default function Nutrition() {
   const [activeTab, setActiveTab] = useState("counter");
   const [user, setUser] = useState(null);
   const [showGoalsModal, setShowGoalsModal] = useState(false);
+  const [isLoadingUser, setIsLoadingUser] = useState(true);
 
   useEffect(() => {
     const loadUser = async () => {
       try {
+        setIsLoadingUser(true);
         const currentUser = await base44.auth.me();
         setUser(currentUser);
       } catch (error) {
         console.error("Error loading user:", error);
+      } finally {
+        setIsLoadingUser(false);
       }
     };
     loadUser();
-  }, []);
+  }, []); // Array vazio
 
   const { data: mealLogs = [] } = useQuery({
     queryKey: ['meal-logs', user?.email],
@@ -36,7 +40,7 @@ export default function Nutrition() {
       const allLogs = await base44.entities.MealLog.list('-date');
       return allLogs.filter(log => log.created_by === user.email);
     },
-    enabled: !!user?.email,
+    enabled: !!user?.email && !isLoadingUser, // Only enabled if user is loaded and not null
   });
 
   const { data: nutritionPlans = [] } = useQuery({

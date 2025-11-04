@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,20 +9,33 @@ import { motion } from "framer-motion";
 
 export default function Subscription() {
   const [user, setUser] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const loadUser = async () => {
       try {
+        setIsLoading(true);
         const currentUser = await base44.auth.me();
         setUser(currentUser);
       } catch (error) {
         console.error("Error loading user:", error);
+        // Optionally handle error state for user feedback
+      } finally {
+        setIsLoading(false);
       }
     };
     loadUser();
-  }, []);
+  }, []); // Array vazio
 
   const isPremium = user?.subscription_status === 'premium';
+
+  if (isLoading) {
+    return (
+      <div className="py-6">
+        <p className="text-slate-400 text-center">Carregando...</p>
+      </div>
+    );
+  }
 
   const features = [
     { icon: Zap, text: "Acesso ilimitado a todos os treinos", premium: false },

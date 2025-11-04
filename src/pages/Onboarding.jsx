@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useNavigate } from "react-router-dom";
@@ -74,6 +75,7 @@ export default function Onboarding() {
   });
   const [isLoading, setIsLoading] = useState(false);
   const [user, setUser] = useState(null);
+  const [checkedUser, setCheckedUser] = useState(false);
 
   useEffect(() => {
     const loadUser = async () => {
@@ -86,16 +88,20 @@ export default function Onboarding() {
           setAnswers(prev => ({ ...prev, full_name: currentUser.full_name }));
         }
         
-        // Se já completou onboarding, redireciona
-        if (currentUser.fitness_goal) {
-          navigate(createPageUrl("Home"));
+        // Só redireciona se já completou onboarding E ainda não checou
+        if (currentUser.fitness_goal && !checkedUser) {
+          setCheckedUser(true);
+          navigate(createPageUrl("Home"), { replace: true });
         }
       } catch (error) {
         base44.auth.redirectToLogin(createPageUrl("Onboarding"));
       }
     };
-    loadUser();
-  }, [navigate]);
+    
+    if (!checkedUser) {
+      loadUser();
+    }
+  }, []); // Array vazio - só executa uma vez
 
   const currentStepData = STEPS[currentStep];
   const Icon = currentStepData.icon;

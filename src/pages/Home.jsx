@@ -17,13 +17,17 @@ export default function Home() {
   const queryClient = useQueryClient();
   const [user, setUser] = useState(null);
   const [challengeInput, setChallengeInput] = useState("");
+  const [checkedOnboarding, setCheckedOnboarding] = useState(false); // New state variable
 
   useEffect(() => {
     const loadUser = async () => {
       try {
         const currentUser = await base44.auth.me();
         setUser(currentUser);
-        if (!currentUser.fitness_goal) {
+        
+        // Só redireciona se realmente não tem fitness_goal E ainda não checou
+        if (!currentUser.fitness_goal && !checkedOnboarding) {
+          setCheckedOnboarding(true); // Mark as checked
           navigate(createPageUrl("Onboarding"));
         }
       } catch (error) {
@@ -31,7 +35,7 @@ export default function Home() {
       }
     };
     loadUser();
-  }, [navigate]);
+  }, []); // Removed navigate from dependencies as suggested. `checkedOnboarding` is updated internally within the effect.
 
   const { data: workoutLogs = [] } = useQuery({
     queryKey: ['workout-logs', user?.email],

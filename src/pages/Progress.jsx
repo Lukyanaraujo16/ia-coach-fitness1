@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -13,15 +14,19 @@ export default function Progress() {
   const [activeTab, setActiveTab] = useState("weight");
   const [showForm, setShowForm] = useState(false);
   const [user, setUser] = useState(null);
+  const [isLoadingUser, setIsLoadingUser] = useState(true);
   const queryClient = useQueryClient();
 
   useEffect(() => {
     const loadUser = async () => {
       try {
+        setIsLoadingUser(true);
         const currentUser = await base44.auth.me();
         setUser(currentUser);
       } catch (error) {
         console.error("Error loading user:", error);
+      } finally {
+        setIsLoadingUser(false);
       }
     };
     loadUser();
@@ -34,7 +39,7 @@ export default function Progress() {
       const allEntries = await base44.entities.ProgressEntry.list('-date');
       return allEntries.filter(entry => entry.created_by === user.email);
     },
-    enabled: !!user?.email,
+    enabled: !!user?.email && !isLoadingUser,
   });
 
   const { data: workoutLogs = [] } = useQuery({
@@ -44,7 +49,7 @@ export default function Progress() {
       const allLogs = await base44.entities.WorkoutLog.list('-date');
       return allLogs.filter(log => log.created_by === user.email);
     },
-    enabled: !!user?.email,
+    enabled: !!user?.email && !isLoadingUser,
   });
 
   const createProgressMutation = useMutation({

@@ -19,6 +19,7 @@ export default function Admin() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("metrics");
   const [user, setUser] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   const { data: users = [] } = useQuery({
     queryKey: ['all-users'],
@@ -53,26 +54,34 @@ export default function Admin() {
   useEffect(() => {
     const loadUser = async () => {
       try {
+        setIsLoading(true);
         const currentUser = await base44.auth.me();
         setUser(currentUser);
         
-        if (currentUser.role !== 'admin') {
-          navigate(createPageUrl("Home"));
+        // Só redireciona se explicitamente NÃO for admin
+        if (currentUser.role && currentUser.role !== 'admin') {
+          navigate(createPageUrl("Home"), { replace: true });
         }
       } catch (error) {
         console.error("Error loading user:", error);
-        navigate(createPageUrl("Home"));
+        navigate(createPageUrl("Home"), { replace: true });
+      } finally {
+        setIsLoading(false);
       }
     };
     loadUser();
-  }, [navigate]);
+  }, []); // Remove navigate das dependências
 
-  if (!user || user.role !== 'admin') {
+  if (isLoading) {
     return (
       <div className="py-6">
         <p className="text-slate-400 text-center">Verificando permissões...</p>
       </div>
     );
+  }
+
+  if (!user || user.role !== 'admin') {
+    return null; // Retorna null enquanto redireciona
   }
 
   const premiumUsers = users.filter(u => u.subscription_status === 'premium');

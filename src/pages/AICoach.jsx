@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
@@ -14,14 +15,18 @@ import WorkoutGenerator from "../components/ai-coach/WorkoutGenerator";
 export default function AICoach() {
   const [activeTab, setActiveTab] = useState("chat");
   const [user, setUser] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const loadUser = async () => {
       try {
+        setIsLoading(true);
         const currentUser = await base44.auth.me();
         setUser(currentUser);
       } catch (error) {
         console.error("Error loading user:", error);
+      } finally {
+        setIsLoading(false);
       }
     };
     loadUser();
@@ -48,6 +53,14 @@ export default function AICoach() {
   });
 
   const isPremium = user?.subscription_status === 'premium';
+
+  if (isLoading) {
+    return (
+      <div className="py-6">
+        <p className="text-slate-400 text-center">Carregando...</p>
+      </div>
+    );
+  }
 
   if (!isPremium) {
     return (

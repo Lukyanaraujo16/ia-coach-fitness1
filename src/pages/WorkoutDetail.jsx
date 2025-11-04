@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useNavigate } from "react-router-dom";
@@ -34,6 +35,7 @@ export default function WorkoutDetail() {
   const navigate = useNavigate();
   const [workout, setWorkout] = useState(null);
   const [user, setUser] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
   const urlParams = new URLSearchParams(window.location.search);
   const workoutId = urlParams.get('id');
   const fromSelection = urlParams.get('from') === 'selection';
@@ -41,6 +43,7 @@ export default function WorkoutDetail() {
   useEffect(() => {
     const loadData = async () => {
       try {
+        setIsLoading(true);
         const currentUser = await base44.auth.me();
         setUser(currentUser);
 
@@ -51,6 +54,8 @@ export default function WorkoutDetail() {
         }
       } catch (error) {
         console.error("Error loading workout:", error);
+      } finally {
+        setIsLoading(false);
       }
     };
     loadData();
@@ -86,10 +91,24 @@ export default function WorkoutDetail() {
     }
   };
 
-  if (!workout) {
+  if (isLoading) {
     return (
       <div className="py-6">
         <p className="text-slate-400 text-center">Carregando...</p>
+      </div>
+    );
+  }
+
+  if (!workout) {
+    return (
+      <div className="py-6">
+        <p className="text-slate-400 text-center">Treino não encontrado</p>
+        <Button
+          onClick={() => navigate(createPageUrl("Workouts"))}
+          className="mx-auto mt-4 block"
+        >
+          Voltar para Treinos
+        </Button>
       </div>
     );
   }
