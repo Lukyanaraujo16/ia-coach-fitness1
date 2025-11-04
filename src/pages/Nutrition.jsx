@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -16,6 +16,7 @@ export default function Nutrition() {
   const [activeTab, setActiveTab] = useState("counter");
   const [user, setUser] = useState(null);
   const [showGoalsModal, setShowGoalsModal] = useState(false);
+  const queryClient = useQueryClient(); // Initialize useQueryClient
 
   useEffect(() => {
     const loadUser = async () => {
@@ -43,6 +44,17 @@ export default function Nutrition() {
     queryKey: ['nutrition-plans'],
     queryFn: () => base44.entities.NutritionPlan.list(),
   });
+
+  // Handler for when goals are saved in the modal
+  const handleGoalsSaved = async () => {
+    setShowGoalsModal(false);
+    // Recarregar dados do usuário
+    const updatedUser = await base44.auth.me();
+    setUser(updatedUser);
+    // Invalidar queries relacionadas para recalcular metas
+    queryClient.invalidateQueries(['meal-logs', user?.email]);
+    // Optionally invalidate any other queries that depend on user goals if they exist
+  };
 
   // Calcular calorias e macros de hoje - usando data local
   const getLocalDate = () => {
@@ -200,10 +212,7 @@ export default function Nutrition() {
         <NutritionGoalsModal
           user={user}
           onClose={() => setShowGoalsModal(false)}
-          onSave={() => {
-            setShowGoalsModal(false);
-            window.location.reload();
-          }}
+          onSave={handleGoalsSaved}
         />
       )}
     </div>
