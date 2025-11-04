@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { base44 } from "@/api/base44Client";
 import { Link, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -8,17 +8,33 @@ import { Home, Dumbbell, TrendingUp, Users, User, Crown, Shield, Apple } from "l
 export default function Layout({ children, currentPageName }) {
   const location = useLocation();
   const [user, setUser] = useState(null);
+  const isMounted = useRef(true);
 
   useEffect(() => {
+    isMounted.current = true;
+    
     const loadUser = async () => {
       try {
         const currentUser = await base44.auth.me();
-        setUser(currentUser);
+        if (isMounted.current) {
+          setUser(currentUser);
+        }
       } catch (error) {
+        if (!isMounted.current) return;
+        
+        // Ignorar erros de abort
+        if (error.message?.includes('abort') || error.name === 'AbortError') {
+          return;
+        }
         console.error("Error loading user:", error);
       }
     };
+    
     loadUser();
+    
+    return () => {
+      isMounted.current = false;
+    };
   }, []);
 
   const navigationItems = [
