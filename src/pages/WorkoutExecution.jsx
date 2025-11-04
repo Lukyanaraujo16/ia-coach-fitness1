@@ -3,11 +3,11 @@ import { base44 } from "@/api/base44Client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft, Play, Pause, SkipForward, CheckCircle, Plus, Minus, AlertTriangle, Trophy, Clock, Zap, X, Lightbulb, Weight, TrendingUp, Video, Loader2 } from "lucide-react";
+import { Play, Pause, SkipForward, CheckCircle, Plus, Minus, AlertTriangle, Trophy, Clock, Zap, X, Weight } from "lucide-react";
 import { motion } from "framer-motion";
 
 export default function WorkoutExecution() {
@@ -33,63 +33,80 @@ export default function WorkoutExecution() {
   const [user, setUser] = useState(null);
   const [startTime, setStartTime] = useState(null);
   const [endTime, setEndTime] = useState(null);
-  const [showAITips, setShowAITips] = useState(false);
-  const [aiTips, setAiTips] = useState(null);
-  const [showAISuggestion, setShowAISuggestion] = useState(false);
-  const [aiSuggestion, setAiSuggestion] = useState(null);
-  const [workoutLogs, setWorkoutLogs] = useState([]);
-  const [showVideoAnalysis, setShowVideoAnalysis] = useState(false);
-  const [videoAnalysis, setVideoAnalysis] = useState(null);
-  const [isAnalyzingVideo, setIsAnalyzingVideo] = useState(false);
+  const [isLoadingData, setIsLoadingData] = useState(true);
+  const [loadError, setLoadError] = useState(null);
 
-  const isPremium = user?.subscription_status === 'premium';
   const currentExercise = currentDay?.exercises?.[currentExerciseIndex];
   const isLastExercise = currentExerciseIndex === (currentDay?.exercises?.length || 0) - 1;
 
   useEffect(() => {
     const loadWorkout = async () => {
-      if (workoutId) {
-        try {
-          const currentUser = await base44.auth.me();
-          setUser(currentUser);
-          setStartTime(new Date());
-          
-          const allLogs = await base44.entities.WorkoutLog.list('-date');
-          const userLogs = allLogs.filter(log => log.created_by === currentUser.email);
-          setWorkoutLogs(userLogs);
-          
-          const workouts = await base44.entities.Workout.list();
-          const foundWorkout = workouts.find(w => w.id === workoutId);
-          setWorkout(foundWorkout);
-          
-          if (foundWorkout?.days) {
-            const day = foundWorkout.days.find(d => d.day_number === dayNumber);
-            setCurrentDay(day);
-            
-            if (day?.exercises) {
-              const initialData = day.exercises.map(ex => ({
-                exercise_id: ex.exercise_id || '',
-                exercise_name: ex.exercise_name,
-                exercise_category: ex.exercise_category || '',
-                sets_completed: ex.sets.map((set, idx) => ({
-                  set_number: idx + 1,
-                  reps_completed: parseInt(set.reps) || 0,
-                  weight_used: 0,
-                  notes: ''
-                }))
-              }));
-              setExercisesData(initialData);
-            }
-            
-            if (day?.exercises?.[0]?.sets?.[0]?.rest_seconds) {
-              const firstRest = day.exercises[0].sets[0].rest_seconds;
-              setRestTime(firstRest);
-              setTimeRemaining(firstRest);
-            }
-          }
-        } catch (error) {
-          console.error("Error loading workout:", error);
+      if (!workoutId) {
+        setLoadError("ID do treino não encontrado");
+        setIsLoadingData(false);
+        return;
+      }
+
+      try {
+        setIsLoadingData(true);
+        setLoadError(null);
+
+        const currentUser = await base44.auth.me();
+        if (!currentUser) {
+          throw new Error("Usuário não encontrado");
         }
+        setUser(currentUser);
+        setStartTime(new Date());
+        
+        const workouts = await base44.entities.Workout.list();
+        if (!workouts || workouts.length === 0) {
+          throw new Error("Nenhum treino disponível");
+        }
+
+        const foundWorkout = workouts.find(w => w.id === workoutId);
+        if (!foundWorkout) {
+          throw new Error("Treino não encontrado");
+        }
+        setWorkout(foundWorkout);
+        
+        if (!foundWorkout.days || foundWorkout.days.length === 0) {
+          throw new Error("Treino sem dias configurados");
+        }
+
+        const day = foundWorkout.days.find(d => d.day_number === dayNumber);
+        if (!day) {
+          throw new Error(`Dia ${dayNumber} não encontrado no treino`);
+        }
+        setCurrentDay(day);
+        
+        if (day.exercises && day.exercises.length > 0) {
+          const initialData = day.exercises.map(ex => ({
+            exercise_id: ex.exercise_id || '',
+            exercise_name: ex.exercise_name || 'Exercício',
+            exercise_category: ex.exercise_category || '',
+            sets_completed: (ex.sets || []).map((set, idx) => ({
+              set_number: idx + 1,
+              reps_completed: parseInt(set.reps) || 0,
+              weight_used: 0,
+              notes: ''
+            }))
+          }));
+          setExercisesData(initialData);
+
+          if (day.exercises[0]?.sets?.[0]?.rest_seconds) {
+            const firstRest = day.exercises[0].sets[0].rest_seconds;
+            setRestTime(firstRest);
+            setTimeRemaining(firstRest);
+          }
+        } else {
+          throw new Error("Nenhum exercício encontrado para este dia");
+        }
+
+        setIsLoadingData(false);
+      } catch (error) {
+        console.error("Error loading workout:", error);
+        setLoadError(error.message || "Erro ao carregar treino");
+        setIsLoadingData(false);
       }
     };
     loadWorkout();
@@ -120,32 +137,52 @@ export default function WorkoutExecution() {
   }, [isResting, restStartTime, restTime]);
 
   const createWorkoutLogMutation = useMutation({
-    mutationFn: (data) => base44.entities.WorkoutLog.create(data),
-    onSuccess: async () => {
-      queryClient.invalidateQueries(['workout-logs']);
-      
-      const completedDays = user?.completed_workout_days || [];
-      if (!completedDays.includes(dayNumber)) {
-        completedDays.push(dayNumber);
+    mutationFn: async (data) => {
+      try {
+        return await base44.entities.WorkoutLog.create(data);
+      } catch (error) {
+        console.error("Error creating workout log:", error);
+        throw error;
       }
-      
-      const totalDays = workout?.days?.length || 1;
-      const nextDay = dayNumber >= totalDays ? 1 : dayNumber + 1;
-      
-      await base44.auth.updateMe({
-        current_workout_day: nextDay,
-        completed_workout_days: completedDays,
-      });
-      
-      navigate(createPageUrl("Home"));
     },
+    onSuccess: async () => {
+      try {
+        queryClient.invalidateQueries(['workout-logs']);
+        
+        const completedDays = user?.completed_workout_days || [];
+        if (!completedDays.includes(dayNumber)) {
+          completedDays.push(dayNumber);
+        }
+        
+        const totalDays = workout?.days?.length || 1;
+        const nextDay = dayNumber >= totalDays ? 1 : dayNumber + 1;
+        
+        await base44.auth.updateMe({
+          current_workout_day: nextDay,
+          completed_workout_days: completedDays,
+        });
+        
+        navigate(createPageUrl("Home"));
+      } catch (error) {
+        console.error("Error updating user progress:", error);
+        navigate(createPageUrl("Home"));
+      }
+    },
+    onError: (error) => {
+      console.error("Mutation error:", error);
+      alert("Erro ao salvar treino. Tente novamente.");
+    }
   });
 
   const updateSetData = (exerciseIndex, setIndex, field, value) => {
-    const newData = [...exercisesData];
-    if (newData[exerciseIndex] && newData[exerciseIndex].sets_completed[setIndex]) {
-      newData[exerciseIndex].sets_completed[setIndex][field] = value;
-      setExercisesData(newData);
+    try {
+      const newData = [...exercisesData];
+      if (newData[exerciseIndex]?.sets_completed?.[setIndex]) {
+        newData[exerciseIndex].sets_completed[setIndex][field] = value;
+        setExercisesData(newData);
+      }
+    } catch (error) {
+      console.error("Error updating set data:", error);
     }
   };
 
@@ -171,8 +208,6 @@ export default function WorkoutExecution() {
   const handleNextExercise = () => {
     setIsResting(false);
     setRestStartTime(null);
-    setShowAISuggestion(false);
-    setAiSuggestion(null);
 
     if (isLastExercise) {
       if (skippedExercises.length > 0) {
@@ -206,27 +241,32 @@ export default function WorkoutExecution() {
   };
 
   const handleFinishWorkout = () => {
-    const today = new Date();
-    const year = today.getFullYear();
-    const month = String(today.getMonth() + 1).padStart(2, '0');
-    const day = String(today.getDate()).padStart(2, '0');
-    const localDate = `${year}-${month}-${day}`;
+    try {
+      const today = new Date();
+      const year = today.getFullYear();
+      const month = String(today.getMonth() + 1).padStart(2, '0');
+      const day = String(today.getDate()).padStart(2, '0');
+      const localDate = `${year}-${month}-${day}`;
 
-    const durationMinutes = endTime && startTime 
-      ? Math.round((endTime - startTime) / 1000 / 60)
-      : workout.duration_minutes;
+      const durationMinutes = endTime && startTime 
+        ? Math.round((endTime - startTime) / 1000 / 60)
+        : workout.duration_minutes;
 
-    const completedExercises = exercisesData.filter((_, idx) => !skippedExercises.includes(idx));
+      const completedExercises = exercisesData.filter((_, idx) => !skippedExercises.includes(idx));
 
-    createWorkoutLogMutation.mutate({
-      workout_id: workout.id,
-      workout_title: `${workout.title} - Dia ${dayNumber}`,
-      date: localDate,
-      duration_minutes: durationMinutes,
-      calories_burned: caloriesInput ? parseInt(caloriesInput) : undefined,
-      exercises_completed: completedExercises,
-      notes: skippedExercises.length > 0 ? `${skippedExercises.length} exercícios pulados` : "",
-    });
+      createWorkoutLogMutation.mutate({
+        workout_id: workout.id,
+        workout_title: `${workout.title} - Dia ${dayNumber}`,
+        date: localDate,
+        duration_minutes: durationMinutes,
+        calories_burned: caloriesInput ? parseInt(caloriesInput) : undefined,
+        exercises_completed: completedExercises,
+        notes: skippedExercises.length > 0 ? `${skippedExercises.length} exercícios pulados` : "",
+      });
+    } catch (error) {
+      console.error("Error finishing workout:", error);
+      alert("Erro ao finalizar treino. Tente novamente.");
+    }
   };
 
   const adjustRestTime = (delta) => {
@@ -245,10 +285,39 @@ export default function WorkoutExecution() {
     navigate(createPageUrl("WorkoutDetail") + `?id=${workoutId}`);
   };
 
-  if (!workout || !currentDay) {
+  // Loading state
+  if (isLoadingData) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-slate-950 to-slate-900">
-        <p className="text-slate-400">Carregando treino...</p>
+        <div className="text-center">
+          <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-slate-400">Carregando treino...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Error state
+  if (loadError) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-slate-950 to-slate-900 p-4">
+        <Card className="bg-slate-900 border-slate-800 max-w-md w-full">
+          <CardContent className="p-6 text-center space-y-4">
+            <div className="w-16 h-16 bg-red-600/20 rounded-full flex items-center justify-center mx-auto">
+              <AlertTriangle className="w-8 h-8 text-red-400" />
+            </div>
+            <div>
+              <h3 className="text-xl font-bold text-white mb-2">Erro ao Carregar</h3>
+              <p className="text-slate-400 text-sm">{loadError}</p>
+            </div>
+            <Button
+              onClick={() => navigate(createPageUrl("Home"))}
+              className="w-full bg-blue-600 hover:bg-blue-700"
+            >
+              Voltar para Home
+            </Button>
+          </CardContent>
+        </Card>
       </div>
     );
   }
@@ -263,9 +332,7 @@ export default function WorkoutExecution() {
               <AlertTriangle className="w-8 h-8 text-orange-400" />
             </div>
             <div>
-              <h3 className="text-xl font-bold text-white mb-2">
-                Interromper Treino?
-              </h3>
+              <h3 className="text-xl font-bold text-white mb-2">Interromper Treino?</h3>
               <p className="text-slate-400 text-sm">
                 Você realmente deseja sair do treino? Seu progresso não será salvo.
               </p>
@@ -427,7 +494,7 @@ export default function WorkoutExecution() {
           <div className="text-center">
             <p className="text-slate-400 text-xs">Dia {dayNumber}</p>
             <p className="text-white font-bold text-xs">
-              Exercício {currentExerciseIndex + 1}/{currentDay.exercises?.length || 0}
+              Exercício {currentExerciseIndex + 1}/{currentDay?.exercises?.length || 0}
             </p>
           </div>
           <div className="w-8" />
@@ -437,14 +504,14 @@ export default function WorkoutExecution() {
       {/* Nome do Exercício - Fixo */}
       <div className="flex-shrink-0 text-center px-3 py-2 border-b border-slate-800 bg-slate-900/50">
         <h2 className="text-base font-bold text-white leading-tight">
-          {currentExercise?.exercise_name}
+          {currentExercise?.exercise_name || 'Exercício'}
         </h2>
         {currentExercise?.notes && (
           <p className="text-slate-400 text-xs mt-0.5">💡 {currentExercise.notes}</p>
         )}
       </div>
 
-      {/* Séries - Área Rolável APENAS COM PESO */}
+      {/* Séries - Área Rolável */}
       <div className="flex-1 overflow-y-auto px-3 py-2" style={{ minHeight: 0 }}>
         <div className="space-y-2 pb-2">
           {currentExercise?.sets?.map((set, index) => (
@@ -474,7 +541,7 @@ export default function WorkoutExecution() {
                   </div>
                 </div>
 
-                {/* Registro APENAS de Peso */}
+                {/* Registro de Peso */}
                 <div className="space-y-1">
                   <Label className="text-slate-300 text-sm flex items-center gap-1">
                     <Weight className="w-4 h-4" />
@@ -483,7 +550,7 @@ export default function WorkoutExecution() {
                   <Input
                     type="number"
                     step="0.5"
-                    value={exercisesData[currentExerciseIndex]?.sets_completed[index]?.weight_used || ''}
+                    value={exercisesData[currentExerciseIndex]?.sets_completed?.[index]?.weight_used || ''}
                     onChange={(e) => updateSetData(currentExerciseIndex, index, 'weight_used', parseFloat(e.target.value) || 0)}
                     placeholder="Ex: 20"
                     className="bg-slate-700 border-slate-600 text-white h-12 text-base text-center font-semibold"
