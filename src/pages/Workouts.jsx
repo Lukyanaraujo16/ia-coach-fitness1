@@ -13,42 +13,24 @@ export default function Workouts() {
   const [searchQuery, setSearchQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [user, setUser] = useState(null);
-  const [isLoadingUser, setIsLoadingUser] = useState(true);
 
   const { data: workouts = [], isLoading: loadingWorkouts } = useQuery({
     queryKey: ['workouts'],
-    queryFn: async () => {
-      try {
-        return await base44.entities.Workout.list();
-      } catch (error) {
-        console.error("Error loading workouts:", error);
-        return [];
-      }
-    },
+    queryFn: () => base44.entities.Workout.list(),
   });
 
   const { data: exercises = [], isLoading: loadingExercises } = useQuery({
     queryKey: ['exercises'],
-    queryFn: async () => {
-      try {
-        return await base44.entities.Exercise.list();
-      } catch (error) {
-        console.error("Error loading exercises:", error);
-        return [];
-      }
-    },
+    queryFn: () => base44.entities.Exercise.list(),
   });
 
   useEffect(() => {
     const loadUser = async () => {
       try {
-        setIsLoadingUser(true);
         const currentUser = await base44.auth.me();
         setUser(currentUser);
       } catch (error) {
         console.error("Error loading user:", error);
-      } finally {
-        setIsLoadingUser(false);
       }
     };
     loadUser();
@@ -56,11 +38,12 @@ export default function Workouts() {
 
   const isPremium = user?.subscription_status === 'premium';
 
-  const freeWorkouts = (workouts || []).filter(w => !w.is_premium).slice(0, 5);
+  // Usuários free só veem até 5 treinos
+  const freeWorkouts = workouts.filter(w => !w.is_premium).slice(0, 5);
   const availableWorkouts = isPremium ? workouts : freeWorkouts;
 
-  const filteredWorkouts = (availableWorkouts || []).filter(workout => {
-    const matchesSearch = workout.title?.toLowerCase().includes(searchQuery.toLowerCase());
+  const filteredWorkouts = availableWorkouts.filter(workout => {
+    const matchesSearch = workout.title.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesCategory = categoryFilter === "all" || workout.category === categoryFilter;
     return matchesSearch && matchesCategory;
   });
@@ -74,20 +57,12 @@ export default function Workouts() {
     { value: "full_body", label: "Corpo Inteiro" },
   ];
 
-  if (isLoadingUser) {
-    return (
-      <div className="py-6 flex items-center justify-center min-h-[400px]">
-        <p className="text-slate-400">Carregando...</p>
-      </div>
-    );
-  }
-
   return (
     <div className="py-6 space-y-6">
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <h2 className="text-3xl font-bold text-white">Treinos</h2>
-          {!isPremium && workouts.length > 0 && (
+          {!isPremium && (
             <div className="flex items-center gap-2 text-yellow-400 text-sm">
               <Lock className="w-4 h-4" />
               <span>5/{workouts.length} treinos disponíveis</span>
@@ -95,6 +70,7 @@ export default function Workouts() {
           )}
         </div>
         
+        {/* Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="bg-slate-900/50 border border-slate-800">
             <TabsTrigger value="workouts" className="data-[state=active]:bg-blue-600">
@@ -106,6 +82,7 @@ export default function Workouts() {
           </TabsList>
         </Tabs>
 
+        {/* Search */}
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
           <Input
@@ -116,6 +93,7 @@ export default function Workouts() {
           />
         </div>
 
+        {/* Category Filter for Workouts */}
         {activeTab === "workouts" && (
           <div className="flex gap-2 overflow-x-auto pb-2">
             {categories.map((cat) => (
@@ -135,6 +113,7 @@ export default function Workouts() {
         )}
       </div>
 
+      {/* Content */}
       {activeTab === "workouts" ? (
         <>
           <div className="grid md:grid-cols-2 gap-4">
@@ -151,6 +130,7 @@ export default function Workouts() {
             )}
           </div>
           
+          {/* Locked Workouts Preview */}
           {!isPremium && workouts.length > 5 && (
             <Card className="bg-slate-900/30 border-slate-800 relative overflow-hidden">
               <div className="absolute inset-0 bg-gradient-to-r from-blue-900/20 to-purple-900/20 backdrop-blur-sm" />

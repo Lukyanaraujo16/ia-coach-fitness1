@@ -39,33 +39,20 @@ export default function WorkoutExecution() {
   const [showAISuggestion, setShowAISuggestion] = useState(false);
   const [aiSuggestion, setAiSuggestion] = useState(null);
   const [workoutLogs, setWorkoutLogs] = useState([]);
-  const [isLoadingData, setIsLoadingData] = useState(true);
-  const [hasAnalyzedCurrentExercise, setHasAnalyzedCurrentExercise] = useState(false);
 
   const isPremium = user?.subscription_status === 'premium';
 
   useEffect(() => {
     const loadWorkout = async () => {
-      if (!workoutId) {
-        setIsLoadingData(false);
-        return;
-      }
-      
-      try {
-        setIsLoadingData(true);
+      if (workoutId) {
         const currentUser = await base44.auth.me();
         setUser(currentUser);
         setStartTime(new Date());
         
-        try {
-          // Carregar histórico de treinos para análise
-          const allLogs = await base44.entities.WorkoutLog.list('-date'); // Assuming '-date' sorts by date descending
-          const userLogs = (allLogs || []).filter(log => log.created_by === currentUser.email);
-          setWorkoutLogs(userLogs);
-        } catch (logError) {
-          console.error("Error loading workout logs:", logError);
-          setWorkoutLogs([]); // Ensure workoutLogs is an empty array on error
-        }
+        // Carregar histórico de treinos para análise
+        const allLogs = await base44.entities.WorkoutLog.list('-date'); // Assuming '-date' sorts by date descending
+        const userLogs = allLogs.filter(log => log.created_by === currentUser.email);
+        setWorkoutLogs(userLogs);
         
         const workouts = await base44.entities.Workout.list();
         const foundWorkout = workouts.find(w => w.id === workoutId);
@@ -81,7 +68,7 @@ export default function WorkoutExecution() {
               exercise_id: ex.exercise_id || '',
               exercise_name: ex.exercise_name,
               exercise_category: ex.exercise_category || '',
-              sets_completed: (ex.sets || []).map((set, idx) => ({ // Ensure ex.sets is an array
+              sets_completed: ex.sets.map((set, idx) => ({
                 set_number: idx + 1,
                 reps_completed: parseInt(set.reps) || 0, // Usar reps da série
                 weight_used: 0,
@@ -97,34 +84,18 @@ export default function WorkoutExecution() {
             setTimeRemaining(firstRest);
           }
         }
-      } catch (error) {
-        console.error("Error loading workout:", error);
-      } finally {
-        setIsLoadingData(false);
       }
     };
     loadWorkout();
   }, [workoutId, dayNumber]);
 
-  // Reset analysis flag when current exercise changes
-  useEffect(() => {
-    setHasAnalyzedCurrentExercise(false);
-  }, [currentExerciseIndex]);
-
   // Análise automática ao mudar de exercício
   const currentExercise = currentDay?.exercises?.[currentExerciseIndex]; // Define currentExercise here for the useEffect below
   useEffect(() => {
-    if (!isLoadingData && 
-        !hasAnalyzedCurrentExercise && 
-        currentExercise && 
-        currentExercise.exercise_name && // Ensure exercise name exists
-        isPremium && 
-        workoutLogs.length >= 2) { // Need at least 2 logs to compare progress
-      
-      setHasAnalyzedCurrentExercise(true); // Mark as analyzed to prevent re-triggering for the same exercise
+    if (currentExercise && isPremium && workoutLogs.length > 0) {
       analyzeExercisePerformance(currentExercise);
     }
-  }, [isLoadingData, hasAnalyzedCurrentExercise, currentExerciseIndex, currentExercise, isPremium, workoutLogs]);
+  }, [currentExerciseIndex, currentExercise, isPremium, workoutLogs]);
 
 
   // Timer com controle baseado em timestamp real
@@ -153,12 +124,12 @@ export default function WorkoutExecution() {
   }, [isResting, restStartTime, restTime]);
 
   const analyzeExercisePerformance = async (exercise) => {
-    if (!exercise?.exercise_name || !isPremium || !workoutLogs?.length) return; // Add null/undefined checks
+    if (!exercise || !isPremium || !workoutLogs.length) return;
     
     // Encontrar histórico deste exercício
-    const exerciseHistory = (workoutLogs || []) // Ensure workoutLogs is an array
-      .flatMap(log => (log.exercises_completed || [])) // Ensure exercises_completed is an array
-      .filter(ex => ex?.exercise_name === exercise.exercise_name) // Add null/undefined check for ex
+    const exerciseHistory = workoutLogs
+      .flatMap(log => log.exercises_completed || [])
+      .filter(ex => ex.exercise_name === exercise.exercise_name)
       .slice(0, 5); // Últimos 5 registros
 
     if (exerciseHistory.length < 2) {
@@ -169,20 +140,20 @@ export default function WorkoutExecution() {
 
     // Analisar progressão de carga
     const recentWeights = exerciseHistory.map(ex => {
-      const maxWeight = (ex.sets_completed || []).reduce((max, set) => // Ensure sets_completed is an array
-        (set?.weight_used || 0) > max ? (set?.weight_used || 0) : max, 0 // Add null/undefined check for set
-      );
+      const maxWeight = ex.sets_completed?.reduce((max, set) => 
+        set.weight_used > max ? set.weight_used : max, 0
+      ) || 0;
       return maxWeight;
     });
 
-    const lastWeight = recentWeights[0] || 0; // Default to 0 if undefined
-    const hasProgressedRecently = recentWeights.length >= 2 && recentWeights[0] > recentWeights[1]; // Check length before accessing index 1
+    const lastWeight = recentWeights[0];
+    const hasProgressedRecently = recentWeights[0] > recentWeights[1];
     const isStagnant = recentWeights.slice(0, 3).every(w => w === lastWeight && w > 0);
 
     try {
       const prompt = `Você é um personal trainer analisando o desempenho de um atleta no exercício "${exercise.exercise_name}".
 
-**Histórico de cargas (últimas ${recentWeights.length} execuções):**
+**Histórico de cargas (últimas 5 execuções):**
 ${recentWeights.map((w, i) => `${i + 1}. ${w}kg`).join('\n')}
 
 **Situação atual:**
@@ -218,7 +189,7 @@ IMPORTANTE: Só mostre sugestão se for realmente relevante. Não seja repetitiv
         }
       });
 
-      if (response?.show_suggestion) { // Check if response and show_suggestion exist
+      if (response.show_suggestion) {
         setAiSuggestion(response);
         setShowAISuggestion(true);
       } else {
@@ -297,10 +268,10 @@ Seja direto, prático e motivador.`;
     }
   };
 
-  if (!workout || !currentDay || isLoadingData) {
+  if (!workout || !currentDay) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-slate-950 to-slate-900">
-        <p className="text-slate-400">Carregando treino...</p>
+      <div className="min-h-screen flex items-center justify-center">
+        <p className="text-slate-400">Carregando...</p>
       </div>
     );
   }

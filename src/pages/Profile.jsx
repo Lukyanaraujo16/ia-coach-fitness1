@@ -18,49 +18,35 @@ export default function Profile() {
   const [isEditingName, setIsEditingName] = useState(false);
   const [newName, setNewName] = useState("");
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [isLoadingUser, setIsLoadingUser] = useState(true);
 
   const { data: selectedWorkout } = useQuery({
     queryKey: ['selected-workout', user?.selected_workout_id],
     queryFn: async () => {
       if (!user?.selected_workout_id) return null;
-      try {
-        const workouts = await base44.entities.Workout.list();
-        return (workouts || []).find(w => w.id === user.selected_workout_id);
-      } catch (error) {
-        console.error("Error loading workout:", error);
-        return null;
-      }
+      const workouts = await base44.entities.Workout.list();
+      return workouts.find(w => w.id === user.selected_workout_id);
     },
-    enabled: !!user?.selected_workout_id && !isLoadingUser,
+    enabled: !!user?.selected_workout_id,
   });
 
   const { data: posts = [] } = useQuery({
-    queryKey: ['user-posts', user?.email],
+    queryKey: ['user-posts'],
     queryFn: async () => {
-      if (!user?.email) return [];
-      try {
-        const allPosts = await base44.entities.CommunityPost.list();
-        return (allPosts || []).filter(p => p.created_by === user.email);
-      } catch (error) {
-        console.error("Error loading posts:", error);
-        return [];
-      }
+      if (!user) return [];
+      const allPosts = await base44.entities.CommunityPost.list();
+      return allPosts.filter(p => p.created_by === user.email);
     },
-    enabled: !!user?.email && !isLoadingUser,
+    enabled: !!user,
   });
 
   useEffect(() => {
     const loadUser = async () => {
       try {
-        setIsLoadingUser(true);
         const currentUser = await base44.auth.me();
         setUser(currentUser);
         setNewName(currentUser.full_name || "");
       } catch (error) {
         console.error("Error loading user:", error);
-      } finally {
-        setIsLoadingUser(false);
       }
     };
     loadUser();
@@ -69,6 +55,7 @@ export default function Profile() {
   const updateNameMutation = useMutation({
     mutationFn: async (name) => {
       await base44.auth.updateMe({ full_name: name });
+      // Recarregar os dados do usuário após atualizar
       const updatedUser = await base44.auth.me();
       return updatedUser;
     },
@@ -135,18 +122,11 @@ export default function Profile() {
     deleteAccountMutation.mutate();
   };
 
-  if (isLoadingUser) {
-    return (
-      <div className="py-6 flex items-center justify-center min-h-[400px]">
-        <p className="text-slate-400">Carregando...</p>
-      </div>
-    );
-  }
-
   const isPremium = user?.subscription_status === 'premium';
 
   return (
     <div className="py-6 space-y-6">
+      {/* Profile Header */}
       <Card className="bg-gradient-to-br from-slate-900/80 to-slate-800/50 border-slate-800 backdrop-blur-sm overflow-hidden relative">
         <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/10 rounded-full blur-3xl" />
         <CardContent className="p-6 relative">
