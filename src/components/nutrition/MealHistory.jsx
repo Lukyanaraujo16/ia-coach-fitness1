@@ -328,15 +328,6 @@ Seja preciso com base na quantidade informada.
                                   )}
                                 </div>
                                 
-                                {/* Debug info - remover depois */}
-                                {isExpanded && (
-                                  <div className="mb-2 p-2 bg-slate-700/30 rounded text-xs">
-                                    <p className="text-slate-400">
-                                      Debug: Data da refeição: {meal.date} | Hoje: {todayDate} | É hoje? {isToday ? 'SIM ✅' : 'NÃO ❌'}
-                                    </p>
-                                  </div>
-                                )}
-                                
                                 <div className="space-y-1">
                                   {meal.food_items?.map((item, idx) => (
                                     <div
