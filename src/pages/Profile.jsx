@@ -18,6 +18,7 @@ export default function Profile() {
   const [isEditingName, setIsEditingName] = useState(false);
   const [newName, setNewName] = useState("");
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showResetOnboardingConfirm, setShowResetOnboardingConfirm] = useState(false);
 
   const { data: selectedWorkout } = useQuery({
     queryKey: ['selected-workout', user?.selected_workout_id],
@@ -95,6 +96,20 @@ export default function Profile() {
     },
   });
 
+  const resetOnboardingMutation = useMutation({
+    mutationFn: () => base44.auth.updateMe({
+      onboarding_completed: false,
+      nutrition_setup_completed: false,
+      workout_setup_completed: false,
+      selected_workout_id: null,
+      current_workout_day: 1,
+      completed_workout_days: [],
+    }),
+    onSuccess: () => {
+      navigate(createPageUrl("Onboarding"));
+    },
+  });
+
   const handleLogout = async () => {
     await base44.auth.logout();
   };
@@ -120,6 +135,14 @@ export default function Profile() {
 
   const confirmDeleteAccount = () => {
     deleteAccountMutation.mutate();
+  };
+
+  const handleResetOnboarding = () => {
+    setShowResetOnboardingConfirm(true);
+  };
+
+  const confirmResetOnboarding = () => {
+    resetOnboardingMutation.mutate();
   };
 
   const isPremium = user?.subscription_status === 'premium';
@@ -240,6 +263,14 @@ export default function Profile() {
       <div className="space-y-3">
         <Button
           variant="outline"
+          onClick={handleResetOnboarding}
+          className="w-full justify-start bg-slate-800 border-slate-700 text-slate-200 hover:bg-slate-700 hover:text-white"
+        >
+          <Settings className="w-5 h-5 mr-3" />
+          Refazer Configuração Inicial
+        </Button>
+        <Button
+          variant="outline"
           className="w-full justify-start bg-slate-800 border-slate-700 text-slate-200 hover:bg-slate-700 hover:text-white"
         >
           <Settings className="w-5 h-5 mr-3" />
@@ -262,6 +293,47 @@ export default function Profile() {
           Cancelar Conta
         </Button>
       </div>
+
+      {/* Reset Onboarding Confirmation Modal */}
+      {showResetOnboardingConfirm && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <Card className="bg-slate-900 border-slate-800 max-w-md w-full">
+            <CardContent className="p-6 text-center space-y-4">
+              <div className="w-16 h-16 bg-blue-600/20 rounded-full flex items-center justify-center mx-auto">
+                <Settings className="w-8 h-8 text-blue-400" />
+              </div>
+              <div>
+                <h3 className="text-xl font-bold text-white mb-2">
+                  Refazer Configuração Inicial?
+                </h3>
+                <p className="text-slate-400 text-sm">
+                  Isso irá resetar suas configurações de onboarding, plano nutricional e treino selecionado.
+                  Você passará novamente pelo processo de configuração completo.
+                </p>
+                <p className="text-orange-400 text-sm mt-3">
+                  ⚠️ Seu treino atual será desmarcado
+                </p>
+              </div>
+              <div className="flex gap-3">
+                <Button
+                  variant="outline"
+                  onClick={() => setShowResetOnboardingConfirm(false)}
+                  className="flex-1 bg-slate-800 border-slate-600 text-slate-200 hover:bg-slate-700 hover:text-white"
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  onClick={confirmResetOnboarding}
+                  disabled={resetOnboardingMutation.isPending}
+                  className="flex-1 bg-blue-600 hover:bg-blue-700"
+                >
+                  {resetOnboardingMutation.isPending ? "Resetando..." : "Confirmar"}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       {/* Delete Account Confirmation Modal */}
       {showDeleteConfirm && (
