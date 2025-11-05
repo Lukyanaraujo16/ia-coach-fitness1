@@ -37,14 +37,62 @@ export default function AIMealPlanner({ user }) {
   useEffect(() => {
     if (user?.selected_nutrition_plan_data) {
       try {
-        // Validar que o plano tem a estrutura esperada
         const plan = user.selected_nutrition_plan_data;
-        if (plan && plan.daily_meals && Array.isArray(plan.daily_meals)) {
-          setMealPlan(plan);
-          setLoadError(null);
+        
+        // Verificar se é o formato do setup (meal_timing) ou o formato completo (daily_meals)
+        if (plan && typeof plan === 'object') {
+          // Se tem meal_timing, converter para o formato esperado
+          if (plan.meal_timing && !plan.daily_meals) {
+            console.log("Detectado plano do setup inicial, convertendo formato...");
+
+            // Ensure macros are available from user or default to avoid errors
+            const proteinPercentage = user?.macro_protein_percentage || 30;
+            const carbsPercentage = user?.macro_carbs_percentage || 40;
+            const fatPercentage = user?.macro_fat_percentage || 30;
+
+            const convertedPlan = {
+              plan_summary: `Plano nutricional personalizado: ${plan.daily_calories} kcal/dia com ${proteinPercentage}% proteínas, ${carbsPercentage}% carboidratos e ${fatPercentage}% gorduras.`,
+              daily_meals: [
+                {
+                  day: 1,
+                  day_name: "Seu Dia Padrão",
+                  total_calories: plan.daily_calories,
+                  meals: plan.meal_timing.map(meal => ({
+                    meal_type: meal.meal_type,
+                    time: meal.time,
+                    recipe_name: meal.suggestion,
+                    ingredients: [{ name: meal.suggestion, quantity: "Veja descrição" }],
+                    preparation: ["Preparar conforme sugestão acima. Este é um plano básico do seu setup inicial. Gere um plano completo para receitas detalhadas."],
+                    prep_time_minutes: 15,
+                    calories: meal.calories,
+                    macros: {
+                      protein: Math.round((meal.calories * (proteinPercentage / 100)) / 4),
+                      carbs: Math.round((meal.calories * (carbsPercentage / 100)) / 4),
+                      fat: Math.round((meal.calories * (fatPercentage / 100)) / 9)
+                    },
+                    tip: plan.recommendations?.[0] || "Mantenha-se hidratado."
+                  }))
+                }
+              ],
+              weekly_tips: plan.tips || [],
+              is_from_setup: true // Flag para indicar que é do setup
+            };
+            setMealPlan(convertedPlan);
+            setLoadError(null);
+          } 
+          // Se tem daily_meals, usar direto
+          else if (plan.daily_meals && Array.isArray(plan.daily_meals)) {
+            setMealPlan(plan);
+            setLoadError(null);
+          } 
+          // Formato inválido
+          else {
+            console.error("Plano nutricional com estrutura inválida:", plan);
+            setLoadError("Plano nutricional com formato inválido");
+            setMealPlan(null);
+          }
         } else {
-          console.error("Plano nutricional com estrutura inválida:", plan);
-          setLoadError("Plano nutricional com formato inválido");
+          setLoadError("Plano nutricional vazio");
           setMealPlan(null);
         }
       } catch (error) {
@@ -447,6 +495,16 @@ IMPORTANTE:
             </p>
           )}
           
+          {/* Aviso se for do setup */}
+          {mealPlan.is_from_setup && (
+            <div className="p-3 bg-blue-900/20 border border-blue-800/50 rounded-lg">
+              <p className="text-blue-400 text-xs font-semibold mb-1">💡 Dica:</p>
+              <p className="text-slate-300 text-sm">
+                Este é o plano básico do seu setup inicial. Para um plano semanal completo com receitas detalhadas e variações para cada dia, clique em "Gerar Novo Plano"!
+              </p>
+            </div>
+          )}
+          
           <div className="flex flex-wrap gap-2">
             <Button
               onClick={() => setShowPreferencesModal(true)}
@@ -470,6 +528,15 @@ IMPORTANTE:
                 <Sparkles className="w-4 h-4 mr-2" />
               )}
               Gerar Novo Plano
+            </Button>
+            <Button
+              onClick={handleClearPlan}
+              size="sm"
+              variant="outline"
+              className="border-red-700 text-red-400 hover:bg-red-900/30"
+            >
+              <Flame className="w-4 h-4 mr-2" />
+              Limpar Plano
             </Button>
           </div>
         </CardContent>
