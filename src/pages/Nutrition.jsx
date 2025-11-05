@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Camera, TrendingUp, Book, Target, Settings, Loader2 } from "lucide-react";
+import { Camera, TrendingUp, Book, Target, Settings, Loader2, AlertTriangle } from "lucide-react";
 import CalorieCounter from "../components/nutrition/CalorieCounter";
 import NutritionStats from "../components/nutrition/NutritionStats";
 import MealHistory from "../components/nutrition/MealHistory";
@@ -16,15 +16,19 @@ export default function Nutrition() {
   const [activeTab, setActiveTab] = useState("planner");
   const [user, setUser] = useState(null);
   const [isLoadingUser, setIsLoadingUser] = useState(true);
+  const [loadError, setLoadError] = useState(null);
   const [showGoalsModal, setShowGoalsModal] = useState(false);
 
   useEffect(() => {
     const loadUser = async () => {
       try {
+        setIsLoadingUser(true);
+        setLoadError(null);
         const currentUser = await base44.auth.me();
         setUser(currentUser);
       } catch (error) {
         console.error("Error loading user:", error);
+        setLoadError(error.message);
       } finally {
         setIsLoadingUser(false);
       }
@@ -32,19 +36,31 @@ export default function Nutrition() {
     loadUser();
   }, []);
 
-  const { data: mealLogs = [] } = useQuery({
+  const { data: mealLogs = [], isLoading: isLoadingMealLogs } = useQuery({
     queryKey: ['meal-logs', user?.email],
     queryFn: async () => {
       if (!user?.email) return [];
-      const allLogs = await base44.entities.MealLog.list('-date');
-      return allLogs.filter(log => log.created_by === user.email);
+      try {
+        const allLogs = await base44.entities.MealLog.list('-date');
+        return allLogs.filter(log => log.created_by === user.email);
+      } catch (error) {
+        console.error("Error loading meal logs:", error);
+        return [];
+      }
     },
     enabled: !!user?.email,
   });
 
-  const { data: nutritionPlans = [] } = useQuery({
+  const { data: nutritionPlans = [], isLoading: isLoadingPlans } = useQuery({
     queryKey: ['nutrition-plans'],
-    queryFn: () => base44.entities.NutritionPlan.list(),
+    queryFn: async () => {
+      try {
+        return await base44.entities.NutritionPlan.list();
+      } catch (error) {
+        console.error("Error loading nutrition plans:", error);
+        return [];
+      }
+    },
   });
 
   // Calcular calorias e macros de hoje - usando data local
@@ -77,11 +93,34 @@ export default function Nutrition() {
   // Loading state
   if (isLoadingUser) {
     return (
-      <div className="py-6 flex items-center justify-center min-h-screen">
+      <div className="py-6 flex items-center justify-center" style={{ minHeight: '60vh' }}>
         <div className="text-center">
           <Loader2 className="w-8 h-8 text-blue-400 animate-spin mx-auto mb-3" />
-          <p className="text-slate-400">Carregando...</p>
+          <p className="text-slate-400">Carregando seus dados...</p>
         </div>
+      </div>
+    );
+  }
+
+  // Error state
+  if (loadError) {
+    return (
+      <div className="py-6">
+        <Card className="bg-red-900/20 border-red-800/50">
+          <CardContent className="p-8 text-center">
+            <AlertTriangle className="w-12 h-12 text-red-400 mx-auto mb-4" />
+            <h3 className="text-white font-semibold mb-2">Erro ao Carregar</h3>
+            <p className="text-slate-300 text-sm mb-4">
+              {loadError}
+            </p>
+            <Button
+              onClick={() => window.location.reload()}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              Tentar Novamente
+            </Button>
+          </CardContent>
+        </Card>
       </div>
     );
   }
@@ -209,14 +248,14 @@ export default function Nutrition() {
       </Tabs>
 
       {/* Content */}
-      {activeTab === "planner" && <AIMealPlanner user={user} />}
+      {activeTab === "planner" && user && <AIMealPlanner user={user} />}
       {activeTab === "counter" && <CalorieCounter />}
       {activeTab === "stats" && <NutritionStats mealLogs={mealLogs} calorieGoal={calorieGoal} />}
       {activeTab === "history" && <MealHistory mealLogs={mealLogs} />}
       {activeTab === "plans" && <NutritionPlans plans={nutritionPlans} user={user} />}
 
       {/* Goals Modal */}
-      {showGoalsModal && (
+      {showGoalsModal && user && (
         <NutritionGoalsModal
           user={user}
           onClose={() => setShowGoalsModal(false)}
