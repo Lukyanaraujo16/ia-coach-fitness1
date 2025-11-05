@@ -5,7 +5,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Sparkles, Loader2, ChefHat, Calendar, Plus, Settings, CheckCircle2, Clock, Flame } from "lucide-react";
+import { Sparkles, Loader2, ChefHat, Calendar, Plus, Settings, CheckCircle2, Clock, Flame, AlertTriangle } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import DietaryPreferencesModal from "./DietaryPreferencesModal";
 
@@ -30,12 +30,28 @@ export default function AIMealPlanner({ user }) {
   const [loading, setLoading] = useState(false);
   const [expandedMeal, setExpandedMeal] = useState(null);
   const [showPreferencesModal, setShowPreferencesModal] = useState(false);
+  const [loadError, setLoadError] = useState(null);
   const queryClient = useQueryClient();
 
   // Carregar plano salvo do usuário quando componente montar
   useEffect(() => {
     if (user?.selected_nutrition_plan_data) {
-      setMealPlan(user.selected_nutrition_plan_data);
+      try {
+        // Validar que o plano tem a estrutura esperada
+        const plan = user.selected_nutrition_plan_data;
+        if (plan && plan.daily_meals && Array.isArray(plan.daily_meals)) {
+          setMealPlan(plan);
+          setLoadError(null);
+        } else {
+          console.error("Plano nutricional com estrutura inválida:", plan);
+          setLoadError("Plano nutricional com formato inválido");
+          setMealPlan(null);
+        }
+      } catch (error) {
+        console.error("Erro ao carregar plano nutricional:", error);
+        setLoadError("Erro ao carregar plano nutricional");
+        setMealPlan(null);
+      }
     }
   }, [user]);
 
@@ -194,6 +210,7 @@ IMPORTANTE:
       });
 
       setMealPlan(response);
+      setLoadError(null); // Clear any previous load errors
       
       // Salvar o novo plano no perfil do usuário
       await base44.auth.updateMe({
@@ -240,9 +257,61 @@ IMPORTANTE:
     }
   };
 
+  const handleClearPlan = async () => {
+    if (confirm('Tem certeza que deseja remover o plano atual? Você poderá gerar um novo depois.')) {
+      try {
+        await base44.auth.updateMe({
+          selected_nutrition_plan_data: null
+        });
+        setMealPlan(null);
+        setLoadError(null);
+        queryClient.invalidateQueries(['user']);
+      } catch (error) {
+        console.error("Erro ao limpar plano:", error);
+        alert("Erro ao limpar plano. Tente novamente.");
+      }
+    }
+  };
+
   const hasPreferences = user?.dietary_preferences?.length > 0 || 
                         user?.food_allergies?.length > 0 || 
                         user?.meals_per_day;
+
+  // Se há erro ao carregar o plano
+  if (loadError) {
+    return (
+      <div className="space-y-4">
+        <Card className="bg-red-900/20 border-red-800/50">
+          <CardContent className="p-8 text-center space-y-4">
+            <AlertTriangle className="w-12 h-12 text-red-400 mx-auto" />
+            <div>
+              <h3 className="text-xl font-bold text-white mb-2">
+                Erro ao Carregar Plano
+              </h3>
+              <p className="text-slate-300 text-sm mb-4">
+                {loadError}. O plano salvo pode estar corrompido ou em formato antigo.
+              </p>
+            </div>
+            <div className="flex flex-col gap-3">
+              <Button
+                onClick={handleClearPlan}
+                className="bg-red-600 hover:bg-red-700"
+              >
+                Remover Plano Corrompido e Gerar Novo
+              </Button>
+              <Button
+                onClick={() => window.location.reload()}
+                variant="outline"
+                className="border-slate-700 text-slate-300"
+              >
+                Tentar Recarregar
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   if (!mealPlan) {
     return (
@@ -334,6 +403,33 @@ IMPORTANTE:
     );
   }
 
+  // Validar que o plano tem os dados necessários
+  if (!mealPlan.daily_meals || !Array.isArray(mealPlan.daily_meals)) {
+    return (
+      <div className="space-y-4">
+        <Card className="bg-red-900/20 border-red-800/50">
+          <CardContent className="p-8 text-center space-y-4">
+            <AlertTriangle className="w-12 h-12 text-red-400 mx-auto" />
+            <div>
+              <h3 className="text-xl font-bold text-white mb-2">
+                Plano Incompleto
+              </h3>
+              <p className="text-slate-300 text-sm mb-4">
+                O plano salvo não contém as refeições necessárias.
+              </p>
+            </div>
+            <Button
+              onClick={handleClearPlan}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              Gerar Novo Plano
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       {/* Plan Summary */}
@@ -345,9 +441,11 @@ IMPORTANTE:
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <p className="text-slate-300 leading-relaxed">
-            {mealPlan.plan_summary}
-          </p>
+          {mealPlan.plan_summary && (
+            <p className="text-slate-300 leading-relaxed">
+              {mealPlan.plan_summary}
+            </p>
+          )}
           
           <div className="flex flex-wrap gap-2">
             <Button
@@ -398,165 +496,189 @@ IMPORTANTE:
 
       {/* Daily Meal Plans */}
       <div className="space-y-4">
-        {mealPlan.daily_meals.map((day, dayIdx) => (
-          <Card key={dayIdx} className="bg-slate-900/50 border-slate-800">
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle className="text-white flex items-center gap-2">
-                    <Calendar className="w-5 h-5 text-blue-400" />
-                    {day.day_name}
-                  </CardTitle>
-                  <p className="text-slate-400 text-sm mt-1">
-                    {day.total_calories} kcal total
-                  </p>
-                </div>
-                <Badge className="bg-blue-600/20 text-blue-400">
-                  Dia {day.day}
-                </Badge>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {day.meals.map((meal, mealIdx) => {
-                const isExpanded = expandedMeal === `${dayIdx}-${mealIdx}`;
-                
-                return (
-                  <div
-                    key={mealIdx}
-                    className="bg-slate-800/50 rounded-lg overflow-hidden"
-                  >
-                    <button
-                      onClick={() => setExpandedMeal(isExpanded ? null : `${dayIdx}-${mealIdx}`)}
-                      className="w-full p-4 flex items-center justify-between hover:bg-slate-800/70 transition-all"
-                    >
-                      <div className="flex items-center gap-3 text-left flex-1">
-                        <span className="text-2xl">{mealTypeIcons[meal.meal_type]}</span>
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-1">
-                            <p className="text-white font-semibold">{meal.recipe_name}</p>
-                            <Badge variant="outline" className="text-xs border-slate-600">
-                              {meal.time}
-                            </Badge>
-                          </div>
-                          <p className="text-slate-400 text-sm">
-                            {mealTypeLabels[meal.meal_type]} • {meal.calories} kcal
-                          </p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Button
-                          size="sm"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleAddToLog(day, meal);
-                          }}
-                          disabled={addToLogMutation.isPending}
-                          className="bg-green-600/20 border border-green-600/30 text-green-400 hover:bg-green-600/40"
-                        >
-                          <Plus className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </button>
+        {mealPlan.daily_meals.map((day, dayIdx) => {
+          // Validar que o dia tem os dados necessários
+          if (!day || !day.meals || !Array.isArray(day.meals)) {
+            return null;
+          }
 
-                    <AnimatePresence>
-                      {isExpanded && (
-                        <motion.div
-                          initial={{ height: 0, opacity: 0 }}
-                          animate={{ height: "auto", opacity: 1 }}
-                          exit={{ height: 0, opacity: 0 }}
-                          className="border-t border-slate-700"
-                        >
-                          <div className="p-4 space-y-4">
-                            {/* Macros */}
-                            <div className="grid grid-cols-4 gap-2">
-                              <div className="text-center p-2 bg-slate-900/50 rounded">
-                                <p className="text-green-400 font-bold">{meal.calories}</p>
-                                <p className="text-slate-500 text-xs">kcal</p>
-                              </div>
-                              <div className="text-center p-2 bg-slate-900/50 rounded">
-                                <p className="text-blue-400 font-bold">{Math.round(meal.macros.protein)}g</p>
-                                <p className="text-slate-500 text-xs">Prot.</p>
-                              </div>
-                              <div className="text-center p-2 bg-slate-900/50 rounded">
-                                <p className="text-orange-400 font-bold">{Math.round(meal.macros.carbs)}g</p>
-                                <p className="text-slate-500 text-xs">Carbs</p>
-                              </div>
-                              <div className="text-center p-2 bg-slate-900/50 rounded">
-                                <p className="text-yellow-400 font-bold">{Math.round(meal.macros.fat)}g</p>
-                                <p className="text-slate-500 text-xs">Gord.</p>
-                              </div>
-                            </div>
-
-                            {/* Prep Time */}
-                            <div className="flex items-center gap-2 text-slate-300 text-sm">
-                              <Clock className="w-4 h-4 text-slate-400" />
-                              <span>Tempo de preparo: {meal.prep_time_minutes} minutos</span>
-                            </div>
-
-                            {/* Ingredients */}
-                            <div>
-                              <p className="text-slate-300 font-semibold mb-2 text-sm">📋 Ingredientes:</p>
-                              <ul className="space-y-1">
-                                {meal.ingredients.map((ing, idx) => (
-                                  <li key={idx} className="flex items-start gap-2 text-slate-300 text-sm">
-                                    <span className="text-green-400 mt-1">•</span>
-                                    <span><strong>{ing.quantity}</strong> {ing.name}</span>
-                                  </li>
-                                ))}
-                              </ul>
-                            </div>
-
-                            {/* Preparation */}
-                            <div>
-                              <p className="text-slate-300 font-semibold mb-2 text-sm">👨‍🍳 Modo de Preparo:</p>
-                              <ol className="space-y-2">
-                                {meal.preparation.map((step, idx) => (
-                                  <li key={idx} className="flex items-start gap-2 text-slate-300 text-sm">
-                                    <span className="w-5 h-5 bg-purple-600/20 rounded-full flex items-center justify-center text-purple-400 text-xs font-bold flex-shrink-0 mt-0.5">
-                                      {idx + 1}
-                                    </span>
-                                    <span>{step}</span>
-                                  </li>
-                                ))}
-                              </ol>
-                            </div>
-
-                            {/* Tip */}
-                            {meal.tip && (
-                              <div className="p-3 bg-blue-900/20 border border-blue-800/50 rounded-lg">
-                                <p className="text-blue-400 text-xs font-semibold mb-1">💡 Dica Nutricional:</p>
-                                <p className="text-slate-300 text-sm">{meal.tip}</p>
-                              </div>
-                            )}
-
-                            {/* Add to Log Button */}
-                            <Button
-                              onClick={() => handleAddToLog(day, meal)}
-                              disabled={addToLogMutation.isPending}
-                              className="w-full bg-green-600 hover:bg-green-700"
-                            >
-                              {addToLogMutation.isPending ? (
-                                <>
-                                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                                  Adicionando...
-                                </>
-                              ) : (
-                                <>
-                                  <Plus className="w-4 h-4 mr-2" />
-                                  Adicionar ao Meu Registro
-                                </>
-                              )}
-                            </Button>
-                          </div>
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
+          return (
+            <Card key={dayIdx} className="bg-slate-900/50 border-slate-800">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="text-white flex items-center gap-2">
+                      <Calendar className="w-5 h-5 text-blue-400" />
+                      {day.day_name || `Dia ${day.day}`}
+                    </CardTitle>
+                    {day.total_calories && (
+                      <p className="text-slate-400 text-sm mt-1">
+                        {day.total_calories} kcal total
+                      </p>
+                    )}
                   </div>
-                );
-              })}
-            </CardContent>
-          </Card>
-        ))}
+                  <Badge className="bg-blue-600/20 text-blue-400">
+                    Dia {day.day}
+                  </Badge>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {day.meals.map((meal, mealIdx) => {
+                  // Validar dados da refeição
+                  if (!meal || !meal.meal_type || !meal.recipe_name) {
+                    return null;
+                  }
+
+                  const isExpanded = expandedMeal === `${dayIdx}-${mealIdx}`;
+                  
+                  return (
+                    <div
+                      key={mealIdx}
+                      className="bg-slate-800/50 rounded-lg overflow-hidden"
+                    >
+                      <button
+                        onClick={() => setExpandedMeal(isExpanded ? null : `${dayIdx}-${mealIdx}`)}
+                        className="w-full p-4 flex items-center justify-between hover:bg-slate-800/70 transition-all"
+                      >
+                        <div className="flex items-center gap-3 text-left flex-1">
+                          <span className="text-2xl">{mealTypeIcons[meal.meal_type] || "🍽️"}</span>
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-1">
+                              <p className="text-white font-semibold">{meal.recipe_name}</p>
+                              {meal.time && (
+                                <Badge variant="outline" className="text-xs border-slate-600">
+                                  {meal.time}
+                                </Badge>
+                              )}
+                            </div>
+                            <p className="text-slate-400 text-sm">
+                              {mealTypeLabels[meal.meal_type] || meal.meal_type} • {meal.calories || 0} kcal
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            size="sm"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleAddToLog(day, meal);
+                            }}
+                            disabled={addToLogMutation.isPending}
+                            className="bg-green-600/20 border border-green-600/30 text-green-400 hover:bg-green-600/40"
+                          >
+                            <Plus className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </button>
+
+                      <AnimatePresence>
+                        {isExpanded && (
+                          <motion.div
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: "auto", opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            className="border-t border-slate-700"
+                          >
+                            <div className="p-4 space-y-4">
+                              {/* Macros */}
+                              {meal.macros && (
+                                <div className="grid grid-cols-4 gap-2">
+                                  <div className="text-center p-2 bg-slate-900/50 rounded">
+                                    <p className="text-green-400 font-bold">{meal.calories || 0}</p>
+                                    <p className="text-slate-500 text-xs">kcal</p>
+                                  </div>
+                                  <div className="text-center p-2 bg-slate-900/50 rounded">
+                                    <p className="text-blue-400 font-bold">{Math.round(meal.macros.protein || 0)}g</p>
+                                    <p className="text-slate-500 text-xs">Prot.</p>
+                                  </div>
+                                  <div className="text-center p-2 bg-slate-900/50 rounded">
+                                    <p className="text-orange-400 font-bold">{Math.round(meal.macros.carbs || 0)}g</p>
+                                    <p className="text-slate-500 text-xs">Carbs</p>
+                                  </div>
+                                  <div className="text-center p-2 bg-slate-900/50 rounded">
+                                    <p className="text-yellow-400 font-bold">{Math.round(meal.macros.fat || 0)}g</p>
+                                    <p className="text-slate-500 text-xs">Gord.</p>
+                                  </div>
+                                </div>
+                              )}
+
+                              {/* Prep Time */}
+                              {meal.prep_time_minutes && (
+                                <div className="flex items-center gap-2 text-slate-300 text-sm">
+                                  <Clock className="w-4 h-4 text-slate-400" />
+                                  <span>Tempo de preparo: {meal.prep_time_minutes} minutos</span>
+                                </div>
+                              )}
+
+                              {/* Ingredients */}
+                              {meal.ingredients && meal.ingredients.length > 0 && (
+                                <div>
+                                  <p className="text-slate-300 font-semibold mb-2 text-sm">📋 Ingredientes:</p>
+                                  <ul className="space-y-1">
+                                    {meal.ingredients.map((ing, idx) => (
+                                      <li key={idx} className="flex items-start gap-2 text-slate-300 text-sm">
+                                        <span className="text-green-400 mt-1">•</span>
+                                        <span><strong>{ing.quantity}</strong> {ing.name}</span>
+                                      </li>
+                                    ))}
+                                  </ul>
+                                </div>
+                              )}
+
+                              {/* Preparation */}
+                              {meal.preparation && meal.preparation.length > 0 && (
+                                <div>
+                                  <p className="text-slate-300 font-semibold mb-2 text-sm">👨‍🍳 Modo de Preparo:</p>
+                                  <ol className="space-y-2">
+                                    {meal.preparation.map((step, idx) => (
+                                      <li key={idx} className="flex items-start gap-2 text-slate-300 text-sm">
+                                        <span className="w-5 h-5 bg-purple-600/20 rounded-full flex items-center justify-center text-purple-400 text-xs font-bold flex-shrink-0 mt-0.5">
+                                          {idx + 1}
+                                        </span>
+                                        <span>{step}</span>
+                                      </li>
+                                    ))}
+                                  </ol>
+                                </div>
+                              )}
+
+                              {/* Tip */}
+                              {meal.tip && (
+                                <div className="p-3 bg-blue-900/20 border border-blue-800/50 rounded-lg">
+                                  <p className="text-blue-400 text-xs font-semibold mb-1">💡 Dica Nutricional:</p>
+                                  <p className="text-slate-300 text-sm">{meal.tip}</p>
+                                </div>
+                              )}
+
+                              {/* Add to Log Button */}
+                              <Button
+                                onClick={() => handleAddToLog(day, meal)}
+                                disabled={addToLogMutation.isPending}
+                                className="w-full bg-green-600 hover:bg-green-700"
+                              >
+                                {addToLogMutation.isPending ? (
+                                  <>
+                                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                    Adicionando...
+                                  </>
+                                ) : (
+                                  <>
+                                    <Plus className="w-4 h-4 mr-2" />
+                                    Adicionar ao Meu Registro
+                                  </>
+                                )}
+                              </Button>
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
+                  );
+                })}
+              </CardContent>
+            </Card>
+          );
+        })}
       </div>
 
       {showPreferencesModal && (
