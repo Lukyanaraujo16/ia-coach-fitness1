@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useNavigate } from "react-router-dom";
@@ -110,9 +111,12 @@ export default function NutritionSetup() {
   const generateNutritionPlan = async () => {
     setGeneratingPlan(true);
     try {
+      // Calcular idade estimada (25 anos se não tiver)
+      const estimatedAge = 25;
+      
       const bmr = user.gender === 'male'
-        ? 88.362 + (13.397 * user.current_weight) + (4.799 * user.height) - (5.677 * 25)
-        : 447.593 + (9.247 * user.current_weight) + (3.098 * user.height) - (4.330 * 25);
+        ? 88.362 + (13.397 * user.current_weight) + (4.799 * user.height) - (5.677 * estimatedAge)
+        : 447.593 + (9.247 * user.current_weight) + (3.098 * user.height) - (4.330 * estimatedAge);
 
       const activityMultiplier = user.fitness_level === 'advanced' ? 1.7 : user.fitness_level === 'intermediate' ? 1.5 : 1.3;
       const tdee = bmr * activityMultiplier;
@@ -122,6 +126,23 @@ export default function NutritionSetup() {
         calorieGoal = tdee - 500;
       } else if (user.fitness_goal === 'gain_muscle') {
         calorieGoal = tdee + 300;
+      }
+
+      // Definir porcentagens de macros baseado no objetivo
+      let proteinPercentage, carbsPercentage, fatPercentage;
+      
+      if (user.fitness_goal === 'lose_weight') {
+        proteinPercentage = 35;
+        carbsPercentage = 35;
+        fatPercentage = 30;
+      } else if (user.fitness_goal === 'gain_muscle') {
+        proteinPercentage = 30;
+        carbsPercentage = 45;
+        fatPercentage = 25;
+      } else { // Maintenance
+        proteinPercentage = 30;
+        carbsPercentage = 40;
+        fatPercentage = 30;
       }
 
       const prompt = `Você é um nutricionista experiente criando um plano alimentar COMPLETO para um novo aluno.
@@ -143,16 +164,21 @@ ${formData.disliked_foods.length > 0 ? '- Não gosta: ' + formData.disliked_food
 
 METAS CALCULADAS:
 - Calorias diárias: ${Math.round(calorieGoal)} kcal
+- Proteínas: ${proteinPercentage}%
+- Carboidratos: ${carbsPercentage}%
+- Gorduras: ${fatPercentage}%
 
-Crie um plano nutricional COMPLETO e PERSONALIZADO:
+Crie um plano nutricional COMPLETO e PERSONALIZADO com:
 
-1. Calcule a distribuição ideal de macronutrientes (proteínas, carboidratos, gorduras) em PORCENTAGENS
-2. Forneça recomendações práticas e específicas
-3. Liste alimentos recomendados e a evitar
-4. Dê dicas de preparação e organização
-5. Crie um exemplo de dia alimentar com horários sugeridos
+1. Calcule e CONFIRME a distribuição de macronutrientes em PORCENTAGENS (deve somar 100%)
+2. Forneça 5-8 recomendações práticas e específicas para este aluno
+3. Liste 8-10 alimentos ESPECÍFICOS recomendados (considerando as restrições)
+4. Liste 5-8 alimentos ESPECÍFICOS a evitar (baseado no objetivo)
+5. Crie um exemplo de dia alimentar com ${formData.meals_per_day} refeições, incluindo horários
+6. Forneça 5-8 dicas práticas de nutrição e hidratação
 
-Seja ESPECÍFICO, PRÁTICO e considere TODAS as preferências e restrições mencionadas.`;
+Seja ESPECÍFICO, PRÁTICO e considere TODAS as preferências e restrições mencionadas.
+Use ingredientes BRASILEIROS e acessíveis.`;
 
       const response = await base44.integrations.Core.InvokeLLM({
         prompt: prompt,
@@ -166,28 +192,37 @@ Seja ESPECÍFICO, PRÁTICO e considere TODAS as preferências e restrições men
             macros: {
               type: "object",
               properties: {
-                protein_percentage: { type: "number" },
-                carbs_percentage: { type: "number" },
-                fat_percentage: { type: "number" }
-              }
+                protein_percentage: { type: "number", minimum: 20, maximum: 40 },
+                carbs_percentage: { type: "number", minimum: 25, maximum: 55 },
+                fat_percentage: { type: "number", minimum: 20, maximum: 35 }
+              },
+              required: ["protein_percentage", "carbs_percentage", "fat_percentage"]
             },
             recommendations: {
               type: "array",
+              minItems: 5,
+              maxItems: 8,
               items: { type: "string" },
-              description: "Recomendações gerais"
+              description: "Recomendações práticas e específicas"
             },
             recommended_foods: {
               type: "array",
+              minItems: 8,
+              maxItems: 10,
               items: { type: "string" },
-              description: "Alimentos recomendados"
+              description: "Alimentos recomendados específicos"
             },
             foods_to_avoid: {
               type: "array",
+              minItems: 5,
+              maxItems: 8,
               items: { type: "string" },
               description: "Alimentos a evitar"
             },
             meal_timing: {
               type: "array",
+              minItems: formData.meals_per_day,
+              maxItems: formData.meals_per_day,
               items: {
                 type: "object",
                 properties: {
@@ -195,12 +230,15 @@ Seja ESPECÍFICO, PRÁTICO e considere TODAS as preferências e restrições men
                   meal_type: { type: "string" },
                   suggestion: { type: "string" },
                   calories: { type: "number" }
-                }
+                },
+                required: ["time", "meal_type", "suggestion", "calories"]
               },
               description: "Exemplo de distribuição de refeições"
             },
             tips: {
               type: "array",
+              minItems: 5,
+              maxItems: 8,
               items: { type: "string" },
               description: "Dicas práticas de nutrição"
             },
@@ -208,15 +246,33 @@ Seja ESPECÍFICO, PRÁTICO e considere TODAS as preferências e restrições men
               type: "string",
               description: "Meta de hidratação diária"
             }
-          }
+          },
+          required: ["daily_calories", "macros", "recommendations", "recommended_foods", "foods_to_avoid", "meal_timing", "tips", "hydration_goal"]
         }
       });
 
+      // Validar que os macros somam aproximadamente 100%
+      const macrosSum = response.macros.protein_percentage + response.macros.carbs_percentage + response.macros.fat_percentage;
+      if (Math.abs(macrosSum - 100) > 5) {
+        console.warn("Ajustando macros para somar 100%");
+        // Ajustar proporcionalmente
+        const factor = 100 / macrosSum;
+        response.macros.protein_percentage = Math.round(response.macros.protein_percentage * factor);
+        response.macros.carbs_percentage = Math.round(response.macros.carbs_percentage * factor);
+        response.macros.fat_percentage = 100 - response.macros.protein_percentage - response.macros.carbs_percentage;
+      }
+
+      // Validar que temos todas as refeições
+      if (!response.meal_timing || response.meal_timing.length !== formData.meals_per_day) {
+        throw new Error(`Erro: gerou ${response.meal_timing?.length || 0} refeições, mas deveria gerar ${formData.meals_per_day}`);
+      }
+
+      console.log("Plano nutricional gerado:", response);
       setGeneratedPlan(response);
       setStep(4);
     } catch (error) {
       console.error("Error generating plan:", error);
-      alert("Erro ao gerar plano. Tente novamente.");
+      alert(`Erro ao gerar plano: ${error.message}. Tente novamente.`);
     } finally {
       setGeneratingPlan(false);
     }
@@ -266,7 +322,7 @@ Seja ESPECÍFICO, PRÁTICO e considere TODAS as preferências e restrições men
             ))}
           </div>
           <p className="text-slate-400 text-sm text-center mt-3">
-            Passo {step} de 4
+            Passo {step} de 4 - Setup Nutricional
           </p>
         </div>
 
@@ -527,7 +583,7 @@ Seja ESPECÍFICO, PRÁTICO e considere TODAS as preferências e restrições men
                     <Check className="w-10 h-10 text-green-400" />
                   </div>
                   <h2 className="text-2xl font-bold text-white mb-2">
-                    Seu Plano Foi Criado!
+                    ✅ Seu Plano Foi Criado!
                   </h2>
                   <p className="text-slate-300">
                     Analisamos seu perfil e criamos um plano nutricional personalizado
@@ -549,14 +605,23 @@ Seja ESPECÍFICO, PRÁTICO e considere TODAS as preferências e restrições men
                     <div className="p-3 bg-blue-900/20 rounded-lg">
                       <p className="text-blue-400 font-bold text-xl">{generatedPlan.macros.protein_percentage}%</p>
                       <p className="text-slate-400 text-xs">Proteínas</p>
+                      <p className="text-slate-500 text-xs">
+                        {Math.round(generatedPlan.daily_calories * (generatedPlan.macros.protein_percentage / 100) / 4)}g
+                      </p>
                     </div>
                     <div className="p-3 bg-orange-900/20 rounded-lg">
                       <p className="text-orange-400 font-bold text-xl">{generatedPlan.macros.carbs_percentage}%</p>
-                      <p className="text-slate-400 text-xs">Carbos</p>
+                      <p className="text-slate-400 text-xs">Carboidratos</p>
+                      <p className="text-slate-500 text-xs">
+                        {Math.round(generatedPlan.daily_calories * (generatedPlan.macros.carbs_percentage / 100) / 4)}g
+                      </p>
                     </div>
                     <div className="p-3 bg-yellow-900/20 rounded-lg">
                       <p className="text-yellow-400 font-bold text-xl">{generatedPlan.macros.fat_percentage}%</p>
                       <p className="text-slate-400 text-xs">Gorduras</p>
+                      <p className="text-slate-500 text-xs">
+                        {Math.round(generatedPlan.daily_calories * (generatedPlan.macros.fat_percentage / 100) / 9)}g
+                      </p>
                     </div>
                   </div>
                 </CardContent>
@@ -569,13 +634,47 @@ Seja ESPECÍFICO, PRÁTICO e considere TODAS as preferências e restrições men
                 </CardHeader>
                 <CardContent>
                   <ul className="space-y-2">
-                    {generatedPlan.recommendations.slice(0, 5).map((rec, idx) => (
+                    {generatedPlan.recommendations.map((rec, idx) => (
                       <li key={idx} className="flex items-start gap-2 text-slate-300 text-sm">
                         <Check className="w-4 h-4 text-green-400 mt-0.5 flex-shrink-0" />
                         <span>{rec}</span>
                       </li>
                     ))}
                   </ul>
+                </CardContent>
+              </Card>
+
+              {/* Meal Timing */}
+              <Card className="bg-slate-900/50 border-slate-800">
+                <CardHeader>
+                  <CardTitle className="text-white text-sm">🍽️ Exemplo de Dia Alimentar</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {generatedPlan.meal_timing.map((meal, idx) => (
+                      <div key={idx} className="flex items-start gap-3 p-3 bg-slate-800/50 rounded-lg">
+                        <div className="flex-shrink-0">
+                          <p className="text-green-400 font-bold">{meal.time}</p>
+                          <p className="text-slate-500 text-xs">{meal.meal_type}</p>
+                        </div>
+                        <div className="flex-1">
+                          <p className="text-slate-300 text-sm">{meal.suggestion}</p>
+                          <p className="text-blue-400 text-xs mt-1">{meal.calories} kcal</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Hydration */}
+              <Card className="bg-blue-900/20 border-blue-800/50">
+                <CardContent className="p-4 flex items-center gap-3">
+                  <span className="text-3xl">💧</span>
+                  <div>
+                    <p className="text-blue-400 font-semibold text-sm">Hidratação</p>
+                    <p className="text-slate-300 text-sm">{generatedPlan.hydration_goal}</p>
+                  </div>
                 </CardContent>
               </Card>
 
@@ -590,7 +689,10 @@ Seja ESPECÍFICO, PRÁTICO e considere TODAS as preferências e restrições men
                     Salvando...
                   </>
                 ) : (
-                  "Continuar para Configuração de Treino"
+                  <>
+                    <Check className="w-5 h-5 mr-2" />
+                    Continuar para Configuração de Treino
+                  </>
                 )}
               </Button>
             </motion.div>

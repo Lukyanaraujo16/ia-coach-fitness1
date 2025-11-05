@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useNavigate } from "react-router-dom";
@@ -53,6 +54,8 @@ export default function WorkoutSetup() {
         both: 'variando entre academia e casa'
       };
 
+      const daysOfWeek = user.weekly_goal;
+
       const prompt = `Você é um personal trainer experiente criando um programa de treino COMPLETO para um novo aluno.
 
 PERFIL DO ALUNO:
@@ -60,27 +63,63 @@ PERFIL DO ALUNO:
 - Objetivo: ${goalLabels[user.fitness_goal]}
 - Nível: ${levelLabels[user.fitness_level]}
 - Local: ${locationLabels[user.training_location]}
-- Meta semanal: ${user.weekly_goal} treinos/semana
+- Meta semanal: ${daysOfWeek} treinos/semana
 - Peso atual: ${user.current_weight}kg
 - Meta de peso: ${user.weight_goal}kg
+
+IMPORTANTE: Você DEVE criar EXATAMENTE ${daysOfWeek} dias de treino. NÃO MENOS.
 
 Crie um programa de treino COMPLETO E ESTRUTURADO com:
 
 1. Título atrativo e motivador
 2. Descrição explicando a abordagem do treino
-3. ${user.weekly_goal} dias de treino (estruturado por dia)
+3. EXATAMENTE ${daysOfWeek} dias de treino (numerados de 1 a ${daysOfWeek})
 4. Para cada dia: 6-8 exercícios específicos com séries e repetições
 5. Tempo de descanso entre séries apropriado
 6. Notas técnicas para execução correta
-7. Duração estimada de cada treino
+7. Duração estimada de cada treino (45-60 minutos)
 
-IMPORTANTE:
+DISTRIBUIÇÃO DOS DIAS (use como guia):
+${daysOfWeek === 3 ? `
+- Dia 1: Corpo Inteiro (Push - Peito, Ombros, Tríceps)
+- Dia 2: Corpo Inteiro (Pull - Costas, Bíceps)
+- Dia 3: Pernas e Core completo
+` : daysOfWeek === 4 ? `
+- Dia 1: Peito e Tríceps
+- Dia 2: Costas e Bíceps
+- Dia 3: Pernas
+- Dia 4: Ombros e Core
+` : daysOfWeek === 5 ? `
+- Dia 1: Peito
+- Dia 2: Costas
+- Dia 3: Pernas
+- Dia 4: Ombros
+- Dia 5: Braços e Core
+` : daysOfWeek === 6 ? `
+- Dia 1: Peito
+- Dia 2: Costas
+- Dia 3: Pernas (Quadríceps)
+- Dia 4: Ombros
+- Dia 5: Braços
+- Dia 6: Pernas (Posteriores) e Core
+` : `
+- Dia 1: Peito e Tríceps
+- Dia 2: Costas
+- Dia 3: Pernas (Quadríceps)
+- Dia 4: Ombros
+- Dia 5: Braços
+- Dia 6: Pernas (Posteriores)
+- Dia 7: Core e Cardio
+`}
+
+REGRAS OBRIGATÓRIAS:
 - Use exercícios apropriados para ${user.training_location}
 - Considere o nível ${user.fitness_level} nas cargas e volumes
 - Foque no objetivo de ${user.fitness_goal}
 - Seja ESPECÍFICO nos exercícios (nome exato, grupo muscular)
 - Varie os exercícios entre os dias
-- Inclua aquecimento e alongamento quando necessário`;
+- Inclua aquecimento quando necessário
+- O array "days" DEVE ter EXATAMENTE ${daysOfWeek} elementos`;
 
       const response = await base44.integrations.Core.InvokeLLM({
         prompt: prompt,
@@ -101,6 +140,8 @@ IMPORTANTE:
             },
             days: {
               type: "array",
+              minItems: daysOfWeek,
+              maxItems: daysOfWeek,
               items: {
                 type: "object",
                 properties: {
@@ -108,6 +149,8 @@ IMPORTANTE:
                   title: { type: "string", description: "Nome do dia (ex: Peito e Tríceps)" },
                   exercises: {
                     type: "array",
+                    minItems: 6,
+                    maxItems: 8,
                     items: {
                       type: "object",
                       properties: {
@@ -132,7 +175,8 @@ IMPORTANTE:
                     }
                   }
                 }
-              }
+              },
+              description: "Array com EXATAMENTE " + daysOfWeek + " dias de treino"
             },
             tips: {
               type: "array",
@@ -143,10 +187,15 @@ IMPORTANTE:
         }
       });
 
+      // Validar que temos o número correto de dias
+      if (!response.days || response.days.length !== daysOfWeek) {
+        throw new Error(`A IA gerou ${response.days?.length || 0} dias, mas deveria gerar ${daysOfWeek}`);
+      }
+
       setGeneratedWorkout(response);
     } catch (error) {
       console.error("Error generating workout:", error);
-      alert("Erro ao gerar treino. Tente novamente.");
+      alert(`Erro ao gerar treino: ${error.message}. Tente novamente.`);
     } finally {
       setGeneratingWorkout(false);
     }
@@ -209,7 +258,7 @@ IMPORTANTE:
                 Olá, {user.full_name}! 👋
               </p>
               <p className="text-slate-400 max-w-md mx-auto">
-                Agora vamos criar seu programa de treino personalizado com base no seu perfil e objetivos!
+                Agora vamos criar seu programa de treino personalizado com {user.weekly_goal} dias por semana!
               </p>
             </div>
 
@@ -241,7 +290,7 @@ IMPORTANTE:
               {generatingWorkout ? (
                 <>
                   <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                  Gerando Seu Treino...
+                  Gerando Treino de {user.weekly_goal} Dias...
                 </>
               ) : (
                 <>
@@ -252,7 +301,7 @@ IMPORTANTE:
             </Button>
 
             <p className="text-slate-500 text-sm">
-              ⏱️ Isso pode levar 30-60 segundos
+              ⏱️ Criando {user.weekly_goal} dias de treino personalizado... Isso pode levar 30-60 segundos
             </p>
           </CardContent>
         </Card>
