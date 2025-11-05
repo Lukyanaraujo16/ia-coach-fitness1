@@ -57,61 +57,61 @@ export default function WorkoutSetup() {
       const daysOfWeek = user.weekly_goal;
       const userGender = user.gender || 'male';
 
-      // Divisões específicas por gênero
+      // Divisões específicas por gênero - ATUALIZADAS
       const maleDivisions = {
         3: `- Dia 1: Peito + Ombros + Tríceps
-- Dia 2: Costas + Bíceps
-- Dia 3: Pernas + Posteriores`,
-        4: `- Dia 1: Peito + Tríceps + Ombros
-- Dia 2: Costas + Bíceps
-- Dia 3: Pernas (Quadríceps)
-- Dia 4: Posteriores (Posterior de coxa, Glúteos)`,
-        5: `- Dia 1: Peito + Tríceps
-- Dia 2: Pernas (Quadríceps)
+- Dia 2: Costas + Bíceps + Core
+- Dia 3: Pernas + Posteriores + Core`,
+        4: `- Dia 1: Peito + Tríceps + Core
+- Dia 2: Pernas + Ombros
+- Dia 3: Costas + Bíceps + Core
+- Dia 4: Posteriores + Core`,
+        5: `- Dia 1: Peito + Ombros + Tríceps
+- Dia 2: Pernas + Core
 - Dia 3: Costas + Bíceps
-- Dia 4: Posteriores (Posterior de coxa, Glúteos)
-- Dia 5: Ombros + Bíceps + Tríceps`,
+- Dia 4: Posteriores + Core
+- Dia 5: Peito + Costas + Bíceps + Tríceps`,
         6: `- Dia 1: Peito
 - Dia 2: Costas
-- Dia 3: Pernas (Quadríceps)
+- Dia 3: Pernas
 - Dia 4: Ombros
-- Dia 5: Braços (Bíceps e Tríceps)
-- Dia 6: Posteriores (Posterior de coxa, Glúteos)`,
+- Dia 5: Bíceps + Tríceps
+- Dia 6: Posteriores + Core`,
         7: `- Dia 1: Peito
 - Dia 2: Costas
-- Dia 3: Pernas (Quadríceps)
+- Dia 3: Pernas
 - Dia 4: Ombros
-- Dia 5: Braços (Bíceps e Tríceps)
-- Dia 6: Posteriores (Posterior de coxa, Glúteos)
-- Dia 7: Core e Cardio`
+- Dia 5: Bíceps + Tríceps
+- Dia 6: Posteriores
+- Dia 7: Core + Cardio`
       };
 
       const femaleDivisions = {
         3: `- Dia 1: Peito + Ombros + Pernas
-- Dia 2: Costas + Posteriores
+- Dia 2: Costas + Posteriores + Core
 - Dia 3: Bíceps + Tríceps + Pernas + Posteriores`,
-        4: `- Dia 1: Peito + Ombros + Pernas
+        4: `- Dia 1: Peito + Pernas + Core
 - Dia 2: Costas + Posteriores
-- Dia 3: Bíceps
-- Dia 4: Pernas + Posteriores`,
-        5: `- Dia 1: Pernas + Ombros
-- Dia 2: Peito + Tríceps
-- Dia 3: Posteriores
+- Dia 3: Bíceps + Ombros + Tríceps + Core
+- Dia 4: Pernas + Posteriores + Core`,
+        5: `- Dia 1: Pernas + Core
+- Dia 2: Peito + Ombros + Tríceps
+- Dia 3: Posteriores + Core
 - Dia 4: Costas + Bíceps
-- Dia 5: Pernas + Posteriores`,
-        6: `- Dia 1: Pernas + Ombros
+- Dia 5: Pernas + Posteriores + Core`,
+        6: `- Dia 1: Pernas + Core
 - Dia 2: Peito + Tríceps
-- Dia 3: Posteriores
+- Dia 3: Posteriores + Core
 - Dia 4: Costas + Bíceps
-- Dia 5: Pernas
-- Dia 6: Posteriores (Glúteos com foco)`,
-        7: `- Dia 1: Pernas + Ombros
+- Dia 5: Ombros
+- Dia 6: Pernas + Posteriores`,
+        7: `- Dia 1: Pernas + Core
 - Dia 2: Peito + Tríceps
-- Dia 3: Posteriores
+- Dia 3: Posteriores + Core
 - Dia 4: Costas + Bíceps
-- Dia 5: Pernas
-- Dia 6: Posteriores (Glúteos com foco)
-- Dia 7: Core e Cardio`
+- Dia 5: Ombros
+- Dia 6: Pernas + Posteriores
+- Dia 7: Core + Cardio`
       };
 
       const divisions = userGender === 'female' ? femaleDivisions : maleDivisions;
@@ -148,7 +148,7 @@ REGRAS OBRIGATÓRIAS:
 - Use exercícios apropriados para ${user.training_location}
 - Considere o nível ${user.fitness_level} nas cargas e volumes
 - Foque no objetivo de ${user.fitness_goal}
-${userGender === 'female' ? '- Para mulheres, dê ATENÇÃO ESPECIAL a pernas e glúteos, com exercícios variados' : '- Para homens, equilibre bem entre push/pull e garanta volume adequado'}
+${userGender === 'female' ? '- Para mulheres, dê ATENÇÃO ESPECIAL a pernas, glúteos e posteriores, com exercícios variados' : '- Para homens, equilibre bem entre push/pull e garanta volume adequado'}
 - Seja ESPECÍFICO nos exercícios (nome exato, grupo muscular)
 - Varie os exercícios entre os dias
 - Inclua aquecimento quando necessário
