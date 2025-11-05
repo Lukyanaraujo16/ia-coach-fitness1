@@ -1,19 +1,20 @@
-
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Dumbbell, Loader2, Check, Sparkles, Clock, Zap, Calendar } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { Dumbbell, Loader2, Check, Sparkles, AlertTriangle } from "lucide-react";
+import { motion } from "framer-motion";
 
 export default function WorkoutSetup() {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(false);
   const [generatingWorkout, setGeneratingWorkout] = useState(false);
   const [generatedWorkout, setGeneratedWorkout] = useState(null);
+  const [error, setError] = useState(null);
+  const [attemptCount, setAttemptCount] = useState(0);
+  const MAX_ATTEMPTS = 3;
 
   useEffect(() => {
     const loadUser = async () => {
@@ -21,7 +22,9 @@ export default function WorkoutSetup() {
         const currentUser = await base44.auth.me();
         setUser(currentUser);
         
-        if (!currentUser.nutrition_setup_completed) {
+        if (!currentUser.onboarding_completed) {
+          navigate(createPageUrl("Onboarding"));
+        } else if (!currentUser.nutrition_setup_completed) {
           navigate(createPageUrl("NutritionSetup"));
         } else if (currentUser.workout_setup_completed) {
           navigate(createPageUrl("Home"));
@@ -35,6 +38,10 @@ export default function WorkoutSetup() {
 
   const generateWorkoutPlan = async () => {
     setGeneratingWorkout(true);
+    setError(null);
+    const currentAttempt = attemptCount + 1;
+    setAttemptCount(currentAttempt);
+
     try {
       const goalLabels = {
         lose_weight: 'emagrecimento com foco em queima de gordura',
@@ -59,63 +66,83 @@ export default function WorkoutSetup() {
 
       // Divisões específicas por gênero - ATUALIZADAS
       const maleDivisions = {
-        3: `- Dia 1: Peito + Ombros + Tríceps
-- Dia 2: Costas + Bíceps + Core
-- Dia 3: Pernas + Posteriores + Core`,
-        4: `- Dia 1: Peito + Tríceps + Core
-- Dia 2: Pernas + Ombros
-- Dia 3: Costas + Bíceps + Core
-- Dia 4: Posteriores + Core`,
-        5: `- Dia 1: Peito + Ombros + Tríceps
-- Dia 2: Pernas + Core
-- Dia 3: Costas + Bíceps
-- Dia 4: Posteriores + Core
-- Dia 5: Peito + Costas + Bíceps + Tríceps`,
-        6: `- Dia 1: Peito
-- Dia 2: Costas
-- Dia 3: Pernas
-- Dia 4: Ombros
-- Dia 5: Bíceps + Tríceps
-- Dia 6: Posteriores + Core`,
-        7: `- Dia 1: Peito
-- Dia 2: Costas
-- Dia 3: Pernas
-- Dia 4: Ombros
-- Dia 5: Bíceps + Tríceps
-- Dia 6: Posteriores
-- Dia 7: Core + Cardio`
+        3: [
+          "Dia 1: Peito + Ombros + Tríceps",
+          "Dia 2: Costas + Bíceps + Core",
+          "Dia 3: Pernas + Posteriores + Core"
+        ],
+        4: [
+          "Dia 1: Peito + Tríceps + Core",
+          "Dia 2: Pernas + Ombros",
+          "Dia 3: Costas + Bíceps + Core",
+          "Dia 4: Posteriores + Core"
+        ],
+        5: [
+          "Dia 1: Peito + Ombros + Tríceps",
+          "Dia 2: Pernas + Core",
+          "Dia 3: Costas + Bíceps",
+          "Dia 4: Posteriores + Core",
+          "Dia 5: Peito + Costas + Bíceps + Tríceps"
+        ],
+        6: [
+          "Dia 1: Peito",
+          "Dia 2: Costas",
+          "Dia 3: Pernas",
+          "Dia 4: Ombros",
+          "Dia 5: Bíceps + Tríceps",
+          "Dia 6: Posteriores + Core"
+        ],
+        7: [
+          "Dia 1: Peito",
+          "Dia 2: Costas",
+          "Dia 3: Pernas",
+          "Dia 4: Ombros",
+          "Dia 5: Bíceps + Tríceps",
+          "Dia 6: Posteriores",
+          "Dia 7: Core + Cardio"
+        ]
       };
 
       const femaleDivisions = {
-        3: `- Dia 1: Peito + Ombros + Pernas
-- Dia 2: Costas + Posteriores + Core
-- Dia 3: Bíceps + Tríceps + Pernas + Posteriores`,
-        4: `- Dia 1: Peito + Pernas + Core
-- Dia 2: Costas + Posteriores
-- Dia 3: Bíceps + Ombros + Tríceps + Core
-- Dia 4: Pernas + Posteriores + Core`,
-        5: `- Dia 1: Pernas + Core
-- Dia 2: Peito + Ombros + Tríceps
-- Dia 3: Posteriores + Core
-- Dia 4: Costas + Bíceps
-- Dia 5: Pernas + Posteriores + Core`,
-        6: `- Dia 1: Pernas + Core
-- Dia 2: Peito + Tríceps
-- Dia 3: Posteriores + Core
-- Dia 4: Costas + Bíceps
-- Dia 5: Ombros
-- Dia 6: Pernas + Posteriores`,
-        7: `- Dia 1: Pernas + Core
-- Dia 2: Peito + Tríceps
-- Dia 3: Posteriores + Core
-- Dia 4: Costas + Bíceps
-- Dia 5: Ombros
-- Dia 6: Pernas + Posteriores
-- Dia 7: Core + Cardio`
+        3: [
+          "Dia 1: Peito + Ombros + Pernas",
+          "Dia 2: Costas + Posteriores + Core",
+          "Dia 3: Bíceps + Tríceps + Pernas + Posteriores"
+        ],
+        4: [
+          "Dia 1: Peito + Pernas + Core",
+          "Dia 2: Costas + Posteriores",
+          "Dia 3: Bíceps + Ombros + Tríceps + Core",
+          "Dia 4: Pernas + Posteriores + Core"
+        ],
+        5: [
+          "Dia 1: Pernas + Core",
+          "Dia 2: Peito + Ombros + Tríceps",
+          "Dia 3: Posteriores + Core",
+          "Dia 4: Costas + Bíceps",
+          "Dia 5: Pernas + Posteriores + Core"
+        ],
+        6: [
+          "Dia 1: Pernas + Core",
+          "Dia 2: Peito + Tríceps",
+          "Dia 3: Posteriores + Core",
+          "Dia 4: Costas + Bíceps",
+          "Dia 5: Ombros",
+          "Dia 6: Pernas + Posteriores"
+        ],
+        7: [
+          "Dia 1: Pernas + Core",
+          "Dia 2: Peito + Tríceps",
+          "Dia 3: Posteriores + Core",
+          "Dia 4: Costas + Bíceps",
+          "Dia 5: Ombros",
+          "Dia 6: Pernas + Posteriores",
+          "Dia 7: Core + Cardio"
+        ]
       };
 
       const divisions = userGender === 'female' ? femaleDivisions : maleDivisions;
-      const divisionGuide = divisions[daysOfWeek] || divisions[5]; // Fallback to 5 days if division is not explicitly defined for daysOfWeek
+      const divisionList = divisions[daysOfWeek] || divisions[5];
 
       const prompt = `Você é um personal trainer experiente criando um programa de treino COMPLETO para um novo aluno.
 
@@ -129,48 +156,47 @@ PERFIL DO ALUNO:
 - Peso atual: ${user.current_weight}kg
 - Meta de peso: ${user.weight_goal}kg
 
-IMPORTANTE: Você DEVE criar EXATAMENTE ${daysOfWeek} dias de treino. NÃO MENOS.
+⚠️ REGRA CRÍTICA: Você DEVE criar EXATAMENTE ${daysOfWeek} dias de treino. NÃO MENOS, NÃO MAIS.
+Se você gerar menos de ${daysOfWeek} dias, o treino será REJEITADO.
 
-Crie um programa de treino COMPLETO E ESTRUTURADO com:
+DISTRIBUIÇÃO OBRIGATÓRIA DOS DIAS (use EXATAMENTE esta divisão para ${userGender === 'female' ? 'MULHERES' : 'HOMENS'}):
+${divisionList.map(day => `- ${day}`).join('\n')}
 
-1. Título atrativo e motivador
-2. Descrição explicando a abordagem do treino
-3. EXATAMENTE ${daysOfWeek} dias de treino (numerados de 1 a ${daysOfWeek})
-4. Para cada dia: 6-8 exercícios específicos com séries e repetições
-5. Tempo de descanso entre séries apropriado
-6. Notas técnicas para execução correta
-7. Duração estimada de cada treino (45-60 minutos)
-
-DISTRIBUIÇÃO DOS DIAS (use EXATAMENTE esta divisão para ${userGender === 'female' ? 'MULHERES' : 'HOMENS'}):
-${divisionGuide}
-
-REGRAS OBRIGATÓRIAS:
-- Use exercícios apropriados para ${user.training_location}
-- Considere o nível ${user.fitness_level} nas cargas e volumes
-- Foque no objetivo de ${user.fitness_goal}
+INSTRUÇÕES DETALHADAS:
+1. Crie EXATAMENTE ${daysOfWeek} dias de treino (não menos, não mais)
+2. Cada dia deve ter 6-8 exercícios específicos
+3. Para cada exercício, inclua:
+   - Nome completo e específico do exercício
+   - 3-4 séries com repetições
+   - Tempo de descanso adequado entre séries (em segundos)
+   - Notas técnicas quando necessário
+4. Siga RIGOROSAMENTE a divisão de grupos musculares especificada acima
+5. Use exercícios apropriados para ${user.training_location}
+6. Considere o nível ${user.fitness_level} nas cargas e volumes
 ${userGender === 'female' ? '- Para mulheres, dê ATENÇÃO ESPECIAL a pernas, glúteos e posteriores, com exercícios variados' : '- Para homens, equilibre bem entre push/pull e garanta volume adequado'}
-- Seja ESPECÍFICO nos exercícios (nome exato, grupo muscular)
-- Varie os exercícios entre os dias
-- Inclua aquecimento quando necessário
-- O array "days" DEVE ter EXATAMENTE ${daysOfWeek} elementos
-- RESPEITE a divisão de grupos musculares especificada acima`;
+7. Duração estimada de cada treino: 45-60 minutos
 
-      const response = await base44.integrations.Core.InvokeLLM({
+IMPORTANTE: O array "days" na sua resposta DEVE ter EXATAMENTE ${daysOfWeek} elementos.
+Cada elemento do array representa 1 dia de treino completo.
+
+Crie um programa COMPLETO, ESTRUTURADO e PRÁTICO.`;
+
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Timeout: A geração demorou mais de 90 segundos')), 90000)
+      );
+
+      const generatePromise = base44.integrations.Core.InvokeLLM({
         prompt: prompt,
         response_json_schema: {
           type: "object",
           properties: {
             title: {
               type: "string",
-              description: "Título do programa de treino"
+              description: "Título motivador do programa"
             },
             description: {
               type: "string",
-              description: "Descrição detalhada do programa"
-            },
-            duration_minutes: {
-              type: "number",
-              description: "Duração média de cada treino"
+              description: "Descrição explicando a abordagem"
             },
             days: {
               type: "array",
@@ -179,8 +205,20 @@ ${userGender === 'female' ? '- Para mulheres, dê ATENÇÃO ESPECIAL a pernas, g
               items: {
                 type: "object",
                 properties: {
-                  day_number: { type: "number" },
-                  title: { type: "string", description: "Nome do dia (ex: Peito e Tríceps)" },
+                  day_number: {
+                    type: "number",
+                    minimum: 1,
+                    maximum: daysOfWeek,
+                    description: "Número do dia (1, 2, 3, etc.)"
+                  },
+                  title: {
+                    type: "string",
+                    description: "Título do dia (ex: Peito e Tríceps)"
+                  },
+                  focus: {
+                    type: "string",
+                    description: "Foco do treino do dia"
+                  },
                   exercises: {
                     type: "array",
                     minItems: 6,
@@ -188,69 +226,109 @@ ${userGender === 'female' ? '- Para mulheres, dê ATENÇÃO ESPECIAL a pernas, g
                     items: {
                       type: "object",
                       properties: {
-                        exercise_name: { type: "string" },
+                        exercise_name: {
+                          type: "string",
+                          description: "Nome completo do exercício"
+                        },
                         exercise_category: {
                           type: "string",
-                          enum: ["chest", "back", "legs", "shoulders", "arms", "core", "cardio", "full_body"]
+                          description: "Categoria do exercício"
                         },
                         sets: {
                           type: "array",
+                          minItems: 3,
+                          maxItems: 4,
                           items: {
                             type: "object",
                             properties: {
-                              times: { type: "number", description: "Quantas vezes fazer" },
-                              reps: { type: "string", description: "Repetições" },
-                              rest_seconds: { type: "number" }
-                            }
+                              reps: {
+                                type: "string",
+                                description: "Repetições (ex: 12, 10-12, máximo)"
+                              },
+                              rest_seconds: {
+                                type: "number",
+                                description: "Descanso em segundos"
+                              },
+                              notes: {
+                                type: "string",
+                                description: "Notas sobre a série (opcional)"
+                              }
+                            },
+                            required: ["reps", "rest_seconds"]
                           }
                         },
-                        notes: { type: "string", description: "Dicas de execução" }
-                      }
-                    }
+                        notes: {
+                          type: "string",
+                          description: "Observações sobre execução"
+                        }
+                      },
+                      required: ["exercise_name", "exercise_category", "sets"]
+                    },
+                    description: "Lista de exercícios do dia"
                   }
-                }
+                },
+                required: ["day_number", "title", "focus", "exercises"]
               },
-              description: "Array com EXATAMENTE " + daysOfWeek + " dias de treino"
-            },
-            tips: {
-              type: "array",
-              items: { type: "string" },
-              description: "Dicas gerais sobre o programa"
+              description: `Array com EXATAMENTE ${daysOfWeek} dias de treino`
             }
-          }
+          },
+          required: ["title", "description", "days"]
         }
       });
 
-      // Validar que temos o número correto de dias
-      if (!response.days || response.days.length !== daysOfWeek) {
-        throw new Error(`IA gerou ${response.days?.length || 0} dias, mas deveria gerar ${daysOfWeek}`);
+      const response = await Promise.race([generatePromise, timeoutPromise]);
+
+      // Validações críticas
+      if (!response.days || !Array.isArray(response.days)) {
+        throw new Error('Resposta inválida: days não é um array');
       }
 
+      if (response.days.length !== daysOfWeek) {
+        throw new Error(`Erro: gerou ${response.days.length} dias, mas deveria gerar ${daysOfWeek} dias. Tentando novamente...`);
+      }
+
+      // Validar que cada dia tem exercícios suficientes
+      for (let i = 0; i < response.days.length; i++) {
+        const day = response.days[i];
+        if (!day.exercises || day.exercises.length < 6) {
+          throw new Error(`Dia ${i + 1} tem apenas ${day.exercises?.length || 0} exercícios (mínimo 6)`);
+        }
+      }
+
+      console.log("Treino gerado com sucesso:", response);
       setGeneratedWorkout(response);
+      setAttemptCount(0);
     } catch (error) {
       console.error("Error generating workout:", error);
-      alert(`Erro ao gerar treino: ${error.message}. Tente novamente.`);
+      setError(error.message);
+      
+      if (currentAttempt < MAX_ATTEMPTS) {
+        // Tentar novamente automaticamente
+        setTimeout(() => {
+          generateWorkoutPlan();
+        }, 2000);
+      }
     } finally {
       setGeneratingWorkout(false);
     }
   };
 
   const handleComplete = async () => {
-    setLoading(true);
+    setGeneratingWorkout(true);
     try {
       // Criar o treino no banco
       const createdWorkout = await base44.entities.Workout.create({
-        title: generatedWorkout.title + " - Personalizado",
+        title: generatedWorkout.title,
         description: generatedWorkout.description,
-        category: user.fitness_goal === 'lose_weight' ? 'cardio' : 'strength',
+        category: "full_body",
         difficulty: user.fitness_level,
         training_location: user.training_location,
-        duration_minutes: generatedWorkout.duration_minutes,
+        duration_minutes: 50,
         days: generatedWorkout.days,
         is_premium: false,
       });
 
-      // Selecionar este treino e marcar setup completo
+      // Salvar o ID do treino no usuário e marcar setup como completo
       await base44.auth.updateMe({
         selected_workout_id: createdWorkout.id,
         current_workout_day: 1,
@@ -263,7 +341,7 @@ ${userGender === 'female' ? '- Para mulheres, dê ATENÇÃO ESPECIAL a pernas, g
       console.error("Error saving workout:", error);
       alert("Erro ao salvar treino. Tente novamente.");
     } finally {
-      setLoading(false);
+      setGeneratingWorkout(false);
     }
   };
 
@@ -275,197 +353,219 @@ ${userGender === 'female' ? '- Para mulheres, dê ATENÇÃO ESPECIAL a pernas, g
     );
   }
 
-  if (!generatedWorkout) {
-    return (
-      <div className="min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 flex items-center justify-center px-4 py-12">
-        <Card className="bg-slate-900/50 border-slate-800 max-w-2xl w-full">
-          <CardContent className="p-12 text-center space-y-6">
-            <div className="w-20 h-20 bg-gradient-to-br from-blue-600 to-purple-600 rounded-3xl flex items-center justify-center mx-auto shadow-2xl">
-              <Dumbbell className="w-10 h-10 text-white" />
-            </div>
-            
-            <div>
-              <h1 className="text-3xl font-bold text-white mb-3">
-                Configuração de Treino
-              </h1>
-              <p className="text-slate-300 text-lg mb-2">
-                Olá, {user.full_name}! 👋
-              </p>
-              <p className="text-slate-400 max-w-md mx-auto">
-                Agora vamos criar seu programa de treino personalizado com {user.weekly_goal} dias por semana!
-              </p>
-            </div>
-
-            <Card className="bg-slate-800/50 border-slate-700 max-w-md mx-auto text-left">
-              <CardContent className="p-6 space-y-3">
-                <p className="text-slate-400 text-sm font-semibold">Seu Perfil:</p>
-                <div className="space-y-2 text-sm">
-                  <p className="text-slate-300">
-                    🎯 Objetivo: <strong>{user.fitness_goal === 'lose_weight' ? 'Emagrecimento' : user.fitness_goal === 'gain_muscle' ? 'Ganho de Massa' : 'Manutenção'}</strong>
-                  </p>
-                  <p className="text-slate-300">
-                    📊 Nível: <strong className="capitalize">{user.fitness_level === 'beginner' ? 'Iniciante' : user.fitness_level === 'intermediate' ? 'Intermediário' : 'Avançado'}</strong>
-                  </p>
-                  <p className="text-slate-300">
-                    📍 Local: <strong>{user.training_location === 'gym' ? 'Academia' : user.training_location === 'home' ? 'Casa' : 'Ambos'}</strong>
-                  </p>
-                  <p className="text-slate-300">
-                    📅 Meta: <strong>{user.weekly_goal} treinos/semana</strong>
-                  </p>
+  return (
+    <div className="min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 flex items-center justify-center px-4 py-12">
+      <div className="w-full max-w-3xl">
+        {!generatedWorkout ? (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+          >
+            <Card className="bg-slate-900/50 border-slate-800">
+              <CardHeader>
+                <div className="w-20 h-20 bg-gradient-to-br from-blue-600 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-xl">
+                  <Dumbbell className="w-10 h-10 text-white" />
                 </div>
+                <CardTitle className="text-white text-3xl text-center mb-2">
+                  Configuração de Treino
+                </CardTitle>
+                <p className="text-slate-400 text-center text-lg">
+                  Vamos criar seu programa de treino personalizado com IA
+                </p>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <Card className="bg-gradient-to-br from-blue-900/30 to-purple-900/20 border-blue-700/50">
+                  <CardContent className="p-6">
+                    <h3 className="text-white font-semibold mb-4 text-center">
+                      📊 Seu Perfil de Treino
+                    </h3>
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                      <div>
+                        <p className="text-slate-400">Objetivo</p>
+                        <p className="text-white font-semibold">
+                          {user.fitness_goal === 'lose_weight' ? '🔥 Emagrecimento' : 
+                           user.fitness_goal === 'gain_muscle' ? '💪 Ganho de Massa' : 
+                           '⚡ Manutenção'}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-slate-400">Nível</p>
+                        <p className="text-white font-semibold capitalize">
+                          {user.fitness_level === 'beginner' ? '🌱 Iniciante' :
+                           user.fitness_level === 'intermediate' ? '🚀 Intermediário' :
+                           '🏆 Avançado'}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-slate-400">Local</p>
+                        <p className="text-white font-semibold">
+                          {user.training_location === 'gym' ? '🏋️ Academia' :
+                           user.training_location === 'home' ? '🏠 Casa' :
+                           '🔄 Ambos'}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-slate-400">Frequência</p>
+                        <p className="text-white font-semibold">
+                          {user.weekly_goal}x por semana
+                        </p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <div className="bg-blue-900/20 border border-blue-700/50 rounded-lg p-4">
+                  <p className="text-blue-400 text-sm font-semibold mb-2">✨ O que será criado:</p>
+                  <ul className="space-y-1 text-slate-300 text-sm">
+                    <li>• {user.weekly_goal} dias de treino completos</li>
+                    <li>• 6-8 exercícios por dia</li>
+                    <li>• Séries, repetições e descanso personalizados</li>
+                    <li>• Divisão otimizada para seus objetivos</li>
+                    <li>• Exercícios adequados para {user.training_location === 'gym' ? 'academia' : user.training_location === 'home' ? 'casa' : 'ambos locais'}</li>
+                  </ul>
+                </div>
+
+                {error && (
+                  <Card className="bg-red-900/20 border-red-800/50">
+                    <CardContent className="p-4">
+                      <div className="flex items-start gap-3">
+                        <AlertTriangle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
+                        <div>
+                          <p className="text-red-400 font-semibold text-sm mb-1">Erro na Geração</p>
+                          <p className="text-slate-300 text-sm">{error}</p>
+                          {attemptCount < MAX_ATTEMPTS && (
+                            <p className="text-orange-400 text-xs mt-2">
+                              Tentando novamente automaticamente... (Tentativa {attemptCount + 1}/{MAX_ATTEMPTS})
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+
+                <Button
+                  onClick={generateWorkoutPlan}
+                  disabled={generatingWorkout || (attemptCount >= MAX_ATTEMPTS && error)}
+                  className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white py-8 text-xl font-bold shadow-lg"
+                >
+                  {generatingWorkout ? (
+                    <div className="flex flex-col items-center gap-2">
+                      <Loader2 className="w-6 h-6 animate-spin" />
+                      <span className="text-base">Gerando seu treino personalizado...</span>
+                      {attemptCount > 0 && (
+                        <span className="text-xs opacity-75">Tentativa {attemptCount}/{MAX_ATTEMPTS}</span>
+                      )}
+                    </div>
+                  ) : attemptCount >= MAX_ATTEMPTS && error ? (
+                    <>
+                      <AlertTriangle className="w-6 h-6 mr-2" />
+                      Tentar Novamente
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="w-6 h-6 mr-2" />
+                      Gerar Meu Treino com IA
+                    </>
+                  )}
+                </Button>
+
+                <p className="text-slate-500 text-xs text-center">
+                  ⏱️ A geração leva cerca de 30-60 segundos. Aguarde enquanto criamos o melhor treino para você!
+                </p>
+              </CardContent>
+            </Card>
+          </motion.div>
+        ) : (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="space-y-4"
+          >
+            <Card className="bg-gradient-to-br from-blue-900/30 to-purple-900/20 border-blue-700/50">
+              <CardContent className="p-8 text-center">
+                <div className="w-20 h-20 bg-blue-600/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Check className="w-10 h-10 text-blue-400" />
+                </div>
+                <h2 className="text-3xl font-bold text-white mb-2">
+                  🎉 Treino Criado!
+                </h2>
+                <p className="text-slate-300 text-lg">
+                  Seu programa personalizado está pronto
+                </p>
               </CardContent>
             </Card>
 
+            <Card className="bg-slate-900/50 border-slate-800">
+              <CardHeader>
+                <CardTitle className="text-white text-2xl">{generatedWorkout.title}</CardTitle>
+                <p className="text-slate-400">{generatedWorkout.description}</p>
+              </CardHeader>
+            </Card>
+
+            {generatedWorkout.days.map((day, idx) => (
+              <Card key={idx} className="bg-slate-900/50 border-slate-800">
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle className="text-white text-lg">
+                        📅 Dia {day.day_number} - {day.title}
+                      </CardTitle>
+                      <p className="text-slate-400 text-sm">{day.focus}</p>
+                    </div>
+                    <Badge className="bg-blue-600/20 text-blue-400">
+                      {day.exercises.length} exercícios
+                    </Badge>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {day.exercises.map((ex, exIdx) => (
+                      <div key={exIdx} className="bg-slate-800/50 p-3 rounded-lg">
+                        <div className="flex items-start gap-3">
+                          <div className="w-6 h-6 bg-blue-600/20 rounded flex items-center justify-center flex-shrink-0 mt-0.5">
+                            <span className="text-blue-400 text-xs font-bold">{exIdx + 1}</span>
+                          </div>
+                          <div className="flex-1">
+                            <p className="text-white font-medium mb-1">{ex.exercise_name}</p>
+                            <div className="flex flex-wrap gap-2 text-xs text-slate-400">
+                              {ex.sets.map((set, setIdx) => (
+                                <span key={setIdx} className="bg-slate-700/50 px-2 py-1 rounded">
+                                  {setIdx + 1}x{set.reps} ({set.rest_seconds}s)
+                                </span>
+                              ))}
+                            </div>
+                            {ex.notes && (
+                              <p className="text-slate-500 text-xs mt-2">💡 {ex.notes}</p>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+
             <Button
-              onClick={generateWorkoutPlan}
+              onClick={handleComplete}
               disabled={generatingWorkout}
-              className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white py-6 px-8 text-lg shadow-lg"
+              className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 py-8 text-xl font-bold"
             >
               {generatingWorkout ? (
                 <>
-                  <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                  Gerando Treino de {user.weekly_goal} Dias...
+                  <Loader2 className="w-6 h-6 mr-2 animate-spin" />
+                  Salvando...
                 </>
               ) : (
                 <>
-                  <Sparkles className="w-5 h-5 mr-2" />
-                  Gerar Programa com IA
+                  <Check className="w-6 h-6 mr-2" />
+                  Começar Meu Treino!
                 </>
               )}
             </Button>
-
-            <p className="text-slate-500 text-sm">
-              ⏱️ Criando {user.weekly_goal} dias de treino personalizado... Isso pode levar 30-60 segundos
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
-  return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 px-4 py-12">
-      <div className="max-w-4xl mx-auto space-y-6">
-        {/* Success Header */}
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-        >
-          <Card className="bg-gradient-to-br from-blue-900/30 to-purple-900/20 border-blue-700/50">
-            <CardContent className="p-8 text-center">
-              <div className="w-20 h-20 bg-blue-600/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Check className="w-10 h-10 text-blue-400" />
-              </div>
-              <h2 className="text-3xl font-bold text-white mb-2">
-                Seu Treino Foi Criado!
-              </h2>
-              <p className="text-slate-300 text-lg">
-                Programa personalizado pronto para começar
-              </p>
-            </CardContent>
-          </Card>
-        </motion.div>
-
-        {/* Workout Overview */}
-        <Card className="bg-slate-900/50 border-slate-800">
-          <CardHeader>
-            <CardTitle className="text-white text-2xl">{generatedWorkout.title}</CardTitle>
-            <p className="text-slate-300 mt-2">{generatedWorkout.description}</p>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-3 gap-4">
-              <div className="p-4 bg-blue-900/20 rounded-lg text-center">
-                <Calendar className="w-6 h-6 text-blue-400 mx-auto mb-2" />
-                <p className="text-2xl font-bold text-white">{generatedWorkout.days.length}</p>
-                <p className="text-slate-400 text-sm">Dias/semana</p>
-              </div>
-              <div className="p-4 bg-purple-900/20 rounded-lg text-center">
-                <Clock className="w-6 h-6 text-purple-400 mx-auto mb-2" />
-                <p className="text-2xl font-bold text-white">{generatedWorkout.duration_minutes}</p>
-                <p className="text-slate-400 text-sm">Minutos</p>
-              </div>
-              <div className="p-4 bg-green-900/20 rounded-lg text-center">
-                <Zap className="w-6 h-6 text-green-400 mx-auto mb-2" />
-                <p className="text-2xl font-bold text-white">
-                  {generatedWorkout.days.reduce((sum, day) => sum + day.exercises.length, 0)}
-                </p>
-                <p className="text-slate-400 text-sm">Exercícios</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Days Preview */}
-        <div className="space-y-3">
-          <h3 className="text-xl font-bold text-white">📅 Programa de Treino</h3>
-          {generatedWorkout.days.map((day, idx) => (
-            <Card key={idx} className="bg-slate-900/50 border-slate-800">
-              <CardHeader>
-                <CardTitle className="text-white text-lg">
-                  Dia {day.day_number}: {day.title}
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  {day.exercises.slice(0, 3).map((exercise, exIdx) => (
-                    <div key={exIdx} className="flex items-center gap-3 text-sm">
-                      <div className="w-6 h-6 bg-blue-600/20 rounded flex items-center justify-center flex-shrink-0">
-                        <span className="text-blue-400 text-xs font-bold">{exIdx + 1}</span>
-                      </div>
-                      <p className="text-slate-300 flex-1">{exercise.exercise_name}</p>
-                      <p className="text-slate-500 text-xs">
-                        {exercise.sets[0].times}x{exercise.sets[0].reps}
-                      </p>
-                    </div>
-                  ))}
-                  {day.exercises.length > 3 && (
-                    <p className="text-slate-500 text-xs text-center pt-2">
-                      + {day.exercises.length - 3} exercícios
-                    </p>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-
-        {/* Tips */}
-        {generatedWorkout.tips && generatedWorkout.tips.length > 0 && (
-          <Card className="bg-slate-900/50 border-slate-800">
-            <CardHeader>
-              <CardTitle className="text-white text-sm">💡 Dicas Importantes</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ul className="space-y-2">
-                {generatedWorkout.tips.map((tip, idx) => (
-                  <li key={idx} className="flex items-start gap-2 text-slate-300 text-sm">
-                    <Check className="w-4 h-4 text-green-400 mt-0.5 flex-shrink-0" />
-                    <span>{tip}</span>
-                  </li>
-                ))}
-              </ul>
-            </CardContent>
-          </Card>
+          </motion.div>
         )}
-
-        {/* Complete Button */}
-        <Button
-          onClick={handleComplete}
-          disabled={loading}
-          className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white py-6 text-lg shadow-lg"
-        >
-          {loading ? (
-            <>
-              <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-              Finalizando Configuração...
-            </>
-          ) : (
-            <>
-              <Check className="w-5 h-5 mr-2" />
-              Finalizar e Começar a Treinar!
-            </>
-          )}
-        </Button>
       </div>
     </div>
   );
