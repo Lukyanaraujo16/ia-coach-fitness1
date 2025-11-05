@@ -304,16 +304,22 @@ Seja preciso com base na quantidade informada.
                                     <div className="flex gap-2">
                                       <Button
                                         size="sm"
-                                        onClick={() => setEditingMeal(meal.id)}
-                                        className="bg-blue-600/20 border border-blue-600/30 text-blue-400 hover:bg-blue-600/30 h-7 text-xs"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          setEditingMeal(meal.id);
+                                        }}
+                                        className="bg-blue-600/20 border border-blue-600/30 text-blue-400 hover:bg-blue-600/40 h-8 text-xs px-3"
                                       >
                                         <Edit2 className="w-3 h-3 mr-1" />
                                         Editar
                                       </Button>
                                       <Button
                                         size="sm"
-                                        onClick={() => setDeletingMeal(meal.id)}
-                                        className="bg-red-600/20 border border-red-600/30 text-red-400 hover:bg-red-600/30 h-7 text-xs"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          setDeletingMeal(meal.id);
+                                        }}
+                                        className="bg-red-600/20 border border-red-600/30 text-red-400 hover:bg-red-600/40 h-8 text-xs px-3"
                                       >
                                         <Trash2 className="w-3 h-3 mr-1" />
                                         Excluir
@@ -321,6 +327,16 @@ Seja preciso com base na quantidade informada.
                                     </div>
                                   )}
                                 </div>
+                                
+                                {/* Debug info - remover depois */}
+                                {isExpanded && (
+                                  <div className="mb-2 p-2 bg-slate-700/30 rounded text-xs">
+                                    <p className="text-slate-400">
+                                      Debug: Data da refeição: {meal.date} | Hoje: {todayDate} | É hoje? {isToday ? 'SIM ✅' : 'NÃO ❌'}
+                                    </p>
+                                  </div>
+                                )}
+                                
                                 <div className="space-y-1">
                                   {meal.food_items?.map((item, idx) => (
                                     <div
