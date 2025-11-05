@@ -4,7 +4,8 @@ import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Dumbbell, Loader2, Check, Sparkles, AlertTriangle } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Dumbbell, Loader2, Check, Sparkles, AlertTriangle, RefreshCw } from "lucide-react";
 import { motion } from "framer-motion";
 
 export default function WorkoutSetup() {
@@ -14,6 +15,7 @@ export default function WorkoutSetup() {
   const [generatedWorkout, setGeneratedWorkout] = useState(null);
   const [error, setError] = useState(null);
   const [attemptCount, setAttemptCount] = useState(0);
+  const [shouldRetry, setShouldRetry] = useState(false);
   const MAX_ATTEMPTS = 3;
 
   useEffect(() => {
@@ -36,7 +38,20 @@ export default function WorkoutSetup() {
     loadUser();
   }, [navigate]);
 
+  // Auto-retry quando shouldRetry for true
+  useEffect(() => {
+    if (shouldRetry && attemptCount < MAX_ATTEMPTS) {
+      const timer = setTimeout(() => {
+        setShouldRetry(false);
+        generateWorkoutPlan();
+      }, 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [shouldRetry, attemptCount]);
+
   const generateWorkoutPlan = async () => {
+    if (!user) return;
+    
     setGeneratingWorkout(true);
     setError(null);
     const currentAttempt = attemptCount + 1;
@@ -64,7 +79,7 @@ export default function WorkoutSetup() {
       const daysOfWeek = user.weekly_goal;
       const userGender = user.gender || 'male';
 
-      // Divisões específicas por gênero - ATUALIZADAS
+      // Divisões específicas por gênero
       const maleDivisions = {
         3: [
           "Dia 1: Peito + Ombros + Tríceps",
@@ -156,33 +171,34 @@ PERFIL DO ALUNO:
 - Peso atual: ${user.current_weight}kg
 - Meta de peso: ${user.weight_goal}kg
 
-⚠️ REGRA CRÍTICA: Você DEVE criar EXATAMENTE ${daysOfWeek} dias de treino. NÃO MENOS, NÃO MAIS.
-Se você gerar menos de ${daysOfWeek} dias, o treino será REJEITADO.
+⚠️⚠️⚠️ REGRA ABSOLUTAMENTE CRÍTICA ⚠️⚠️⚠️
+Você DEVE criar EXATAMENTE ${daysOfWeek} dias de treino.
+O array "days" DEVE ter EXATAMENTE ${daysOfWeek} elementos.
+Cada dia DEVE ter day_number de 1 até ${daysOfWeek}.
+NÃO GERE MENOS DIAS. NÃO GERE MAIS DIAS.
+Se você gerar quantidade diferente de ${daysOfWeek} dias, o treino será REJEITADO.
 
-DISTRIBUIÇÃO OBRIGATÓRIA DOS DIAS (use EXATAMENTE esta divisão para ${userGender === 'female' ? 'MULHERES' : 'HOMENS'}):
-${divisionList.map(day => `- ${day}`).join('\n')}
+DISTRIBUIÇÃO OBRIGATÓRIA (para ${userGender === 'female' ? 'MULHERES' : 'HOMENS'}):
+${divisionList.map((day, i) => `${day} (day_number: ${i + 1})`).join('\n')}
 
-INSTRUÇÕES DETALHADAS:
-1. Crie EXATAMENTE ${daysOfWeek} dias de treino (não menos, não mais)
-2. Cada dia deve ter 6-8 exercícios específicos
-3. Para cada exercício, inclua:
-   - Nome completo e específico do exercício
-   - 3-4 séries com repetições
-   - Tempo de descanso adequado entre séries (em segundos)
-   - Notas técnicas quando necessário
-4. Siga RIGOROSAMENTE a divisão de grupos musculares especificada acima
-5. Use exercícios apropriados para ${user.training_location}
-6. Considere o nível ${user.fitness_level} nas cargas e volumes
-${userGender === 'female' ? '- Para mulheres, dê ATENÇÃO ESPECIAL a pernas, glúteos e posteriores, com exercícios variados' : '- Para homens, equilibre bem entre push/pull e garanta volume adequado'}
-7. Duração estimada de cada treino: 45-60 minutos
+INSTRUÇÕES OBRIGATÓRIAS:
+1. Crie EXATAMENTE ${daysOfWeek} objetos no array "days"
+2. Cada dia DEVE ter day_number sequencial: 1, 2, 3... até ${daysOfWeek}
+3. Cada dia DEVE ter 6-8 exercícios
+4. Cada exercício DEVE ter:
+   - exercise_name (nome completo)
+   - exercise_category (categoria)
+   - sets: array com 3-4 objetos contendo reps e rest_seconds
+   - notes (opcional)
+5. Siga RIGOROSAMENTE a divisão muscular especificada
+6. Use exercícios para ${user.training_location}
+7. Considere nível ${user.fitness_level}
+${userGender === 'female' ? '8. Para mulheres: ÊNFASE em pernas, glúteos e posteriores' : '8. Para homens: equilibre push/pull'}
 
-IMPORTANTE: O array "days" na sua resposta DEVE ter EXATAMENTE ${daysOfWeek} elementos.
-Cada elemento do array representa 1 dia de treino completo.
-
-Crie um programa COMPLETO, ESTRUTURADO e PRÁTICO.`;
+LEMBRE-SE: ${daysOfWeek} dias, numerados de 1 a ${daysOfWeek}, SEM EXCEÇÃO!`;
 
       const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Timeout: A geração demorou mais de 90 segundos')), 90000)
+        setTimeout(() => reject(new Error('Timeout: geração demorou mais de 2 minutos')), 120000)
       );
 
       const generatePromise = base44.integrations.Core.InvokeLLM({
@@ -278,45 +294,58 @@ Crie um programa COMPLETO, ESTRUTURADO e PRÁTICO.`;
 
       const response = await Promise.race([generatePromise, timeoutPromise]);
 
-      // Validações críticas
+      // Validações críticas com mensagens detalhadas
+      if (!response) {
+        throw new Error('Resposta vazia da IA');
+      }
+
       if (!response.days || !Array.isArray(response.days)) {
         throw new Error('Resposta inválida: days não é um array');
       }
 
       if (response.days.length !== daysOfWeek) {
-        throw new Error(`Erro: gerou ${response.days.length} dias, mas deveria gerar ${daysOfWeek} dias. Tentando novamente...`);
+        throw new Error(`Erro crítico: IA gerou ${response.days.length} dias, mas você pediu ${daysOfWeek} dias. Tentativa ${currentAttempt}/${MAX_ATTEMPTS}.`);
       }
 
       // Validar que cada dia tem exercícios suficientes
       for (let i = 0; i < response.days.length; i++) {
         const day = response.days[i];
         if (!day.exercises || day.exercises.length < 6) {
-          throw new Error(`Dia ${i + 1} tem apenas ${day.exercises?.length || 0} exercícios (mínimo 6)`);
+          throw new Error(`Dia ${i + 1} incompleto: tem apenas ${day.exercises?.length || 0} exercícios (mínimo 6)`);
+        }
+        if (day.day_number !== i + 1) {
+          day.day_number = i + 1; // Corrigir numeração se necessário
         }
       }
 
-      console.log("Treino gerado com sucesso:", response);
+      console.log("✅ Treino gerado com sucesso:", response);
       setGeneratedWorkout(response);
       setAttemptCount(0);
+      setError(null);
     } catch (error) {
-      console.error("Error generating workout:", error);
-      setError(error.message);
+      console.error("❌ Erro ao gerar treino:", error);
+      const errorMessage = error.message || 'Erro desconhecido';
+      setError(errorMessage);
       
+      // Auto-retry se ainda tiver tentativas
       if (currentAttempt < MAX_ATTEMPTS) {
-        // Tentar novamente automaticamente
-        setTimeout(() => {
-          generateWorkoutPlan();
-        }, 2000);
+        setShouldRetry(true);
       }
     } finally {
       setGeneratingWorkout(false);
     }
   };
 
+  const handleReset = () => {
+    setError(null);
+    setAttemptCount(0);
+    setShouldRetry(false);
+    setGeneratedWorkout(null);
+  };
+
   const handleComplete = async () => {
     setGeneratingWorkout(true);
     try {
-      // Criar o treino no banco
       const createdWorkout = await base44.entities.Workout.create({
         title: generatedWorkout.title,
         description: generatedWorkout.description,
@@ -328,7 +357,6 @@ Crie um programa COMPLETO, ESTRUTURADO e PRÁTICO.`;
         is_premium: false,
       });
 
-      // Salvar o ID do treino no usuário e marcar setup como completo
       await base44.auth.updateMe({
         selected_workout_id: createdWorkout.id,
         current_workout_day: 1,
@@ -430,14 +458,34 @@ Crie um programa COMPLETO, ESTRUTURADO e PRÁTICO.`;
                     <CardContent className="p-4">
                       <div className="flex items-start gap-3">
                         <AlertTriangle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
-                        <div>
+                        <div className="flex-1">
                           <p className="text-red-400 font-semibold text-sm mb-1">Erro na Geração</p>
-                          <p className="text-slate-300 text-sm">{error}</p>
-                          {attemptCount < MAX_ATTEMPTS && (
-                            <p className="text-orange-400 text-xs mt-2">
-                              Tentando novamente automaticamente... (Tentativa {attemptCount + 1}/{MAX_ATTEMPTS})
-                            </p>
-                          )}
+                          <p className="text-slate-300 text-sm mb-2">{error}</p>
+                          {attemptCount < MAX_ATTEMPTS && shouldRetry ? (
+                            <div className="flex items-center gap-2 text-orange-400 text-xs">
+                              <Loader2 className="w-3 h-3 animate-spin" />
+                              <span>Tentando novamente em 2 segundos... (Tentativa {attemptCount + 1}/{MAX_ATTEMPTS})</span>
+                            </div>
+                          ) : attemptCount >= MAX_ATTEMPTS ? (
+                            <div className="flex gap-2 mt-3">
+                              <Button
+                                onClick={handleReset}
+                                size="sm"
+                                className="bg-blue-600 hover:bg-blue-700"
+                              >
+                                <RefreshCw className="w-3 h-3 mr-2" />
+                                Tentar Novamente
+                              </Button>
+                              <Button
+                                onClick={() => navigate(createPageUrl("Home"))}
+                                size="sm"
+                                variant="outline"
+                                className="border-slate-700 text-slate-300"
+                              >
+                                Configurar Depois
+                              </Button>
+                            </div>
+                          ) : null}
                         </div>
                       </div>
                     </CardContent>
@@ -446,22 +494,18 @@ Crie um programa COMPLETO, ESTRUTURADO e PRÁTICO.`;
 
                 <Button
                   onClick={generateWorkoutPlan}
-                  disabled={generatingWorkout || (attemptCount >= MAX_ATTEMPTS && error)}
+                  disabled={generatingWorkout || (shouldRetry && attemptCount < MAX_ATTEMPTS)}
                   className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white py-8 text-xl font-bold shadow-lg"
                 >
-                  {generatingWorkout ? (
+                  {generatingWorkout || shouldRetry ? (
                     <div className="flex flex-col items-center gap-2">
                       <Loader2 className="w-6 h-6 animate-spin" />
-                      <span className="text-base">Gerando seu treino personalizado...</span>
-                      {attemptCount > 0 && (
-                        <span className="text-xs opacity-75">Tentativa {attemptCount}/{MAX_ATTEMPTS}</span>
-                      )}
+                      <span className="text-base">
+                        {shouldRetry 
+                          ? `Tentativa ${attemptCount}/${MAX_ATTEMPTS} - Aguarde...`
+                          : 'Gerando seu treino personalizado...'}
+                      </span>
                     </div>
-                  ) : attemptCount >= MAX_ATTEMPTS && error ? (
-                    <>
-                      <AlertTriangle className="w-6 h-6 mr-2" />
-                      Tentar Novamente
-                    </>
                   ) : (
                     <>
                       <Sparkles className="w-6 h-6 mr-2" />
@@ -471,7 +515,7 @@ Crie um programa COMPLETO, ESTRUTURADO e PRÁTICO.`;
                 </Button>
 
                 <p className="text-slate-500 text-xs text-center">
-                  ⏱️ A geração leva cerca de 30-60 segundos. Aguarde enquanto criamos o melhor treino para você!
+                  ⏱️ A geração leva cerca de 30-90 segundos. Aguarde!
                 </p>
               </CardContent>
             </Card>
