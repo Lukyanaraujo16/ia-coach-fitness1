@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useNavigate } from "react-router-dom";
@@ -86,9 +87,15 @@ export default function Onboarding() {
           setAnswers(prev => ({ ...prev, full_name: currentUser.full_name }));
         }
         
-        // Se já completou onboarding, redireciona
-        if (currentUser.fitness_goal) {
-          navigate(createPageUrl("Home"));
+        // Se já completou onboarding, redireciona para próxima etapa
+        if (currentUser.onboarding_completed) {
+          if (!currentUser.nutrition_setup_completed) {
+            navigate(createPageUrl("NutritionSetup"));
+          } else if (!currentUser.workout_setup_completed) {
+            navigate(createPageUrl("WorkoutSetup"));
+          } else {
+            navigate(createPageUrl("Home"));
+          }
         }
       } catch (error) {
         base44.auth.redirectToLogin(createPageUrl("Onboarding"));
@@ -125,8 +132,9 @@ export default function Onboarding() {
         fitness_goal: answers.goal,
         training_location: answers.location,
         fitness_level: answers.level,
+        onboarding_completed: true,
       });
-      navigate(createPageUrl("WorkoutSelection"));
+      navigate(createPageUrl("NutritionSetup"));
     } catch (error) {
       console.error("Error saving onboarding:", error);
       alert("Erro ao salvar suas informações. Tente novamente.");

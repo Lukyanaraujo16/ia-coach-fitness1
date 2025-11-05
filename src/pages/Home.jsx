@@ -23,8 +23,14 @@ export default function Home() {
       try {
         const currentUser = await base44.auth.me();
         setUser(currentUser);
-        if (!currentUser.fitness_goal) {
+        
+        // Verificar fluxo de onboarding
+        if (!currentUser.onboarding_completed) {
           navigate(createPageUrl("Onboarding"));
+        } else if (!currentUser.nutrition_setup_completed) {
+          navigate(createPageUrl("NutritionSetup"));
+        } else if (!currentUser.workout_setup_completed) {
+          navigate(createPageUrl("WorkoutSetup"));
         }
       } catch (error) {
         console.error("Error loading user:", error);

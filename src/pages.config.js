@@ -12,6 +12,8 @@ import WorkoutExecution from './pages/WorkoutExecution';
 import WorkoutSelection from './pages/WorkoutSelection';
 import Nutrition from './pages/Nutrition';
 import AICoach from './pages/AICoach';
+import NutritionSetup from './pages/NutritionSetup';
+import WorkoutSetup from './pages/WorkoutSetup';
 import Layout from './Layout.jsx';
 
 
@@ -30,6 +32,8 @@ export const PAGES = {
     "WorkoutSelection": WorkoutSelection,
     "Nutrition": Nutrition,
     "AICoach": AICoach,
+    "NutritionSetup": NutritionSetup,
+    "WorkoutSetup": WorkoutSetup,
 }
 
 export const pagesConfig = {
