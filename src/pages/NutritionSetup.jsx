@@ -287,6 +287,7 @@ Use ingredientes BRASILEIROS e acessíveis.`;
         macro_protein_percentage: generatedPlan.macros.protein_percentage,
         macro_carbs_percentage: generatedPlan.macros.carbs_percentage,
         macro_fat_percentage: generatedPlan.macros.fat_percentage,
+        selected_nutrition_plan_data: generatedPlan,
         nutrition_setup_completed: true,
       });
       navigate(createPageUrl("WorkoutSetup"));

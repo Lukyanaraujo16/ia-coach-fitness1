@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+
+import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -30,6 +31,13 @@ export default function AIMealPlanner({ user }) {
   const [expandedMeal, setExpandedMeal] = useState(null);
   const [showPreferencesModal, setShowPreferencesModal] = useState(false);
   const queryClient = useQueryClient();
+
+  // Carregar plano salvo do usuário quando componente montar
+  useEffect(() => {
+    if (user?.selected_nutrition_plan_data) {
+      setMealPlan(user.selected_nutrition_plan_data);
+    }
+  }, [user]);
 
   const addToLogMutation = useMutation({
     mutationFn: (mealData) => base44.entities.MealLog.create(mealData),
@@ -186,6 +194,13 @@ IMPORTANTE:
       });
 
       setMealPlan(response);
+      
+      // Salvar o novo plano no perfil do usuário
+      await base44.auth.updateMe({
+        selected_nutrition_plan_data: response
+      });
+      
+      queryClient.invalidateQueries(['user']);
     } catch (error) {
       console.error("Error generating meal plan:", error);
       alert("Erro ao gerar plano alimentar. Tente novamente.");
@@ -550,7 +565,7 @@ IMPORTANTE:
           onClose={() => setShowPreferencesModal(false)}
           onSave={() => {
             setShowPreferencesModal(false);
-            setMealPlan(null); // Reset to regenerate
+            setMealPlan(null); // Reset to trigger initial state logic or regenerate
             window.location.reload();
           }}
         />

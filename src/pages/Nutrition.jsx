@@ -14,7 +14,7 @@ import NutritionGoalsModal from "../components/nutrition/NutritionGoalsModal";
 import AIMealPlanner from "../components/nutrition/AIMealPlanner";
 
 export default function Nutrition() {
-  const [activeTab, setActiveTab] = useState("counter");
+  const [activeTab, setActiveTab] = useState("planner"); // Changed initial state to "planner"
   const [user, setUser] = useState(null);
   const [showGoalsModal, setShowGoalsModal] = useState(false);
 
@@ -171,13 +171,13 @@ export default function Nutrition() {
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="bg-slate-900/50 border border-slate-800 w-full grid grid-cols-5">
-          <TabsTrigger value="counter" className="data-[state=active]:bg-green-600">
-            <Camera className="w-4 h-4 mr-2" />
-            Foto
-          </TabsTrigger>
           <TabsTrigger value="planner" className="data-[state=active]:bg-green-600">
             <Target className="w-4 h-4 mr-2" />
             Planner IA
+          </TabsTrigger>
+          <TabsTrigger value="counter" className="data-[state=active]:bg-green-600">
+            <Camera className="w-4 h-4 mr-2" />
+            Foto
           </TabsTrigger>
           <TabsTrigger value="stats" className="data-[state=active]:bg-green-600">
             <TrendingUp className="w-4 h-4 mr-2" />
@@ -195,8 +195,8 @@ export default function Nutrition() {
       </Tabs>
 
       {/* Content */}
-      {activeTab === "counter" && <CalorieCounter />}
       {activeTab === "planner" && <AIMealPlanner user={user} />}
+      {activeTab === "counter" && <CalorieCounter />}
       {activeTab === "stats" && <NutritionStats mealLogs={mealLogs} calorieGoal={calorieGoal} />}
       {activeTab === "history" && <MealHistory mealLogs={mealLogs} />}
       {activeTab === "plans" && <NutritionPlans plans={nutritionPlans} user={user} />}
