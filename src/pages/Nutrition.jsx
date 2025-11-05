@@ -1,11 +1,10 @@
-
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Camera, TrendingUp, Book, Target, Settings } from "lucide-react";
+import { Camera, TrendingUp, Book, Target, Settings, Loader2 } from "lucide-react";
 import CalorieCounter from "../components/nutrition/CalorieCounter";
 import NutritionStats from "../components/nutrition/NutritionStats";
 import MealHistory from "../components/nutrition/MealHistory";
@@ -14,8 +13,9 @@ import NutritionGoalsModal from "../components/nutrition/NutritionGoalsModal";
 import AIMealPlanner from "../components/nutrition/AIMealPlanner";
 
 export default function Nutrition() {
-  const [activeTab, setActiveTab] = useState("planner"); // Changed initial state to "planner"
+  const [activeTab, setActiveTab] = useState("planner");
   const [user, setUser] = useState(null);
+  const [isLoadingUser, setIsLoadingUser] = useState(true);
   const [showGoalsModal, setShowGoalsModal] = useState(false);
 
   useEffect(() => {
@@ -25,6 +25,8 @@ export default function Nutrition() {
         setUser(currentUser);
       } catch (error) {
         console.error("Error loading user:", error);
+      } finally {
+        setIsLoadingUser(false);
       }
     };
     loadUser();
@@ -71,6 +73,18 @@ export default function Nutrition() {
   const proteinGoal = Math.round((calorieGoal * (proteinPercentage / 100)) / 4);
   const carbsGoal = Math.round((calorieGoal * (carbsPercentage / 100)) / 4);
   const fatGoal = Math.round((calorieGoal * (fatPercentage / 100)) / 9);
+
+  // Loading state
+  if (isLoadingUser) {
+    return (
+      <div className="py-6 flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <Loader2 className="w-8 h-8 text-blue-400 animate-spin mx-auto mb-3" />
+          <p className="text-slate-400">Carregando...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="py-6 space-y-6">
