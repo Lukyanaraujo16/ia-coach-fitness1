@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
@@ -6,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Coffee, Sun, Cookie, Moon, Zap, ChevronDown, ChevronUp, Edit2, Plus, Save, X, Loader2 } from "lucide-react";
+import { Coffee, Sun, Cookie, Moon, Zap, ChevronDown, ChevronUp, Edit2, Plus, Save, X, Loader2, Trash2, AlertTriangle } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 const mealIcons = {
@@ -28,6 +29,7 @@ const mealLabels = {
 export default function MealHistory({ mealLogs = [] }) {
   const [expandedMeal, setExpandedMeal] = useState(null);
   const [editingMeal, setEditingMeal] = useState(null);
+  const [deletingMeal, setDeletingMeal] = useState(null);
   const [newFoodName, setNewFoodName] = useState("");
   const [newFoodQuantity, setNewFoodQuantity] = useState("");
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -40,6 +42,15 @@ export default function MealHistory({ mealLogs = [] }) {
       setEditingMeal(null);
       setNewFoodName("");
       setNewFoodQuantity("");
+    },
+  });
+
+  const deleteMealMutation = useMutation({
+    mutationFn: (mealId) => base44.entities.MealLog.delete(mealId),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['meal-logs']);
+      setDeletingMeal(null);
+      setExpandedMeal(null); // Collapse the meal after deletion
     },
   });
 
@@ -131,6 +142,10 @@ Seja preciso com base na quantidade informada.
     }
   };
 
+  const handleDeleteMeal = (mealId) => {
+    deleteMealMutation.mutate(mealId);
+  };
+
   // Agrupar por data
   const groupedByDate = mealLogs.reduce((acc, log) => {
     if (!log.analysis_complete) return acc;
@@ -199,6 +214,7 @@ Seja preciso com base na quantidade informada.
                   const Icon = mealIcons[meal.meal_type] || Cookie;
                   const isExpanded = expandedMeal === meal.id;
                   const isEditing = editingMeal === meal.id;
+                  const isDeleting = deletingMeal === meal.id;
 
                   return (
                     <div
@@ -284,15 +300,25 @@ Seja preciso com base na quantidade informada.
                               <div>
                                 <div className="flex items-center justify-between mb-2">
                                   <p className="text-slate-400 text-xs">Alimentos:</p>
-                                  {isToday && !isEditing && (
-                                    <Button
-                                      size="sm"
-                                      onClick={() => setEditingMeal(meal.id)}
-                                      className="bg-blue-600/20 border border-blue-600/30 text-blue-400 hover:bg-blue-600/30 h-7 text-xs"
-                                    >
-                                      <Edit2 className="w-3 h-3 mr-1" />
-                                      Editar
-                                    </Button>
+                                  {isToday && !isEditing && !isDeleting && (
+                                    <div className="flex gap-2">
+                                      <Button
+                                        size="sm"
+                                        onClick={() => setEditingMeal(meal.id)}
+                                        className="bg-blue-600/20 border border-blue-600/30 text-blue-400 hover:bg-blue-600/30 h-7 text-xs"
+                                      >
+                                        <Edit2 className="w-3 h-3 mr-1" />
+                                        Editar
+                                      </Button>
+                                      <Button
+                                        size="sm"
+                                        onClick={() => setDeletingMeal(meal.id)}
+                                        className="bg-red-600/20 border border-red-600/30 text-red-400 hover:bg-red-600/30 h-7 text-xs"
+                                      >
+                                        <Trash2 className="w-3 h-3 mr-1" />
+                                        Excluir
+                                      </Button>
+                                    </div>
                                   )}
                                 </div>
                                 <div className="space-y-1">
@@ -312,8 +338,54 @@ Seja preciso com base na quantidade informada.
                                 </div>
                               </div>
 
+                              {/* Delete Confirmation */}
+                              {isDeleting && (
+                                <motion.div
+                                  initial={{ opacity: 0, y: -10 }}
+                                  animate={{ opacity: 1, y: 0 }}
+                                  className="p-3 bg-red-900/20 border border-red-800/50 rounded-lg space-y-3"
+                                >
+                                  <div className="flex items-center gap-2">
+                                    <AlertTriangle className="w-5 h-5 text-red-400" />
+                                    <p className="text-red-400 text-sm font-semibold">
+                                      Tem certeza que deseja excluir esta refeição?
+                                    </p>
+                                  </div>
+                                  <p className="text-slate-300 text-xs">
+                                    Esta ação não pode ser desfeita. Todos os dados nutricionais desta refeição serão perdidos.
+                                  </p>
+                                  <div className="flex gap-2">
+                                    <Button
+                                      variant="outline"
+                                      onClick={() => setDeletingMeal(null)}
+                                      className="flex-1 bg-slate-800 border-slate-600 text-slate-200 h-10"
+                                    >
+                                      <X className="w-4 h-4 mr-1" />
+                                      Cancelar
+                                    </Button>
+                                    <Button
+                                      onClick={() => handleDeleteMeal(meal.id)}
+                                      disabled={deleteMealMutation.isPending}
+                                      className="flex-1 bg-red-600 hover:bg-red-700 h-10"
+                                    >
+                                      {deleteMealMutation.isPending ? (
+                                        <>
+                                          <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+                                          Excluindo...
+                                        </>
+                                      ) : (
+                                        <>
+                                          <Trash2 className="w-4 h-4 mr-1" />
+                                          Confirmar Exclusão
+                                        </>
+                                      )}
+                                    </Button>
+                                  </div>
+                                </motion.div>
+                              )}
+
                               {/* Edit Form */}
-                              {isEditing && isToday && (
+                              {isEditing && isToday && !isDeleting && (
                                 <motion.div
                                   initial={{ opacity: 0, y: -10 }}
                                   animate={{ opacity: 1, y: 0 }}
@@ -377,7 +449,7 @@ Seja preciso com base na quantidade informada.
                               )}
 
                               {/* Notes */}
-                              {meal.notes && (
+                              {meal.notes && !isEditing && !isDeleting && (
                                 <div className="p-2 bg-slate-900/50 rounded">
                                   <p className="text-slate-400 text-xs">Observações:</p>
                                   <p className="text-slate-300 text-sm">{meal.notes}</p>
