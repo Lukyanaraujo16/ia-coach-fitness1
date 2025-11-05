@@ -48,11 +48,11 @@ export default function Layout({ children, currentPageName }) {
     });
   }
 
-  // Esconder navegação durante execução de treino
-  const isWorkoutExecution = currentPageName === "WorkoutExecution";
+  // Esconder navegação durante execução de treino, onboarding e setup
+  const hideNavigation = ["WorkoutExecution", "Onboarding", "NutritionSetup", "WorkoutSetup"].includes(currentPageName);
 
   return (
-    <div className={`min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 ${!isWorkoutExecution ? 'pb-20' : ''}`}>
+    <div className={`min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 ${!hideNavigation ? 'pb-20' : ''}`}>
       <style>{`
         :root {
           --primary: #1E40AF;
@@ -62,8 +62,8 @@ export default function Layout({ children, currentPageName }) {
         }
       `}</style>
 
-      {/* Header - Escondido durante execução de treino */}
-      {!isWorkoutExecution && (
+      {/* Header - Escondido durante execução de treino, onboarding e setup */}
+      {!hideNavigation && (
         <header className="fixed top-0 left-0 right-0 z-50 bg-slate-950/80 backdrop-blur-xl border-b border-slate-800/50">
           <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -83,12 +83,12 @@ export default function Layout({ children, currentPageName }) {
       )}
 
       {/* Main Content */}
-      <main className={!isWorkoutExecution ? 'pt-20 max-w-7xl mx-auto px-4' : ''}>
+      <main className={!hideNavigation ? 'pt-20 max-w-7xl mx-auto px-4' : ''}>
         {children}
       </main>
 
-      {/* Bottom Navigation - Escondido durante execução de treino */}
-      {!isWorkoutExecution && (
+      {/* Bottom Navigation - Escondido durante execução de treino, onboarding e setup */}
+      {!hideNavigation && (
         <nav className="fixed bottom-0 left-0 right-0 bg-slate-950/95 backdrop-blur-xl border-t border-slate-800/50 z-50">
           <div className="max-w-7xl mx-auto">
             <div className="flex overflow-x-auto scrollbar-hide py-2 px-2">

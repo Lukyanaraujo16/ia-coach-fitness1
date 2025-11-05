@@ -55,11 +55,73 @@ export default function WorkoutSetup() {
       };
 
       const daysOfWeek = user.weekly_goal;
+      const userGender = user.gender || 'male';
+
+      // Divisões específicas por gênero
+      const maleDivisions = {
+        3: `- Dia 1: Peito + Ombros + Tríceps
+- Dia 2: Costas + Bíceps
+- Dia 3: Pernas + Posteriores`,
+        4: `- Dia 1: Peito + Tríceps + Ombros
+- Dia 2: Costas + Bíceps
+- Dia 3: Pernas (Quadríceps)
+- Dia 4: Posteriores (Posterior de coxa, Glúteos)`,
+        5: `- Dia 1: Peito + Tríceps
+- Dia 2: Pernas (Quadríceps)
+- Dia 3: Costas + Bíceps
+- Dia 4: Posteriores (Posterior de coxa, Glúteos)
+- Dia 5: Ombros + Bíceps + Tríceps`,
+        6: `- Dia 1: Peito
+- Dia 2: Costas
+- Dia 3: Pernas (Quadríceps)
+- Dia 4: Ombros
+- Dia 5: Braços (Bíceps e Tríceps)
+- Dia 6: Posteriores (Posterior de coxa, Glúteos)`,
+        7: `- Dia 1: Peito
+- Dia 2: Costas
+- Dia 3: Pernas (Quadríceps)
+- Dia 4: Ombros
+- Dia 5: Braços (Bíceps e Tríceps)
+- Dia 6: Posteriores (Posterior de coxa, Glúteos)
+- Dia 7: Core e Cardio`
+      };
+
+      const femaleDivisions = {
+        3: `- Dia 1: Peito + Ombros + Pernas
+- Dia 2: Costas + Posteriores
+- Dia 3: Bíceps + Tríceps + Pernas + Posteriores`,
+        4: `- Dia 1: Peito + Ombros + Pernas
+- Dia 2: Costas + Posteriores
+- Dia 3: Bíceps
+- Dia 4: Pernas + Posteriores`,
+        5: `- Dia 1: Pernas + Ombros
+- Dia 2: Peito + Tríceps
+- Dia 3: Posteriores
+- Dia 4: Costas + Bíceps
+- Dia 5: Pernas + Posteriores`,
+        6: `- Dia 1: Pernas + Ombros
+- Dia 2: Peito + Tríceps
+- Dia 3: Posteriores
+- Dia 4: Costas + Bíceps
+- Dia 5: Pernas
+- Dia 6: Posteriores (Glúteos com foco)`,
+        7: `- Dia 1: Pernas + Ombros
+- Dia 2: Peito + Tríceps
+- Dia 3: Posteriores
+- Dia 4: Costas + Bíceps
+- Dia 5: Pernas
+- Dia 6: Posteriores (Glúteos com foco)
+- Dia 7: Core e Cardio`
+      };
+
+      const divisions = userGender === 'female' ? femaleDivisions : maleDivisions;
+      const divisionGuide = divisions[daysOfWeek] || divisions[5]; // Fallback to 5 days if division is not explicitly defined for daysOfWeek
 
       const prompt = `Você é um personal trainer experiente criando um programa de treino COMPLETO para um novo aluno.
 
 PERFIL DO ALUNO:
 - Nome: ${user.full_name}
+- Gênero: ${userGender === 'male' ? 'Masculino' : userGender === 'female' ? 'Feminino' : 'Outro'}
 - Objetivo: ${goalLabels[user.fitness_goal]}
 - Nível: ${levelLabels[user.fitness_level]}
 - Local: ${locationLabels[user.training_location]}
@@ -79,47 +141,19 @@ Crie um programa de treino COMPLETO E ESTRUTURADO com:
 6. Notas técnicas para execução correta
 7. Duração estimada de cada treino (45-60 minutos)
 
-DISTRIBUIÇÃO DOS DIAS (use como guia):
-${daysOfWeek === 3 ? `
-- Dia 1: Corpo Inteiro (Push - Peito, Ombros, Tríceps)
-- Dia 2: Corpo Inteiro (Pull - Costas, Bíceps)
-- Dia 3: Pernas e Core completo
-` : daysOfWeek === 4 ? `
-- Dia 1: Peito e Tríceps
-- Dia 2: Costas e Bíceps
-- Dia 3: Pernas
-- Dia 4: Ombros e Core
-` : daysOfWeek === 5 ? `
-- Dia 1: Peito
-- Dia 2: Costas
-- Dia 3: Pernas
-- Dia 4: Ombros
-- Dia 5: Braços e Core
-` : daysOfWeek === 6 ? `
-- Dia 1: Peito
-- Dia 2: Costas
-- Dia 3: Pernas (Quadríceps)
-- Dia 4: Ombros
-- Dia 5: Braços
-- Dia 6: Pernas (Posteriores) e Core
-` : `
-- Dia 1: Peito e Tríceps
-- Dia 2: Costas
-- Dia 3: Pernas (Quadríceps)
-- Dia 4: Ombros
-- Dia 5: Braços
-- Dia 6: Pernas (Posteriores)
-- Dia 7: Core e Cardio
-`}
+DISTRIBUIÇÃO DOS DIAS (use EXATAMENTE esta divisão para ${userGender === 'female' ? 'MULHERES' : 'HOMENS'}):
+${divisionGuide}
 
 REGRAS OBRIGATÓRIAS:
 - Use exercícios apropriados para ${user.training_location}
 - Considere o nível ${user.fitness_level} nas cargas e volumes
 - Foque no objetivo de ${user.fitness_goal}
+${userGender === 'female' ? '- Para mulheres, dê ATENÇÃO ESPECIAL a pernas e glúteos, com exercícios variados' : '- Para homens, equilibre bem entre push/pull e garanta volume adequado'}
 - Seja ESPECÍFICO nos exercícios (nome exato, grupo muscular)
 - Varie os exercícios entre os dias
 - Inclua aquecimento quando necessário
-- O array "days" DEVE ter EXATAMENTE ${daysOfWeek} elementos`;
+- O array "days" DEVE ter EXATAMENTE ${daysOfWeek} elementos
+- RESPEITE a divisão de grupos musculares especificada acima`;
 
       const response = await base44.integrations.Core.InvokeLLM({
         prompt: prompt,
@@ -189,7 +223,7 @@ REGRAS OBRIGATÓRIAS:
 
       // Validar que temos o número correto de dias
       if (!response.days || response.days.length !== daysOfWeek) {
-        throw new Error(`A IA gerou ${response.days?.length || 0} dias, mas deveria gerar ${daysOfWeek}`);
+        throw new Error(`IA gerou ${response.days?.length || 0} dias, mas deveria gerar ${daysOfWeek}`);
       }
 
       setGeneratedWorkout(response);
