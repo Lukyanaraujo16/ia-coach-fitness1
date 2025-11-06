@@ -18,6 +18,7 @@ export default function ExerciseFormModal({ exercise, onClose }) {
     category: 'full_body',
     difficulty: 'beginner',
     equipment: 'bodyweight',
+    video_url: '', // Added video_url field
     is_premium: false,
   });
 
@@ -29,6 +30,7 @@ export default function ExerciseFormModal({ exercise, onClose }) {
         category: exercise.category || 'full_body',
         difficulty: exercise.difficulty || 'beginner',
         equipment: exercise.equipment || 'bodyweight',
+        video_url: exercise.video_url || '', // Added video_url to existing exercise data
         is_premium: exercise.is_premium || false,
       });
     }
@@ -84,6 +86,21 @@ export default function ExerciseFormModal({ exercise, onClose }) {
                 className="bg-slate-800 border-slate-700 text-white h-24"
               />
             </div>
+
+            {/* New Video URL field */}
+            <div className="space-y-2">
+              <Label className="text-slate-300">URL do Vídeo</Label>
+              <Input
+                value={formData.video_url}
+                onChange={(e) => setFormData({ ...formData, video_url: e.target.value })}
+                className="bg-slate-800 border-slate-700 text-white"
+                placeholder="https://youtube.com/... ou https://vimeo.com/..."
+              />
+              <p className="text-slate-500 text-xs">
+                Cole a URL de um vídeo demonstrativo do YouTube, Vimeo, etc.
+              </p>
+            </div>
+            {/* End New Video URL field */}
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
