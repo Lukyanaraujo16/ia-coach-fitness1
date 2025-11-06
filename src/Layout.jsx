@@ -10,20 +10,6 @@ export default function Layout({ children, currentPageName }) {
   const [user, setUser] = useState(null);
   const [showMenu, setShowMenu] = useState(false);
 
-  useEffect(() => {
-  const loadUser = async () => {
-    // Se a página atual for a "Welcome", não tenta carregar usuário
-    if (currentPageName === "Welcome") return;
-
-    try {
-      const currentUser = await base44.auth.me();
-      setUser(currentUser);
-    } catch (error) {
-      console.error("Error loading user:", error);
-    }
-  };
-  loadUser();
-}, [currentPageName]);
 
   const navigationItems = [
     { name: "Home", path: createPageUrl("Home"), icon: Home },
