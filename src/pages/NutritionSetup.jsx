@@ -143,9 +143,9 @@ export default function NutritionSetup() {
       } else { // gain_muscle
         // Ganho de massa
         if (gender === 'female') {
-          calorieGoal = (weight * 23 + 300) * 1.55;
+          calorieGoal = weight * 23 + 300;
         } else {
-          calorieGoal = (weight * 25 + 300) * 1.55;
+          calorieGoal = weight * 25 + 300;
         }
         proteinPercentage = 40;
         carbsPercentage = 40;
