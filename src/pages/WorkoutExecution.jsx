@@ -8,7 +8,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft, Play, Pause, SkipForward, CheckCircle, Plus, Minus, AlertTriangle, Trophy, Clock, Zap, X, Weight } from "lucide-react";
+import { ArrowLeft, Play, Pause, SkipForward, CheckCircle, Plus, Minus, AlertTriangle, Trophy, Clock, Zap, X, Weight, Video } from "lucide-react";
 import { motion } from "framer-motion";
 
 export default function WorkoutExecution() {
@@ -30,6 +30,7 @@ export default function WorkoutExecution() {
   const [caloriesInput, setCaloriesInput] = useState("");
   const [showSkipWarning, setShowSkipWarning] = useState(false);
   const [showExitConfirm, setShowExitConfirm] = useState(false);
+  const [showVideoModal, setShowVideoModal] = useState(false); // New state variable
   const [user, setUser] = useState(null);
   const [startTime, setStartTime] = useState(null);
   const [endTime, setEndTime] = useState(null);
@@ -231,6 +232,41 @@ export default function WorkoutExecution() {
 
   const currentExerciseWeight = exerciseWeights[currentExerciseIndex] || "";
 
+  // Video Modal
+  if (showVideoModal && currentExercise?.video_url) {
+    return (
+      <div className="fixed inset-0 bg-black/95 backdrop-blur-sm z-[80] flex items-center justify-center p-4">
+        <div className="w-full max-w-4xl">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-white text-xl font-bold">{currentExercise.exercise_name}</h3>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setShowVideoModal(false)}
+              className="text-white hover:bg-white/10"
+            >
+              <X className="w-6 h-6" />
+            </Button>
+          </div>
+          <div className="relative pt-[56.25%] bg-slate-900 rounded-xl overflow-hidden">
+            <iframe
+              src={currentExercise.video_url}
+              className="absolute inset-0 w-full h-full"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+              title="Exercise Video"
+            />
+          </div>
+          {currentExercise.notes && (
+            <div className="mt-4 p-4 bg-slate-900/50 rounded-lg border border-slate-800">
+              <p className="text-slate-300 text-sm">💡 {currentExercise.notes}</p>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
   // Exit Confirmation Modal
   if (showExitConfirm) {
     return (
@@ -413,7 +449,18 @@ export default function WorkoutExecution() {
               Exercício {currentExerciseIndex + 1}/{currentDay.exercises?.length || 0}
             </p>
           </div>
-          <div className="w-8" />
+          {currentExercise?.video_url ? (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setShowVideoModal(true)}
+              className="text-blue-400 hover:text-blue-300 h-8 w-8"
+            >
+              <Video className="w-5 h-5" />
+            </Button>
+          ) : (
+            <div className="w-8" /> // Placeholder to maintain spacing
+          )}
         </div>
       </div>
 
