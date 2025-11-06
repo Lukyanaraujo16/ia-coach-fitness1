@@ -51,6 +51,9 @@ export default function Layout({ children, currentPageName }) {
   // Esconder navegação durante execução de treino, onboarding e setup
   const hideNavigation = ["WorkoutExecution", "Onboarding", "NutritionSetup", "WorkoutSetup"].includes(currentPageName);
 
+  // Esconder link da comunidade se estiver desabilitada
+  const showCommunity = user?.community_enabled !== false;
+
   return (
     <div className={`min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 ${!hideNavigation ? 'pb-20' : ''}`}>
       <style>{`
@@ -92,7 +95,11 @@ export default function Layout({ children, currentPageName }) {
         <nav className="fixed bottom-0 left-0 right-0 bg-slate-950/95 backdrop-blur-xl border-t border-slate-800/50 z-50">
           <div className="max-w-7xl mx-auto">
             <div className="flex overflow-x-auto scrollbar-hide py-2 px-2">
-              {navigationItems.map((item) => {
+              {navigationItems.filter(item => {
+                // Filtrar comunidade se desabilitada
+                if (item.name === "Comunidade" && !showCommunity) return false;
+                return true;
+              }).map((item) => {
                 const isActive = location.pathname === item.path;
                 const Icon = item.icon;
                 return (
