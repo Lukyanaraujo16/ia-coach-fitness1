@@ -32,7 +32,9 @@ export default function WorkoutFormModal({ workout, exercises, onClose }) {
       difficulty: "intermediate",
       training_location: "gym",
       duration_minutes: 60,
+      image_url: "", // Added image_url
       is_premium: false,
+      is_public: true, // Added is_public, default to true
       days: [
         {
           day_number: 1,
@@ -311,15 +313,15 @@ export default function WorkoutFormModal({ workout, exercises, onClose }) {
                   <Textarea
                     value={formData.description}
                     onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                    className="bg-slate-800 border-slate-700 text-white min-h-20 text-base"
+                    className="bg-slate-800 border-slate-700 text-white h-24 text-base" // Updated height
                     placeholder="Descreva o treino..."
                   />
                 </div>
 
-                <div className="grid grid-cols-1 gap-4">
+                <div className="grid grid-cols-2 gap-4"> {/* Changed to grid layout */}
                   <div className="space-y-2">
                     <Label className="text-slate-300 text-sm">Categoria</Label>
-                    <Select value={formData.category} onValueChange={(v) => setFormData({ ...formData, category: v })}>
+                    <Select value={formData.category} onValueChange={(value) => setFormData({ ...formData, category: value })}>
                       <SelectTrigger className="bg-slate-800 border-slate-700 text-white h-12">
                         <SelectValue />
                       </SelectTrigger>
@@ -335,7 +337,7 @@ export default function WorkoutFormModal({ workout, exercises, onClose }) {
 
                   <div className="space-y-2">
                     <Label className="text-slate-300 text-sm">Dificuldade</Label>
-                    <Select value={formData.difficulty} onValueChange={(v) => setFormData({ ...formData, difficulty: v })}>
+                    <Select value={formData.difficulty} onValueChange={(value) => setFormData({ ...formData, difficulty: value })}>
                       <SelectTrigger className="bg-slate-800 border-slate-700 text-white h-12">
                         <SelectValue />
                       </SelectTrigger>
@@ -346,10 +348,12 @@ export default function WorkoutFormModal({ workout, exercises, onClose }) {
                       </SelectContent>
                     </Select>
                   </div>
+                </div>
 
+                <div className="grid grid-cols-2 gap-4"> {/* Changed to grid layout */}
                   <div className="space-y-2">
                     <Label className="text-slate-300 text-sm">Local</Label>
-                    <Select value={formData.training_location} onValueChange={(v) => setFormData({ ...formData, training_location: v })}>
+                    <Select value={formData.training_location} onValueChange={(value) => setFormData({ ...formData, training_location: value })}>
                       <SelectTrigger className="bg-slate-800 border-slate-700 text-white h-12">
                         <SelectValue />
                       </SelectTrigger>
@@ -360,10 +364,8 @@ export default function WorkoutFormModal({ workout, exercises, onClose }) {
                       </SelectContent>
                     </Select>
                   </div>
-                </div>
 
-                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-                  <div className="space-y-2 flex-1 w-full">
+                  <div className="space-y-2">
                     <Label className="text-slate-300 text-sm">Duração (min)</Label>
                     <Input
                       type="number"
@@ -372,26 +374,52 @@ export default function WorkoutFormModal({ workout, exercises, onClose }) {
                       className="bg-slate-800 border-slate-700 text-white h-12"
                     />
                   </div>
-                  <div className="flex items-center gap-2 pt-0 sm:pt-7">
-                    <input
-                      type="checkbox"
-                      id="premium"
-                      checked={formData.is_premium}
-                      onChange={(e) => setFormData({ ...formData, is_premium: e.target.checked })}
-                      className="w-5 h-5"
-                    />
-                    <Label htmlFor="premium" className="text-slate-300">Premium</Label>
-                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-slate-300 text-sm">URL da Imagem</Label> {/* New field */}
+                  <Input
+                    value={formData.image_url}
+                    onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
+                    className="bg-slate-800 border-slate-700 text-white h-12"
+                    placeholder="https://..."
+                  />
+                </div>
+
+                <div className="flex items-center gap-2"> {/* Modified premium checkbox */}
+                  <input
+                    type="checkbox"
+                    id="is_premium"
+                    checked={formData.is_premium}
+                    onChange={(e) => setFormData({ ...formData, is_premium: e.target.checked })}
+                    className="w-4 h-4"
+                  />
+                  <Label htmlFor="is_premium" className="text-slate-300 text-sm">
+                    Conteúdo Premium
+                  </Label>
+                </div>
+
+                <div className="flex items-center gap-2"> {/* New public checkbox */}
+                  <input
+                    type="checkbox"
+                    id="is_public"
+                    checked={formData.is_public !== false}
+                    onChange={(e) => setFormData({ ...formData, is_public: e.target.checked })}
+                    className="w-4 h-4"
+                  />
+                  <Label htmlFor="is_public" className="text-slate-300 text-sm">
+                    Treino Público (visível para todos os usuários)
+                  </Label>
                 </div>
               </div>
 
               {/* Dias do Treino */}
-              <div className="space-y-4">
+              <div className="space-y-3 pt-4 border-t border-slate-800"> {/* Updated styling */}
                 <div className="flex items-center justify-between">
-                  <h3 className="text-white font-semibold text-base">Dias do Treino</h3>
-                  <Button type="button" onClick={addDay} size="sm" className="bg-blue-600 hover:bg-blue-700 h-9">
+                  <Label className="text-slate-300 text-lg">Dias do Treino</Label> {/* Changed from h3 to Label, updated text size and color */}
+                  <Button type="button" onClick={addDay} size="sm" className="bg-blue-600 hover:bg-blue-700 h-9"> {/* Added h-9 for consistency */}
                     <Plus className="w-4 h-4 mr-1" />
-                    Dia
+                    Adicionar Dia
                   </Button>
                 </div>
 
