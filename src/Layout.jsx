@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { Link, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { Home, Dumbbell, TrendingUp, Users, User, Crown, Shield, Apple, Sparkles, Menu, X } from "lucide-react";
+import { Home, Dumbbell, TrendingUp, Users, User, Crown, Shield, Apple, Sparkles, Menu, X, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export default function Layout({ children, currentPageName }) {
@@ -58,6 +58,12 @@ export default function Layout({ children, currentPageName }) {
   // Esconder navegação durante execução de treino, onboarding, setup e landing
   const hideNavigation = ["WorkoutExecution", "Onboarding", "NutritionSetup", "WorkoutSetup", "LandingPage"].includes(currentPageName);
 
+  const isPremium = user?.subscription_status === 'premium';
+
+  const handleLogout = async () => {
+    await base44.auth.logout();
+  };
+
   return (
     <div className={`min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 ${!hideNavigation ? 'pb-20 md:pb-0' : ''}`}>
       <style>{`
@@ -100,12 +106,14 @@ export default function Layout({ children, currentPageName }) {
                     </Link>
                   );
                 })}
-                <Link to={createPageUrl("Subscription")}>
-                  <button className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 text-white rounded-lg text-sm font-medium transition-all duration-300 shadow-lg shadow-blue-900/50 ml-2">
-                    <Crown className="w-4 h-4" />
-                    Premium
-                  </button>
-                </Link>
+                {!isPremium && (
+                  <Link to={createPageUrl("Subscription")}>
+                    <button className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 text-white rounded-lg text-sm font-medium transition-all duration-300 shadow-lg shadow-blue-900/50 ml-2">
+                      <Crown className="w-4 h-4" />
+                      Premium
+                    </button>
+                  </Link>
+                )}
               </nav>
 
               {/* Mobile Menu Button */}
@@ -130,7 +138,7 @@ export default function Layout({ children, currentPageName }) {
       {/* Mobile Menu Overlay */}
       {showMenu && !hideNavigation && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60] md:hidden" onClick={() => setShowMenu(false)}>
-          <div className="fixed inset-y-0 right-0 w-64 bg-slate-900 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+          <div className="fixed inset-y-0 right-0 w-64 bg-slate-900 shadow-2xl flex flex-col" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between p-4 border-b border-slate-800">
               <h2 className="text-white font-semibold">Menu</h2>
               <Button
@@ -142,7 +150,8 @@ export default function Layout({ children, currentPageName }) {
                 <X className="w-5 h-5" />
               </Button>
             </div>
-            <nav className="p-4 space-y-2">
+            
+            <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
               {navigationItems.map((item) => {
                 const isActive = location.pathname === item.path;
                 const Icon = item.icon;
@@ -162,15 +171,47 @@ export default function Layout({ children, currentPageName }) {
                   </Link>
                 );
               })}
+              
+              {/* Meus Treinos */}
               <Link
-                to={createPageUrl("Subscription")}
+                to={createPageUrl("MyWorkouts")}
                 onClick={() => setShowMenu(false)}
-                className="flex items-center gap-3 px-4 py-3 rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 text-white"
+                className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
+                  location.pathname === createPageUrl("MyWorkouts")
+                    ? "bg-blue-600 text-white"
+                    : "text-slate-400 hover:text-white hover:bg-slate-800"
+                }`}
               >
-                <Crown className="w-5 h-5" />
-                <span className="font-medium">Assinar Premium</span>
+                <Dumbbell className="w-5 h-5" />
+                <span className="font-medium">Meus Treinos</span>
               </Link>
+
+              {/* Assinar Premium - só aparece se não for premium */}
+              {!isPremium && (
+                <Link
+                  to={createPageUrl("Subscription")}
+                  onClick={() => setShowMenu(false)}
+                  className="flex items-center gap-3 px-4 py-3 rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 text-white"
+                >
+                  <Crown className="w-5 h-5" />
+                  <span className="font-medium">Assinar Premium</span>
+                </Link>
+              )}
             </nav>
+
+            {/* Sair - fixo no bottom */}
+            <div className="p-4 border-t border-slate-800">
+              <button
+                onClick={() => {
+                  setShowMenu(false);
+                  handleLogout();
+                }}
+                className="flex items-center gap-3 px-4 py-3 rounded-xl text-red-400 hover:text-red-300 hover:bg-red-900/20 w-full transition-all"
+              >
+                <LogOut className="w-5 h-5" />
+                <span className="font-medium">Sair da Conta</span>
+              </button>
+            </div>
           </div>
         </div>
       )}
