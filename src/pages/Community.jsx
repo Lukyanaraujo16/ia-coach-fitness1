@@ -2,7 +2,8 @@ import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Plus, Lock } from "lucide-react";
 import CreatePostForm from "../components/community/CreatePostForm";
 import PostCard from "../components/community/PostCard";
 
@@ -92,6 +93,29 @@ export default function Community() {
       likedBy: post.liked_by || [],
     });
   };
+
+  // Verificar se comunidade está habilitada
+  const communityEnabled = user?.community_enabled !== false;
+
+  if (!communityEnabled) {
+    return (
+      <div className="py-6">
+        <Card className="bg-slate-900/50 border-slate-800">
+          <CardContent className="py-24 text-center">
+            <div className="w-20 h-20 bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-6">
+              <Lock className="w-10 h-10 text-slate-600" />
+            </div>
+            <h3 className="text-2xl font-bold text-white mb-3">
+              Comunidade Temporariamente Desativada
+            </h3>
+            <p className="text-slate-400 max-w-md mx-auto">
+              A comunidade está em manutenção no momento. Volte em breve!
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="py-6 space-y-6">
