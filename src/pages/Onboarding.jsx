@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useNavigate } from "react-router-dom";
@@ -8,12 +7,12 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronRight, Target, Home, TrendingUp, User as UserIcon, Users } from "lucide-react";
+import { ChevronRight, Target, TrendingUp, User as UserIcon, Users, Phone } from "lucide-react";
 
 const STEPS = [
   {
     id: "personal_info",
-    title: "Suas Informações",
+    title: "Informações",
     icon: UserIcon,
     type: "form",
   },
@@ -38,16 +37,6 @@ const STEPS = [
     ],
   },
   {
-    id: "location",
-    title: "Onde você treina?",
-    icon: Home,
-    options: [
-      { value: "gym", label: "Academia", emoji: "🏋️" },
-      { value: "home", label: "Em Casa", emoji: "🏠" },
-      { value: "both", label: "Ambos", emoji: "🔄" },
-    ],
-  },
-  {
     id: "level",
     title: "Qual seu nível?",
     icon: TrendingUp,
@@ -64,13 +53,13 @@ export default function Onboarding() {
   const [currentStep, setCurrentStep] = useState(0);
   const [answers, setAnswers] = useState({
     full_name: "",
+    whatsapp: "",
     current_weight: "",
     height: "",
     weight_goal: "",
     weekly_goal: "3",
     gender: "",
     goal: "",
-    location: "",
     level: "",
   });
   const [isLoading, setIsLoading] = useState(false);
@@ -82,12 +71,10 @@ export default function Onboarding() {
         const currentUser = await base44.auth.me();
         setUser(currentUser);
         
-        // Se já tem nome, usa como padrão mas ainda permite editar
         if (currentUser.full_name) {
           setAnswers(prev => ({ ...prev, full_name: currentUser.full_name }));
         }
         
-        // Se já completou onboarding, redireciona para próxima etapa
         if (currentUser.onboarding_completed) {
           if (!currentUser.nutrition_setup_completed) {
             navigate(createPageUrl("NutritionSetup"));
@@ -115,26 +102,34 @@ export default function Onboarding() {
     if (currentStep < STEPS.length - 1) {
       setCurrentStep(currentStep + 1);
     } else {
-      handleComplete();
+      handleComplete(false);
     }
   };
 
-  const handleComplete = async () => {
+  const handleComplete = async (skipSetup) => {
     setIsLoading(true);
     try {
       await base44.auth.updateMe({
         full_name: answers.full_name.trim(),
+        whatsapp: answers.whatsapp.trim(),
         current_weight: answers.current_weight ? parseFloat(answers.current_weight) : undefined,
         height: answers.height ? parseFloat(answers.height) : undefined,
         weight_goal: answers.weight_goal ? parseFloat(answers.weight_goal) : undefined,
         weekly_goal: parseInt(answers.weekly_goal),
         gender: answers.gender,
         fitness_goal: answers.goal,
-        training_location: answers.location,
+        training_location: "gym",
         fitness_level: answers.level,
         onboarding_completed: true,
+        nutrition_setup_completed: skipSetup,
+        workout_setup_completed: skipSetup,
       });
-      navigate(createPageUrl("NutritionSetup"));
+      
+      if (skipSetup) {
+        navigate(createPageUrl("Home"));
+      } else {
+        navigate(createPageUrl("NutritionSetup"));
+      }
     } catch (error) {
       console.error("Error saving onboarding:", error);
       alert("Erro ao salvar suas informações. Tente novamente.");
@@ -145,7 +140,7 @@ export default function Onboarding() {
 
   const canProceed = () => {
     if (currentStepData.type === "form") {
-      return answers.full_name.trim() && answers.current_weight && answers.height && answers.weight_goal && answers.weekly_goal;
+      return answers.full_name.trim() && answers.whatsapp.trim() && answers.current_weight && answers.height && answers.weight_goal && answers.weekly_goal;
     }
     return answers[currentStepData.id] !== "";
   };
@@ -159,8 +154,8 @@ export default function Onboarding() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 flex flex-col items-center justify-center px-4 py-12">
-      <div className="w-full max-w-md mb-8">
+    <div className="min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 flex flex-col items-center justify-center px-4 py-8">
+      <div className="w-full max-w-md mb-6">
         <div className="flex gap-2">
           {STEPS.map((_, index) => (
             <div
@@ -171,7 +166,7 @@ export default function Onboarding() {
             />
           ))}
         </div>
-        <p className="text-slate-400 text-sm text-center mt-3">
+        <p className="text-slate-400 text-xs text-center mt-2">
           Passo {currentStep + 1} de {STEPS.length}
         </p>
       </div>
@@ -185,124 +180,147 @@ export default function Onboarding() {
           className="w-full max-w-md"
         >
           <Card className="bg-slate-900/50 border-slate-800 backdrop-blur-sm">
-            <CardContent className="p-8">
-              <div className="text-center mb-8">
-                <div className="w-16 h-16 bg-blue-600/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                  <Icon className="w-8 h-8 text-blue-400" />
+            <CardContent className="p-6">
+              <div className="text-center mb-6">
+                <div className="w-14 h-14 bg-blue-600/20 rounded-2xl flex items-center justify-center mx-auto mb-3">
+                  <Icon className="w-7 h-7 text-blue-400" />
                 </div>
-                <h2 className="text-2xl font-bold text-white mb-2">
+                <h2 className="text-xl font-bold text-white mb-1">
                   {currentStepData.title}
                 </h2>
-                <p className="text-slate-400">
+                <p className="text-slate-400 text-sm">
                   {currentStepData.type === "form" 
-                    ? "Preencha seus dados para personalizar sua experiência"
-                    : "Escolha a opção que melhor descreve você"}
+                    ? "Preencha seus dados"
+                    : "Escolha uma opção"}
                 </p>
               </div>
 
               {currentStepData.type === "form" ? (
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <Label className="text-slate-300">Nome Completo *</Label>
+                <div className="space-y-3">
+                  <div className="space-y-1.5">
+                    <Label className="text-slate-300 text-sm">Nome Completo *</Label>
                     <Input
                       value={answers.full_name}
                       onChange={(e) => setAnswers({ ...answers, full_name: e.target.value })}
-                      className="bg-slate-800 border-slate-700 text-white"
-                      placeholder="Digite seu nome completo"
+                      className="bg-slate-800 border-slate-700 text-white h-11"
+                      placeholder="Digite seu nome"
                     />
-                    <p className="text-slate-500 text-xs">
-                      Este será o nome exibido no app
-                    </p>
                   </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label className="text-slate-300">Peso Atual (kg) *</Label>
+                  
+                  <div className="space-y-1.5">
+                    <Label className="text-slate-300 text-sm">WhatsApp *</Label>
+                    <Input
+                      value={answers.whatsapp}
+                      onChange={(e) => setAnswers({ ...answers, whatsapp: e.target.value })}
+                      className="bg-slate-800 border-slate-700 text-white h-11"
+                      placeholder="(11) 99999-9999"
+                    />
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1.5">
+                      <Label className="text-slate-300 text-sm">Peso (kg) *</Label>
                       <Input
                         type="number"
                         step="0.1"
                         value={answers.current_weight}
                         onChange={(e) => setAnswers({ ...answers, current_weight: e.target.value })}
-                        className="bg-slate-800 border-slate-700 text-white"
+                        className="bg-slate-800 border-slate-700 text-white h-11"
                         placeholder="70"
                       />
                     </div>
-                    <div className="space-y-2">
-                      <Label className="text-slate-300">Altura (cm) *</Label>
+                    <div className="space-y-1.5">
+                      <Label className="text-slate-300 text-sm">Altura (cm) *</Label>
                       <Input
                         type="number"
                         value={answers.height}
                         onChange={(e) => setAnswers({ ...answers, height: e.target.value })}
-                        className="bg-slate-800 border-slate-700 text-white"
+                        className="bg-slate-800 border-slate-700 text-white h-11"
                         placeholder="175"
                       />
                     </div>
                   </div>
-                  <div className="space-y-2">
-                    <Label className="text-slate-300">Meta de Peso (kg) *</Label>
+                  
+                  <div className="space-y-1.5">
+                    <Label className="text-slate-300 text-sm">Meta de Peso (kg) *</Label>
                     <Input
                       type="number"
                       step="0.1"
                       value={answers.weight_goal}
                       onChange={(e) => setAnswers({ ...answers, weight_goal: e.target.value })}
-                      className="bg-slate-800 border-slate-700 text-white"
+                      className="bg-slate-800 border-slate-700 text-white h-11"
                       placeholder="65"
                     />
                   </div>
-                  <div className="space-y-2">
-                    <Label className="text-slate-300">Meta Semanal de Treinos *</Label>
+                  
+                  <div className="space-y-1.5">
+                    <Label className="text-slate-300 text-sm">Treinos por Semana *</Label>
                     <Input
                       type="number"
                       min="1"
                       max="7"
                       value={answers.weekly_goal}
                       onChange={(e) => setAnswers({ ...answers, weekly_goal: e.target.value })}
-                      className="bg-slate-800 border-slate-700 text-white"
+                      className="bg-slate-800 border-slate-700 text-white h-11"
                       placeholder="3"
                     />
-                    <p className="text-slate-500 text-xs">
-                      Quantos dias por semana você quer treinar?
-                    </p>
                   </div>
                 </div>
               ) : (
-                <div className="space-y-3">
+                <div className="space-y-2">
                   {currentStepData.options.map((option) => (
                     <motion.button
                       key={option.value}
                       whileHover={{ scale: 1.02 }}
                       whileTap={{ scale: 0.98 }}
                       onClick={() => handleSelect(option.value)}
-                      className={`w-full p-4 rounded-xl border-2 transition-all duration-300 text-left ${
+                      className={`w-full p-3 rounded-xl border-2 transition-all text-left ${
                         answers[currentStepData.id] === option.value
                           ? "border-blue-600 bg-blue-600/20"
                           : "border-slate-800 bg-slate-800/50 hover:border-slate-700"
                       }`}
                     >
                       <div className="flex items-center gap-3">
-                        <span className="text-3xl">{option.emoji}</span>
-                        <span className="text-white font-medium">{option.label}</span>
+                        <span className="text-2xl">{option.emoji}</span>
+                        <span className="text-white font-medium text-sm">{option.label}</span>
                       </div>
                     </motion.button>
                   ))}
                 </div>
               )}
 
-              <Button
-                onClick={handleNext}
-                disabled={!canProceed() || isLoading}
-                className="w-full mt-8 bg-blue-600 hover:bg-blue-700 text-white py-6 text-lg"
-              >
-                {isLoading ? (
-                  "Salvando..."
-                ) : currentStep === STEPS.length - 1 ? (
-                  "Concluir"
-                ) : (
-                  <>
-                    Continuar
-                    <ChevronRight className="w-5 h-5 ml-2" />
-                  </>
+              <div className="mt-6 space-y-2">
+                <Button
+                  onClick={handleNext}
+                  disabled={!canProceed() || isLoading}
+                  className="w-full bg-blue-600 hover:bg-blue-700 text-white h-12 text-base"
+                >
+                  {isLoading ? (
+                    "Salvando..."
+                  ) : currentStep === STEPS.length - 1 ? (
+                    <>
+                      Gerar Dieta e Treino
+                      <ChevronRight className="w-4 h-4 ml-2" />
+                    </>
+                  ) : (
+                    <>
+                      Continuar
+                      <ChevronRight className="w-4 h-4 ml-2" />
+                    </>
+                  )}
+                </Button>
+                
+                {currentStep === STEPS.length - 1 && (
+                  <Button
+                    onClick={() => handleComplete(true)}
+                    disabled={isLoading}
+                    variant="outline"
+                    className="w-full border-slate-700 text-slate-300 h-12 text-base"
+                  >
+                    Pular e Configurar Depois
+                  </Button>
                 )}
-              </Button>
+              </div>
             </CardContent>
           </Card>
         </motion.div>
