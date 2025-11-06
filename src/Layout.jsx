@@ -55,8 +55,8 @@ export default function Layout({ children, currentPageName }) {
     });
   }
 
-  // Esconder navegação durante execução de treino, onboarding e setup (Welcome é a landing page pública)
-  const hideNavigation = ["WorkoutExecution", "Onboarding", "NutritionSetup", "WorkoutSetup", "Welcome"].includes(currentPageName);
+  // Esconder navegação durante execução de treino, onboarding, setup e landing
+  const hideNavigation = ["WorkoutExecution", "Onboarding", "NutritionSetup", "WorkoutSetup", "LandingPage"].includes(currentPageName);
 
   return (
     <div className={`min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 ${!hideNavigation ? 'pb-20 md:pb-0' : ''}`}>

@@ -1,45 +1,13 @@
-
-import React, { useEffect } from "react";
+import React from "react";
 import { base44 } from "@/api/base44Client";
-import { useNavigate } from "react-router-dom";
-import { createPageUrl } from "@/utils";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Check, Crown, Dumbbell, TrendingUp, Users, Apple, Sparkles, ArrowRight } from "lucide-react";
 import { motion } from "framer-motion";
 
 export default function Welcome() {
-  const navigate = useNavigate();
-
-  // Verificar se o usuário já está logado e redirecionar
-  useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        const user = await base44.auth.me();
-        
-        // Se o usuário está autenticado, redirecionar para o fluxo correto
-        if (user) {
-          if (!user.onboarding_completed) {
-            navigate(createPageUrl("Onboarding"));
-          } else if (!user.nutrition_setup_completed) {
-            navigate(createPageUrl("NutritionSetup"));
-          } else if (!user.workout_setup_completed) {
-            navigate(createPageUrl("WorkoutSetup"));
-          } else {
-            navigate(createPageUrl("Home"));
-          }
-        }
-      } catch (error) {
-        // Usuário não autenticado, continuar na landing page
-        console.log("User not authenticated, staying on Welcome page");
-      }
-    };
-    
-    checkAuth();
-  }, [navigate]);
-
   const handleLogin = () => {
-    base44.auth.redirectToLogin(createPageUrl("Welcome"));
+    base44.auth.redirectToLogin();
   };
 
   const features = [

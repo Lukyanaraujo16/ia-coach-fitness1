@@ -34,8 +34,6 @@ export default function Home() {
         }
       } catch (error) {
         console.error("Error loading user:", error);
-        // Se não conseguir carregar o usuário (não autenticado), redireciona para Welcome
-        navigate(createPageUrl("Welcome"));
       }
     };
     loadUser();
