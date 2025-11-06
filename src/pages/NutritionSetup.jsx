@@ -111,39 +111,49 @@ export default function NutritionSetup() {
   const generateNutritionPlan = async () => {
     setGeneratingPlan(true);
     try {
-      // Calcular idade estimada (25 anos se não tiver)
-      const estimatedAge = 25;
-      
-      const bmr = user.gender === 'male'
-        ? 88.362 + (13.397 * user.current_weight) + (4.799 * user.height) - (5.677 * estimatedAge)
-        : 447.593 + (9.247 * user.current_weight) + (3.098 * user.height) - (4.330 * estimatedAge);
-
-      const activityMultiplier = user.fitness_level === 'advanced' ? 1.7 : user.fitness_level === 'intermediate' ? 1.5 : 1.3;
-      const tdee = bmr * activityMultiplier;
-      
-      let calorieGoal = tdee;
-      if (user.fitness_goal === 'lose_weight') {
-        calorieGoal = tdee - 500;
-      } else if (user.fitness_goal === 'gain_muscle') {
-        calorieGoal = tdee + 300;
-      }
-
-      // Definir porcentagens de macros baseado no objetivo
+      // Calcular calorias baseado em gênero e objetivo
+      let calorieGoal;
       let proteinPercentage, carbsPercentage, fatPercentage;
       
-      if (user.fitness_goal === 'lose_weight') {
-        proteinPercentage = 35;
+      const weight = user.current_weight;
+      const gender = user.gender;
+      const goal = user.fitness_goal;
+
+      // Definir calorias e macros baseado em gênero e objetivo
+      if (goal === 'lose_weight') {
+        // Emagrecimento
+        if (gender === 'female') {
+          calorieGoal = weight * 20;
+        } else {
+          calorieGoal = weight * 23;
+        }
+        proteinPercentage = 40;
         carbsPercentage = 35;
-        fatPercentage = 30;
-      } else if (user.fitness_goal === 'gain_muscle') {
-        proteinPercentage = 30;
-        carbsPercentage = 45;
         fatPercentage = 25;
-      } else { // Maintenance
-        proteinPercentage = 30;
+      } else if (goal === 'maintain') {
+        // Manutenção
+        if (gender === 'female') {
+          calorieGoal = weight * 25;
+        } else {
+          calorieGoal = weight * 27;
+        }
+        proteinPercentage = 40;
+        carbsPercentage = 35;
+        fatPercentage = 25;
+      } else { // gain_muscle
+        // Ganho de massa
+        if (gender === 'female') {
+          calorieGoal = (weight * 23 + 300) * 1.55;
+        } else {
+          calorieGoal = (weight * 25 + 300) * 1.55;
+        }
+        proteinPercentage = 40;
         carbsPercentage = 40;
-        fatPercentage = 30;
+        fatPercentage = 20;
       }
+
+      // Arredondar calorias
+      calorieGoal = Math.round(calorieGoal);
 
       const prompt = `Você é um nutricionista experiente criando um plano alimentar COMPLETO para um novo aluno.
 
@@ -154,7 +164,7 @@ INFORMAÇÕES DO ALUNO:
 - Altura: ${user.height}cm
 - Meta de peso: ${user.weight_goal}kg
 - Nível: ${user.fitness_level}
-- Gênero: ${user.gender}
+- Gênero: ${user.gender === 'male' ? 'Masculino' : user.gender === 'female' ? 'Feminino' : 'Outro'}
 
 PREFERÊNCIAS ALIMENTARES:
 ${formData.dietary_preferences.length > 0 ? '- Dietas: ' + formData.dietary_preferences.join(', ') : '- Sem restrições de dieta'}
@@ -163,7 +173,7 @@ ${formData.disliked_foods.length > 0 ? '- Não gosta: ' + formData.disliked_food
 - Refeições/dia: ${formData.meals_per_day}
 
 METAS CALCULADAS:
-- Calorias diárias: ${Math.round(calorieGoal)} kcal
+- Calorias diárias: ${calorieGoal} kcal
 - Proteínas: ${proteinPercentage}%
 - Carboidratos: ${carbsPercentage}%
 - Gorduras: ${fatPercentage}%
@@ -192,9 +202,9 @@ Use ingredientes BRASILEIROS e acessíveis.`;
             macros: {
               type: "object",
               properties: {
-                protein_percentage: { type: "number", minimum: 20, maximum: 40 },
-                carbs_percentage: { type: "number", minimum: 25, maximum: 55 },
-                fat_percentage: { type: "number", minimum: 20, maximum: 35 }
+                protein_percentage: { type: "number", minimum: 20, maximum: 50 },
+                carbs_percentage: { type: "number", minimum: 20, maximum: 55 },
+                fat_percentage: { type: "number", minimum: 15, maximum: 35 }
               },
               required: ["protein_percentage", "carbs_percentage", "fat_percentage"]
             },
@@ -251,16 +261,11 @@ Use ingredientes BRASILEIROS e acessíveis.`;
         }
       });
 
-      // Validar que os macros somam aproximadamente 100%
-      const macrosSum = response.macros.protein_percentage + response.macros.carbs_percentage + response.macros.fat_percentage;
-      if (Math.abs(macrosSum - 100) > 5) {
-        console.warn("Ajustando macros para somar 100%");
-        // Ajustar proporcionalmente
-        const factor = 100 / macrosSum;
-        response.macros.protein_percentage = Math.round(response.macros.protein_percentage * factor);
-        response.macros.carbs_percentage = Math.round(response.macros.carbs_percentage * factor);
-        response.macros.fat_percentage = 100 - response.macros.protein_percentage - response.macros.carbs_percentage;
-      }
+      // Sobrescrever com os valores calculados
+      response.daily_calories = calorieGoal;
+      response.macros.protein_percentage = proteinPercentage;
+      response.macros.carbs_percentage = carbsPercentage;
+      response.macros.fat_percentage = fatPercentage;
 
       // Validar que temos todas as refeições
       if (!response.meal_timing || response.meal_timing.length !== formData.meals_per_day) {
