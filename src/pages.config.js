@@ -14,7 +14,6 @@ import Nutrition from './pages/Nutrition';
 import AICoach from './pages/AICoach';
 import NutritionSetup from './pages/NutritionSetup';
 import WorkoutSetup from './pages/WorkoutSetup';
-import LandingPage from './pages/LandingPage';
 import MyWorkouts from './pages/MyWorkouts';
 import Layout from './Layout.jsx';
 
@@ -36,7 +35,6 @@ export const PAGES = {
     "AICoach": AICoach,
     "NutritionSetup": NutritionSetup,
     "WorkoutSetup": WorkoutSetup,
-    "LandingPage": LandingPage,
     "MyWorkouts": MyWorkouts,
 }
 
