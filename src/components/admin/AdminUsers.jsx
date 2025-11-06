@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -7,7 +6,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search, Crown, User, Trash2, Shield } from "lucide-react";
+import { Label } from "@/components/ui/label";
+import { Search, Crown, User, Trash2, Edit2, X, Save, Power, PowerOff } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -17,12 +17,15 @@ import {
 
 export default function AdminUsers({ users = [] }) {
   const [searchQuery, setSearchQuery] = useState("");
+  const [editingUser, setEditingUser] = useState(null);
+  const [editForm, setEditForm] = useState({});
   const queryClient = useQueryClient();
 
   const updateUserMutation = useMutation({
     mutationFn: ({ userId, data }) => base44.entities.User.update(userId, data),
     onSuccess: () => {
       queryClient.invalidateQueries(['all-users']);
+      setEditingUser(null);
     },
   });
 
@@ -41,10 +44,55 @@ export default function AdminUsers({ users = [] }) {
     });
   };
 
+  const handleToggleCommunity = (value) => {
+    // Atualizar para TODOS os usuários
+    users.forEach(user => {
+      updateUserMutation.mutate({
+        userId: user.id,
+        data: { community_enabled: value },
+      });
+    });
+  };
+
   const handleDeleteUser = (userId) => {
     if (confirm('Tem certeza que deseja excluir este usuário?')) {
       deleteUserMutation.mutate(userId);
     }
+  };
+
+  const handleEditUser = (user) => {
+    setEditingUser(user.id);
+    setEditForm({
+      full_name: user.full_name || '',
+      whatsapp: user.whatsapp || '',
+      email: user.email || '',
+      current_weight: user.current_weight || '',
+      height: user.height || '',
+      weight_goal: user.weight_goal || '',
+      weekly_goal: user.weekly_goal || 3,
+      gender: user.gender || 'male',
+      fitness_goal: user.fitness_goal || 'maintain',
+      fitness_level: user.fitness_level || 'beginner',
+    });
+  };
+
+  const handleSaveEdit = () => {
+    if (!editingUser) return;
+    
+    updateUserMutation.mutate({
+      userId: editingUser,
+      data: {
+        full_name: editForm.full_name,
+        whatsapp: editForm.whatsapp,
+        current_weight: parseFloat(editForm.current_weight) || undefined,
+        height: parseFloat(editForm.height) || undefined,
+        weight_goal: parseFloat(editForm.weight_goal) || undefined,
+        weekly_goal: parseInt(editForm.weekly_goal) || 3,
+        gender: editForm.gender,
+        fitness_goal: editForm.fitness_goal,
+        fitness_level: editForm.fitness_level,
+      },
+    });
   };
 
   const filteredUsers = users.filter(user => 
@@ -52,8 +100,38 @@ export default function AdminUsers({ users = [] }) {
     user.full_name?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  const communityEnabled = users.length > 0 ? users[0]?.community_enabled !== false : true;
+
   return (
     <div className="space-y-4">
+      {/* Community Toggle */}
+      <Card className="bg-gradient-to-br from-purple-900/30 to-blue-900/20 border-purple-700/50">
+        <CardContent className="p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-white font-semibold mb-1">Comunidade Global</h3>
+              <p className="text-slate-400 text-sm">Habilitar ou desabilitar para todos os usuários</p>
+            </div>
+            <Button
+              onClick={() => handleToggleCommunity(!communityEnabled)}
+              className={communityEnabled ? "bg-green-600 hover:bg-green-700" : "bg-red-600 hover:bg-red-700"}
+            >
+              {communityEnabled ? (
+                <>
+                  <Power className="w-4 h-4 mr-2" />
+                  Ativada
+                </>
+              ) : (
+                <>
+                  <PowerOff className="w-4 h-4 mr-2" />
+                  Desativada
+                </>
+              )}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
       <Card className="bg-slate-900/50 border-slate-800">
         <CardHeader>
           <div className="flex items-center justify-between">
@@ -76,9 +154,8 @@ export default function AdminUsers({ users = [] }) {
                 <TableRow className="border-slate-800">
                   <TableHead className="text-slate-400">Usuário</TableHead>
                   <TableHead className="text-slate-400">Email</TableHead>
+                  <TableHead className="text-slate-400">WhatsApp</TableHead>
                   <TableHead className="text-slate-400">Plano</TableHead>
-                  <TableHead className="text-slate-400">Nível</TableHead>
-                  <TableHead className="text-slate-400">Cadastro</TableHead>
                   <TableHead className="text-slate-400">Ações</TableHead>
                 </TableRow>
               </TableHeader>
@@ -96,6 +173,7 @@ export default function AdminUsers({ users = [] }) {
                       </div>
                     </TableCell>
                     <TableCell className="text-slate-300">{user.email}</TableCell>
+                    <TableCell className="text-slate-300">{user.whatsapp || '-'}</TableCell>
                     <TableCell>
                       {user.subscription_status === 'premium' ? (
                         <Badge className="bg-yellow-500/20 text-yellow-400 border-yellow-500/30">
@@ -109,40 +187,40 @@ export default function AdminUsers({ users = [] }) {
                       )}
                     </TableCell>
                     <TableCell>
-                      <Badge variant="outline" className="text-slate-400 border-slate-700 capitalize">
-                        {user.fitness_level === 'beginner' ? 'Iniciante' : 
-                         user.fitness_level === 'intermediate' ? 'Intermediário' : 
-                         user.fitness_level === 'advanced' ? 'Avançado' : 'N/A'}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-slate-400 text-sm">
-                      {new Date(user.created_date).toLocaleDateString('pt-BR')}
-                    </TableCell>
-                    <TableCell>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            className="bg-slate-800 border border-slate-700 text-slate-200 hover:bg-slate-700 hover:text-white"
-                          >
-                            Ações
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent>
-                          <DropdownMenuItem onClick={() => handleTogglePremium(user)}>
-                            <Crown className="w-4 h-4 mr-2" />
-                            {user.subscription_status === 'premium' ? 'Remover Premium' : 'Tornar Premium'}
-                          </DropdownMenuItem>
-                          <DropdownMenuItem 
-                            onClick={() => handleDeleteUser(user.id)}
-                            className="text-red-400"
-                          >
-                            <Trash2 className="w-4 h-4 mr-2" />
-                            Excluir Usuário
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                      <div className="flex gap-2">
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => handleEditUser(user)}
+                          className="text-blue-400 hover:text-blue-300 hover:bg-blue-900/20"
+                        >
+                          <Edit2 className="w-4 h-4" />
+                        </Button>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              className="text-slate-300 hover:bg-slate-800"
+                            >
+                              •••
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent>
+                            <DropdownMenuItem onClick={() => handleTogglePremium(user)}>
+                              <Crown className="w-4 h-4 mr-2" />
+                              {user.subscription_status === 'premium' ? 'Remover Premium' : 'Tornar Premium'}
+                            </DropdownMenuItem>
+                            <DropdownMenuItem 
+                              onClick={() => handleDeleteUser(user.id)}
+                              className="text-red-400"
+                            >
+                              <Trash2 className="w-4 h-4 mr-2" />
+                              Excluir Usuário
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -151,6 +229,143 @@ export default function AdminUsers({ users = [] }) {
           </div>
         </CardContent>
       </Card>
+
+      {/* Edit User Modal */}
+      {editingUser && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <Card className="bg-slate-900 border-slate-800 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <CardHeader className="border-b border-slate-800">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-white">Editar Usuário</CardTitle>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setEditingUser(null)}
+                  className="text-slate-400"
+                >
+                  <X className="w-5 h-5" />
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent className="p-6 space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label className="text-slate-300">Nome Completo</Label>
+                  <Input
+                    value={editForm.full_name}
+                    onChange={(e) => setEditForm({...editForm, full_name: e.target.value})}
+                    className="bg-slate-800 border-slate-700 text-white"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-slate-300">WhatsApp</Label>
+                  <Input
+                    value={editForm.whatsapp}
+                    onChange={(e) => setEditForm({...editForm, whatsapp: e.target.value})}
+                    className="bg-slate-800 border-slate-700 text-white"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-slate-300">Peso Atual (kg)</Label>
+                  <Input
+                    type="number"
+                    value={editForm.current_weight}
+                    onChange={(e) => setEditForm({...editForm, current_weight: e.target.value})}
+                    className="bg-slate-800 border-slate-700 text-white"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-slate-300">Altura (cm)</Label>
+                  <Input
+                    type="number"
+                    value={editForm.height}
+                    onChange={(e) => setEditForm({...editForm, height: e.target.value})}
+                    className="bg-slate-800 border-slate-700 text-white"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-slate-300">Meta de Peso (kg)</Label>
+                  <Input
+                    type="number"
+                    value={editForm.weight_goal}
+                    onChange={(e) => setEditForm({...editForm, weight_goal: e.target.value})}
+                    className="bg-slate-800 border-slate-700 text-white"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-slate-300">Treinos/Semana</Label>
+                  <Input
+                    type="number"
+                    value={editForm.weekly_goal}
+                    onChange={(e) => setEditForm({...editForm, weekly_goal: e.target.value})}
+                    className="bg-slate-800 border-slate-700 text-white"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-slate-300">Gênero</Label>
+                  <select
+                    value={editForm.gender}
+                    onChange={(e) => setEditForm({...editForm, gender: e.target.value})}
+                    className="w-full bg-slate-800 border border-slate-700 text-white rounded-md px-3 py-2"
+                  >
+                    <option value="male">Masculino</option>
+                    <option value="female">Feminino</option>
+                    <option value="other">Outro</option>
+                  </select>
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-slate-300">Objetivo</Label>
+                  <select
+                    value={editForm.fitness_goal}
+                    onChange={(e) => setEditForm({...editForm, fitness_goal: e.target.value})}
+                    className="w-full bg-slate-800 border border-slate-700 text-white rounded-md px-3 py-2"
+                  >
+                    <option value="lose_weight">Emagrecer</option>
+                    <option value="gain_muscle">Ganhar Massa</option>
+                    <option value="maintain">Manter Forma</option>
+                  </select>
+                </div>
+                <div className="space-y-2 col-span-2">
+                  <Label className="text-slate-300">Nível</Label>
+                  <select
+                    value={editForm.fitness_level}
+                    onChange={(e) => setEditForm({...editForm, fitness_level: e.target.value})}
+                    className="w-full bg-slate-800 border border-slate-700 text-white rounded-md px-3 py-2"
+                  >
+                    <option value="beginner">Iniciante</option>
+                    <option value="intermediate">Intermediário</option>
+                    <option value="advanced">Avançado</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="flex gap-3 pt-4">
+                <Button
+                  variant="outline"
+                  onClick={() => setEditingUser(null)}
+                  className="flex-1 border-slate-700 text-slate-300"
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  onClick={handleSaveEdit}
+                  disabled={updateUserMutation.isPending}
+                  className="flex-1 bg-blue-600 hover:bg-blue-700"
+                >
+                  {updateUserMutation.isPending ? (
+                    "Salvando..."
+                  ) : (
+                    <>
+                      <Save className="w-4 h-4 mr-2" />
+                      Salvar Alterações
+                    </>
+                  )}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       {/* User Stats */}
       <div className="grid md:grid-cols-3 gap-4">
