@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
@@ -16,7 +17,16 @@ export default function Workouts() {
 
   const { data: workouts = [], isLoading: loadingWorkouts } = useQuery({
     queryKey: ['workouts'],
-    queryFn: () => base44.entities.Workout.list(),
+    queryFn: async () => {
+      const allWorkouts = await base44.entities.Workout.list();
+      // Filtrar treinos: mostrar públicos ou criados para o usuário atual
+      return allWorkouts.filter(w => 
+        w.is_public !== false || // Treinos públicos (is_public true ou undefined)
+        w.created_for_user === user?.email || // Treinos criados para o usuário
+        user?.role === 'admin' // Admins veem tudo
+      );
+    },
+    enabled: !!user,
   });
 
   const { data: exercises = [], isLoading: loadingExercises } = useQuery({
