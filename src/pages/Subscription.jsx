@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -133,11 +134,11 @@ export default function Subscription() {
                 <CardTitle className="text-white">Premium</CardTitle>
               </div>
               <div className="flex items-baseline gap-2">
-                <span className="text-4xl font-bold text-white">R$ 29,90</span>
+                <span className="text-4xl font-bold text-white">R$ 4,99</span>
                 <span className="text-slate-300">/mês</span>
               </div>
               <p className="text-sm text-slate-400 mt-2">
-                ou <span className="text-green-400 font-semibold">R$ 299,90/ano</span> (economize 17%)
+                ou <span className="text-green-400 font-semibold">R$ 49,90/ano</span> (economize 17%)
               </p>
             </CardHeader>
             <CardContent className="space-y-4 relative">
