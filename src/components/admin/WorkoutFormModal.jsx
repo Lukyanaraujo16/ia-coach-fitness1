@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { X, Plus, Trash2, ChevronDown, ChevronUp, GripVertical, CheckSquare, Square, Search, ArrowRight, ArrowLeft } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
-export default function WorkoutFormModal({ workout, exercises, onClose }) {
+export default function WorkoutFormModal({ workout, exercises, onClose, isUserCreated = false, userEmail = null }) {
   const queryClient = useQueryClient();
   const [expandedDay, setExpandedDay] = useState(0);
   const [expandedExercise, setExpandedExercise] = useState(null);
@@ -34,7 +34,8 @@ export default function WorkoutFormModal({ workout, exercises, onClose }) {
       duration_minutes: 60,
       image_url: "", // Added image_url
       is_premium: false,
-      is_public: true, // Added is_public, default to true
+      is_public: isUserCreated ? false : true, // Added is_public, default to true
+      created_for_user: isUserCreated ? userEmail : undefined,
       days: [
         {
           day_number: 1,
@@ -85,6 +86,7 @@ export default function WorkoutFormModal({ workout, exercises, onClose }) {
     onSuccess: () => {
       queryClient.invalidateQueries(["all-workouts"]);
       queryClient.invalidateQueries(["workouts"]);
+      queryClient.invalidateQueries(["my-custom-workouts"]);
       onClose();
     },
   });
@@ -276,7 +278,7 @@ export default function WorkoutFormModal({ workout, exercises, onClose }) {
           <CardHeader className="border-b border-slate-800 sticky top-0 bg-slate-900 z-20 p-4">
             <div className="flex items-center justify-between gap-3">
               <CardTitle className="text-white text-lg">
-                {workout ? "Editar Treino" : "Novo Treino"}
+                {workout ? "Editar Treino" : isUserCreated ? "Criar Meu Treino" : "Novo Treino"}
               </CardTitle>
               <Button 
                 type="button"

@@ -1,7 +1,6 @@
-
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -11,12 +10,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Edit2, Save, X } from "lucide-react";
 
 export default function ProfileInfo({ user, setUser }) {
+  const queryClient = useQueryClient();
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({
+    full_name: '',
     current_weight: '',
     weight_goal: '',
     height: '',
-    gender: 'male', // Added gender field
+    gender: 'male',
     fitness_level: 'beginner',
     bio: '',
   });
@@ -24,10 +25,11 @@ export default function ProfileInfo({ user, setUser }) {
   useEffect(() => {
     if (user) {
       setFormData({
+        full_name: user.full_name || '',
         current_weight: user.current_weight || '',
         weight_goal: user.weight_goal || '',
         height: user.height || '',
-        gender: user.gender || 'male', // Initialize gender from user
+        gender: user.gender || 'male',
         fitness_level: user.fitness_level || 'beginner',
         bio: user.bio || '',
       });
@@ -35,22 +37,35 @@ export default function ProfileInfo({ user, setUser }) {
   }, [user]);
 
   const updateProfileMutation = useMutation({
-    mutationFn: (data) => base44.auth.updateMe(data),
+    mutationFn: async (data) => {
+      // Atualizar usando o entity User diretamente
+      await base44.entities.User.update(user.id, data);
+      // Recarregar usuário
+      const updatedUser = await base44.auth.me();
+      return updatedUser;
+    },
     onSuccess: (updatedUser) => {
       setUser(updatedUser);
       setIsEditing(false);
+      queryClient.invalidateQueries(['user']);
+      queryClient.invalidateQueries(['all-users']);
     },
+    onError: (error) => {
+      console.error("Erro ao atualizar perfil:", error);
+      alert("Erro ao atualizar perfil. Tente novamente.");
+    }
   });
 
   const handleSubmit = (e) => {
     e.preventDefault();
     updateProfileMutation.mutate({
+      full_name: formData.full_name.trim(),
       current_weight: formData.current_weight ? parseFloat(formData.current_weight) : undefined,
       weight_goal: formData.weight_goal ? parseFloat(formData.weight_goal) : undefined,
       height: formData.height ? parseFloat(formData.height) : undefined,
-      gender: formData.gender, // Include gender in mutation data
+      gender: formData.gender,
       fitness_level: formData.fitness_level,
-      bio: formData.bio,
+      bio: formData.bio.trim(),
     });
   };
 
@@ -77,7 +92,18 @@ export default function ProfileInfo({ user, setUser }) {
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => setIsEditing(false)}
+            onClick={() => {
+              setIsEditing(false);
+              setFormData({
+                full_name: user.full_name || '',
+                current_weight: user.current_weight || '',
+                weight_goal: user.weight_goal || '',
+                height: user.height || '',
+                gender: user.gender || 'male',
+                fitness_level: user.fitness_level || 'beginner',
+                bio: user.bio || '',
+              });
+            }}
             className="text-slate-400 hover:text-white hover:bg-slate-800"
           >
             <X className="w-4 h-4" />
@@ -87,6 +113,15 @@ export default function ProfileInfo({ user, setUser }) {
       <CardContent>
         {isEditing ? (
           <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <Label className="text-slate-300">Nome Completo</Label>
+              <Input
+                value={formData.full_name}
+                onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
+                className="bg-slate-800 border-slate-700 text-white"
+                placeholder="Digite seu nome"
+              />
+            </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label className="text-slate-300">Peso Atual (kg)</Label>
@@ -118,7 +153,6 @@ export default function ProfileInfo({ user, setUser }) {
                 className="bg-slate-800 border-slate-700 text-white"
               />
             </div>
-            {/* New Gender Select */}
             <div className="space-y-2">
               <Label className="text-slate-300">Gênero</Label>
               <Select
@@ -135,7 +169,6 @@ export default function ProfileInfo({ user, setUser }) {
                 </SelectContent>
               </Select>
             </div>
-            {/* End New Gender Select */}
             <div className="space-y-2">
               <Label className="text-slate-300">Nível de Condicionamento</Label>
               <Select
@@ -156,7 +189,7 @@ export default function ProfileInfo({ user, setUser }) {
               <Label className="text-slate-300">Bio</Label>
               <Textarea
                 value={formData.bio}
-                onChange={(e) => setFormData({ ...formData, bio: e.target.value })} // Fixed typo: orphData -> formData
+                onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
                 className="bg-slate-800 border-slate-700 text-white"
                 placeholder="Conte um pouco sobre você..."
               />
@@ -173,6 +206,10 @@ export default function ProfileInfo({ user, setUser }) {
         ) : (
           <div className="space-y-3 text-sm">
             <div className="flex justify-between">
+              <span className="text-slate-400">Nome:</span>
+              <span className="text-white font-medium">{user?.full_name || '-'}</span>
+            </div>
+            <div className="flex justify-between">
               <span className="text-slate-400">Peso Atual:</span>
               <span className="text-white font-medium">{user?.current_weight || '-'} kg</span>
             </div>
@@ -184,12 +221,10 @@ export default function ProfileInfo({ user, setUser }) {
               <span className="text-slate-400">Altura:</span>
               <span className="text-white font-medium">{user?.height || '-'} cm</span>
             </div>
-            {/* Display Gender */}
             <div className="flex justify-between">
               <span className="text-slate-400">Gênero:</span>
               <span className="text-white font-medium">{user?.gender ? genderLabels[user.gender] : '-'}</span>
             </div>
-            {/* End Display Gender */}
             <div className="flex justify-between">
               <span className="text-slate-400">Nível:</span>
               <span className="text-white font-medium capitalize">{user?.fitness_level || '-'}</span>

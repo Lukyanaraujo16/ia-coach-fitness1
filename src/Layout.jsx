@@ -1,13 +1,14 @@
-
 import React, { useEffect, useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { Link, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { Home, Dumbbell, TrendingUp, Users, User, Crown, Shield, Apple, Sparkles } from "lucide-react";
+import { Home, Dumbbell, TrendingUp, Users, User, Crown, Shield, Apple, Sparkles, Menu, X } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 export default function Layout({ children, currentPageName }) {
   const location = useLocation();
   const [user, setUser] = useState(null);
+  const [showMenu, setShowMenu] = useState(false);
 
   useEffect(() => {
     const loadUser = async () => {
@@ -26,9 +27,15 @@ export default function Layout({ children, currentPageName }) {
     { name: "Treinos", path: createPageUrl("Workouts"), icon: Dumbbell },
     { name: "Nutrição", path: createPageUrl("Nutrition"), icon: Apple },
     { name: "Progresso", path: createPageUrl("Progress"), icon: TrendingUp },
-    { name: "Comunidade", path: createPageUrl("Community"), icon: Users },
-    { name: "Perfil", path: createPageUrl("Profile"), icon: User },
   ];
+
+  // Adicionar comunidade se habilitada
+  if (user?.community_enabled !== false) {
+    navigationItems.push({ name: "Comunidade", path: createPageUrl("Community"), icon: Users });
+  }
+
+  // Adicionar perfil
+  navigationItems.push({ name: "Perfil", path: createPageUrl("Profile"), icon: User });
 
   // Adiciona item AI Coach se for premium
   if (user?.subscription_status === 'premium') {
@@ -48,11 +55,8 @@ export default function Layout({ children, currentPageName }) {
     });
   }
 
-  // Esconder navegação durante execução de treino, onboarding e setup
-  const hideNavigation = ["WorkoutExecution", "Onboarding", "NutritionSetup", "WorkoutSetup"].includes(currentPageName);
-
-  // Esconder link da comunidade se estiver desabilitada
-  const showCommunity = user?.community_enabled !== false;
+  // Esconder navegação durante execução de treino, onboarding, setup e landing
+  const hideNavigation = ["WorkoutExecution", "Onboarding", "NutritionSetup", "WorkoutSetup", "LandingPage"].includes(currentPageName);
 
   return (
     <div className={`min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 ${!hideNavigation ? 'pb-20' : ''}`}>
@@ -65,7 +69,7 @@ export default function Layout({ children, currentPageName }) {
         }
       `}</style>
 
-      {/* Header - Escondido durante execução de treino, onboarding e setup */}
+      {/* Header */}
       {!hideNavigation && (
         <header className="fixed top-0 left-0 right-0 z-50 bg-slate-950/80 backdrop-blur-xl border-b border-slate-800/50">
           <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
@@ -75,12 +79,22 @@ export default function Layout({ children, currentPageName }) {
               </div>
               <h1 className="text-xl font-bold text-white">FitTrack+</h1>
             </div>
-            <Link to={createPageUrl("Subscription")}>
-              <button className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 text-white rounded-full text-sm font-medium transition-all duration-300 shadow-lg shadow-blue-900/50">
-                <Crown className="w-4 h-4" />
-                Premium
-              </button>
-            </Link>
+            <div className="flex items-center gap-2">
+              <Link to={createPageUrl("Subscription")}>
+                <button className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 text-white rounded-full text-sm font-medium transition-all duration-300 shadow-lg shadow-blue-900/50">
+                  <Crown className="w-4 h-4" />
+                  Premium
+                </button>
+              </Link>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setShowMenu(!showMenu)}
+                className="text-white hover:bg-slate-800 md:hidden"
+              >
+                <Menu className="w-6 h-6" />
+              </Button>
+            </div>
           </div>
         </header>
       )}
@@ -90,30 +104,66 @@ export default function Layout({ children, currentPageName }) {
         {children}
       </main>
 
-      {/* Bottom Navigation - Escondido durante execução de treino, onboarding e setup */}
-      {!hideNavigation && (
-        <nav className="fixed bottom-0 left-0 right-0 bg-slate-950/95 backdrop-blur-xl border-t border-slate-800/50 z-50">
-          <div className="max-w-7xl mx-auto">
-            <div className="flex overflow-x-auto scrollbar-hide py-2 px-2">
-              {navigationItems.filter(item => {
-                // Filtrar comunidade se desabilitada
-                if (item.name === "Comunidade" && !showCommunity) return false;
-                return true;
-              }).map((item) => {
+      {/* Mobile Menu Overlay */}
+      {showMenu && !hideNavigation && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60] md:hidden" onClick={() => setShowMenu(false)}>
+          <div className="fixed inset-y-0 right-0 w-64 bg-slate-900 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between p-4 border-b border-slate-800">
+              <h2 className="text-white font-semibold">Menu</h2>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setShowMenu(false)}
+                className="text-slate-400 hover:text-white"
+              >
+                <X className="w-5 h-5" />
+              </Button>
+            </div>
+            <nav className="p-4 space-y-2">
+              {navigationItems.map((item) => {
                 const isActive = location.pathname === item.path;
                 const Icon = item.icon;
                 return (
                   <Link
                     key={item.name}
                     to={item.path}
-                    className={`flex flex-col items-center gap-1 px-4 py-2 rounded-xl transition-all duration-300 whitespace-nowrap flex-shrink-0 ${
+                    onClick={() => setShowMenu(false)}
+                    className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
+                      isActive
+                        ? "bg-blue-600 text-white"
+                        : "text-slate-400 hover:text-white hover:bg-slate-800"
+                    }`}
+                  >
+                    <Icon className="w-5 h-5" />
+                    <span className="font-medium">{item.name}</span>
+                  </Link>
+                );
+              })}
+            </nav>
+          </div>
+        </div>
+      )}
+
+      {/* Bottom Navigation - Grid de 4 colunas */}
+      {!hideNavigation && (
+        <nav className="fixed bottom-0 left-0 right-0 bg-slate-950/95 backdrop-blur-xl border-t border-slate-800/50 z-50">
+          <div className="max-w-7xl mx-auto">
+            <div className="grid grid-cols-4 gap-1 p-2">
+              {navigationItems.slice(0, 4).map((item) => {
+                const isActive = location.pathname === item.path;
+                const Icon = item.icon;
+                return (
+                  <Link
+                    key={item.name}
+                    to={item.path}
+                    className={`flex flex-col items-center gap-1 px-2 py-2 rounded-xl transition-all ${
                       isActive
                         ? "bg-blue-600/20 text-blue-400"
                         : "text-slate-400 hover:text-slate-300"
                     }`}
                   >
                     <Icon className={`w-5 h-5 ${isActive ? "scale-110" : ""}`} />
-                    <span className="text-xs font-medium">{item.name}</span>
+                    <span className="text-[10px] font-medium">{item.name}</span>
                   </Link>
                 );
               })}
@@ -121,16 +171,6 @@ export default function Layout({ children, currentPageName }) {
           </div>
         </nav>
       )}
-
-      <style>{`
-        .scrollbar-hide::-webkit-scrollbar {
-          display: none;
-        }
-        .scrollbar-hide {
-          -ms-overflow-style: none;
-          scrollbar-width: none;
-        }
-      `}</style>
     </div>
   );
 }

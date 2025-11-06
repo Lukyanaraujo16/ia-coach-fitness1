@@ -1,25 +1,58 @@
 
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Plus, Edit2, Trash2, Lock } from "lucide-react";
 import WorkoutFormModal from "./WorkoutFormModal";
 import AIWorkoutGenerator from "./AIWorkoutGenerator";
+import { Label } from "@/components/ui/label"; // Added Label import
 
 export default function AdminWorkouts({ workouts = [], exercises = [] }) {
   const [showForm, setShowForm] = useState(false);
   const [showAIGenerator, setShowAIGenerator] = useState(false);
   const [editingWorkout, setEditingWorkout] = useState(null);
+  const [showCopyModal, setShowCopyModal] = useState(false);
+  const [workoutToCopy, setWorkoutToCopy] = useState(null);
+  const [targetUserEmail, setTargetUserEmail] = useState("");
   const queryClient = useQueryClient();
+
+  const { data: users = [] } = useQuery({
+    queryKey: ['all-users'],
+    queryFn: () => base44.entities.User.list(),
+  });
 
   const deleteWorkoutMutation = useMutation({
     mutationFn: (workoutId) => base44.entities.Workout.delete(workoutId),
     onSuccess: () => {
       queryClient.invalidateQueries(['all-workouts']);
       queryClient.invalidateQueries(['workouts']);
+    },
+  });
+
+  const copyWorkoutMutation = useMutation({
+    mutationFn: async ({ workout, userEmail }) => {
+      const newWorkout = {
+        ...workout,
+        id: undefined, // Remove ID to create a new entry
+        title: `${workout.title} (Cópia)`,
+        is_public: false, // Copied workouts should be private by default for the target user
+        created_for_user: userEmail,
+      };
+      // Remove fields that should not be copied or are auto-generated
+      delete newWorkout.created_date;
+      delete newWorkout.updated_date;
+      delete newWorkout.created_by;
+      return base44.entities.Workout.create(newWorkout);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(['all-workouts']);
+      queryClient.invalidateQueries(['workouts']);
+      setShowCopyModal(false);
+      setWorkoutToCopy(null);
+      setTargetUserEmail("");
     },
   });
 
@@ -31,6 +64,21 @@ export default function AdminWorkouts({ workouts = [], exercises = [] }) {
   const handleDelete = (workoutId) => {
     if (confirm('Tem certeza que deseja excluir este treino?')) {
       deleteWorkoutMutation.mutate(workoutId);
+    }
+  };
+
+  const handleCopy = (workout) => {
+    setWorkoutToCopy(workout);
+    setShowCopyModal(true);
+  };
+
+  const handleConfirmCopy = () => {
+    if (!targetUserEmail) {
+      alert("Selecione um usuário");
+      return;
+    }
+    if (workoutToCopy) {
+      copyWorkoutMutation.mutate({ workout: workoutToCopy, userEmail: targetUserEmail });
     }
   };
 
@@ -94,10 +142,18 @@ export default function AdminWorkouts({ workouts = [], exercises = [] }) {
                         {workout.is_premium && (
                           <Lock className="w-4 h-4 text-yellow-400" />
                         )}
+                        {workout.created_for_user && (
+                          <Badge className="bg-blue-500/20 text-blue-400 text-xs">Privado</Badge>
+                        )}
                       </div>
                       <p className="text-slate-400 text-sm line-clamp-2">
                         {workout.description}
                       </p>
+                      {workout.created_for_user && (
+                        <p className="text-slate-500 text-xs mt-1">
+                          Para: {workout.created_for_user}
+                        </p>
+                      )}
                     </div>
                   </div>
                   
@@ -118,6 +174,15 @@ export default function AdminWorkouts({ workouts = [], exercises = [] }) {
                     <Button
                       variant="outline"
                       size="sm"
+                      onClick={() => handleCopy(workout)}
+                      className="flex-1 bg-purple-900/20 border-purple-700 text-purple-400 hover:bg-purple-900/40 hover:text-purple-300"
+                    >
+                      <Plus className="w-4 h-4 mr-1" />
+                      Copiar
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
                       onClick={() => handleEdit(workout)}
                       className="flex-1 bg-blue-900/20 border-blue-700 text-blue-400 hover:bg-blue-900/40 hover:text-blue-300"
                     >
@@ -128,10 +193,9 @@ export default function AdminWorkouts({ workouts = [], exercises = [] }) {
                       variant="outline"
                       size="sm"
                       onClick={() => handleDelete(workout.id)}
-                      className="flex-1 bg-red-900/20 border-red-700 text-red-400 hover:bg-red-900/40 hover:text-red-300"
+                      className="bg-red-900/20 border-red-700 text-red-400 hover:bg-red-900/40 hover:text-red-300"
                     >
-                      <Trash2 className="w-4 h-4 mr-2" />
-                      Excluir
+                      <Trash2 className="w-4 h-4" />
                     </Button>
                   </div>
                 </CardContent>
@@ -157,6 +221,59 @@ export default function AdminWorkouts({ workouts = [], exercises = [] }) {
 
       {showAIGenerator && (
         <AIWorkoutGenerator onClose={() => setShowAIGenerator(false)} />
+      )}
+
+      {/* Copy Modal */}
+      {showCopyModal && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <Card className="bg-slate-900 border-slate-800 max-w-md w-full">
+            <CardHeader className="border-b border-slate-800">
+              <CardTitle className="text-white">Copiar Treino para Usuário</CardTitle>
+            </CardHeader>
+            <CardContent className="p-6 space-y-4">
+              <div>
+                <p className="text-slate-300 mb-2">Treino: <span className="font-semibold">{workoutToCopy?.title}</span></p>
+                <p className="text-slate-400 text-sm">Selecione o usuário que receberá uma cópia deste treino</p>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="user-select" className="text-slate-300">Usuário</Label>
+                <select
+                  id="user-select"
+                  value={targetUserEmail}
+                  onChange={(e) => setTargetUserEmail(e.target.value)}
+                  className="w-full bg-slate-800 border border-slate-700 text-white rounded-md px-3 py-2"
+                >
+                  <option value="">Selecione um usuário...</option>
+                  {users.map((user) => (
+                    <option key={user.id} value={user.email}>
+                      {user.full_name || user.email}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="flex gap-3 pt-4">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setShowCopyModal(false);
+                    setWorkoutToCopy(null);
+                    setTargetUserEmail("");
+                  }}
+                  className="flex-1 border-slate-700 text-slate-300"
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  onClick={handleConfirmCopy}
+                  disabled={copyWorkoutMutation.isPending || !targetUserEmail}
+                  className="flex-1 bg-purple-600 hover:bg-purple-700"
+                >
+                  {copyWorkoutMutation.isPending ? "Copiando..." : "Copiar Treino"}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       )}
     </div>
   );
