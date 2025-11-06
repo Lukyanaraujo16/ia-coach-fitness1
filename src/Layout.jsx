@@ -59,7 +59,7 @@ export default function Layout({ children, currentPageName }) {
   const hideNavigation = ["WorkoutExecution", "Onboarding", "NutritionSetup", "WorkoutSetup", "LandingPage"].includes(currentPageName);
 
   return (
-    <div className={`min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 ${!hideNavigation ? 'pb-20' : ''}`}>
+    <div className={`min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 ${!hideNavigation ? 'pb-20 md:pb-0' : ''}`}>
       <style>{`
         :root {
           --primary: #1E40AF;
@@ -73,19 +73,42 @@ export default function Layout({ children, currentPageName }) {
       {!hideNavigation && (
         <header className="fixed top-0 left-0 right-0 z-50 bg-slate-950/80 backdrop-blur-xl border-b border-slate-800/50">
           <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
-            <div className="flex items-center gap-2">
+            <Link to={createPageUrl("Home")} className="flex items-center gap-2">
               <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-blue-800 rounded-xl flex items-center justify-center shadow-lg shadow-blue-900/50">
                 <Dumbbell className="w-5 h-5 text-white" />
               </div>
               <h1 className="text-xl font-bold text-white">FitTrack+</h1>
-            </div>
+            </Link>
             <div className="flex items-center gap-2">
-              <Link to={createPageUrl("Subscription")}>
-                <button className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 text-white rounded-full text-sm font-medium transition-all duration-300 shadow-lg shadow-blue-900/50">
-                  <Crown className="w-4 h-4" />
-                  Premium
-                </button>
-              </Link>
+              {/* Desktop Navigation */}
+              <nav className="hidden md:flex items-center gap-1">
+                {navigationItems.map((item) => {
+                  const isActive = location.pathname === item.path;
+                  const Icon = item.icon;
+                  return (
+                    <Link
+                      key={item.name}
+                      to={item.path}
+                      className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all ${
+                        isActive
+                          ? "bg-blue-600 text-white"
+                          : "text-slate-400 hover:text-white hover:bg-slate-800"
+                      }`}
+                    >
+                      <Icon className="w-4 h-4" />
+                      <span className="text-sm font-medium">{item.name}</span>
+                    </Link>
+                  );
+                })}
+                <Link to={createPageUrl("Subscription")}>
+                  <button className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 text-white rounded-lg text-sm font-medium transition-all duration-300 shadow-lg shadow-blue-900/50 ml-2">
+                    <Crown className="w-4 h-4" />
+                    Premium
+                  </button>
+                </Link>
+              </nav>
+
+              {/* Mobile Menu Button */}
               <Button
                 variant="ghost"
                 size="icon"
@@ -139,14 +162,22 @@ export default function Layout({ children, currentPageName }) {
                   </Link>
                 );
               })}
+              <Link
+                to={createPageUrl("Subscription")}
+                onClick={() => setShowMenu(false)}
+                className="flex items-center gap-3 px-4 py-3 rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 text-white"
+              >
+                <Crown className="w-5 h-5" />
+                <span className="font-medium">Assinar Premium</span>
+              </Link>
             </nav>
           </div>
         </div>
       )}
 
-      {/* Bottom Navigation - Grid de 4 colunas */}
+      {/* Bottom Navigation - Mobile only, 4 items fixos */}
       {!hideNavigation && (
-        <nav className="fixed bottom-0 left-0 right-0 bg-slate-950/95 backdrop-blur-xl border-t border-slate-800/50 z-50">
+        <nav className="fixed bottom-0 left-0 right-0 bg-slate-950/95 backdrop-blur-xl border-t border-slate-800/50 z-50 md:hidden">
           <div className="max-w-7xl mx-auto">
             <div className="grid grid-cols-4 gap-1 p-2">
               {navigationItems.slice(0, 4).map((item) => {
