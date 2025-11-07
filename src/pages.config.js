@@ -16,6 +16,8 @@ import NutritionSetup from './pages/NutritionSetup';
 import WorkoutSetup from './pages/WorkoutSetup';
 import LandingPage from './pages/LandingPage';
 import MyWorkouts from './pages/MyWorkouts';
+import Leaderboard from './pages/Leaderboard';
+import Badges from './pages/Badges';
 import Layout from './Layout.jsx';
 
 
@@ -38,6 +40,8 @@ export const PAGES = {
     "WorkoutSetup": WorkoutSetup,
     "LandingPage": LandingPage,
     "MyWorkouts": MyWorkouts,
+    "Leaderboard": Leaderboard,
+    "Badges": Badges,
 }
 
 export const pagesConfig = {

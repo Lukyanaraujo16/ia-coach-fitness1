@@ -1,8 +1,9 @@
+
 import React, { useEffect, useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { Link, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { Home, Dumbbell, TrendingUp, Users, User, Crown, Shield, Apple, Sparkles, Menu, X, LogOut } from "lucide-react";
+import { Home, Dumbbell, TrendingUp, Users, User, Crown, Shield, Apple, Sparkles, Menu, X, LogOut, Trophy, Award } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export default function Layout({ children, currentPageName }) {
@@ -34,12 +35,15 @@ export default function Layout({ children, currentPageName }) {
     navigationItems.push({ name: "Comunidade", path: createPageUrl("Community"), icon: Users });
   }
 
+  // Adicionar Ranking
+  navigationItems.push({ name: "Ranking", path: createPageUrl("Leaderboard"), icon: Trophy });
+
   // Adicionar perfil
   navigationItems.push({ name: "Perfil", path: createPageUrl("Profile"), icon: User });
 
   // Adiciona item AI Coach se for premium
   if (user?.subscription_status === 'premium') {
-    navigationItems.splice(5, 0, {
+    navigationItems.splice(6, 0, { // Adjusted index to account for new 'Ranking' item
       name: "Coach IA",
       path: createPageUrl("AICoach"),
       icon: Sparkles,
@@ -184,6 +188,20 @@ export default function Layout({ children, currentPageName }) {
               >
                 <Dumbbell className="w-5 h-5" />
                 <span className="font-medium">Meus Treinos</span>
+              </Link>
+
+              {/* Conquistas */}
+              <Link
+                to={createPageUrl("Badges")}
+                onClick={() => setShowMenu(false)}
+                className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
+                  location.pathname === createPageUrl("Badges")
+                    ? "bg-blue-600 text-white"
+                    : "text-slate-400 hover:text-white hover:hover:bg-slate-800"
+                }`}
+              >
+                <Award className="w-5 h-5" />
+                <span className="font-medium">Conquistas</span>
               </Link>
 
               {/* Assinar Premium - só aparece se não for premium */}
