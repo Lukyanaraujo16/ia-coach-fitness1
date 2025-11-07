@@ -5,7 +5,7 @@ import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Crown, LogOut, User, Settings, Edit2, Save, X, Dumbbell, Trash2, AlertTriangle, ChevronRight } from "lucide-react";
+import { Crown, LogOut, User, Settings, Edit2, Save, X, Dumbbell, Trash2, AlertTriangle, ChevronRight, MessageCircle } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import ProfileStats from "../components/profile/ProfileStats";
@@ -270,6 +270,28 @@ export default function Profile() {
           </CardContent>
         </Card>
       </Link>
+
+      {/* WhatsApp Coach - Novo card */}
+      <a 
+        href={base44.agents.getWhatsAppConnectURL('fitness_coach')} 
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        <Card className="bg-gradient-to-br from-green-900/30 to-green-800/20 border-green-700/50 hover:from-green-900/40 hover:to-green-800/30 transition-all cursor-pointer">
+          <CardContent className="p-5 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 bg-green-600/20 rounded-xl flex items-center justify-center">
+                <MessageCircle className="w-6 h-6 text-green-400" />
+              </div>
+              <div>
+                <h3 className="text-white font-semibold">Coach no WhatsApp</h3>
+                <p className="text-slate-300 text-sm">Treinador virtual 24/7 disponível</p>
+              </div>
+            </div>
+            <ChevronRight className="w-5 h-5 text-slate-400" />
+          </CardContent>
+        </Card>
+      </a>
 
       {/* Stats */}
       <ProfileStats user={user} />
