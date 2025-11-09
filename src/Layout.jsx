@@ -9,6 +9,7 @@ export default function Layout({ children, currentPageName }) {
   const location = useLocation();
   const [user, setUser] = useState(null);
   const [showMenu, setShowMenu] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const loadUser = async () => {
@@ -17,6 +18,8 @@ export default function Layout({ children, currentPageName }) {
         setUser(currentUser);
       } catch (error) {
         console.error("Error loading user:", error);
+      } finally {
+        setIsLoading(false);
       }
     };
     loadUser();
@@ -52,8 +55,9 @@ export default function Layout({ children, currentPageName }) {
     });
   }
 
-  // Esconder navegação em páginas especiais E na página Welcome
-  const hideNavigation = ["WorkoutExecution", "Onboarding", "NutritionSetup", "WorkoutSetup", "LandingPage", "Welcome"].includes(currentPageName);
+  // Esconder navegação em páginas especiais OU quando não há usuário autenticado
+  const specialPages = ["WorkoutExecution", "Onboarding", "NutritionSetup", "WorkoutSetup", "LandingPage", "Welcome"];
+  const hideNavigation = specialPages.includes(currentPageName) || !user;
 
   const isPremium = user?.subscription_status === 'premium';
 
