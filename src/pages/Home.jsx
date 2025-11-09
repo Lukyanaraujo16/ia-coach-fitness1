@@ -33,7 +33,7 @@ export default function Home() {
           navigate(createPageUrl("WorkoutSetup"));
         }
       } catch (error) {
-        base44.auth.redirectToLogin(createPageUrl("Home"));
+        console.error("Error loading user:", error);
       }
     };
     loadUser();
@@ -62,7 +62,6 @@ export default function Home() {
   const { data: challenges = [] } = useQuery({
     queryKey: ['challenges'],
     queryFn: () => base44.entities.Challenge.list('-created_date'),
-    enabled: !!user,
   });
 
   const { data: challengeProgress = [] } = useQuery({
@@ -74,14 +73,6 @@ export default function Home() {
     },
     enabled: !!user?.email,
   });
-
-  if (!user) {
-    return (
-      <div className="py-6 flex items-center justify-center min-h-[60vh]">
-        <p className="text-slate-400">Carregando...</p>
-      </div>
-    );
-  }
 
   const activeChallenge = challenges.find(c => c.is_active);
   const userProgress = challengeProgress.find(p => p.challenge_id === activeChallenge?.id);
