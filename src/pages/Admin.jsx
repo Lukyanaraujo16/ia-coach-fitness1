@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
@@ -6,18 +5,7 @@ import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
-import {
-  Users,
-  DollarSign,
-  Dumbbell,
-  Crown,
-  MessageSquare,
-  BarChart, // Added
-  Activity, // Added
-  Apple, // Added
-  Target, // Added
-  MessageCircle, // Added
-} from "lucide-react";
+import { Users, DollarSign, Dumbbell, Crown, MessageSquare, MessageCircle, BarChart, Target, Activity, Apple } from "lucide-react";
 import AdminUsers from "../components/admin/AdminUsers";
 import AdminWorkouts from "../components/admin/AdminWorkouts";
 import AdminExercises from "../components/admin/AdminExercises";
@@ -25,7 +13,7 @@ import AdminChallenges from "../components/admin/AdminChallenges";
 import AdminMetrics from "../components/admin/AdminMetrics";
 import AdminCommunity from "../components/admin/AdminCommunity";
 import AdminNutrition from "../components/admin/AdminNutrition";
-import AdminWhatsAppCoach from "../components/admin/AdminWhatsAppCoach"; // Added import
+import AdminWhatsAppCoach from "../components/admin/AdminWhatsAppCoach";
 
 export default function Admin() {
   const navigate = useNavigate();
@@ -79,17 +67,6 @@ export default function Admin() {
     loadUser();
   }, [navigate]);
 
-  const tabs = [
-    { value: "metrics", label: "Métricas", icon: BarChart },
-    { value: "users", label: "Usuários", icon: Users },
-    { value: "workouts", label: "Treinos", icon: Dumbbell },
-    { value: "exercises", label: "Exercícios", icon: Activity },
-    { value: "nutrition", label: "Nutrição", icon: Apple },
-    { value: "challenges", label: "Desafios", icon: Target },
-    { value: "community", label: "Comunidade", icon: MessageSquare },
-    { value: "whatsapp", label: "WhatsApp Coach", icon: MessageCircle },
-  ];
-
   if (!user || user.role !== 'admin') {
     return (
       <div className="py-6">
@@ -100,6 +77,17 @@ export default function Admin() {
 
   const premiumUsers = users.filter(u => u.subscription_status === 'premium');
   const monthlyRevenue = premiumUsers.length * 29.90;
+
+  const tabs = [
+    { value: "metrics", label: "Métricas", icon: BarChart },
+    { value: "users", label: "Usuários", icon: Users },
+    { value: "workouts", label: "Treinos", icon: Dumbbell },
+    { value: "exercises", label: "Exercícios", icon: Activity },
+    { value: "nutrition", label: "Nutrição", icon: Apple },
+    { value: "challenges", label: "Desafios", icon: Target },
+    { value: "community", label: "Comunidade", icon: MessageSquare },
+    { value: "whatsapp", label: "WhatsApp Coach", icon: MessageCircle },
+  ];
 
   return (
     <div className="py-6 space-y-6">
@@ -194,13 +182,13 @@ export default function Admin() {
 
       {/* Content */}
       <div className="mt-6">
-        {activeTab === "metrics" && <AdminMetrics />}
+        {activeTab === "metrics" && <AdminMetrics users={users} workouts={workouts} />}
         {activeTab === "users" && <AdminUsers users={users} />}
         {activeTab === "workouts" && <AdminWorkouts workouts={workouts} exercises={exercises} />}
         {activeTab === "exercises" && <AdminExercises exercises={exercises} />}
         {activeTab === "nutrition" && <AdminNutrition plans={nutritionPlans} />}
         {activeTab === "challenges" && <AdminChallenges challenges={challenges} />}
-        {activeTab === "community" && <AdminCommunity posts={posts} />} {/* Changed 'communityPosts' to 'posts' to match query variable */}
+        {activeTab === "community" && <AdminCommunity posts={posts} />}
         {activeTab === "whatsapp" && <AdminWhatsAppCoach />}
       </div>
     </div>
