@@ -6,6 +6,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Search, Lock } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
+import { createPageUrl } from "@/utils";
 import WorkoutCard from "../components/workouts/WorkoutCard";
 import ExerciseLibrary from "../components/workouts/ExerciseLibrary";
 
@@ -14,6 +15,18 @@ export default function Workouts() {
   const [searchQuery, setSearchQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [user, setUser] = useState(null);
+
+  useEffect(() => {
+    const loadUser = async () => {
+      try {
+        const currentUser = await base44.auth.me();
+        setUser(currentUser);
+      } catch (error) {
+        base44.auth.redirectToLogin(createPageUrl("Workouts"));
+      }
+    };
+    loadUser();
+  }, []);
 
   const { data: workouts = [], isLoading: loadingWorkouts } = useQuery({
     queryKey: ['workouts'],
@@ -32,19 +45,16 @@ export default function Workouts() {
   const { data: exercises = [], isLoading: loadingExercises } = useQuery({
     queryKey: ['exercises'],
     queryFn: () => base44.entities.Exercise.list(),
+    enabled: !!user,
   });
 
-  useEffect(() => {
-    const loadUser = async () => {
-      try {
-        const currentUser = await base44.auth.me();
-        setUser(currentUser);
-      } catch (error) {
-        console.error("Error loading user:", error);
-      }
-    };
-    loadUser();
-  }, []);
+  if (!user) {
+    return (
+      <div className="py-6 flex items-center justify-center min-h-[60vh]">
+        <p className="text-slate-400">Carregando...</p>
+      </div>
+    );
+  }
 
   const isPremium = user?.subscription_status === 'premium';
 

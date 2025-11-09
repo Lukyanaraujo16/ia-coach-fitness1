@@ -1,8 +1,9 @@
+
 import React from "react";
 import { base44 } from "@/api/base44Client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Check, Crown, Dumbbell, TrendingUp, Users, Apple, Sparkles, Zap, ArrowRight } from "lucide-react";
+import { Check, Crown, Dumbbell, TrendingUp, Users, Apple, Sparkles, ArrowRight } from "lucide-react";
 import { motion } from "framer-motion";
 
 export default function LandingPage() {

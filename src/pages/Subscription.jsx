@@ -1,6 +1,7 @@
 
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
+import { createPageUrl } from "@/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -16,11 +17,20 @@ export default function Subscription() {
         const currentUser = await base44.auth.me();
         setUser(currentUser);
       } catch (error) {
-        console.error("Error loading user:", error);
+        // Redirect to login if there's an error loading the user (e.g., not logged in)
+        base44.auth.redirectToLogin(createPageUrl("Subscription"));
       }
     };
     loadUser();
   }, []);
+
+  if (!user) {
+    return (
+      <div className="py-6 flex items-center justify-center min-h-[60vh]">
+        <p className="text-slate-400">Carregando...</p>
+      </div>
+    );
+  }
 
   const isPremium = user?.subscription_status === 'premium';
 
