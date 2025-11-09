@@ -182,30 +182,32 @@ export default function Home() {
         </Link>
       )}
 
-      {/* WhatsApp Coach Card */}
-      <a 
-        href={base44.agents.getWhatsAppConnectURL('fitness_coach')} 
-        target="_blank"
-        rel="noopener noreferrer"
-      >
-        <Card className="bg-gradient-to-r from-green-900/50 to-emerald-900/50 border-green-700/50 hover:from-green-900/60 hover:to-emerald-900/60 transition-all cursor-pointer">
-          <CardContent className="p-5 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 bg-green-600/20 rounded-xl flex items-center justify-center">
-                <MessageCircle className="w-6 h-6 text-green-400" />
+      {/* WhatsApp Coach Card - Only if enabled */}
+      {user?.whatsapp_coach_enabled !== false && (
+        <a 
+          href={base44.agents.getWhatsAppConnectURL('fitness_coach')} 
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          <Card className="bg-gradient-to-r from-green-900/50 to-emerald-900/50 border-green-700/50 hover:from-green-900/60 hover:to-emerald-900/60 transition-all cursor-pointer">
+            <CardContent className="p-5 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 bg-green-600/20 rounded-xl flex items-center justify-center">
+                  <MessageCircle className="w-6 h-6 text-green-400" />
+                </div>
+                <div>
+                  <h3 className="text-white font-semibold flex items-center gap-2">
+                    Coach no WhatsApp
+                    <span className="px-2 py-0.5 bg-green-600/20 text-green-400 text-xs rounded-full">Novo</span>
+                  </h3>
+                  <p className="text-slate-300 text-sm">Tire dúvidas e registre treinos 24/7</p>
+                </div>
               </div>
-              <div>
-                <h3 className="text-white font-semibold flex items-center gap-2">
-                  Coach no WhatsApp
-                  <span className="px-2 py-0.5 bg-green-600/20 text-green-400 text-xs rounded-full">Novo</span>
-                </h3>
-                <p className="text-slate-300 text-sm">Tire dúvidas e registre treinos 24/7</p>
-              </div>
-            </div>
-            <ChevronRight className="w-5 h-5 text-slate-400" />
-          </CardContent>
-        </Card>
-      </a>
+              <ChevronRight className="w-5 h-5 text-slate-400" />
+            </CardContent>
+          </Card>
+        </a>
+      )}
 
       {/* Stats Grid */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">

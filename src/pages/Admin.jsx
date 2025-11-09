@@ -6,14 +6,26 @@ import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
-import { Users, DollarSign, Dumbbell, Crown, MessageSquare } from "lucide-react";
+import {
+  Users,
+  DollarSign,
+  Dumbbell,
+  Crown,
+  MessageSquare,
+  BarChart, // Added
+  Activity, // Added
+  Apple, // Added
+  Target, // Added
+  MessageCircle, // Added
+} from "lucide-react";
 import AdminUsers from "../components/admin/AdminUsers";
 import AdminWorkouts from "../components/admin/AdminWorkouts";
 import AdminExercises from "../components/admin/AdminExercises";
 import AdminChallenges from "../components/admin/AdminChallenges";
 import AdminMetrics from "../components/admin/AdminMetrics";
 import AdminCommunity from "../components/admin/AdminCommunity";
-import AdminNutrition from "../components/admin/AdminNutrition"; // Added import
+import AdminNutrition from "../components/admin/AdminNutrition";
+import AdminWhatsAppCoach from "../components/admin/AdminWhatsAppCoach"; // Added import
 
 export default function Admin() {
   const navigate = useNavigate();
@@ -45,7 +57,7 @@ export default function Admin() {
     queryFn: () => base44.entities.CommunityPost.list('-created_date'),
   });
 
-  const { data: nutritionPlans = [] } = useQuery({ // Added new query
+  const { data: nutritionPlans = [] } = useQuery({
     queryKey: ['all-nutrition-plans'],
     queryFn: () => base44.entities.NutritionPlan.list(),
   });
@@ -66,6 +78,17 @@ export default function Admin() {
     };
     loadUser();
   }, [navigate]);
+
+  const tabs = [
+    { value: "metrics", label: "Métricas", icon: BarChart },
+    { value: "users", label: "Usuários", icon: Users },
+    { value: "workouts", label: "Treinos", icon: Dumbbell },
+    { value: "exercises", label: "Exercícios", icon: Activity },
+    { value: "nutrition", label: "Nutrição", icon: Apple },
+    { value: "challenges", label: "Desafios", icon: Target },
+    { value: "community", label: "Comunidade", icon: MessageSquare },
+    { value: "whatsapp", label: "WhatsApp Coach", icon: MessageCircle },
+  ];
 
   if (!user || user.role !== 'admin') {
     return (
@@ -152,39 +175,34 @@ export default function Admin() {
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="bg-slate-900/50 border border-slate-800 w-full grid grid-cols-3 md:grid-cols-7 gap-2"> {/* Changed grid-cols to 7 */}
-          <TabsTrigger value="metrics" className="data-[state=active]:bg-blue-600">
-            Métricas
-          </TabsTrigger>
-          <TabsTrigger value="users" className="data-[state=active]:bg-blue-600">
-            Usuários
-          </TabsTrigger>
-          <TabsTrigger value="workouts" className="data-[state=active]:bg-blue-600">
-            Treinos
-          </TabsTrigger>
-          <TabsTrigger value="exercises" className="data-[state=active]:bg-blue-600">
-            Exercícios
-          </TabsTrigger>
-          <TabsTrigger value="nutrition" className="data-[state=active]:bg-blue-600"> {/* Added new tab trigger */}
-            Nutrição
-          </TabsTrigger>
-          <TabsTrigger value="challenges" className="data-[state=active]:bg-blue-600">
-            Desafios
-          </TabsTrigger>
-          <TabsTrigger value="community" className="data-[state=active]:bg-blue-600">
-            Comunidade
-          </TabsTrigger>
+        <TabsList className="bg-slate-900/50 border border-slate-800 grid grid-cols-4 md:grid-cols-8 gap-1">
+          {tabs.map((tab) => {
+            const Icon = tab.icon;
+            return (
+              <TabsTrigger
+                key={tab.value}
+                value={tab.value}
+                className="data-[state=active]:bg-blue-600 flex items-center gap-2"
+              >
+                <Icon className="w-4 h-4" />
+                <span className="hidden md:inline">{tab.label}</span>
+              </TabsTrigger>
+            );
+          })}
         </TabsList>
       </Tabs>
 
       {/* Content */}
-      {activeTab === "metrics" && <AdminMetrics users={users} workouts={workouts} />}
-      {activeTab === "users" && <AdminUsers users={users} />}
-      {activeTab === "workouts" && <AdminWorkouts workouts={workouts} exercises={exercises} />}
-      {activeTab === "exercises" && <AdminExercises exercises={exercises} />}
-      {activeTab === "nutrition" && <AdminNutrition plans={nutritionPlans} />} {/* Added new content component */}
-      {activeTab === "challenges" && <AdminChallenges challenges={challenges} />}
-      {activeTab === "community" && <AdminCommunity posts={posts} />}
+      <div className="mt-6">
+        {activeTab === "metrics" && <AdminMetrics />}
+        {activeTab === "users" && <AdminUsers users={users} />}
+        {activeTab === "workouts" && <AdminWorkouts workouts={workouts} exercises={exercises} />}
+        {activeTab === "exercises" && <AdminExercises exercises={exercises} />}
+        {activeTab === "nutrition" && <AdminNutrition plans={nutritionPlans} />}
+        {activeTab === "challenges" && <AdminChallenges challenges={challenges} />}
+        {activeTab === "community" && <AdminCommunity posts={posts} />} {/* Changed 'communityPosts' to 'posts' to match query variable */}
+        {activeTab === "whatsapp" && <AdminWhatsAppCoach />}
+      </div>
     </div>
   );
 }
