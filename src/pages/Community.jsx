@@ -1,6 +1,8 @@
+
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { createPageUrl } from "@/utils";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Plus, Lock } from "lucide-react";
@@ -24,7 +26,7 @@ export default function Community() {
         const currentUser = await base44.auth.me();
         setUser(currentUser);
       } catch (error) {
-        console.error("Error loading user:", error);
+        base44.auth.redirectToLogin(createPageUrl("Community"));
       }
     };
     loadUser();
@@ -94,8 +96,15 @@ export default function Community() {
     });
   };
 
-  // Verificar se comunidade está habilitada
   const communityEnabled = user?.community_enabled !== false;
+
+  if (!user) {
+    return (
+      <div className="py-6 flex items-center justify-center min-h-[60vh]">
+        <p className="text-slate-400">Carregando...</p>
+      </div>
+    );
+  }
 
   if (!communityEnabled) {
     return (

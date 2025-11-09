@@ -47,7 +47,7 @@ export default function Profile() {
         setUser(currentUser);
         setNewName(currentUser.full_name || "");
       } catch (error) {
-        console.error("Error loading user:", error);
+        base44.auth.redirectToLogin(createPageUrl("Profile"));
       }
     };
     loadUser();
@@ -146,6 +146,14 @@ export default function Profile() {
   };
 
   const isPremium = user?.subscription_status === 'premium';
+
+  if (!user) {
+    return (
+      <div className="py-6 flex items-center justify-center min-h-[60vh]">
+        <p className="text-slate-400">Carregando...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="py-6 space-y-6">

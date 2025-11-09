@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
+import { createPageUrl } from "@/utils";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Sparkles, TrendingUp, Lightbulb, Dumbbell, Crown } from "lucide-react";
@@ -19,7 +20,7 @@ export default function AICoach() {
         const currentUser = await base44.auth.me();
         setUser(currentUser);
       } catch (error) {
-        console.error("Error loading user:", error);
+        base44.auth.redirectToLogin(createPageUrl("AICoach"));
       }
     };
     loadUser();
@@ -44,6 +45,14 @@ export default function AICoach() {
     },
     enabled: !!user?.email,
   });
+
+  if (!user) {
+    return (
+      <div className="py-6 flex items-center justify-center min-h-[60vh]">
+        <p className="text-slate-400">Carregando...</p>
+      </div>
+    );
+  }
 
   const isPremium = user?.subscription_status === 'premium';
 
@@ -82,7 +91,6 @@ export default function AICoach() {
         </div>
       </div>
 
-      {/* Quick Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <Card className="bg-slate-900/50 border-slate-800">
           <CardContent className="p-4">
@@ -123,7 +131,6 @@ export default function AICoach() {
         </Card>
       </div>
 
-      {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="bg-slate-900/50 border border-slate-800 w-full grid grid-cols-4">
           <TabsTrigger value="insights" className="data-[state=active]:bg-blue-600">
@@ -141,7 +148,6 @@ export default function AICoach() {
         </TabsList>
       </Tabs>
 
-      {/* Content */}
       {activeTab === "insights" && (
         <WeeklyInsights 
           workoutLogs={workoutLogs} 

@@ -33,7 +33,7 @@ export default function Home() {
           navigate(createPageUrl("WorkoutSetup"));
         }
       } catch (error) {
-        console.error("Error loading user:", error);
+        base44.auth.redirectToLogin(createPageUrl("Home"));
       }
     };
     loadUser();
@@ -129,6 +129,14 @@ export default function Home() {
   const challengePercentage = activeChallenge 
     ? Math.min(((userProgress?.current_progress || 0) / activeChallenge.target) * 100, 100)
     : 0;
+
+  if (!user) {
+    return (
+      <div className="py-6 flex items-center justify-center min-h-[60vh]">
+        <p className="text-slate-400">Carregando...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="py-6 space-y-6">

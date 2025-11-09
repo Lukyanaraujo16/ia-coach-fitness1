@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { Link, useLocation } from "react-router-dom";
@@ -30,27 +29,21 @@ export default function Layout({ children, currentPageName }) {
     { name: "Progresso", path: createPageUrl("Progress"), icon: TrendingUp },
   ];
 
-  // Adicionar comunidade se habilitada
   if (user?.community_enabled !== false) {
     navigationItems.push({ name: "Comunidade", path: createPageUrl("Community"), icon: Users });
   }
 
-  // Adicionar Ranking
   navigationItems.push({ name: "Ranking", path: createPageUrl("Leaderboard"), icon: Trophy });
-
-  // Adicionar perfil
   navigationItems.push({ name: "Perfil", path: createPageUrl("Profile"), icon: User });
 
-  // Adiciona item AI Coach se for premium
   if (user?.subscription_status === 'premium') {
-    navigationItems.splice(6, 0, { // Adjusted index to account for new 'Ranking' item
+    navigationItems.splice(6, 0, {
       name: "Coach IA",
       path: createPageUrl("AICoach"),
       icon: Sparkles,
     });
   }
 
-  // Adiciona item Admin se for admin
   if (user?.role === 'admin') {
     navigationItems.push({
       name: "Admin",
@@ -59,8 +52,8 @@ export default function Layout({ children, currentPageName }) {
     });
   }
 
-  // Esconder navegação durante execução de treino, onboarding, setup e landing
-  const hideNavigation = ["WorkoutExecution", "Onboarding", "NutritionSetup", "WorkoutSetup", "LandingPage"].includes(currentPageName);
+  // Esconder navegação em páginas especiais E na página Welcome
+  const hideNavigation = ["WorkoutExecution", "Onboarding", "NutritionSetup", "WorkoutSetup", "LandingPage", "Welcome"].includes(currentPageName);
 
   const isPremium = user?.subscription_status === 'premium';
 
@@ -79,7 +72,6 @@ export default function Layout({ children, currentPageName }) {
         }
       `}</style>
 
-      {/* Header */}
       {!hideNavigation && (
         <header className="fixed top-0 left-0 right-0 z-50 bg-slate-950/80 backdrop-blur-xl border-b border-slate-800/50">
           <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
@@ -90,7 +82,6 @@ export default function Layout({ children, currentPageName }) {
               <h1 className="text-xl font-bold text-white">FitTrack+</h1>
             </Link>
             <div className="flex items-center gap-2">
-              {/* Desktop Navigation */}
               <nav className="hidden md:flex items-center gap-1">
                 {navigationItems.map((item) => {
                   const isActive = location.pathname === item.path;
@@ -120,7 +111,6 @@ export default function Layout({ children, currentPageName }) {
                 )}
               </nav>
 
-              {/* Mobile Menu Button */}
               <Button
                 variant="ghost"
                 size="icon"
@@ -134,12 +124,10 @@ export default function Layout({ children, currentPageName }) {
         </header>
       )}
 
-      {/* Main Content */}
       <main className={!hideNavigation ? 'pt-20 max-w-7xl mx-auto px-4' : ''}>
         {children}
       </main>
 
-      {/* Mobile Menu Overlay */}
       {showMenu && !hideNavigation && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60] md:hidden" onClick={() => setShowMenu(false)}>
           <div className="fixed inset-y-0 right-0 w-64 bg-slate-900 shadow-2xl flex flex-col" onClick={(e) => e.stopPropagation()}>
@@ -176,7 +164,6 @@ export default function Layout({ children, currentPageName }) {
                 );
               })}
               
-              {/* Meus Treinos */}
               <Link
                 to={createPageUrl("MyWorkouts")}
                 onClick={() => setShowMenu(false)}
@@ -190,7 +177,6 @@ export default function Layout({ children, currentPageName }) {
                 <span className="font-medium">Meus Treinos</span>
               </Link>
 
-              {/* Conquistas */}
               <Link
                 to={createPageUrl("Badges")}
                 onClick={() => setShowMenu(false)}
@@ -204,7 +190,6 @@ export default function Layout({ children, currentPageName }) {
                 <span className="font-medium">Conquistas</span>
               </Link>
 
-              {/* Assinar Premium - só aparece se não for premium */}
               {!isPremium && (
                 <Link
                   to={createPageUrl("Subscription")}
@@ -217,7 +202,6 @@ export default function Layout({ children, currentPageName }) {
               )}
             </nav>
 
-            {/* Sair - fixo no bottom */}
             <div className="p-4 border-t border-slate-800">
               <button
                 onClick={() => {
@@ -234,7 +218,6 @@ export default function Layout({ children, currentPageName }) {
         </div>
       )}
 
-      {/* Bottom Navigation - Mobile only, 4 items fixos */}
       {!hideNavigation && (
         <nav className="fixed bottom-0 left-0 right-0 bg-slate-950/95 backdrop-blur-xl border-t border-slate-800/50 z-50 md:hidden">
           <div className="max-w-7xl mx-auto">
