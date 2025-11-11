@@ -69,10 +69,11 @@ export default function Layout({ children, currentPageName }) {
     });
   }
 
-  const specialPages = ["WorkoutExecution", "Onboarding", "NutritionSetup", "WorkoutSetup", "LandingPage", "Welcome"];
+  // Páginas especiais que não mostram navegação (Welcome tem sua própria navegação)
+  const specialPages = ["WorkoutExecution", "Onboarding", "NutritionSetup", "WorkoutSetup", "Welcome"];
   
-  // Mostrar navegação se: não é página especial E (tem usuário OU está carregando)
-  const showNavigation = !specialPages.includes(currentPageName) && (user || isLoading);
+  // Mostrar navegação se não é página especial
+  const showNavigation = !specialPages.includes(currentPageName);
 
   const handleLogout = async () => {
     await base44.auth.logout();
