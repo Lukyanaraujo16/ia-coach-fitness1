@@ -11,14 +11,15 @@ import { Input } from "@/components/ui/input";
 import StatsCard from "../components/home/StatsCard";
 import QuickActionCard from "../components/home/QuickActionCard";
 import NextWorkoutCard from "../components/home/NextWorkoutCard";
-import PWAInstallPrompt from "../components/home/PWAInstallPrompt"; // Added import
+import PWAInstallPrompt from "../components/home/PWAInstallPrompt";
+import TrialBanner from "../components/TrialBanner";
 
 export default function Home() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [user, setUser] = useState(null);
   const [challengeInput, setChallengeInput] = useState("");
-  const [showPWAPrompt, setShowPWAPrompt] = useState(false); // Added state
+  const [showPWAPrompt, setShowPWAPrompt] = useState(false);
 
   useEffect(() => {
     const loadUser = async () => {
@@ -26,7 +27,6 @@ export default function Home() {
         const currentUser = await base44.auth.me();
         setUser(currentUser);
         
-        // Verificar fluxo de onboarding
         if (!currentUser.onboarding_completed) {
           navigate(createPageUrl("Onboarding"));
         } else if (!currentUser.nutrition_setup_completed) {
@@ -34,15 +34,11 @@ export default function Home() {
         } else if (!currentUser.workout_setup_completed) {
           navigate(createPageUrl("WorkoutSetup"));
         } else {
-          // Verificar se deve mostrar o prompt PWA
-          // Mostrar apenas se:
-          // 1. Nunca foi mostrado antes (pwa_prompt_shown não existe ou é false)
-          // 2. Passou pelo onboarding completo
           const hasSeenPrompt = localStorage.getItem('pwa_prompt_shown');
           if (!hasSeenPrompt && currentUser.workout_setup_completed) {
             setTimeout(() => {
               setShowPWAPrompt(true);
-            }, 1000); // Pequeno delay para melhor UX
+            }, 1000);
           }
         }
       } catch (error) {
@@ -118,7 +114,6 @@ export default function Home() {
     });
   };
 
-  // Added handler functions for PWA prompt
   const handleClosePWAPrompt = () => {
     setShowPWAPrompt(false);
     localStorage.setItem('pwa_prompt_shown', 'true');
@@ -130,9 +125,9 @@ export default function Home() {
   };
 
   const thisWeekWorkouts = workoutLogs.filter(log => {
-    const logDate = new Date(log.date + 'T00:00:00'); // Adicionar hora para evitar problema de fuso
+    const logDate = new Date(log.date + 'T00:00:00');
     const today = new Date();
-    today.setHours(0, 0, 0, 0); // Zerar horas para comparação precisa
+    today.setHours(0, 0, 0, 0);
     const weekAgo = new Date(today);
     weekAgo.setDate(weekAgo.getDate() - 7);
     return logDate >= weekAgo && logDate <= today;
@@ -154,6 +149,8 @@ export default function Home() {
     ? Math.min(((userProgress?.current_progress || 0) / activeChallenge.target) * 100, 100)
     : 0;
 
+  const isPremium = user?.subscription_status === 'premium' || user?.subscription_status === 'trial';
+
   if (!user) {
     return (
       <div className="py-6 flex items-center justify-center min-h-[60vh]">
@@ -164,7 +161,6 @@ export default function Home() {
 
   return (
     <div className="py-6 space-y-6">
-      {/* PWA Install Prompt */}
       {showPWAPrompt && (
         <PWAInstallPrompt 
           onClose={handleClosePWAPrompt}
@@ -172,7 +168,6 @@ export default function Home() {
         />
       )}
 
-      {/* Welcome Section */}
       <div className="space-y-3">
         <h2 className="text-3xl font-bold text-white">
           {getGreeting()}, {user?.full_name?.split(' ')[0] || 'Atleta'}! 👋
@@ -182,8 +177,10 @@ export default function Home() {
         </p>
       </div>
 
-      {/* Premium Banner */}
-      {user?.subscription_status !== 'premium' && (
+      {/* Trial Banner */}
+      <TrialBanner user={user} />
+
+      {!isPremium && (
         <Link to={createPageUrl("Subscription")}>
           <Card className="bg-gradient-to-r from-blue-900/50 to-purple-900/50 border-blue-700/50 hover:from-blue-900/60 hover:to-purple-900/60 transition-all cursor-pointer">
             <CardContent className="p-5 flex items-center justify-between">
@@ -202,8 +199,7 @@ export default function Home() {
         </Link>
       )}
 
-      {/* AI Coach Card - Premium Only */}
-      {user?.subscription_status === 'premium' && (
+      {isPremium && user?.subscription_status !== 'trial' && (
         <Link to={createPageUrl("AICoach")}>
           <Card className="bg-gradient-to-r from-purple-900/50 to-blue-900/50 border-purple-700/50 hover:from-purple-900/60 hover:to-blue-900/60 transition-all cursor-pointer">
             <CardContent className="p-5 flex items-center justify-between">
@@ -222,7 +218,6 @@ export default function Home() {
         </Link>
       )}
 
-      {/* WhatsApp Coach Card - Only if enabled */}
       {user?.whatsapp_coach_enabled !== false && (
         <a 
           href={base44.agents.getWhatsAppConnectURL('fitness_coach')} 

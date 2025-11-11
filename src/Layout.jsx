@@ -4,6 +4,7 @@ import { Link, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Home, Dumbbell, TrendingUp, Users, User, Crown, Shield, Apple, Sparkles, Menu, X, LogOut, Trophy, Award } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import TrialChecker from "./components/TrialChecker";
 
 export default function Layout({ children, currentPageName }) {
   const location = useLocation();
@@ -11,19 +12,25 @@ export default function Layout({ children, currentPageName }) {
   const [showMenu, setShowMenu] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
+  const loadUser = async () => {
+    try {
+      const currentUser = await base44.auth.me();
+      setUser(currentUser);
+    } catch (error) {
+      console.error("Error loading user:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const loadUser = async () => {
-      try {
-        const currentUser = await base44.auth.me();
-        setUser(currentUser);
-      } catch (error) {
-        console.error("Error loading user:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
     loadUser();
   }, []);
+
+  const handleTrialExpired = () => {
+    // Recarregar dados do usuário quando o trial expirar
+    loadUser();
+  };
 
   const navigationItems = [
     { name: "Home", path: createPageUrl("Home"), icon: Home },
@@ -42,7 +49,10 @@ export default function Layout({ children, currentPageName }) {
 
   navigationItems.push({ name: "Perfil", path: createPageUrl("Profile"), icon: User });
 
-  if (user?.subscription_status === 'premium') {
+  // Considerar trial como premium
+  const isPremium = user?.subscription_status === 'premium' || user?.subscription_status === 'trial';
+
+  if (isPremium) {
     navigationItems.splice(6, 0, {
       name: "Coach IA",
       path: createPageUrl("AICoach"),
@@ -58,11 +68,8 @@ export default function Layout({ children, currentPageName }) {
     });
   }
 
-  // Esconder navegação em páginas especiais OU quando não há usuário autenticado
   const specialPages = ["WorkoutExecution", "Onboarding", "NutritionSetup", "WorkoutSetup", "LandingPage", "Welcome"];
   const hideNavigation = specialPages.includes(currentPageName) || !user;
-
-  const isPremium = user?.subscription_status === 'premium';
 
   const handleLogout = async () => {
     await base44.auth.logout();
@@ -78,6 +85,9 @@ export default function Layout({ children, currentPageName }) {
           --bg-card: #1A1A1A;
         }
       `}</style>
+
+      {/* Trial Checker - verifica automaticamente se o trial expirou */}
+      {user && <TrialChecker user={user} onTrialExpired={handleTrialExpired} />}
 
       {!hideNavigation && (
         <header className="fixed top-0 left-0 right-0 z-50 bg-slate-950/80 backdrop-blur-xl border-b border-slate-800/50">
