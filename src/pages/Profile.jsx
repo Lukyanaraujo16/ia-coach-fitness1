@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
@@ -144,8 +145,7 @@ export default function Profile() {
     resetOnboardingMutation.mutate();
   };
 
-  const isPremium = user?.subscription_status === 'premium' || user?.subscription_status === 'trial';
-  const whatsappCoachEnabled = user?.whatsapp_coach_enabled !== false;
+  const isPremium = user?.subscription_status === 'premium';
 
   if (!user) {
     return (
@@ -279,29 +279,27 @@ export default function Profile() {
         </Card>
       </Link>
 
-      {/* WhatsApp Coach - Somente se habilitado */}
-      {whatsappCoachEnabled && (
-        <a 
-          href={base44.agents.getWhatsAppConnectURL('fitness_coach')} 
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Card className="bg-gradient-to-br from-green-900/30 to-green-800/20 border-green-700/50 hover:from-green-900/40 hover:to-green-800/30 transition-all cursor-pointer">
-            <CardContent className="p-5 flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 bg-green-600/20 rounded-xl flex items-center justify-center">
-                  <MessageCircle className="w-6 h-6 text-green-400" />
-                </div>
-                <div>
-                  <h3 className="text-white font-semibold">Coach no WhatsApp</h3>
-                  <p className="text-slate-300 text-sm">Treinador virtual 24/7 disponível</p>
-                </div>
+      {/* WhatsApp Coach - Novo card */}
+      <a 
+        href={base44.agents.getWhatsAppConnectURL('fitness_coach')} 
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        <Card className="bg-gradient-to-br from-green-900/30 to-green-800/20 border-green-700/50 hover:from-green-900/40 hover:to-green-800/30 transition-all cursor-pointer">
+          <CardContent className="p-5 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 bg-green-600/20 rounded-xl flex items-center justify-center">
+                <MessageCircle className="w-6 h-6 text-green-400" />
               </div>
-              <ChevronRight className="w-5 h-5 text-slate-400" />
-            </CardContent>
-          </Card>
-        </a>
-      )}
+              <div>
+                <h3 className="text-white font-semibold">Coach no WhatsApp</h3>
+                <p className="text-slate-300 text-sm">Treinador virtual 24/7 disponível</p>
+              </div>
+            </div>
+            <ChevronRight className="w-5 h-5 text-slate-400" />
+          </CardContent>
+        </Card>
+      </a>
 
       {/* Stats */}
       <ProfileStats user={user} />
