@@ -59,22 +59,8 @@ export default function Welcome() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950">
-      {/* Header com Logo */}
-      <header className="fixed top-0 left-0 right-0 z-50 bg-slate-950/80 backdrop-blur-xl border-b border-slate-800/50">
-        <div className="max-w-7xl mx-auto px-4 py-4">
-          <div className="flex items-center justify-center">
-            <div className="flex items-center gap-2">
-              <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-blue-800 rounded-xl flex items-center justify-center shadow-lg shadow-blue-900/50">
-                <Dumbbell className="w-6 h-6 text-white" />
-              </div>
-              <h1 className="text-2xl font-bold text-white">FitTrack+</h1>
-            </div>
-          </div>
-        </div>
-      </header>
-
       {/* Hero Section */}
-      <section className="relative overflow-hidden min-h-screen flex items-center justify-center pt-20">
+      <section className="relative overflow-hidden min-h-screen flex items-center justify-center">
         <div className="absolute inset-0 bg-gradient-to-br from-blue-900/20 to-purple-900/20" />
         <div className="relative max-w-7xl mx-auto px-4 py-8">
           <motion.div
