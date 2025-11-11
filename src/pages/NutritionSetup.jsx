@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useNavigate } from "react-router-dom";
@@ -9,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
-import { ChefHat, Loader2, Check, X, Sparkles, RefreshCw } from "lucide-react";
+import { ChefHat, Loader2, Check, X, Sparkles, RefreshCw, Wallet, DollarSign, TrendingUp } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 const dietaryOptions = [
@@ -22,6 +21,30 @@ const dietaryOptions = [
   { value: "high_protein", label: "Alta Proteína", emoji: "💪" },
   { value: "gluten_free", label: "Sem Glúten", emoji: "🌾" },
   { value: "dairy_free", label: "Sem Lactose", emoji: "🥛" },
+];
+
+const budgetOptions = [
+  { 
+    value: "low", 
+    label: "Econômico", 
+    icon: Wallet,
+    description: "Priorizar alimentos acessíveis e econômicos",
+    emoji: "💰"
+  },
+  { 
+    value: "moderate", 
+    label: "Moderado", 
+    icon: DollarSign,
+    description: "Equilíbrio entre qualidade e custo",
+    emoji: "💵"
+  },
+  { 
+    value: "flexible", 
+    label: "Flexível", 
+    icon: TrendingUp,
+    description: "Sem restrições de orçamento",
+    emoji: "💎"
+  },
 ];
 
 export default function NutritionSetup() {
@@ -37,6 +60,7 @@ export default function NutritionSetup() {
     food_allergies: [],
     disliked_foods: [],
     meals_per_day: 3,
+    budget: "moderate",
   });
   
   const [newAllergy, setNewAllergy] = useState("");
@@ -140,7 +164,7 @@ export default function NutritionSetup() {
         proteinPercentage = 40;
         carbsPercentage = 35;
         fatPercentage = 25;
-      } else { // gain_muscle
+      } else {
         if (gender === 'female') {
           calorieGoal = weight * 23 + 300;
         } else {
@@ -152,6 +176,12 @@ export default function NutritionSetup() {
       }
 
       calorieGoal = Math.round(calorieGoal);
+
+      const budgetText = formData.budget === 'low' 
+        ? 'ECONÔMICO - Priorize alimentos básicos, acessíveis e de baixo custo. Evite ingredientes caros ou importados. Use arroz, feijão, ovos, frango, batata, banana, etc.'
+        : formData.budget === 'moderate'
+        ? 'MODERADO - Equilíbrio entre qualidade e custo. Pode incluir alguns alimentos mais elaborados, mas sem exageros.'
+        : 'FLEXÍVEL - Sem restrições de orçamento. Pode sugerir alimentos premium, orgânicos, suplementos, etc.';
 
       const prompt = `Você é um nutricionista experiente criando um plano alimentar COMPLETO para um novo aluno.
 
@@ -170,6 +200,8 @@ ${formData.food_allergies.length > 0 ? '- Alergias: ' + formData.food_allergies.
 ${formData.disliked_foods.length > 0 ? '- Não gosta: ' + formData.disliked_foods.join(', ') : '- Sem restrições'}
 - Refeições/dia: ${formData.meals_per_day}
 
+ORÇAMENTO: ${budgetText}
+
 METAS CALCULADAS:
 - Calorias diárias: ${calorieGoal} kcal
 - Proteínas: ${proteinPercentage}%
@@ -180,12 +212,13 @@ Crie um plano nutricional COMPLETO e PERSONALIZADO com:
 
 1. Calcule e CONFIRME a distribuição de macronutrientes em PORCENTAGENS (deve somar 100%)
 2. Forneça 5-8 recomendações práticas e específicas para este aluno
-3. Liste 8-10 alimentos ESPECÍFICOS recomendados (considerando as restrições)
+3. Liste 8-10 alimentos ESPECÍFICOS recomendados (considerando restrições E ORÇAMENTO)
 4. Liste 5-8 alimentos ESPECÍFICOS a evitar (baseado no objetivo)
 5. Crie um exemplo de dia alimentar com ${formData.meals_per_day} refeições, incluindo horários
 6. Forneça 5-8 dicas práticas de nutrição e hidratação
 
-Seja ESPECÍFICO, PRÁTICO e considere TODAS as preferências e restrições mencionadas.
+IMPORTANTE: Considere o orçamento do aluno em TODAS as sugestões de alimentos e refeições.
+Seja ESPECÍFICO, PRÁTICO e considere TODAS as preferências, restrições e ORÇAMENTO.
 Use ingredientes BRASILEIROS e acessíveis.`;
 
       const response = await base44.integrations.Core.InvokeLLM({
@@ -259,20 +292,18 @@ Use ingredientes BRASILEIROS e acessíveis.`;
         }
       });
 
-      // Sobrescrever com os valores calculados
       response.daily_calories = calorieGoal;
       response.macros.protein_percentage = proteinPercentage;
       response.macros.carbs_percentage = carbsPercentage;
       response.macros.fat_percentage = fatPercentage;
 
-      // Validar que temos todas as refeições
       if (!response.meal_timing || response.meal_timing.length !== formData.meals_per_day) {
         throw new Error(`Erro: gerou ${response.meal_timing?.length || 0} refeições, mas deveria gerar ${formData.meals_per_day}`);
       }
 
       console.log("Plano nutricional gerado:", response);
       setGeneratedPlan(response);
-      setStep(4);
+      setStep(5);
     } catch (error) {
       console.error("Error generating plan:", error);
       alert(`Erro ao gerar plano: ${error.message}. Tente novamente.`);
@@ -289,15 +320,24 @@ Use ingredientes BRASILEIROS e acessíveis.`;
 
     setSubstituting(true);
     try {
+      const weight = user.current_weight;
       const calorieGoal = generatedPlan.daily_calories;
       const proteinPercentage = generatedPlan.macros.protein_percentage;
       const carbsPercentage = generatedPlan.macros.carbs_percentage;
       const fatPercentage = generatedPlan.macros.fat_percentage;
 
+      const budgetText = formData.budget === 'low' 
+        ? 'ECONÔMICO - Use alimentos básicos e acessíveis'
+        : formData.budget === 'moderate'
+        ? 'MODERADO - Equilíbrio entre qualidade e custo'
+        : 'FLEXÍVEL - Sem restrições de orçamento';
+
       const prompt = `Você é um nutricionista experiente ajustando um plano alimentar.
 
 PLANO ATUAL DO ALUNO:
 ${JSON.stringify(generatedPlan.meal_timing, null, 2)}
+
+ORÇAMENTO: ${budgetText}
 
 SOLICITAÇÃO DE SUBSTITUIÇÃO:
 "${substitutionRequest}"
@@ -309,12 +349,12 @@ METAS NUTRICIONAIS (NÃO DEVEM MUDAR):
 - Gorduras: ${fatPercentage}%
 
 INSTRUÇÕES:
-1. MANTENHA TODAS as outras refeições EXATAMENTE IGUAIS, apenas o(s) item(ns) específicos mencionados na solicitação de substituição devem ser alterados.
-2. SUBSTITUA APENAS o(s) alimento(s) mencionado(s) pelo usuário, se aplicável, ou crie uma alternativa que se encaixe na solicitação.
-3. A nova sugestão deve ter calorias e macros SIMILARES ao alimento substituído para manter a consistência do plano.
-4. Use ingredientes BRASILEIROS e acessíveis.
-5. Retorne o plano completo com ${formData.meals_per_day} refeições.
-6. A resposta deve ser APENAS o JSON com a chave 'meal_timing'.
+1. MANTENHA TODAS as outras refeições EXATAMENTE IGUAIS
+2. SUBSTITUA APENAS o(s) alimento(s) mencionado(s) pelo usuário
+3. A nova sugestão deve ter calorias e macros SIMILARES ao alimento substituído
+4. RESPEITE o orçamento do aluno na substituição
+5. Use ingredientes BRASILEIROS e acessíveis
+6. Retorne o plano completo com ${formData.meals_per_day} refeições
 
 Gere o novo plano de refeições com a substituição solicitada:`;
 
@@ -343,7 +383,6 @@ Gere o novo plano de refeições com a substituição solicitada:`;
         }
       });
 
-      // Atualizar apenas o meal_timing mantendo todo o resto
       setGeneratedPlan({
         ...generatedPlan,
         meal_timing: response.meal_timing
@@ -394,7 +433,7 @@ Gere o novo plano de refeições com a substituição solicitada:`;
         {/* Progress */}
         <div className="mb-8">
           <div className="flex gap-2">
-            {[1, 2, 3, 4].map((s) => (
+            {[1, 2, 3, 4, 5].map((s) => (
               <div
                 key={s}
                 className={`h-2 flex-1 rounded-full transition-all ${
@@ -404,7 +443,7 @@ Gere o novo plano de refeições com a substituição solicitada:`;
             ))}
           </div>
           <p className="text-slate-400 text-sm text-center mt-3">
-            Passo {step} de 4 - Setup Nutricional
+            Passo {step} de 5 - Setup Nutricional
           </p>
         </div>
 
@@ -629,6 +668,88 @@ Gere o novo plano de refeições com a substituição solicitada:`;
                       Voltar
                     </Button>
                     <Button
+                      onClick={() => setStep(4)}
+                      className="flex-1 bg-green-600 hover:bg-green-700"
+                    >
+                      Continuar
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
+          )}
+
+          {/* Step 4: Budget */}
+          {step === 4 && (
+            <motion.div
+              key="step4"
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+            >
+              <Card className="bg-slate-900/50 border-slate-800">
+                <CardHeader>
+                  <div className="w-16 h-16 bg-gradient-to-br from-green-600 to-emerald-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                    <Wallet className="w-8 h-8 text-white" />
+                  </div>
+                  <CardTitle className="text-white text-2xl text-center">
+                    Orçamento para Alimentação
+                  </CardTitle>
+                  <p className="text-slate-400 text-center">
+                    Quanto você pode investir em alimentação?
+                  </p>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div className="space-y-3">
+                    {budgetOptions.map((option) => {
+                      const Icon = option.icon;
+                      const isSelected = formData.budget === option.value;
+                      return (
+                        <motion.button
+                          key={option.value}
+                          whileHover={{ scale: 1.02 }}
+                          whileTap={{ scale: 0.98 }}
+                          onClick={() => setFormData({ ...formData, budget: option.value })}
+                          className={`w-full p-4 rounded-xl border-2 transition-all text-left ${
+                            isSelected
+                              ? "border-green-600 bg-green-600/20"
+                              : "border-slate-800 bg-slate-800/50 hover:border-slate-700"
+                          }`}
+                        >
+                          <div className="flex items-center gap-4">
+                            <div className={`w-12 h-12 rounded-lg flex items-center justify-center ${
+                              isSelected ? "bg-green-600/30" : "bg-slate-700/50"
+                            }`}>
+                              <span className="text-2xl">{option.emoji}</span>
+                            </div>
+                            <div className="flex-1">
+                              <p className="text-white font-semibold text-base">{option.label}</p>
+                              <p className="text-slate-400 text-sm">{option.description}</p>
+                            </div>
+                            {isSelected && (
+                              <Check className="w-6 h-6 text-green-400" />
+                            )}
+                          </div>
+                        </motion.button>
+                      );
+                    })}
+                  </div>
+
+                  <div className="bg-blue-900/20 border border-blue-600/30 rounded-lg p-4">
+                    <p className="text-blue-300 text-sm">
+                      💡 <strong>Dica:</strong> Seu orçamento ajudará a criar um plano alimentar mais adequado à sua realidade financeira, sem comprometer seus resultados.
+                    </p>
+                  </div>
+
+                  <div className="flex gap-3">
+                    <Button
+                      variant="outline"
+                      onClick={() => setStep(3)}
+                      className="flex-1 border-slate-700"
+                    >
+                      Voltar
+                    </Button>
+                    <Button
                       onClick={generateNutritionPlan}
                       disabled={generatingPlan}
                       className="flex-1 bg-green-600 hover:bg-green-700"
@@ -651,14 +772,16 @@ Gere o novo plano de refeições com a substituição solicitada:`;
             </motion.div>
           )}
 
-          {/* Step 4: Generated Plan */}
-          {step === 4 && generatedPlan && (
+          {/* Step 5: Generated Plan */}
+          {step === 5 && generatedPlan && (
             <motion.div
-              key="step4"
+              key="step5"
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               className="space-y-4"
             >
+              {/* ... keep all existing step 4 (now step 5) code ... */}
+              
               <Card className="bg-gradient-to-br from-green-900/30 to-emerald-900/20 border-green-700/50">
                 <CardContent className="p-8 text-center">
                   <div className="w-20 h-20 bg-green-600/20 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -673,7 +796,6 @@ Gere o novo plano de refeições com a substituição solicitada:`;
                 </CardContent>
               </Card>
 
-              {/* Calorie Goal */}
               <Card className="bg-slate-900/50 border-slate-800">
                 <CardHeader>
                   <CardTitle className="text-white">🎯 Meta Diária</CardTitle>
@@ -709,7 +831,6 @@ Gere o novo plano de refeições com a substituição solicitada:`;
                 </CardContent>
               </Card>
 
-              {/* Recommendations */}
               <Card className="bg-slate-900/50 border-slate-800">
                 <CardHeader>
                   <CardTitle className="text-white text-sm">💡 Recomendações Personalizadas</CardTitle>
@@ -726,7 +847,6 @@ Gere o novo plano de refeições com a substituição solicitada:`;
                 </CardContent>
               </Card>
 
-              {/* Meal Timing with Substitution Option */}
               <Card className="bg-slate-900/50 border-slate-800">
                 <CardHeader>
                   <div className="flex items-center justify-between">
@@ -808,7 +928,6 @@ Gere o novo plano de refeições com a substituição solicitada:`;
                 </CardContent>
               </Card>
 
-              {/* Hydration */}
               <Card className="bg-blue-900/20 border-blue-800/50">
                 <CardContent className="p-4 flex items-center gap-3">
                   <span className="text-3xl">💧</span>
