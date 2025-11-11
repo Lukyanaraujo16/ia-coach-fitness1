@@ -77,7 +77,7 @@ export default function PWAInstallPrompt({ onClose, onInstalled }) {
                 variant="ghost"
                 size="icon"
                 onClick={handleClose}
-                className="absolute top-4 right-4 text-slate-400 hover:text-white"
+                className="absolute top-4 right-4 text-slate-300 hover:text-white hover:bg-slate-800 transition-colors"
               >
                 <X className="w-5 h-5" />
               </Button>
@@ -141,7 +141,7 @@ export default function PWAInstallPrompt({ onClose, onInstalled }) {
                     <Button
                       onClick={handleClose}
                       variant="outline"
-                      className="border-slate-700 text-slate-300 hover:bg-slate-800 w-full"
+                      className="border-slate-600 bg-slate-800 text-white hover:bg-slate-700 hover:border-slate-500 w-full"
                     >
                       Entendi
                     </Button>
@@ -166,7 +166,7 @@ export default function PWAInstallPrompt({ onClose, onInstalled }) {
                     <Button
                       onClick={handleClose}
                       variant="outline"
-                      className="flex-1 border-slate-700 text-slate-300 hover:bg-slate-800"
+                      className="flex-1 border-slate-600 bg-slate-800 text-white hover:bg-slate-700 hover:border-slate-500"
                     >
                       Agora Não
                     </Button>
@@ -194,7 +194,7 @@ export default function PWAInstallPrompt({ onClose, onInstalled }) {
                   <Button
                     onClick={handleClose}
                     variant="outline"
-                    className="w-full border-slate-700 text-slate-300 hover:bg-slate-800"
+                    className="w-full border-slate-600 bg-slate-800 text-white hover:bg-slate-700 hover:border-slate-500"
                   >
                     Fechar
                   </Button>
