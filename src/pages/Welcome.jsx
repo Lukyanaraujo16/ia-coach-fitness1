@@ -58,46 +58,41 @@ export default function Welcome() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950">
       {/* Hero Section */}
-      <section className="relative overflow-hidden">
+      <section className="relative overflow-hidden min-h-screen flex items-center justify-center">
         <div className="absolute inset-0 bg-gradient-to-br from-blue-900/20 to-purple-900/20" />
-        <div className="relative max-w-7xl mx-auto px-4 py-20 md:py-32">
+        <div className="relative max-w-7xl mx-auto px-4 py-8">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             className="text-center space-y-6"
           >
-            <div className="flex items-center justify-center gap-3 mb-6">
-              <div className="w-16 h-16 bg-gradient-to-br from-blue-600 to-blue-800 rounded-2xl flex items-center justify-center shadow-2xl shadow-blue-900/50">
-                <Dumbbell className="w-8 h-8 text-white" />
-              </div>
-            </div>
-            <h1 className="text-5xl md:text-7xl font-bold text-white leading-tight">
-              Transforme seu corpo<br />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400">
-                com IA
-              </span>
-            </h1>
-            <p className="text-xl text-slate-300 max-w-2xl mx-auto">
-              A plataforma completa de fitness que usa inteligência artificial para criar treinos e dietas personalizadas para você
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center pt-6">
-              <Button
-                onClick={handleLogin}
-                size="lg"
-                className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white px-8 py-6 text-lg font-semibold shadow-2xl shadow-blue-900/50 hover:shadow-blue-800/60 hover:scale-105 transition-all duration-300"
-              >
-                Começar Gratuitamente
-                <ArrowRight className="w-5 h-5 ml-2" />
-              </Button>
-              <Button
-                onClick={handleLogin}
-                size="lg"
-                variant="outline"
-                className="border-2 border-slate-600 bg-slate-800/50 text-white hover:bg-slate-700 hover:border-slate-500 px-8 py-6 text-lg font-semibold hover:scale-105 transition-all duration-300"
-              >
-                Já tenho conta
-              </Button>
-            </div>
+            <Card className="bg-gradient-to-br from-blue-900/50 to-purple-900/50 border-blue-700/50 max-w-md mx-auto">
+              <CardContent className="p-8 space-y-6">
+                <Sparkles className="w-14 h-14 text-yellow-400 mx-auto" />
+                <h2 className="text-3xl font-bold text-white leading-tight">
+                  Pronto para transformar seu corpo?
+                </h2>
+                <p className="text-slate-300 text-base">
+                  Junte-se a milhares de pessoas que já estão alcançando seus objetivos
+                </p>
+                <Button
+                  onClick={handleLogin}
+                  size="lg"
+                  className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white px-8 py-6 text-base font-semibold shadow-2xl shadow-blue-900/50 hover:shadow-blue-800/60 hover:scale-105 transition-all duration-300"
+                >
+                  Começar Agora - É Grátis
+                  <ArrowRight className="w-5 h-5 ml-2" />
+                </Button>
+                <Button
+                  onClick={handleLogin}
+                  size="lg"
+                  variant="outline"
+                  className="w-full border-2 border-slate-600 bg-slate-800/50 text-white hover:bg-slate-700 hover:border-slate-500 px-8 py-6 text-base font-semibold hover:scale-105 transition-all duration-300"
+                >
+                  Já tenho conta
+                </Button>
+              </CardContent>
+            </Card>
           </motion.div>
         </div>
       </section>
@@ -261,17 +256,17 @@ export default function Welcome() {
               <CardContent className="p-12">
                 <Sparkles className="w-16 h-16 text-yellow-400 mx-auto mb-6" />
                 <h2 className="text-4xl font-bold text-white mb-4">
-                  Pronto para transformar seu corpo?
+                  Transforme sua vida hoje!
                 </h2>
                 <p className="text-slate-300 text-lg mb-8">
-                  Junte-se a milhares de pessoas que já estão alcançando seus objetivos
+                  Milhares de pessoas já alcançaram seus objetivos. Você é o próximo!
                 </p>
                 <Button
                   onClick={handleLogin}
                   size="lg"
                   className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white px-12 py-6 text-lg font-semibold shadow-2xl shadow-blue-900/50 hover:shadow-blue-800/60 hover:scale-105 transition-all duration-300"
                 >
-                  Começar Agora - É Grátis
+                  Começar Minha Transformação
                   <ArrowRight className="w-5 h-5 ml-2" />
                 </Button>
               </CardContent>
