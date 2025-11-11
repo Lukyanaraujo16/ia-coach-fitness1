@@ -36,7 +36,10 @@ export default function Layout({ children, currentPageName }) {
     navigationItems.push({ name: "Comunidade", path: createPageUrl("Community"), icon: Users });
   }
 
-  navigationItems.push({ name: "Ranking", path: createPageUrl("Leaderboard"), icon: Trophy });
+  if (user?.leaderboard_enabled !== false) {
+    navigationItems.push({ name: "Ranking", path: createPageUrl("Leaderboard"), icon: Trophy });
+  }
+
   navigationItems.push({ name: "Perfil", path: createPageUrl("Profile"), icon: User });
 
   if (user?.subscription_status === 'premium') {

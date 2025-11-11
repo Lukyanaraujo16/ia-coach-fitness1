@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Search, Crown, User, Trash2, Edit2, X, Save, Power, PowerOff } from "lucide-react";
+import { Search, Crown, User, Trash2, Edit2, X, Save, Power, PowerOff, Trophy } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -45,11 +45,19 @@ export default function AdminUsers({ users = [] }) {
   };
 
   const handleToggleCommunity = (value) => {
-    // Atualizar para TODOS os usuários
     users.forEach(user => {
       updateUserMutation.mutate({
         userId: user.id,
         data: { community_enabled: value },
+      });
+    });
+  };
+
+  const handleToggleLeaderboard = (value) => {
+    users.forEach(user => {
+      updateUserMutation.mutate({
+        userId: user.id,
+        data: { leaderboard_enabled: value },
       });
     });
   };
@@ -101,36 +109,68 @@ export default function AdminUsers({ users = [] }) {
   );
 
   const communityEnabled = users.length > 0 ? users[0]?.community_enabled !== false : true;
+  const leaderboardEnabled = users.length > 0 ? users[0]?.leaderboard_enabled !== false : true;
 
   return (
     <div className="space-y-4">
-      {/* Community Toggle */}
-      <Card className="bg-gradient-to-br from-purple-900/30 to-blue-900/20 border-purple-700/50">
-        <CardContent className="p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-white font-semibold mb-1">Comunidade Global</h3>
-              <p className="text-slate-400 text-sm">Habilitar ou desabilitar para todos os usuários</p>
+      {/* Global Toggles */}
+      <div className="grid md:grid-cols-2 gap-4">
+        {/* Community Toggle */}
+        <Card className="bg-gradient-to-br from-purple-900/30 to-blue-900/20 border-purple-700/50">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-white font-semibold mb-1">Comunidade Global</h3>
+                <p className="text-slate-400 text-sm">Habilitar ou desabilitar para todos</p>
+              </div>
+              <Button
+                onClick={() => handleToggleCommunity(!communityEnabled)}
+                className={communityEnabled ? "bg-green-600 hover:bg-green-700" : "bg-red-600 hover:bg-red-700"}
+              >
+                {communityEnabled ? (
+                  <>
+                    <Power className="w-4 h-4 mr-2" />
+                    Ativada
+                  </>
+                ) : (
+                  <>
+                    <PowerOff className="w-4 h-4 mr-2" />
+                    Desativada
+                  </>
+                )}
+              </Button>
             </div>
-            <Button
-              onClick={() => handleToggleCommunity(!communityEnabled)}
-              className={communityEnabled ? "bg-green-600 hover:bg-green-700" : "bg-red-600 hover:bg-red-700"}
-            >
-              {communityEnabled ? (
-                <>
-                  <Power className="w-4 h-4 mr-2" />
-                  Ativada
-                </>
-              ) : (
-                <>
-                  <PowerOff className="w-4 h-4 mr-2" />
-                  Desativada
-                </>
-              )}
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+
+        {/* Leaderboard Toggle */}
+        <Card className="bg-gradient-to-br from-yellow-900/30 to-orange-900/20 border-yellow-700/50">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-white font-semibold mb-1">Ranking Global</h3>
+                <p className="text-slate-400 text-sm">Habilitar ou desabilitar para todos</p>
+              </div>
+              <Button
+                onClick={() => handleToggleLeaderboard(!leaderboardEnabled)}
+                className={leaderboardEnabled ? "bg-green-600 hover:bg-green-700" : "bg-red-600 hover:bg-red-700"}
+              >
+                {leaderboardEnabled ? (
+                  <>
+                    <Power className="w-4 h-4 mr-2" />
+                    Ativado
+                  </>
+                ) : (
+                  <>
+                    <PowerOff className="w-4 h-4 mr-2" />
+                    Desativado
+                  </>
+                )}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
 
       <Card className="bg-slate-900/50 border-slate-800">
         <CardHeader>
