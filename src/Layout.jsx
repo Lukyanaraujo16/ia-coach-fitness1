@@ -16,8 +16,9 @@ export default function Layout({ children, currentPageName }) {
     try {
       const currentUser = await base44.auth.me();
       setUser(currentUser);
+      console.log("✅ Layout - Usuário carregado:", currentUser.email);
     } catch (error) {
-      console.error("Error loading user:", error);
+      console.error("❌ Layout - Error loading user:", error);
       setUser(null);
     } finally {
       setIsLoading(false);
@@ -29,7 +30,6 @@ export default function Layout({ children, currentPageName }) {
   }, []);
 
   const handleTrialExpired = () => {
-    // Recarregar dados do usuário quando o trial expirar
     loadUser();
   };
 
@@ -50,7 +50,6 @@ export default function Layout({ children, currentPageName }) {
 
   navigationItems.push({ name: "Perfil", path: createPageUrl("Profile"), icon: User });
 
-  // Considerar trial como premium
   const isPremium = user?.subscription_status === 'premium' || user?.subscription_status === 'trial';
 
   if (isPremium) {
@@ -69,11 +68,17 @@ export default function Layout({ children, currentPageName }) {
     });
   }
 
-  // Páginas especiais que não mostram navegação (Welcome tem sua própria navegação)
   const specialPages = ["WorkoutExecution", "Onboarding", "NutritionSetup", "WorkoutSetup", "Welcome"];
-  
-  // Mostrar navegação se não é página especial
   const showNavigation = !specialPages.includes(currentPageName);
+
+  console.log("🔍 Layout Debug:", {
+    currentPageName,
+    isSpecialPage: specialPages.includes(currentPageName),
+    showNavigation,
+    hasUser: !!user,
+    isLoading,
+    userEmail: user?.email
+  });
 
   const handleLogout = async () => {
     await base44.auth.logout();
@@ -90,59 +95,86 @@ export default function Layout({ children, currentPageName }) {
         }
       `}</style>
 
-      {/* Trial Checker - verifica automaticamente se o trial expirou */}
       {user && <TrialChecker user={user} onTrialExpired={handleTrialExpired} />}
 
       {showNavigation && (
-        <header className="fixed top-0 left-0 right-0 z-50 bg-slate-950/80 backdrop-blur-xl border-b border-slate-800/50">
-          <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
-            <Link to={createPageUrl("Home")} className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-blue-800 rounded-xl flex items-center justify-center shadow-lg shadow-blue-900/50">
-                <Dumbbell className="w-5 h-5 text-white" />
+        <>
+          <header className="fixed top-0 left-0 right-0 z-50 bg-slate-950/80 backdrop-blur-xl border-b border-slate-800/50">
+            <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
+              <Link to={createPageUrl("Home")} className="flex items-center gap-2">
+                <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-blue-800 rounded-xl flex items-center justify-center shadow-lg shadow-blue-900/50">
+                  <Dumbbell className="w-5 h-5 text-white" />
+                </div>
+                <h1 className="text-xl font-bold text-white">FitTrack+</h1>
+              </Link>
+              <div className="flex items-center gap-2">
+                <nav className="hidden md:flex items-center gap-1">
+                  {navigationItems.map((item) => {
+                    const isActive = location.pathname === item.path;
+                    const Icon = item.icon;
+                    return (
+                      <Link
+                        key={item.name}
+                        to={item.path}
+                        className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all ${
+                          isActive
+                            ? "bg-blue-600 text-white"
+                            : "text-slate-400 hover:text-white hover:bg-slate-800"
+                        }`}
+                      >
+                        <Icon className="w-4 h-4" />
+                        <span className="text-sm font-medium">{item.name}</span>
+                      </Link>
+                    );
+                  })}
+                  {!isPremium && (
+                    <Link to={createPageUrl("Subscription")}>
+                      <button className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 text-white rounded-lg text-sm font-medium transition-all duration-300 shadow-lg shadow-blue-900/50 ml-2">
+                        <Crown className="w-4 h-4" />
+                        Premium
+                      </button>
+                    </Link>
+                  )}
+                </nav>
+
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setShowMenu(!showMenu)}
+                  className="text-white hover:bg-slate-800 md:hidden"
+                >
+                  <Menu className="w-6 h-6" />
+                </Button>
               </div>
-              <h1 className="text-xl font-bold text-white">FitTrack+</h1>
-            </Link>
-            <div className="flex items-center gap-2">
-              <nav className="hidden md:flex items-center gap-1">
-                {navigationItems.map((item) => {
+            </div>
+          </header>
+
+          {/* Bottom Navigation - Mobile */}
+          <nav className="fixed bottom-0 left-0 right-0 bg-slate-950/95 backdrop-blur-xl border-t border-slate-800/50 z-50 md:hidden">
+            <div className="max-w-7xl mx-auto">
+              <div className="grid grid-cols-4 gap-1 p-2">
+                {navigationItems.slice(0, 4).map((item) => {
                   const isActive = location.pathname === item.path;
                   const Icon = item.icon;
                   return (
                     <Link
                       key={item.name}
                       to={item.path}
-                      className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all ${
+                      className={`flex flex-col items-center gap-1 px-2 py-2 rounded-xl transition-all ${
                         isActive
-                          ? "bg-blue-600 text-white"
-                          : "text-slate-400 hover:text-white hover:bg-slate-800"
+                          ? "bg-blue-600/20 text-blue-400"
+                          : "text-slate-400 hover:text-slate-300"
                       }`}
                     >
-                      <Icon className="w-4 h-4" />
-                      <span className="text-sm font-medium">{item.name}</span>
+                      <Icon className={`w-5 h-5 ${isActive ? "scale-110" : ""}`} />
+                      <span className="text-[10px] font-medium">{item.name}</span>
                     </Link>
                   );
                 })}
-                {!isPremium && (
-                  <Link to={createPageUrl("Subscription")}>
-                    <button className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 text-white rounded-lg text-sm font-medium transition-all duration-300 shadow-lg shadow-blue-900/50 ml-2">
-                      <Crown className="w-4 h-4" />
-                      Premium
-                    </button>
-                  </Link>
-                )}
-              </nav>
-
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setShowMenu(!showMenu)}
-                className="text-white hover:bg-slate-800 md:hidden"
-              >
-                <Menu className="w-6 h-6" />
-              </Button>
+              </div>
             </div>
-          </div>
-        </header>
+          </nav>
+        </>
       )}
 
       <main className={showNavigation ? 'pt-20 max-w-7xl mx-auto px-4' : ''}>
@@ -237,33 +269,6 @@ export default function Layout({ children, currentPageName }) {
             </div>
           </div>
         </div>
-      )}
-
-      {showNavigation && (
-        <nav className="fixed bottom-0 left-0 right-0 bg-slate-950/95 backdrop-blur-xl border-t border-slate-800/50 z-50 md:hidden">
-          <div className="max-w-7xl mx-auto">
-            <div className="grid grid-cols-4 gap-1 p-2">
-              {navigationItems.slice(0, 4).map((item) => {
-                const isActive = location.pathname === item.path;
-                const Icon = item.icon;
-                return (
-                  <Link
-                    key={item.name}
-                    to={item.path}
-                    className={`flex flex-col items-center gap-1 px-2 py-2 rounded-xl transition-all ${
-                      isActive
-                        ? "bg-blue-600/20 text-blue-400"
-                        : "text-slate-400 hover:text-slate-300"
-                    }`}
-                  >
-                    <Icon className={`w-5 h-5 ${isActive ? "scale-110" : ""}`} />
-                    <span className="text-[10px] font-medium">{item.name}</span>
-                  </Link>
-                );
-              })}
-            </div>
-          </div>
-        </nav>
       )}
     </div>
   );
