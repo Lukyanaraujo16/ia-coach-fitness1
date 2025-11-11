@@ -76,7 +76,7 @@ export default function Layout({ children, currentPageName }) {
   };
 
   return (
-    <div className={`min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 ${!hideNavigation ? 'pb-24 md:pb-0' : ''}`}>
+    <div className={`min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 ${!hideNavigation ? 'pb-20 md:pb-0' : ''}`}>
       <style>{`
         :root {
           --primary: #1E40AF;
@@ -90,7 +90,7 @@ export default function Layout({ children, currentPageName }) {
       {user && <TrialChecker user={user} onTrialExpired={handleTrialExpired} />}
 
       {!hideNavigation && (
-        <header className="fixed top-0 left-0 right-0 z-40 bg-slate-950/80 backdrop-blur-xl border-b border-slate-800/50">
+        <header className="fixed top-0 left-0 right-0 z-50 bg-slate-950/80 backdrop-blur-xl border-b border-slate-800/50">
           <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
             <Link to={createPageUrl("Home")} className="flex items-center gap-2">
               <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-blue-800 rounded-xl flex items-center justify-center shadow-lg shadow-blue-900/50">
@@ -146,7 +146,7 @@ export default function Layout({ children, currentPageName }) {
       </main>
 
       {showMenu && !hideNavigation && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[70] md:hidden" onClick={() => setShowMenu(false)}>
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60] md:hidden" onClick={() => setShowMenu(false)}>
           <div className="fixed inset-y-0 right-0 w-64 bg-slate-900 shadow-2xl flex flex-col" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between p-4 border-b border-slate-800">
               <h2 className="text-white font-semibold">Menu</h2>
@@ -200,7 +200,7 @@ export default function Layout({ children, currentPageName }) {
                 className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
                   location.pathname === createPageUrl("Badges")
                     ? "bg-blue-600 text-white"
-                    : "text-slate-400 hover:text-white hover:bg-slate-800"
+                    : "text-slate-400 hover:text-white hover:hover:bg-slate-800"
                 }`}
               >
                 <Award className="w-5 h-5" />
@@ -236,9 +236,9 @@ export default function Layout({ children, currentPageName }) {
       )}
 
       {!hideNavigation && (
-        <nav className="fixed bottom-0 left-0 right-0 bg-slate-950/95 backdrop-blur-xl border-t border-slate-800/50 z-50 md:hidden safe-area-bottom">
-          <div className="max-w-7xl mx-auto px-2">
-            <div className="grid grid-cols-4 gap-1 py-2">
+        <nav className="fixed bottom-0 left-0 right-0 bg-slate-950/95 backdrop-blur-xl border-t border-slate-800/50 z-50 md:hidden">
+          <div className="max-w-7xl mx-auto">
+            <div className="grid grid-cols-4 gap-1 p-2">
               {navigationItems.slice(0, 4).map((item) => {
                 const isActive = location.pathname === item.path;
                 const Icon = item.icon;
@@ -246,14 +246,14 @@ export default function Layout({ children, currentPageName }) {
                   <Link
                     key={item.name}
                     to={item.path}
-                    className={`flex flex-col items-center gap-1 px-2 py-2.5 rounded-xl transition-all ${
+                    className={`flex flex-col items-center gap-1 px-2 py-2 rounded-xl transition-all ${
                       isActive
                         ? "bg-blue-600/20 text-blue-400"
                         : "text-slate-400 hover:text-slate-300"
                     }`}
                   >
-                    <Icon className={`w-6 h-6 ${isActive ? "scale-110" : ""}`} />
-                    <span className="text-[10px] font-medium leading-tight">{item.name}</span>
+                    <Icon className={`w-5 h-5 ${isActive ? "scale-110" : ""}`} />
+                    <span className="text-[10px] font-medium">{item.name}</span>
                   </Link>
                 );
               })}
