@@ -245,26 +245,26 @@ export default function Welcome() {
       </section>
 
       {/* CTA Section */}
-      <section className="py-20 px-4">
-        <div className="max-w-4xl mx-auto text-center">
+      <section className="py-20 px-4 pb-16">
+        <div className="max-w-md mx-auto">
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             whileInView={{ opacity: 1, scale: 1 }}
             viewport={{ once: true }}
           >
             <Card className="bg-gradient-to-br from-blue-900/50 to-purple-900/50 border-blue-700/50">
-              <CardContent className="p-12">
-                <Sparkles className="w-16 h-16 text-yellow-400 mx-auto mb-6" />
-                <h2 className="text-4xl font-bold text-white mb-4">
+              <CardContent className="p-8 space-y-6 text-center">
+                <Sparkles className="w-14 h-14 text-yellow-400 mx-auto" />
+                <h2 className="text-3xl font-bold text-white">
                   Transforme sua vida hoje!
                 </h2>
-                <p className="text-slate-300 text-lg mb-8">
+                <p className="text-slate-300 text-base">
                   Milhares de pessoas já alcançaram seus objetivos. Você é o próximo!
                 </p>
                 <Button
                   onClick={handleLogin}
                   size="lg"
-                  className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white px-12 py-6 text-lg font-semibold shadow-2xl shadow-blue-900/50 hover:shadow-blue-800/60 hover:scale-105 transition-all duration-300"
+                  className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white px-8 py-6 text-base font-semibold shadow-2xl shadow-blue-900/50 hover:shadow-blue-800/60 hover:scale-105 transition-all duration-300"
                 >
                   Começar Minha Transformação
                   <ArrowRight className="w-5 h-5 ml-2" />
