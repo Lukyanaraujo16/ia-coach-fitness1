@@ -69,7 +69,8 @@ export default function Layout({ children, currentPageName }) {
   }
 
   const specialPages = ["WorkoutExecution", "Onboarding", "NutritionSetup", "WorkoutSetup", "LandingPage", "Welcome"];
-  const hideNavigation = specialPages.includes(currentPageName) || !user;
+  // Só esconde navegação se for uma página especial E o usuário já foi carregado (ou não existe)
+  const hideNavigation = specialPages.includes(currentPageName) || (!user && !isLoading);
 
   const handleLogout = async () => {
     await base44.auth.logout();
@@ -200,7 +201,7 @@ export default function Layout({ children, currentPageName }) {
                 className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
                   location.pathname === createPageUrl("Badges")
                     ? "bg-blue-600 text-white"
-                    : "text-slate-400 hover:text-white hover:hover:bg-slate-800"
+                    : "text-slate-400 hover:text-white hover:bg-slate-800"
                 }`}
               >
                 <Award className="w-5 h-5" />
