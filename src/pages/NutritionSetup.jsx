@@ -8,7 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { ChefHat, Loader2, Check, X, Sparkles } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
+import { ChefHat, Loader2, Check, X, Sparkles, RefreshCw } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 const dietaryOptions = [
@@ -29,6 +30,7 @@ export default function NutritionSetup() {
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [generatingPlan, setGeneratingPlan] = useState(false);
+  const [substituting, setSubstituting] = useState(false);
   
   const [formData, setFormData] = useState({
     dietary_preferences: [],
@@ -40,6 +42,8 @@ export default function NutritionSetup() {
   const [newAllergy, setNewAllergy] = useState("");
   const [newDislike, setNewDislike] = useState("");
   const [generatedPlan, setGeneratedPlan] = useState(null);
+  const [showSubstitution, setShowSubstitution] = useState(false);
+  const [substitutionRequest, setSubstitutionRequest] = useState("");
 
   useEffect(() => {
     const loadUser = async () => {
@@ -111,7 +115,6 @@ export default function NutritionSetup() {
   const generateNutritionPlan = async () => {
     setGeneratingPlan(true);
     try {
-      // Calcular calorias baseado em gênero e objetivo
       let calorieGoal;
       let proteinPercentage, carbsPercentage, fatPercentage;
       
@@ -119,9 +122,7 @@ export default function NutritionSetup() {
       const gender = user.gender;
       const goal = user.fitness_goal;
 
-      // Definir calorias e macros baseado em gênero e objetivo
       if (goal === 'lose_weight') {
-        // Emagrecimento
         if (gender === 'female') {
           calorieGoal = weight * 20;
         } else {
@@ -131,7 +132,6 @@ export default function NutritionSetup() {
         carbsPercentage = 35;
         fatPercentage = 25;
       } else if (goal === 'maintain') {
-        // Manutenção
         if (gender === 'female') {
           calorieGoal = weight * 25;
         } else {
@@ -141,7 +141,6 @@ export default function NutritionSetup() {
         carbsPercentage = 35;
         fatPercentage = 25;
       } else { // gain_muscle
-        // Ganho de massa
         if (gender === 'female') {
           calorieGoal = weight * 23 + 300;
         } else {
@@ -152,7 +151,6 @@ export default function NutritionSetup() {
         fatPercentage = 20;
       }
 
-      // Arredondar calorias
       calorieGoal = Math.round(calorieGoal);
 
       const prompt = `Você é um nutricionista experiente criando um plano alimentar COMPLETO para um novo aluno.
@@ -280,6 +278,84 @@ Use ingredientes BRASILEIROS e acessíveis.`;
       alert(`Erro ao gerar plano: ${error.message}. Tente novamente.`);
     } finally {
       setGeneratingPlan(false);
+    }
+  };
+
+  const handleSubstitution = async () => {
+    if (!substitutionRequest.trim()) {
+      alert("Por favor, descreva o que deseja substituir");
+      return;
+    }
+
+    setSubstituting(true);
+    try {
+      const calorieGoal = generatedPlan.daily_calories;
+      const proteinPercentage = generatedPlan.macros.protein_percentage;
+      const carbsPercentage = generatedPlan.macros.carbs_percentage;
+      const fatPercentage = generatedPlan.macros.fat_percentage;
+
+      const prompt = `Você é um nutricionista experiente ajustando um plano alimentar.
+
+PLANO ATUAL DO ALUNO:
+${JSON.stringify(generatedPlan.meal_timing, null, 2)}
+
+SOLICITAÇÃO DE SUBSTITUIÇÃO:
+"${substitutionRequest}"
+
+METAS NUTRICIONAIS (NÃO DEVEM MUDAR):
+- Calorias totais: ${calorieGoal} kcal
+- Proteínas: ${proteinPercentage}%
+- Carboidratos: ${carbsPercentage}%
+- Gorduras: ${fatPercentage}%
+
+INSTRUÇÕES:
+1. MANTENHA TODAS as outras refeições EXATAMENTE IGUAIS, apenas o(s) item(ns) específicos mencionados na solicitação de substituição devem ser alterados.
+2. SUBSTITUA APENAS o(s) alimento(s) mencionado(s) pelo usuário, se aplicável, ou crie uma alternativa que se encaixe na solicitação.
+3. A nova sugestão deve ter calorias e macros SIMILARES ao alimento substituído para manter a consistência do plano.
+4. Use ingredientes BRASILEIROS e acessíveis.
+5. Retorne o plano completo com ${formData.meals_per_day} refeições.
+6. A resposta deve ser APENAS o JSON com a chave 'meal_timing'.
+
+Gere o novo plano de refeições com a substituição solicitada:`;
+
+      const response = await base44.integrations.Core.InvokeLLM({
+        prompt: prompt,
+        response_json_schema: {
+          type: "object",
+          properties: {
+            meal_timing: {
+              type: "array",
+              minItems: formData.meals_per_day,
+              maxItems: formData.meals_per_day,
+              items: {
+                type: "object",
+                properties: {
+                  time: { type: "string" },
+                  meal_type: { type: "string" },
+                  suggestion: { type: "string" },
+                  calories: { type: "number" }
+                },
+                required: ["time", "meal_type", "suggestion", "calories"]
+              }
+            }
+          },
+          required: ["meal_timing"]
+        }
+      });
+
+      // Atualizar apenas o meal_timing mantendo todo o resto
+      setGeneratedPlan({
+        ...generatedPlan,
+        meal_timing: response.meal_timing
+      });
+
+      setShowSubstitution(false);
+      setSubstitutionRequest("");
+    } catch (error) {
+      console.error("Error substituting:", error);
+      alert("Erro ao substituir alimento. Tente novamente.");
+    } finally {
+      setSubstituting(false);
     }
   };
 
@@ -650,12 +726,71 @@ Use ingredientes BRASILEIROS e acessíveis.`;
                 </CardContent>
               </Card>
 
-              {/* Meal Timing */}
+              {/* Meal Timing with Substitution Option */}
               <Card className="bg-slate-900/50 border-slate-800">
                 <CardHeader>
-                  <CardTitle className="text-white text-sm">🍽️ Exemplo de Dia Alimentar</CardTitle>
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-white text-sm">🍽️ Exemplo de Dia Alimentar</CardTitle>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setShowSubstitution(!showSubstitution)}
+                      className="border-orange-600 text-orange-400 hover:bg-orange-900/20"
+                    >
+                      <RefreshCw className="w-4 h-4 mr-2" />
+                      Substituir Alimento
+                    </Button>
+                  </div>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="space-y-4">
+                  {showSubstitution && (
+                    <div className="p-4 bg-orange-900/20 border border-orange-600/30 rounded-lg space-y-3">
+                      <p className="text-orange-300 text-sm font-semibold">
+                        🔄 Solicitar Substituição
+                      </p>
+                      <p className="text-slate-400 text-xs">
+                        Descreva o que deseja substituir. Ex: "Substituir o frango do almoço por peixe" ou "Trocar banana por maçã no lanche"
+                      </p>
+                      <Textarea
+                        value={substitutionRequest}
+                        onChange={(e) => setSubstitutionRequest(e.target.value)}
+                        placeholder="Descreva a substituição que deseja..."
+                        className="bg-slate-800 border-slate-700 text-white min-h-[80px]"
+                      />
+                      <div className="flex gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            setShowSubstitution(false);
+                            setSubstitutionRequest("");
+                          }}
+                          className="flex-1 border-slate-700"
+                        >
+                          Cancelar
+                        </Button>
+                        <Button
+                          size="sm"
+                          onClick={handleSubstitution}
+                          disabled={substituting || !substitutionRequest.trim()}
+                          className="flex-1 bg-orange-600 hover:bg-orange-700"
+                        >
+                          {substituting ? (
+                            <>
+                              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                              Substituindo...
+                            </>
+                          ) : (
+                            <>
+                              <RefreshCw className="w-4 h-4 mr-2" />
+                              Substituir
+                            </>
+                          )}
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+
                   <div className="space-y-3">
                     {generatedPlan.meal_timing.map((meal, idx) => (
                       <div key={idx} className="flex items-start gap-3 p-3 bg-slate-800/50 rounded-lg">
