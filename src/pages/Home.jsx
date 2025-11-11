@@ -3,7 +3,7 @@ import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { Calendar, Flame, Trophy, TrendingUp, ChevronRight, Zap, Target, Crown, MessageCircle } from "lucide-react";
+import { Calendar, Flame, Trophy, TrendingUp, ChevronRight, Zap, Target, Crown, MessageCircle, Apple } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -81,6 +81,16 @@ export default function Home() {
     enabled: !!user?.email,
   });
 
+  const { data: mealLogs = [] } = useQuery({
+    queryKey: ['meal-logs', user?.email],
+    queryFn: async () => {
+      if (!user?.email) return [];
+      const allLogs = await base44.entities.MealLog.list('-date');
+      return allLogs.filter(log => log.created_by === user.email);
+    },
+    enabled: !!user?.email,
+  });
+
   const activeChallenge = challenges.find(c => c.is_active);
   const userProgress = challengeProgress.find(p => p.challenge_id === activeChallenge?.id);
 
@@ -135,6 +145,25 @@ export default function Home() {
   const currentWeight = progressEntries[0]?.weight || user?.current_weight || 0;
   const weeklyGoal = user?.weekly_goal || 3;
   const progress = Math.min((thisWeekWorkouts.length / weeklyGoal) * 100, 100);
+
+  // Calcular calorias e macros do dia atual
+  const getLocalDateString = () => {
+    const date = new Date();
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  const todayDate = getLocalDateString();
+  const todayMeals = mealLogs.filter(log => log.date === todayDate && log.analysis_complete);
+  const todayCalories = todayMeals.reduce((sum, log) => sum + (log.total_calories || 0), 0);
+  const todayProtein = todayMeals.reduce((sum, log) => sum + (log.macros?.protein || 0), 0);
+  const todayCarbs = todayMeals.reduce((sum, log) => sum + (log.macros?.carbs || 0), 0);
+  const todayFat = todayMeals.reduce((sum, log) => sum + (log.macros?.fat || 0), 0);
+  
+  const calorieGoal = user?.daily_calorie_goal || 2000;
+  const caloriePercentage = Math.min((todayCalories / calorieGoal) * 100, 100);
 
   const getGreeting = () => {
     const hour = new Date().getHours();
@@ -238,6 +267,59 @@ export default function Home() {
           </Card>
         </a>
       )}
+
+      {/* Nutrition Summary Card */}
+      <Link to={createPageUrl("Nutrition")}>
+        <Card className="bg-gradient-to-br from-green-900/30 to-emerald-900/20 border-green-700/50 hover:from-green-900/40 hover:to-emerald-900/30 transition-all cursor-pointer">
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-white flex items-center gap-2">
+                <Apple className="w-5 h-5 text-green-400" />
+                Nutrição de Hoje
+              </CardTitle>
+              <ChevronRight className="w-5 h-5 text-slate-400" />
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div>
+              <div className="flex items-baseline justify-between mb-2">
+                <div>
+                  <span className="text-4xl font-bold text-green-400">{Math.round(todayCalories)}</span>
+                  <span className="text-slate-400 text-sm ml-2">/ {calorieGoal} kcal</span>
+                </div>
+                <span className="text-slate-400 text-sm">{Math.round(caloriePercentage)}%</span>
+              </div>
+              <div className="relative h-2 bg-slate-800 rounded-full overflow-hidden">
+                <div
+                  className="absolute inset-y-0 left-0 bg-gradient-to-r from-green-600 to-emerald-500 rounded-full transition-all duration-500"
+                  style={{ width: `${caloriePercentage}%` }}
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-3 gap-3">
+              <div className="text-center p-3 bg-slate-900/50 rounded-lg">
+                <p className="text-blue-400 font-bold text-lg">{Math.round(todayProtein)}g</p>
+                <p className="text-slate-400 text-xs">Proteína</p>
+              </div>
+              <div className="text-center p-3 bg-slate-900/50 rounded-lg">
+                <p className="text-orange-400 font-bold text-lg">{Math.round(todayCarbs)}g</p>
+                <p className="text-slate-400 text-xs">Carbos</p>
+              </div>
+              <div className="text-center p-3 bg-slate-900/50 rounded-lg">
+                <p className="text-yellow-400 font-bold text-lg">{Math.round(todayFat)}g</p>
+                <p className="text-slate-400 text-xs">Gordura</p>
+              </div>
+            </div>
+
+            {todayMeals.length === 0 && (
+              <p className="text-slate-400 text-sm text-center py-2">
+                📸 Registre suas refeições para acompanhar
+              </p>
+            )}
+          </CardContent>
+        </Card>
+      </Link>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <StatsCard
