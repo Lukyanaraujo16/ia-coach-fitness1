@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { Link, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { Home, Dumbbell, TrendingUp, Users, User, Crown, Shield, Apple, Sparkles, Menu, X, LogOut, Trophy, Award } from "lucide-react";
+import { Home, Dumbbell, User, Shield, Apple, Sparkles, Menu, X, LogOut, Trophy, Award } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import TrialChecker from "./components/TrialChecker";
 
@@ -32,28 +32,18 @@ export default function Layout({ children, currentPageName }) {
     loadUser();
   };
 
-  const navigationItems = [
+  const isPremium = user?.subscription_status === 'premium' || user?.subscription_status === 'trial';
+
+  // Menu desktop - todas as opções
+  const desktopNavigationItems = [
     { name: "Home", path: createPageUrl("Home"), icon: Home },
     { name: "Treinos", path: createPageUrl("Workouts"), icon: Dumbbell },
     { name: "Nutrição", path: createPageUrl("Nutrition"), icon: Apple },
-    { name: "Progresso", path: createPageUrl("Progress"), icon: TrendingUp },
+    { name: "Perfil", path: createPageUrl("Profile"), icon: User },
   ];
 
-  if (user?.community_enabled !== false) {
-    navigationItems.push({ name: "Comunidade", path: createPageUrl("Community"), icon: Users });
-  }
-
-  if (user?.leaderboard_enabled !== false) {
-    navigationItems.push({ name: "Ranking", path: createPageUrl("Leaderboard"), icon: Trophy });
-  }
-
-  navigationItems.push({ name: "Perfil", path: createPageUrl("Profile"), icon: User });
-
-  // Considerar trial como premium
-  const isPremium = user?.subscription_status === 'premium' || user?.subscription_status === 'trial';
-
   if (isPremium) {
-    navigationItems.splice(6, 0, {
+    desktopNavigationItems.splice(3, 0, {
       name: "Coach IA",
       path: createPageUrl("AICoach"),
       icon: Sparkles,
@@ -61,7 +51,46 @@ export default function Layout({ children, currentPageName }) {
   }
 
   if (user?.role === 'admin') {
-    navigationItems.push({
+    desktopNavigationItems.push({
+      name: "Admin",
+      path: createPageUrl("Admin"),
+      icon: Shield,
+    });
+  }
+
+  // Menu mobile - apenas 4 opções principais
+  const mobileNavigationItems = [
+    { name: "Home", path: createPageUrl("Home"), icon: Home },
+    { name: "Treinos", path: createPageUrl("Workouts"), icon: Dumbbell },
+    { name: "Nutrição", path: createPageUrl("Nutrition"), icon: Apple },
+  ];
+
+  if (isPremium) {
+    mobileNavigationItems.push({
+      name: "Coach IA",
+      path: createPageUrl("AICoach"),
+      icon: Sparkles,
+    });
+  }
+
+  // Menu lateral (hamburger) - todas as opções extras
+  const sideMenuItems = [
+    { name: "Perfil", path: createPageUrl("Profile"), icon: User },
+    { name: "Progresso", path: createPageUrl("Progress"), icon: Trophy },
+    { name: "Meus Treinos", path: createPageUrl("MyWorkouts"), icon: Dumbbell },
+    { name: "Conquistas", path: createPageUrl("Badges"), icon: Award },
+  ];
+
+  if (user?.community_enabled !== false) {
+    sideMenuItems.unshift({ name: "Comunidade", path: createPageUrl("Community"), icon: Trophy });
+  }
+
+  if (user?.leaderboard_enabled !== false) {
+    sideMenuItems.splice(1, 0, { name: "Ranking", path: createPageUrl("Leaderboard"), icon: Trophy });
+  }
+
+  if (user?.role === 'admin') {
+    sideMenuItems.push({
       name: "Admin",
       path: createPageUrl("Admin"),
       icon: Shield,
@@ -100,7 +129,7 @@ export default function Layout({ children, currentPageName }) {
             </Link>
             <div className="flex items-center gap-2">
               <nav className="hidden md:flex items-center gap-1">
-                {navigationItems.map((item) => {
+                {desktopNavigationItems.map((item) => {
                   const isActive = location.pathname === item.path;
                   const Icon = item.icon;
                   return (
@@ -118,14 +147,6 @@ export default function Layout({ children, currentPageName }) {
                     </Link>
                   );
                 })}
-                {!isPremium && (
-                  <Link to={createPageUrl("Subscription")}>
-                    <button className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 text-white rounded-lg text-sm font-medium transition-all duration-300 shadow-lg shadow-blue-900/50 ml-2">
-                      <Crown className="w-4 h-4" />
-                      Premium
-                    </button>
-                  </Link>
-                )}
               </nav>
 
               <Button
@@ -161,7 +182,7 @@ export default function Layout({ children, currentPageName }) {
             </div>
             
             <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
-              {navigationItems.map((item) => {
+              {sideMenuItems.map((item) => {
                 const isActive = location.pathname === item.path;
                 const Icon = item.icon;
                 return (
@@ -180,43 +201,6 @@ export default function Layout({ children, currentPageName }) {
                   </Link>
                 );
               })}
-              
-              <Link
-                to={createPageUrl("MyWorkouts")}
-                onClick={() => setShowMenu(false)}
-                className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
-                  location.pathname === createPageUrl("MyWorkouts")
-                    ? "bg-blue-600 text-white"
-                    : "text-slate-400 hover:text-white hover:bg-slate-800"
-                }`}
-              >
-                <Dumbbell className="w-5 h-5" />
-                <span className="font-medium">Meus Treinos</span>
-              </Link>
-
-              <Link
-                to={createPageUrl("Badges")}
-                onClick={() => setShowMenu(false)}
-                className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
-                  location.pathname === createPageUrl("Badges")
-                    ? "bg-blue-600 text-white"
-                    : "text-slate-400 hover:text-white hover:hover:bg-slate-800"
-                }`}
-              >
-                <Award className="w-5 h-5" />
-                <span className="font-medium">Conquistas</span>
-              </Link>
-
-              {!isPremium && (
-                <Link
-                  to={createPageUrl("Subscription")}
-                  onClick={() => setShowMenu(false)}
-                  className="flex items-center gap-3 px-4 py-3 rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 text-white"
-                >
-                  <Crown className="w-5 h-5" />
-                  <span className="font-medium">Assinar Premium</span>
-                </Link>
-              )}
             </nav>
 
             <div className="p-4 border-t border-slate-800">
@@ -239,7 +223,7 @@ export default function Layout({ children, currentPageName }) {
         <nav className="fixed bottom-0 left-0 right-0 bg-slate-950/95 backdrop-blur-xl border-t border-slate-800/50 z-50 md:hidden">
           <div className="max-w-7xl mx-auto">
             <div className="grid grid-cols-4 gap-1 p-2">
-              {navigationItems.slice(0, 4).map((item) => {
+              {mobileNavigationItems.map((item) => {
                 const isActive = location.pathname === item.path;
                 const Icon = item.icon;
                 return (

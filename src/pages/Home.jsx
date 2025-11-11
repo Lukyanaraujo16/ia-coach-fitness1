@@ -223,25 +223,6 @@ export default function Home() {
         </Link>
       )}
 
-      {isPremium && (
-        <Link to={createPageUrl("AICoach")}>
-          <Card className="bg-gradient-to-r from-purple-900/50 to-blue-900/50 border-purple-700/50 hover:from-purple-900/60 hover:to-blue-900/60 transition-all cursor-pointer">
-            <CardContent className="p-5 flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 bg-gradient-to-br from-blue-600 to-purple-600 rounded-xl flex items-center justify-center">
-                  <Zap className="w-6 h-6 text-white" />
-                </div>
-                <div>
-                  <h3 className="text-white font-semibold">Treinador IA</h3>
-                  <p className="text-slate-300 text-sm">Análises e conselhos personalizados</p>
-                </div>
-              </div>
-              <ChevronRight className="w-5 h-5 text-slate-400" />
-            </CardContent>
-          </Card>
-        </Link>
-      )}
-
       {user?.whatsapp_coach_enabled !== false && (
         <a 
           href={base44.agents.getWhatsAppConnectURL('fitness_coach')} 

@@ -1,11 +1,10 @@
-
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Crown, LogOut, User, Settings, Edit2, Save, X, Dumbbell, Trash2, AlertTriangle, ChevronRight, MessageCircle } from "lucide-react";
+import { Crown, LogOut, User, Settings, Edit2, Save, X, Dumbbell, Trash2, AlertTriangle } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import ProfileStats from "../components/profile/ProfileStats";
@@ -260,46 +259,6 @@ export default function Profile() {
           </CardContent>
         </Card>
       )}
-
-      {/* Meus Treinos - Link para criar treinos próprios */}
-      <Link to={createPageUrl("MyWorkouts")}>
-        <Card className="bg-gradient-to-br from-purple-900/30 to-purple-800/20 border-purple-700/50 hover:from-purple-900/40 hover:to-purple-800/30 transition-all cursor-pointer">
-          <CardContent className="p-5 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 bg-purple-600/20 rounded-xl flex items-center justify-center">
-                <Dumbbell className="w-6 h-6 text-purple-400" />
-              </div>
-              <div>
-                <h3 className="text-white font-semibold">Meus Treinos</h3>
-                <p className="text-slate-300 text-sm">Crie seus próprios treinos personalizados</p>
-              </div>
-            </div>
-            <ChevronRight className="w-5 h-5 text-slate-400" />
-          </CardContent>
-        </Card>
-      </Link>
-
-      {/* WhatsApp Coach - Novo card */}
-      <a 
-        href={base44.agents.getWhatsAppConnectURL('fitness_coach')} 
-        target="_blank"
-        rel="noopener noreferrer"
-      >
-        <Card className="bg-gradient-to-br from-green-900/30 to-green-800/20 border-green-700/50 hover:from-green-900/40 hover:to-green-800/30 transition-all cursor-pointer">
-          <CardContent className="p-5 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 bg-green-600/20 rounded-xl flex items-center justify-center">
-                <MessageCircle className="w-6 h-6 text-green-400" />
-              </div>
-              <div>
-                <h3 className="text-white font-semibold">Coach no WhatsApp</h3>
-                <p className="text-slate-300 text-sm">Treinador virtual 24/7 disponível</p>
-              </div>
-            </div>
-            <ChevronRight className="w-5 h-5 text-slate-400" />
-          </CardContent>
-        </Card>
-      </a>
 
       {/* Stats */}
       <ProfileStats user={user} />
