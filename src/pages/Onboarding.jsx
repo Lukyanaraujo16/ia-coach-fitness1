@@ -7,7 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronRight, Target, TrendingUp, User as UserIcon, Users, Phone, Crown } from "lucide-react";
+import { ChevronRight, Target, TrendingUp, User as UserIcon, Users, Phone } from "lucide-react";
 
 const STEPS = [
   {
@@ -309,7 +309,7 @@ export default function Onboarding() {
                     "Salvando..."
                   ) : currentStep === STEPS.length - 1 ? (
                     <>
-                      Começar Grátis
+                      Começar
                       <ChevronRight className="w-4 h-4 ml-2" />
                     </>
                   ) : (
@@ -335,26 +335,6 @@ export default function Onboarding() {
           </Card>
         </motion.div>
       </AnimatePresence>
-
-      {/* Premium Trial Banner */}
-      <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.5 }}
-        className="mt-6 w-full max-w-md"
-      >
-        <Card className="bg-gradient-to-r from-yellow-900/30 to-orange-900/20 border-yellow-700/50">
-          <CardContent className="p-4 text-center">
-            <div className="flex items-center justify-center gap-2 mb-2">
-              <Crown className="w-5 h-5 text-yellow-400" />
-              <h3 className="text-white font-semibold">7 Dias Premium Grátis</h3>
-            </div>
-            <p className="text-slate-300 text-sm">
-              Teste todos os recursos premium sem compromisso! 🎉
-            </p>
-          </CardContent>
-        </Card>
-      </motion.div>
     </div>
   );
 }

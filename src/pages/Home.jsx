@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -12,7 +11,6 @@ import StatsCard from "../components/home/StatsCard";
 import QuickActionCard from "../components/home/QuickActionCard";
 import NextWorkoutCard from "../components/home/NextWorkoutCard";
 import PWAInstallPrompt from "../components/home/PWAInstallPrompt";
-import TrialBanner from "../components/TrialBanner";
 
 export default function Home() {
   const navigate = useNavigate();
@@ -177,9 +175,6 @@ export default function Home() {
         </p>
       </div>
 
-      {/* Trial Banner */}
-      <TrialBanner user={user} />
-
       {!isPremium && (
         <Link to={createPageUrl("Subscription")}>
           <Card className="bg-gradient-to-r from-blue-900/50 to-purple-900/50 border-blue-700/50 hover:from-blue-900/60 hover:to-purple-900/60 transition-all cursor-pointer">
@@ -199,7 +194,7 @@ export default function Home() {
         </Link>
       )}
 
-      {isPremium && user?.subscription_status !== 'trial' && (
+      {isPremium && (
         <Link to={createPageUrl("AICoach")}>
           <Card className="bg-gradient-to-r from-purple-900/50 to-blue-900/50 border-purple-700/50 hover:from-purple-900/60 hover:to-blue-900/60 transition-all cursor-pointer">
             <CardContent className="p-5 flex items-center justify-between">
@@ -244,7 +239,6 @@ export default function Home() {
         </a>
       )}
 
-      {/* Stats Grid */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <StatsCard
           icon={Calendar}
@@ -276,7 +270,6 @@ export default function Home() {
         />
       </div>
 
-      {/* Weekly Goal Progress */}
       <Card className="bg-slate-900/50 border-slate-800">
         <CardContent className="p-5">
           <div className="flex items-center justify-between mb-3">
@@ -300,7 +293,6 @@ export default function Home() {
         </CardContent>
       </Card>
 
-      {/* Challenge of the Week */}
       {activeChallenge && (
         <Card className="bg-gradient-to-br from-purple-900/30 to-pink-900/30 border-purple-700/50">
           <CardHeader>
@@ -358,10 +350,8 @@ export default function Home() {
         </Card>
       )}
 
-      {/* Next Workout */}
       <NextWorkoutCard />
 
-      {/* Quick Actions */}
       <div className="space-y-3">
         <h3 className="text-lg font-semibold text-white">Ações Rápidas</h3>
         <div className="grid grid-cols-2 gap-3">
@@ -382,7 +372,6 @@ export default function Home() {
         </div>
       </div>
 
-      {/* Recent Activity */}
       <Card className="bg-slate-900/50 border-slate-800 backdrop-blur-sm">
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle className="text-white text-lg">Atividade Recente</CardTitle>
