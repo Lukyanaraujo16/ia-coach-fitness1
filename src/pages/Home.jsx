@@ -165,6 +165,19 @@ export default function Home() {
   const calorieGoal = user?.daily_calorie_goal || 2000;
   const caloriePercentage = Math.min((todayCalories / calorieGoal) * 100, 100);
 
+  // Calcular metas de macros em gramas
+  const proteinPercentage = user?.macro_protein_percentage || 30;
+  const carbsPercentage = user?.macro_carbs_percentage || 40;
+  const fatPercentage = user?.macro_fat_percentage || 30;
+
+  const proteinGoal = Math.round((calorieGoal * (proteinPercentage / 100)) / 4); // 4 cal por grama
+  const carbsGoal = Math.round((calorieGoal * (carbsPercentage / 100)) / 4); // 4 cal por grama
+  const fatGoal = Math.round((calorieGoal * (fatPercentage / 100)) / 9); // 9 cal por grama
+
+  const proteinPercentageComplete = Math.min((todayProtein / proteinGoal) * 100, 100);
+  const carbsPercentageComplete = Math.min((todayCarbs / carbsGoal) * 100, 100);
+  const fatPercentageComplete = Math.min((todayFat / fatGoal) * 100, 100);
+
   const getGreeting = () => {
     const hour = new Date().getHours();
     if (hour < 12) return "Bom dia";
@@ -262,6 +275,7 @@ export default function Home() {
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
+            {/* Calorias */}
             <div>
               <div className="flex items-baseline justify-between mb-2">
                 <div>
@@ -278,18 +292,45 @@ export default function Home() {
               </div>
             </div>
 
+            {/* Macronutrientes com metas */}
             <div className="grid grid-cols-3 gap-3">
+              {/* Proteína */}
               <div className="text-center p-3 bg-slate-900/50 rounded-lg">
                 <p className="text-blue-400 font-bold text-lg">{Math.round(todayProtein)}g</p>
+                <p className="text-slate-500 text-xs mb-1">/ {proteinGoal}g</p>
                 <p className="text-slate-400 text-xs">Proteína</p>
+                <div className="relative h-1 bg-slate-800 rounded-full overflow-hidden mt-2">
+                  <div
+                    className="absolute inset-y-0 left-0 bg-blue-500 rounded-full transition-all duration-500"
+                    style={{ width: `${proteinPercentageComplete}%` }}
+                  />
+                </div>
               </div>
+
+              {/* Carboidratos */}
               <div className="text-center p-3 bg-slate-900/50 rounded-lg">
                 <p className="text-orange-400 font-bold text-lg">{Math.round(todayCarbs)}g</p>
+                <p className="text-slate-500 text-xs mb-1">/ {carbsGoal}g</p>
                 <p className="text-slate-400 text-xs">Carbos</p>
+                <div className="relative h-1 bg-slate-800 rounded-full overflow-hidden mt-2">
+                  <div
+                    className="absolute inset-y-0 left-0 bg-orange-500 rounded-full transition-all duration-500"
+                    style={{ width: `${carbsPercentageComplete}%` }}
+                  />
+                </div>
               </div>
+
+              {/* Gordura */}
               <div className="text-center p-3 bg-slate-900/50 rounded-lg">
                 <p className="text-yellow-400 font-bold text-lg">{Math.round(todayFat)}g</p>
+                <p className="text-slate-500 text-xs mb-1">/ {fatGoal}g</p>
                 <p className="text-slate-400 text-xs">Gordura</p>
+                <div className="relative h-1 bg-slate-800 rounded-full overflow-hidden mt-2">
+                  <div
+                    className="absolute inset-y-0 left-0 bg-yellow-500 rounded-full transition-all duration-500"
+                    style={{ width: `${fatPercentageComplete}%` }}
+                  />
+                </div>
               </div>
             </div>
 
