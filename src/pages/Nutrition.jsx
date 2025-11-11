@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
+import { useQuery } from "@tanstack/react-query";
 import { createPageUrl } from "@/utils";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import CalorieCounter from "../components/nutrition/CalorieCounter";
@@ -23,6 +24,16 @@ export default function Nutrition() {
     };
     loadUser();
   }, []);
+
+  const { data: mealLogs = [] } = useQuery({
+    queryKey: ['meal-logs', user?.email],
+    queryFn: async () => {
+      if (!user?.email) return [];
+      const allLogs = await base44.entities.MealLog.list('-date');
+      return allLogs.filter(log => log.created_by === user.email);
+    },
+    enabled: !!user?.email,
+  });
 
   if (!user) {
     return (
@@ -62,7 +73,7 @@ export default function Nutrition() {
         {activeTab === "my-plan" && <MyNutritionPlan user={user} />}
         {activeTab === "counter" && <CalorieCounter />}
         {activeTab === "stats" && <NutritionStats />}
-        {activeTab === "history" && <MealHistory />}
+        {activeTab === "history" && <MealHistory mealLogs={mealLogs} />}
         {activeTab === "plans" && <NutritionPlans />}
       </div>
     </div>
