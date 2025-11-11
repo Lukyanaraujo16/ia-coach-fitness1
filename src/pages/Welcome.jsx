@@ -1,5 +1,6 @@
 import React from "react";
 import { base44 } from "@/api/base44Client";
+import { createPageUrl } from "@/utils";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Check, Crown, Dumbbell, TrendingUp, Users, Apple, Sparkles, ArrowRight } from "lucide-react";
@@ -7,7 +8,8 @@ import { motion } from "framer-motion";
 
 export default function Welcome() {
   const handleLogin = () => {
-    base44.auth.redirectToLogin();
+    // Redireciona para login e depois para Home (onde o fluxo de onboarding é verificado)
+    base44.auth.redirectToLogin(createPageUrl("Home"));
   };
 
   const features = [
