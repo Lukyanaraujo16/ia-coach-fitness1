@@ -6,7 +6,7 @@ import CalorieCounter from "../components/nutrition/CalorieCounter";
 import NutritionStats from "../components/nutrition/NutritionStats";
 import MealHistory from "../components/nutrition/MealHistory";
 import NutritionPlans from "../components/nutrition/NutritionPlans";
-import MyNutritionPlan from "../components/nutrition/MyNutritionPlan";
+import MyNutritionPlan from "../components/nutrition/MyNutritionPlan.jsx";
 
 export default function Nutrition() {
   const [activeTab, setActiveTab] = useState("my-plan");
