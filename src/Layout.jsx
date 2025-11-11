@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { Link, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { Home, Dumbbell, User, Shield, Apple, Sparkles, Menu, X, LogOut, Trophy, Award } from "lucide-react";
+import { Home, Dumbbell, TrendingUp, Users, User, Shield, Apple, Sparkles, Menu, X, LogOut, Trophy, Award } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import TrialChecker from "./components/TrialChecker";
 
@@ -73,20 +73,31 @@ export default function Layout({ children, currentPageName }) {
     });
   }
 
-  // Menu lateral (hamburger) - todas as opções extras
+  // Menu lateral (hamburger) - TODAS as opções
   const sideMenuItems = [
+    { name: "Home", path: createPageUrl("Home"), icon: Home },
+    { name: "Treinos", path: createPageUrl("Workouts"), icon: Dumbbell },
+    { name: "Nutrição", path: createPageUrl("Nutrition"), icon: Apple },
+    { name: "Progresso", path: createPageUrl("Progress"), icon: TrendingUp },
     { name: "Perfil", path: createPageUrl("Profile"), icon: User },
-    { name: "Progresso", path: createPageUrl("Progress"), icon: Trophy },
     { name: "Meus Treinos", path: createPageUrl("MyWorkouts"), icon: Dumbbell },
     { name: "Conquistas", path: createPageUrl("Badges"), icon: Award },
   ];
 
+  if (isPremium) {
+    sideMenuItems.splice(3, 0, {
+      name: "Coach IA",
+      path: createPageUrl("AICoach"),
+      icon: Sparkles,
+    });
+  }
+
   if (user?.community_enabled !== false) {
-    sideMenuItems.unshift({ name: "Comunidade", path: createPageUrl("Community"), icon: Trophy });
+    sideMenuItems.splice(4, 0, { name: "Comunidade", path: createPageUrl("Community"), icon: Users });
   }
 
   if (user?.leaderboard_enabled !== false) {
-    sideMenuItems.splice(1, 0, { name: "Ranking", path: createPageUrl("Leaderboard"), icon: Trophy });
+    sideMenuItems.splice(5, 0, { name: "Ranking", path: createPageUrl("Leaderboard"), icon: Trophy });
   }
 
   if (user?.role === 'admin') {
