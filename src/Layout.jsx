@@ -18,6 +18,7 @@ export default function Layout({ children, currentPageName }) {
       setUser(currentUser);
     } catch (error) {
       console.error("Error loading user:", error);
+      setUser(null);
     } finally {
       setIsLoading(false);
     }
@@ -69,15 +70,16 @@ export default function Layout({ children, currentPageName }) {
   }
 
   const specialPages = ["WorkoutExecution", "Onboarding", "NutritionSetup", "WorkoutSetup", "LandingPage", "Welcome"];
-  // Só esconde navegação se for uma página especial E o usuário já foi carregado (ou não existe)
-  const hideNavigation = specialPages.includes(currentPageName) || (!user && !isLoading);
+  
+  // Mostrar navegação se: não é página especial E (tem usuário OU está carregando)
+  const showNavigation = !specialPages.includes(currentPageName) && (user || isLoading);
 
   const handleLogout = async () => {
     await base44.auth.logout();
   };
 
   return (
-    <div className={`min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 ${!hideNavigation ? 'pb-20 md:pb-0' : ''}`}>
+    <div className={`min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 ${showNavigation ? 'pb-20 md:pb-0' : ''}`}>
       <style>{`
         :root {
           --primary: #1E40AF;
@@ -90,7 +92,7 @@ export default function Layout({ children, currentPageName }) {
       {/* Trial Checker - verifica automaticamente se o trial expirou */}
       {user && <TrialChecker user={user} onTrialExpired={handleTrialExpired} />}
 
-      {!hideNavigation && (
+      {showNavigation && (
         <header className="fixed top-0 left-0 right-0 z-50 bg-slate-950/80 backdrop-blur-xl border-b border-slate-800/50">
           <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
             <Link to={createPageUrl("Home")} className="flex items-center gap-2">
@@ -142,11 +144,11 @@ export default function Layout({ children, currentPageName }) {
         </header>
       )}
 
-      <main className={!hideNavigation ? 'pt-20 max-w-7xl mx-auto px-4' : ''}>
+      <main className={showNavigation ? 'pt-20 max-w-7xl mx-auto px-4' : ''}>
         {children}
       </main>
 
-      {showMenu && !hideNavigation && (
+      {showMenu && showNavigation && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60] md:hidden" onClick={() => setShowMenu(false)}>
           <div className="fixed inset-y-0 right-0 w-64 bg-slate-900 shadow-2xl flex flex-col" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between p-4 border-b border-slate-800">
@@ -236,7 +238,7 @@ export default function Layout({ children, currentPageName }) {
         </div>
       )}
 
-      {!hideNavigation && (
+      {showNavigation && (
         <nav className="fixed bottom-0 left-0 right-0 bg-slate-950/95 backdrop-blur-xl border-t border-slate-800/50 z-50 md:hidden">
           <div className="max-w-7xl mx-auto">
             <div className="grid grid-cols-4 gap-1 p-2">
