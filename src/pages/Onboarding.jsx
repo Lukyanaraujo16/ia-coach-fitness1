@@ -7,7 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronRight, Target, TrendingUp, User as UserIcon, Users, Phone } from "lucide-react";
+import { ChevronRight, Target, TrendingUp, User as UserIcon, Users, Phone, Crown } from "lucide-react";
 
 const STEPS = [
   {
@@ -109,6 +109,11 @@ export default function Onboarding() {
   const handleComplete = async (skipSetup) => {
     setIsLoading(true);
     try {
+      // Calcular datas do trial (7 dias)
+      const trialStartDate = new Date().toISOString();
+      const trialEndDate = new Date();
+      trialEndDate.setDate(trialEndDate.getDate() + 7);
+      
       await base44.auth.updateMe({
         full_name: answers.full_name.trim(),
         whatsapp: answers.whatsapp.trim(),
@@ -123,6 +128,11 @@ export default function Onboarding() {
         onboarding_completed: true,
         nutrition_setup_completed: skipSetup,
         workout_setup_completed: skipSetup,
+        // Iniciar trial premium de 7 dias
+        subscription_status: "trial",
+        premium_trial_start_date: trialStartDate,
+        premium_trial_end_date: trialEndDate.toISOString(),
+        has_had_trial: true,
       });
       
       if (skipSetup) {
@@ -299,7 +309,7 @@ export default function Onboarding() {
                     "Salvando..."
                   ) : currentStep === STEPS.length - 1 ? (
                     <>
-                      Gerar Dieta e Treino
+                      Começar Grátis
                       <ChevronRight className="w-4 h-4 ml-2" />
                     </>
                   ) : (
@@ -325,6 +335,26 @@ export default function Onboarding() {
           </Card>
         </motion.div>
       </AnimatePresence>
+
+      {/* Premium Trial Banner */}
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.5 }}
+        className="mt-6 w-full max-w-md"
+      >
+        <Card className="bg-gradient-to-r from-yellow-900/30 to-orange-900/20 border-yellow-700/50">
+          <CardContent className="p-4 text-center">
+            <div className="flex items-center justify-center gap-2 mb-2">
+              <Crown className="w-5 h-5 text-yellow-400" />
+              <h3 className="text-white font-semibold">7 Dias Premium Grátis</h3>
+            </div>
+            <p className="text-slate-300 text-sm">
+              Teste todos os recursos premium sem compromisso! 🎉
+            </p>
+          </CardContent>
+        </Card>
+      </motion.div>
     </div>
   );
 }
