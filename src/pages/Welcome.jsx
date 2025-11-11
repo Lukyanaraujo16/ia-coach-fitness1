@@ -83,15 +83,17 @@ export default function Welcome() {
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center pt-6">
               <Button
                 onClick={handleLogin}
-                className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white px-8 py-6 text-lg font-semibold shadow-2xl shadow-blue-900/50"
+                size="lg"
+                className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white px-8 py-6 text-lg font-semibold shadow-2xl shadow-blue-900/50 hover:shadow-blue-800/60 hover:scale-105 transition-all duration-300"
               >
                 Começar Gratuitamente
                 <ArrowRight className="w-5 h-5 ml-2" />
               </Button>
               <Button
-                variant="outline"
                 onClick={handleLogin}
-                className="border-slate-600 text-slate-200 hover:bg-slate-800 px-8 py-6 text-lg"
+                size="lg"
+                variant="outline"
+                className="border-2 border-slate-600 bg-slate-800/50 text-white hover:bg-slate-700 hover:border-slate-500 px-8 py-6 text-lg font-semibold hover:scale-105 transition-all duration-300"
               >
                 Já tenho conta
               </Button>
@@ -194,7 +196,7 @@ export default function Welcome() {
                   <Button
                     onClick={handleLogin}
                     variant="outline"
-                    className="w-full border-slate-600 text-slate-200 hover:bg-slate-800 py-6"
+                    className="w-full border-2 border-slate-600 bg-slate-800 text-white hover:bg-slate-700 hover:border-slate-500 py-6 text-base font-semibold"
                   >
                     Começar Grátis
                   </Button>
@@ -235,7 +237,7 @@ export default function Welcome() {
                   </ul>
                   <Button
                     onClick={handleLogin}
-                    className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white font-semibold py-6 shadow-2xl shadow-blue-900/50"
+                    className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white font-semibold py-6 shadow-2xl shadow-blue-900/50 hover:shadow-blue-800/60 hover:scale-105 transition-all duration-300 text-base"
                   >
                     <Crown className="w-5 h-5 mr-2" />
                     Começar com Premium
@@ -266,7 +268,8 @@ export default function Welcome() {
                 </p>
                 <Button
                   onClick={handleLogin}
-                  className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white px-12 py-6 text-lg font-semibold shadow-2xl shadow-blue-900/50"
+                  size="lg"
+                  className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white px-12 py-6 text-lg font-semibold shadow-2xl shadow-blue-900/50 hover:shadow-blue-800/60 hover:scale-105 transition-all duration-300"
                 >
                   Começar Agora - É Grátis
                   <ArrowRight className="w-5 h-5 ml-2" />

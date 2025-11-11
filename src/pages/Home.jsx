@@ -11,12 +11,14 @@ import { Input } from "@/components/ui/input";
 import StatsCard from "../components/home/StatsCard";
 import QuickActionCard from "../components/home/QuickActionCard";
 import NextWorkoutCard from "../components/home/NextWorkoutCard";
+import PWAInstallPrompt from "../components/home/PWAInstallPrompt"; // Added import
 
 export default function Home() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [user, setUser] = useState(null);
   const [challengeInput, setChallengeInput] = useState("");
+  const [showPWAPrompt, setShowPWAPrompt] = useState(false); // Added state
 
   useEffect(() => {
     const loadUser = async () => {
@@ -31,6 +33,17 @@ export default function Home() {
           navigate(createPageUrl("NutritionSetup"));
         } else if (!currentUser.workout_setup_completed) {
           navigate(createPageUrl("WorkoutSetup"));
+        } else {
+          // Verificar se deve mostrar o prompt PWA
+          // Mostrar apenas se:
+          // 1. Nunca foi mostrado antes (pwa_prompt_shown não existe ou é false)
+          // 2. Passou pelo onboarding completo
+          const hasSeenPrompt = localStorage.getItem('pwa_prompt_shown');
+          if (!hasSeenPrompt && currentUser.workout_setup_completed) {
+            setTimeout(() => {
+              setShowPWAPrompt(true);
+            }, 1000); // Pequeno delay para melhor UX
+          }
         }
       } catch (error) {
         base44.auth.redirectToLogin(createPageUrl("Home"));
@@ -105,6 +118,17 @@ export default function Home() {
     });
   };
 
+  // Added handler functions for PWA prompt
+  const handleClosePWAPrompt = () => {
+    setShowPWAPrompt(false);
+    localStorage.setItem('pwa_prompt_shown', 'true');
+  };
+
+  const handlePWAInstalled = () => {
+    setShowPWAPrompt(false);
+    localStorage.setItem('pwa_prompt_shown', 'true');
+  };
+
   const thisWeekWorkouts = workoutLogs.filter(log => {
     const logDate = new Date(log.date + 'T00:00:00'); // Adicionar hora para evitar problema de fuso
     const today = new Date();
@@ -140,6 +164,14 @@ export default function Home() {
 
   return (
     <div className="py-6 space-y-6">
+      {/* PWA Install Prompt */}
+      {showPWAPrompt && (
+        <PWAInstallPrompt 
+          onClose={handleClosePWAPrompt}
+          onInstalled={handlePWAInstalled}
+        />
+      )}
+
       {/* Welcome Section */}
       <div className="space-y-3">
         <h2 className="text-3xl font-bold text-white">
