@@ -3,7 +3,7 @@ import { base44 } from "@/api/base44Client";
 import { createPageUrl } from "@/utils";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Check, Crown, Dumbbell, TrendingUp, Users, Apple, Sparkles, ArrowRight } from "lucide-react";
+import { Check, Crown, Sparkles, TrendingUp, Users, Apple, Zap, ArrowRight } from "lucide-react";
 import { motion } from "framer-motion";
 
 export default function Welcome() {
@@ -14,7 +14,7 @@ export default function Welcome() {
 
   const features = [
     {
-      icon: Dumbbell,
+      icon: Sparkles,
       title: "Treinos Personalizados",
       description: "Programas de treino criados especialmente para você com IA avançada",
       image: "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=400"
@@ -44,7 +44,7 @@ export default function Welcome() {
     "Registro de treinos",
     "Acompanhamento de peso",
     "Até 5 treinos disponíveis",
-    "Comunidade FitTrack+"
+    "Comunidade IA Coach"
   ];
 
   const premiumFeatures = [
@@ -64,9 +64,9 @@ export default function Welcome() {
         <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-center">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-blue-800 rounded-xl flex items-center justify-center shadow-lg shadow-blue-900/50">
-              <Dumbbell className="w-6 h-6 text-white" />
+              <Sparkles className="w-6 h-6 text-white" />
             </div>
-            <h1 className="text-2xl font-bold text-white">FitTrack+</h1>
+            <h1 className="text-2xl font-bold text-white">IA Coach</h1>
           </div>
         </div>
       </header>
@@ -82,7 +82,7 @@ export default function Welcome() {
           >
             <Card className="bg-gradient-to-br from-blue-900/50 to-purple-900/50 border-blue-700/50 max-w-md mx-auto">
               <CardContent className="p-8 space-y-6">
-                <Sparkles className="w-14 h-14 text-yellow-400 mx-auto" />
+                <Zap className="w-14 h-14 text-yellow-400 mx-auto" />
                 <h2 className="text-3xl font-bold text-white leading-tight">
                   Pronto para transformar seu corpo?
                 </h2>
@@ -268,7 +268,7 @@ export default function Welcome() {
           >
             <Card className="bg-gradient-to-br from-blue-900/50 to-purple-900/50 border-blue-700/50">
               <CardContent className="p-8 space-y-6 text-center">
-                <Sparkles className="w-14 h-14 text-yellow-400 mx-auto" />
+                <Zap className="w-14 h-14 text-yellow-400 mx-auto" />
                 <h2 className="text-3xl font-bold text-white">
                   Transforme sua vida hoje!
                 </h2>
@@ -292,7 +292,7 @@ export default function Welcome() {
       {/* Footer */}
       <footer className="py-8 px-4 border-t border-slate-800">
         <div className="max-w-7xl mx-auto text-center text-slate-400 text-sm">
-          <p>© 2025 FitTrack+. Todos os direitos reservados.</p>
+          <p>© 2025 IA Coach. Todos os direitos reservados.</p>
         </div>
       </footer>
     </div>
