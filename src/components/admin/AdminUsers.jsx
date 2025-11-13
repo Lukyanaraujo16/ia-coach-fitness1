@@ -71,7 +71,7 @@ export default function AdminUsers({ users = [] }) {
   const handleEditUser = (user) => {
     setEditingUser(user.id);
     setEditForm({
-      Nome_completo: user.Nome_completo || '',
+      nome_completo: user.nome_completo || '',
       whatsapp: user.whatsapp || '',
       email: user.email || '',
       current_weight: user.current_weight || '',
@@ -90,7 +90,7 @@ export default function AdminUsers({ users = [] }) {
     updateUserMutation.mutate({
       userId: editingUser,
       data: {
-        full_name: editForm.full_name,
+        nome_completo: editForm.nome_completo,
         whatsapp: editForm.whatsapp,
         current_weight: parseFloat(editForm.current_weight) || undefined,
         height: parseFloat(editForm.height) || undefined,
@@ -105,7 +105,7 @@ export default function AdminUsers({ users = [] }) {
 
   const filteredUsers = users.filter(user => 
     user.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    user.full_name?.toLowerCase().includes(searchQuery.toLowerCase())
+    user.nome_completo?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const communityEnabled = users.length > 0 ? users[0]?.community_enabled !== false : true;
@@ -206,10 +206,10 @@ export default function AdminUsers({ users = [] }) {
                       <div className="flex items-center gap-3">
                         <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-blue-700 rounded-full flex items-center justify-center">
                           <span className="text-white text-xs font-semibold">
-                            {user.full_name?.[0]?.toUpperCase() || 'U'}
+                            {user.nome_completo?.[0]?.toUpperCase() || 'U'}
                           </span>
                         </div>
-                        <span className="text-white font-medium">{user.full_name || 'Usuário'}</span>
+                        <span className="text-white font-medium">{user.nome_completo || 'Usuário'}</span>
                       </div>
                     </TableCell>
                     <TableCell className="text-slate-300">{user.email}</TableCell>
@@ -292,8 +292,8 @@ export default function AdminUsers({ users = [] }) {
                 <div className="space-y-2">
                   <Label className="text-slate-300">Nome Completo</Label>
                   <Input
-                    value={editForm.full_name}
-                    onChange={(e) => setEditForm({...editForm, full_name: e.target.value})}
+                    value={editForm.nome_completo}
+                    onChange={(e) => setEditForm({...editForm, nome_completo: e.target.value})}
                     className="bg-slate-800 border-slate-700 text-white"
                   />
                 </div>
