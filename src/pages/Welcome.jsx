@@ -3,7 +3,7 @@ import { base44 } from "@/api/base44Client";
 import { createPageUrl } from "@/utils";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Check, Crown, Sparkles, TrendingUp, Users, Apple, Zap, ArrowRight } from "lucide-react";
+import { Check, Crown, Dumbbell, TrendingUp, Users, Apple, Zap, ArrowRight } from "lucide-react";
 import { motion } from "framer-motion";
 
 export default function Welcome() {
@@ -14,7 +14,7 @@ export default function Welcome() {
 
   const features = [
     {
-      icon: Sparkles,
+      icon: Dumbbell,
       title: "Treinos Personalizados",
       description: "Programas de treino criados especialmente para você com IA avançada",
       image: "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=400"
@@ -64,9 +64,12 @@ export default function Welcome() {
         <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-center">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-blue-800 rounded-xl flex items-center justify-center shadow-lg shadow-blue-900/50">
-              <Sparkles className="w-6 h-6 text-white" />
+              <Dumbbell className="w-6 h-6 text-white" />
             </div>
-            <h1 className="text-2xl font-bold text-white">IA Coach</h1>
+            <h1 className="text-2xl font-bold">
+              <span className="text-blue-400">IA</span>
+              <span className="text-white"> COACH</span>
+            </h1>
           </div>
         </div>
       </header>
