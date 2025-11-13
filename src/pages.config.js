@@ -3,7 +3,6 @@ import Progress from './pages/Progress';
 import Community from './pages/Community';
 import Profile from './pages/Profile';
 import Subscription from './pages/Subscription';
-import Welcome from './pages/Welcome';
 import Onboarding from './pages/Onboarding';
 import WorkoutDetail from './pages/WorkoutDetail';
 import Admin from './pages/Admin';
@@ -18,6 +17,7 @@ import MyWorkouts from './pages/MyWorkouts';
 import Leaderboard from './pages/Leaderboard';
 import Badges from './pages/Badges';
 import Dashboard from './pages/Dashboard';
+import Home from './pages/Home';
 import Layout from './Layout.jsx';
 
 
@@ -27,7 +27,6 @@ export const PAGES = {
     "Community": Community,
     "Profile": Profile,
     "Subscription": Subscription,
-    "Welcome": Welcome,
     "Onboarding": Onboarding,
     "WorkoutDetail": WorkoutDetail,
     "Admin": Admin,
@@ -42,6 +41,7 @@ export const PAGES = {
     "Leaderboard": Leaderboard,
     "Badges": Badges,
     "Dashboard": Dashboard,
+    "Home": Home,
 }
 
 export const pagesConfig = {
