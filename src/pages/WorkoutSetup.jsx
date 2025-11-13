@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useNavigate } from "react-router-dom";
@@ -261,7 +260,7 @@ LEMBRE-SE: ${daysOfWeek} dias, numerados de 1 a ${daysOfWeek}, SEM EXCEÇÃO!`;
                               reps: {
                                 type: "string",
                                 description: "Repetições (ex: 12, 10-12, máximo)"
-                              ),
+                              },
                               rest_seconds: {
                                 type: "number",
                                 description: "Descanso em segundos"
@@ -407,7 +406,7 @@ LEMBRE-SE: ${daysOfWeek} dias, numerados de 1 a ${daysOfWeek}, SEM EXCEÇÃO!`;
               <CardContent className="space-y-6">
                 <Card className="bg-gradient-to-br from-blue-900/30 to-purple-900/20 border-blue-700/50">
                   <CardContent className="p-6">
-                    <h3 className="text-white font-semibold mb-4                       text-center">
+                    <h3 className="text-white font-semibold mb-4 text-center">
                       📊 Seu Perfil de Treino
                     </h3>
                     <div className="grid grid-cols-2 gap-4 text-sm">
@@ -447,7 +446,7 @@ LEMBRE-SE: ${daysOfWeek} dias, numerados de 1 a ${daysOfWeek}, SEM EXCEÇÃO!`;
 
                 <div className="bg-blue-900/20 border border-blue-700/50 rounded-lg p-4">
                   <p className="text-blue-400 text-sm font-semibold mb-2">✨ O que será criado:</p>
-                  <ul className="space-y-1 text-slate-300                       text-sm">
+                  <ul className="space-y-1 text-slate-300 text-sm">
                     <li>• {user.weekly_goal} dias de treino completos</li>
                     <li>• 6-8 exercícios por dia</li>
                     <li>• Séries, repetições e descanso personalizados</li>
