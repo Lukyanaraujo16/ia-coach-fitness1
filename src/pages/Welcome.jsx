@@ -1,12 +1,29 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { createPageUrl } from "@/utils";
+import { useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Check, Crown, Dumbbell, TrendingUp, Users, Apple, Zap, ArrowRight } from "lucide-react";
 import { motion } from "framer-motion";
 
 export default function Welcome() {
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const isAuthenticated = await base44.auth.isAuthenticated();
+        if (isAuthenticated) {
+          navigate(createPageUrl("Home"));
+        }
+      } catch (error) {
+        // Usuário não está logado, continua na página Welcome
+      }
+    };
+    checkAuth();
+  }, [navigate]);
+
   const handleLogin = () => {
     // Redireciona para login e depois para Home (onde o fluxo de onboarding é verificado)
     base44.auth.redirectToLogin(createPageUrl("Home"));
