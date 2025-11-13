@@ -246,7 +246,7 @@ export default function AdminWorkouts({ workouts = [], exercises = [] }) {
                   <option value="">Selecione um usuário...</option>
                   {users.map((user) => (
                     <option key={user.id} value={user.email}>
-                      {user.full_name || user.email}
+                      {user.nome_completo || user.email}
                     </option>
                   ))}
                 </select>

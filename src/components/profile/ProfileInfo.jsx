@@ -13,7 +13,7 @@ export default function ProfileInfo({ user, setUser }) {
   const queryClient = useQueryClient();
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({
-    full_name: '',
+    nome_completo: '',
     current_weight: '',
     weight_goal: '',
     height: '',
@@ -25,7 +25,7 @@ export default function ProfileInfo({ user, setUser }) {
   useEffect(() => {
     if (user) {
       setFormData({
-        full_name: user.full_name || '',
+        nome_completo: user.nome_completo || '',
         current_weight: user.current_weight || '',
         weight_goal: user.weight_goal || '',
         height: user.height || '',
@@ -59,7 +59,7 @@ export default function ProfileInfo({ user, setUser }) {
   const handleSubmit = (e) => {
     e.preventDefault();
     updateProfileMutation.mutate({
-      full_name: formData.full_name.trim(),
+      nome_completo: formData.nome_completo.trim(),
       current_weight: formData.current_weight ? parseFloat(formData.current_weight) : undefined,
       weight_goal: formData.weight_goal ? parseFloat(formData.weight_goal) : undefined,
       height: formData.height ? parseFloat(formData.height) : undefined,
@@ -95,7 +95,7 @@ export default function ProfileInfo({ user, setUser }) {
             onClick={() => {
               setIsEditing(false);
               setFormData({
-                full_name: user.full_name || '',
+                nome_completo: user.nome_completo || '',
                 current_weight: user.current_weight || '',
                 weight_goal: user.weight_goal || '',
                 height: user.height || '',
@@ -116,8 +116,8 @@ export default function ProfileInfo({ user, setUser }) {
             <div className="space-y-2">
               <Label className="text-slate-300">Nome Completo</Label>
               <Input
-                value={formData.full_name}
-                onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
+                value={formData.nome_completo}
+                onChange={(e) => setFormData({ ...formData, nome_completo: e.target.value })}
                 className="bg-slate-800 border-slate-700 text-white"
                 placeholder="Digite seu nome"
               />
@@ -207,7 +207,7 @@ export default function ProfileInfo({ user, setUser }) {
           <div className="space-y-3 text-sm">
             <div className="flex justify-between">
               <span className="text-slate-400">Nome:</span>
-              <span className="text-white font-medium">{user?.full_name || '-'}</span>
+              <span className="text-white font-medium">{user?.nome_completo || '-'}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-slate-400">Peso Atual:</span>

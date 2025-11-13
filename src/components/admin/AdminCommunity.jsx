@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -33,8 +34,8 @@ export default function AdminCommunity({ posts = [] }) {
       const users = await base44.entities.User.list();
       const authorsMap = {};
       users.forEach(user => {
-        authorsMap[user.email] = user.full_name || user.email;
-        authorsMap[user.id] = user.full_name || user.email;
+        authorsMap[user.email] = user.nome_completo || user.email;
+        authorsMap[user.id] = user.nome_completo || user.email;
       });
       setAuthors(authorsMap);
     };

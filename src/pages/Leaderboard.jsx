@@ -164,7 +164,7 @@ export default function Leaderboard() {
                       <span className="text-white font-bold text-lg">{position}º</span>
                     </div>
                     <h4 className="text-white font-bold text-lg mb-1">
-                      {userAtPosition.full_name || 'Usuário'}
+                      {userAtPosition.nome_completo || 'Usuário'}
                     </h4>
                     <p className={`${color} font-semibold text-xl`}>
                       {getXpValue(userAtPosition).toLocaleString()} XP
@@ -213,12 +213,12 @@ export default function Leaderboard() {
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-blue-700 rounded-full flex items-center justify-center">
                           <span className="text-white text-xs font-semibold">
-                            {rankedUser.full_name?.[0]?.toUpperCase() || 'U'}
+                            {rankedUser.nome_completo?.[0]?.toUpperCase() || 'U'}
                           </span>
                         </div>
                         <div>
                           <p className={`font-semibold ${isCurrentUser ? 'text-blue-300' : 'text-white'}`}>
-                            {rankedUser.full_name || 'Usuário'}
+                            {rankedUser.nome_completo || 'Usuário'}
                             {isCurrentUser && <span className="ml-2 text-xs">(Você)</span>}
                           </p>
                           <p className="text-slate-400 text-sm">Level {rankedUser.level || 1}</p>

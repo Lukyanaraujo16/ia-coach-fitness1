@@ -45,8 +45,8 @@ export default function PostCard({ post, currentUser, onLike, onEdit, onDelete }
       try {
         const users = await base44.entities.User.list();
         const author = users.find(u => u.email === post.created_by || u.id === post.created_by_id);
-        if (author?.full_name) {
-          setAuthorName(author.full_name);
+        if (author?.nome_completo) {
+          setAuthorName(author.nome_completo);
         }
       } catch (error) {
         console.error("Error loading author:", error);

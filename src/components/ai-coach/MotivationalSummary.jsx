@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -45,7 +46,7 @@ export default function MotivationalSummary({ workoutLogs, progressEntries, user
 
       const context = {
         user: {
-          name: user.full_name,
+          name: user.nome_completo, // Changed from user.full_name to user.nome_completo
           goal: user.fitness_goal,
           level: user.fitness_level,
         },

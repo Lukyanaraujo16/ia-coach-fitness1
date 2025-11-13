@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -39,7 +40,7 @@ export default function AdminWhatsAppCoach() {
   });
 
   const filteredUsers = users.filter(user =>
-    user.full_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    user.nome_completo?.toLowerCase().includes(searchQuery.toLowerCase()) ||
     user.email?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
@@ -158,7 +159,7 @@ export default function AdminWhatsAppCoach() {
                 >
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1">
-                      <p className="text-white font-medium">{user.full_name || "Sem nome"}</p>
+                      <p className="text-white font-medium">{user.nome_completo || "Sem nome"}</p>
                       {user.subscription_status === 'premium' && (
                         <Badge className="bg-yellow-600/20 text-yellow-400 border-yellow-600/30">
                           Premium
