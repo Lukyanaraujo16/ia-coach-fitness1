@@ -36,7 +36,7 @@ export default function Layout({ children, currentPageName }) {
 
   // Menu desktop - todas as opções
   const desktopNavigationItems = [
-    { name: "Home", path: createPageUrl("Home"), icon: Home },
+    { name: "Home", path: createPageUrl("Dashboard"), icon: Home },
     { name: "Treinos", path: createPageUrl("Workouts"), icon: Dumbbell },
     { name: "Nutrição", path: createPageUrl("Nutrition"), icon: Apple },
     { name: "Perfil", path: createPageUrl("Profile"), icon: User },
@@ -60,7 +60,7 @@ export default function Layout({ children, currentPageName }) {
 
   // Menu mobile - apenas 4 opções principais
   const mobileNavigationItems = [
-    { name: "Home", path: createPageUrl("Home"), icon: Home },
+    { name: "Home", path: createPageUrl("Dashboard"), icon: Home },
     { name: "Treinos", path: createPageUrl("Workouts"), icon: Dumbbell },
     { name: "Nutrição", path: createPageUrl("Nutrition"), icon: Apple },
   ];
@@ -75,7 +75,7 @@ export default function Layout({ children, currentPageName }) {
 
   // Menu lateral (hamburger) - TODAS as opções
   const sideMenuItems = [
-    { name: "Home", path: createPageUrl("Home"), icon: Home },
+    { name: "Home", path: createPageUrl("Dashboard"), icon: Home },
     { name: "Treinos", path: createPageUrl("Workouts"), icon: Dumbbell },
     { name: "Nutrição", path: createPageUrl("Nutrition"), icon: Apple },
     { name: "Progresso", path: createPageUrl("Progress"), icon: TrendingUp },
@@ -132,7 +132,7 @@ export default function Layout({ children, currentPageName }) {
       {!hideNavigation && (
         <header className="fixed top-0 left-0 right-0 z-50 bg-slate-950/80 backdrop-blur-xl border-b border-slate-800/50">
           <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
-            <Link to={createPageUrl("Home")} className="flex items-center gap-2">
+            <Link to={createPageUrl("Dashboard")} className="flex items-center gap-2">
               <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-blue-800 rounded-xl flex items-center justify-center shadow-lg shadow-blue-900/50">
                 <Dumbbell className="w-5 h-5 text-white" />
               </div>

@@ -1,3 +1,4 @@
+
 import React, { useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { createPageUrl } from "@/utils";
@@ -15,7 +16,7 @@ export default function Welcome() {
       try {
         const isAuthenticated = await base44.auth.isAuthenticated();
         if (isAuthenticated) {
-          navigate(createPageUrl("Home"));
+          navigate(createPageUrl("Dashboard")); // Changed from "Home" to "Dashboard"
         }
       } catch (error) {
         // Usuário não está logado, continua na página Welcome
@@ -25,8 +26,8 @@ export default function Welcome() {
   }, [navigate]);
 
   const handleLogin = () => {
-    // Redireciona para login e depois para Home (onde o fluxo de onboarding é verificado)
-    base44.auth.redirectToLogin(createPageUrl("Home"));
+    // Redireciona para login e depois para Dashboard (onde o fluxo de onboarding é verificado)
+    base44.auth.redirectToLogin(createPageUrl("Dashboard")); // Changed from "Home" to "Dashboard"
   };
 
   const features = [

@@ -1,4 +1,3 @@
-import Home from './pages/Home';
 import Workouts from './pages/Workouts';
 import Progress from './pages/Progress';
 import Community from './pages/Community';
@@ -18,11 +17,11 @@ import LandingPage from './pages/LandingPage';
 import MyWorkouts from './pages/MyWorkouts';
 import Leaderboard from './pages/Leaderboard';
 import Badges from './pages/Badges';
+import Dashboard from './pages/Dashboard';
 import Layout from './Layout.jsx';
 
 
 export const PAGES = {
-    "Home": Home,
     "Workouts": Workouts,
     "Progress": Progress,
     "Community": Community,
@@ -42,10 +41,11 @@ export const PAGES = {
     "MyWorkouts": MyWorkouts,
     "Leaderboard": Leaderboard,
     "Badges": Badges,
+    "Dashboard": Dashboard,
 }
 
 export const pagesConfig = {
-    mainPage: "Home",
+    mainPage: "Workouts",
     Pages: PAGES,
     Layout: Layout,
 };

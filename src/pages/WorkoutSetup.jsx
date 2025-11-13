@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useNavigate } from "react-router-dom";
@@ -29,7 +30,7 @@ export default function WorkoutSetup() {
         } else if (!currentUser.nutrition_setup_completed) {
           navigate(createPageUrl("NutritionSetup"));
         } else if (currentUser.workout_setup_completed) {
-          navigate(createPageUrl("Home"));
+          navigate(createPageUrl("Dashboard"));
         }
       } catch (error) {
         base44.auth.redirectToLogin(createPageUrl("WorkoutSetup"));
@@ -366,7 +367,7 @@ LEMBRE-SE: ${daysOfWeek} dias, numerados de 1 a ${daysOfWeek}, SEM EXCEÇÃO!`;
         workout_setup_completed: true,
       });
 
-      navigate(createPageUrl("Home"));
+      navigate(createPageUrl("Dashboard"));
     } catch (error) {
       console.error("Error saving workout:", error);
       alert("Erro ao salvar treino. Tente novamente.");

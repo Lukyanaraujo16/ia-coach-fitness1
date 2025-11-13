@@ -82,7 +82,7 @@ export default function Onboarding() {
           } else if (!currentUser.workout_setup_completed) {
             navigate(createPageUrl("WorkoutSetup"));
           } else {
-            navigate(createPageUrl("Home"));
+            navigate(createPageUrl("Dashboard"));
           }
         }
       } catch (error) {
@@ -137,7 +137,7 @@ export default function Onboarding() {
       });
       
       if (skipSetup) {
-        navigate(createPageUrl("Home"));
+        navigate(createPageUrl("Dashboard"));
       } else {
         navigate(createPageUrl("NutritionSetup"));
       }
