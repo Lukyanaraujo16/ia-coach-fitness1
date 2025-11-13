@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useNavigate } from "react-router-dom";
@@ -164,7 +165,7 @@ export default function NutritionSetup() {
         proteinPercentage = 40;
         carbsPercentage = 35;
         fatPercentage = 25;
-      } else {
+      } else { // gain_muscle
         if (gender === 'female') {
           calorieGoal = weight * 23 + 300;
         } else {
@@ -186,7 +187,7 @@ export default function NutritionSetup() {
       const prompt = `Você é um nutricionista experiente criando um plano alimentar COMPLETO para um novo aluno.
 
 INFORMAÇÕES DO ALUNO:
-- Nome: ${user.full_name}
+- Nome: ${user.nome_completo}
 - Objetivo: ${user.fitness_goal === 'lose_weight' ? 'Emagrecimento' : user.fitness_goal === 'gain_muscle' ? 'Ganho de massa' : 'Manutenção'}
 - Peso: ${user.current_weight}kg
 - Altura: ${user.height}cm
@@ -780,7 +781,6 @@ Gere o novo plano de refeições com a substituição solicitada:`;
               animate={{ opacity: 1, scale: 1 }}
               className="space-y-4"
             >
-              {/* ... keep all existing step 4 (now step 5) code ... */}
               
               <Card className="bg-gradient-to-br from-green-900/30 to-emerald-900/20 border-green-700/50">
                 <CardContent className="p-8 text-center">

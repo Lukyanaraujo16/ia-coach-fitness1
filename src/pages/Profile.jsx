@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
@@ -44,7 +45,7 @@ export default function Profile() {
       try {
         const currentUser = await base44.auth.me();
         setUser(currentUser);
-        setNewName(currentUser.full_name || "");
+        setNewName(currentUser.nome_completo || "");
       } catch (error) {
         base44.auth.redirectToLogin(createPageUrl("Profile"));
       }
@@ -54,14 +55,14 @@ export default function Profile() {
 
   const updateNameMutation = useMutation({
     mutationFn: async (name) => {
-      await base44.auth.updateMe({ full_name: name });
+      await base44.auth.updateMe({ nome_completo: name });
       // Recarregar os dados do usuário após atualizar
       const updatedUser = await base44.auth.me();
       return updatedUser;
     },
     onSuccess: (updatedUser) => {
       setUser(updatedUser);
-      setNewName(updatedUser.full_name || "");
+      setNewName(updatedUser.nome_completo || "");
       setIsEditingName(false);
       queryClient.invalidateQueries(['user']);
     },
@@ -115,7 +116,7 @@ export default function Profile() {
 
   const handleSaveName = () => {
     const trimmedName = newName.trim();
-    if (trimmedName && trimmedName !== user?.full_name) {
+    if (trimmedName && trimmedName !== user?.nome_completo) {
       updateNameMutation.mutate(trimmedName);
     } else {
       setIsEditingName(false);
@@ -187,7 +188,7 @@ export default function Profile() {
                     variant="outline"
                     onClick={() => {
                       setIsEditingName(false);
-                      setNewName(user?.full_name || "");
+                      setNewName(user?.nome_completo || "");
                     }}
                     className="border-slate-700"
                   >
@@ -197,7 +198,7 @@ export default function Profile() {
               ) : (
                 <div className="flex items-center gap-2 mb-1">
                   <h2 className="text-2xl font-bold text-white">
-                    {user?.full_name || 'Carregando...'}
+                    {user?.nome_completo || 'Carregando...'}
                   </h2>
                   <Button
                     size="icon"

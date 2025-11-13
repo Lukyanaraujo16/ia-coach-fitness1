@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useNavigate } from "react-router-dom";
@@ -52,7 +53,7 @@ export default function Onboarding() {
   const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState(0);
   const [answers, setAnswers] = useState({
-    full_name: "",
+    nome_completo: "",
     whatsapp: "",
     current_weight: "",
     height: "",
@@ -71,8 +72,8 @@ export default function Onboarding() {
         const currentUser = await base44.auth.me();
         setUser(currentUser);
         
-        if (currentUser.full_name) {
-          setAnswers(prev => ({ ...prev, full_name: currentUser.full_name }));
+        if (currentUser.nome_completo) {
+          setAnswers(prev => ({ ...prev, nome_completo: currentUser.nome_completo }));
         }
         
         if (currentUser.onboarding_completed) {
@@ -115,7 +116,7 @@ export default function Onboarding() {
       trialEndDate.setDate(trialEndDate.getDate() + 7);
       
       await base44.auth.updateMe({
-        full_name: answers.full_name.trim(),
+        nome_completo: answers.nome_completo.trim(),
         whatsapp: answers.whatsapp.trim(),
         current_weight: answers.current_weight ? parseFloat(answers.current_weight) : undefined,
         height: answers.height ? parseFloat(answers.height) : undefined,
@@ -150,7 +151,7 @@ export default function Onboarding() {
 
   const canProceed = () => {
     if (currentStepData.type === "form") {
-      return answers.full_name.trim() && answers.whatsapp.trim() && answers.current_weight && answers.height && answers.weight_goal && answers.weekly_goal;
+      return answers.nome_completo.trim() && answers.whatsapp.trim() && answers.current_weight && answers.height && answers.weight_goal && answers.weekly_goal;
     }
     return answers[currentStepData.id] !== "";
   };
@@ -210,8 +211,8 @@ export default function Onboarding() {
                   <div className="space-y-1.5">
                     <Label className="text-slate-300 text-sm">Nome Completo *</Label>
                     <Input
-                      value={answers.full_name}
-                      onChange={(e) => setAnswers({ ...answers, full_name: e.target.value })}
+                      value={answers.nome_completo}
+                      onChange={(e) => setAnswers({ ...answers, nome_completo: e.target.value })}
                       className="bg-slate-800 border-slate-700 text-white h-11"
                       placeholder="Digite seu nome"
                     />

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -210,7 +211,7 @@ export default function Home() {
 
       <div className="space-y-3">
         <h2 className="text-3xl font-bold text-white">
-          {getGreeting()}, {user?.full_name?.split(' ')[0] || 'Atleta'}! 👋
+          {getGreeting()}, {user?.nome_completo?.split(' ')[0] || 'Atleta'}! 👋
         </h2>
         <p className="text-slate-400">
           Pronto para superar seus limites hoje?

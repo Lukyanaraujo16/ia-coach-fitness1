@@ -163,7 +163,7 @@ export default function WorkoutSetup() {
       const prompt = `Você é um personal trainer experiente criando um programa de treino COMPLETO para um novo aluno.
 
 PERFIL DO ALUNO:
-- Nome: ${user.full_name}
+- Nome: ${user.nome_completo}
 - Gênero: ${userGender === 'male' ? 'Masculino' : userGender === 'female' ? 'Feminino' : 'Outro'}
 - Objetivo: ${goalLabels[user.fitness_goal]}
 - Nível: ${levelLabels[user.fitness_level]}
@@ -261,7 +261,7 @@ LEMBRE-SE: ${daysOfWeek} dias, numerados de 1 a ${daysOfWeek}, SEM EXCEÇÃO!`;
                               reps: {
                                 type: "string",
                                 description: "Repetições (ex: 12, 10-12, máximo)"
-                              },
+                              ),
                               rest_seconds: {
                                 type: "number",
                                 description: "Descanso em segundos"
