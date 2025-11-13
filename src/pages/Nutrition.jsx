@@ -43,6 +43,8 @@ export default function Nutrition() {
     );
   }
 
+  const calorieGoal = user?.daily_calorie_goal || 2000;
+
   return (
     <div className="py-6 space-y-6">
       <div className="flex items-center justify-between">
@@ -72,7 +74,7 @@ export default function Nutrition() {
       <div className="mt-6">
         {activeTab === "my-plan" && <MyNutritionPlan user={user} />}
         {activeTab === "counter" && <CalorieCounter />}
-        {activeTab === "stats" && <NutritionStats />}
+        {activeTab === "stats" && <NutritionStats mealLogs={mealLogs} calorieGoal={calorieGoal} />}
         {activeTab === "history" && <MealHistory mealLogs={mealLogs} />}
         {activeTab === "plans" && <NutritionPlans />}
       </div>
