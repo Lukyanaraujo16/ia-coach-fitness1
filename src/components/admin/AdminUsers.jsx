@@ -71,7 +71,7 @@ export default function AdminUsers({ users = [] }) {
   const handleEditUser = (user) => {
     setEditingUser(user.id);
     setEditForm({
-      full_name: user.Nome_completo || '',
+      Nome_completo: user.Nome_completo || '',
       whatsapp: user.whatsapp || '',
       email: user.email || '',
       current_weight: user.current_weight || '',
