@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -87,7 +88,7 @@ export default function PWAInstallPrompt({ onClose, onInstalled }) {
                 </div>
                 <div>
                   <CardTitle className="text-white text-xl">
-                    Instalar FitTrack+
+                    Instalar IA Coach Fitness
                   </CardTitle>
                   <p className="text-slate-400 text-sm mt-1">
                     Acesse mais rápido e offline
@@ -153,7 +154,7 @@ export default function PWAInstallPrompt({ onClose, onInstalled }) {
                   <div className="bg-green-600/10 border border-green-600/30 rounded-xl p-4 text-center">
                     <Home className="w-12 h-12 text-green-400 mx-auto mb-3" />
                     <p className="text-slate-300 text-sm mb-2">
-                      Instale o FitTrack+ na tela inicial para acesso rápido e funcionalidade offline
+                      Instale o IA Coach Fitness na tela inicial para acesso rápido e funcionalidade offline
                     </p>
                     <p className="text-green-400 text-xs">
                       ✓ Acesso instantâneo<br />

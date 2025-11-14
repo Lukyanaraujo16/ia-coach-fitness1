@@ -43,7 +43,7 @@ export default function LandingPage() {
     "Registro de treinos",
     "Acompanhamento de peso",
     "Até 5 treinos disponíveis",
-    "Comunidade FitTrack+"
+    "Comunidade IA Coach Fitness"
   ];
 
   const premiumFeatures = [
@@ -281,7 +281,7 @@ export default function LandingPage() {
       {/* Footer */}
       <footer className="py-8 px-4 border-t border-slate-800">
         <div className="max-w-7xl mx-auto text-center text-slate-400 text-sm">
-          <p>© 2025 FitTrack+. Todos os direitos reservados.</p>
+          <p>© 2025 IA Coach Fitness. Todos os direitos reservados.</p>
         </div>
       </footer>
     </div>
