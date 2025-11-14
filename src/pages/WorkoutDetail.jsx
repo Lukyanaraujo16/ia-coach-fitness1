@@ -5,7 +5,7 @@ import { createPageUrl } from "@/utils";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Clock, Zap, Lock, CheckCircle } from "lucide-react";
+import { ArrowLeft, Clock, Zap, Lock, CheckCircle, Play } from "lucide-react";
 import { motion } from "framer-motion";
 
 const categoryLabels = {
@@ -56,7 +56,7 @@ export default function WorkoutDetail() {
     loadData();
   }, [workoutId]);
 
-  const isPremium = user?.subscription_status === 'premium';
+  const isPremium = user?.subscription_status === 'premium' || user?.subscription_status === 'trial';
   const isLocked = workout?.is_premium && !isPremium;
 
   const handleSelectWorkout = async () => {
@@ -71,19 +71,15 @@ export default function WorkoutDetail() {
         current_workout_day: 1,
         completed_workout_days: [],
       });
-      navigate(createPageUrl("Home"));
+      navigate(createPageUrl("Dashboard"));
     } catch (error) {
       console.error("Error selecting workout:", error);
     }
   };
 
-  const handleStartWorkout = () => {
-    if (user?.selected_workout_id === workout?.id) {
-      const currentDay = user.current_workout_day || 1;
-      navigate(createPageUrl("WorkoutExecution") + `?id=${workout.id}&day=${currentDay}`);
-    } else {
-      navigate(createPageUrl("WorkoutExecution") + `?id=${workout.id}&day=1`);
-    }
+  const handleStartWorkout = (dayNumber = null) => {
+    const day = dayNumber || (user?.selected_workout_id === workout?.id ? user.current_workout_day || 1 : 1);
+    navigate(createPageUrl("WorkoutExecution") + `?id=${workout.id}&day=${day}`);
   };
 
   if (!workout) {
@@ -95,6 +91,7 @@ export default function WorkoutDetail() {
   }
 
   const totalExercises = workout.days?.reduce((sum, day) => sum + (day.exercises?.length || 0), 0) || 0;
+  const hasMultipleDays = workout.days && workout.days.length > 1;
 
   return (
     <div className="py-6 space-y-6">
@@ -171,13 +168,25 @@ export default function WorkoutDetail() {
               <Card className={`border-slate-800 ${isLocked ? 'bg-slate-900/30' : 'bg-slate-900/50'}`}>
                 <CardContent className="p-4">
                   <div className="flex items-center justify-between mb-3">
-                    <h4 className="text-white font-semibold flex items-center gap-2">
-                      📅 Dia {day.day_number}
+                    <div className="flex items-center gap-2">
+                      <h4 className="text-white font-semibold">📅 Dia {day.day_number}</h4>
                       {user?.selected_workout_id === workout.id && user?.completed_workout_days?.includes(day.day_number) && (
                         <CheckCircle className="w-4 h-4 text-green-400" />
                       )}
-                    </h4>
-                    <span className="text-slate-400 text-sm">{day.exercises?.length || 0} exercícios</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-slate-400 text-sm">{day.exercises?.length || 0} exercícios</span>
+                      {!isLocked && hasMultipleDays && (
+                        <Button
+                          size="sm"
+                          onClick={() => handleStartWorkout(day.day_number)}
+                          className="bg-blue-600 hover:bg-blue-700 h-8 px-3"
+                        >
+                          <Play className="w-3 h-3 mr-1" />
+                          Treinar
+                        </Button>
+                      )}
+                    </div>
                   </div>
 
                   {isLocked ? (
@@ -247,9 +256,12 @@ export default function WorkoutDetail() {
               Assinar Premium para Desbloquear
             </Button>
           ) : (
-            <Button onClick={handleStartWorkout} className="w-full bg-blue-600 hover:bg-blue-700 text-white py-6">
-              Iniciar Treino
-            </Button>
+            !hasMultipleDays && (
+              <Button onClick={() => handleStartWorkout()} className="w-full bg-blue-600 hover:bg-blue-700 text-white py-6">
+                <Play className="w-5 h-5 mr-2" />
+                Iniciar Treino
+              </Button>
+            )
           )}
         </>
       )}

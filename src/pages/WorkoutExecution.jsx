@@ -104,8 +104,8 @@ export default function WorkoutExecution() {
         completed_workout_days: completedDays,
       });
       
-      // Navegar para Home após salvar
-      navigate(createPageUrl("Home"));
+      // Navegar para Dashboard após salvar
+      navigate(createPageUrl("Dashboard"));
     },
   });
 

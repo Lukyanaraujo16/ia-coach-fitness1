@@ -18,11 +18,13 @@ export default function WorkoutFormModal({ workout, exercises, onClose, isUserCr
   const [showBulkAdd, setShowBulkAdd] = useState(false);
   const [bulkAddStep, setBulkAddStep] = useState(1);
   const [bulkSearchQuery, setBulkSearchQuery] = useState("");
+  const [bulkCategoryFilter, setBulkCategoryFilter] = useState("all");
   const [selectedExercises, setSelectedExercises] = useState([]);
   const [currentDayForBulk, setCurrentDayForBulk] = useState(0);
   const [bulkSetsConfig, setBulkSetsConfig] = useState([
     { times: 3, reps: "10-12", rest_seconds: 60, notes: "" }
   ]);
+  const [singleExerciseCategoryFilter, setSingleExerciseCategoryFilter] = useState({});
   
   const [formData, setFormData] = useState(
     workout || {
@@ -139,6 +141,7 @@ export default function WorkoutFormModal({ workout, exercises, onClose, isUserCr
     setCurrentDayForBulk(dayIndex);
     setSelectedExercises([]);
     setBulkSearchQuery("");
+    setBulkCategoryFilter("all");
     setBulkAddStep(1);
     setBulkSetsConfig([{ times: 3, reps: "10-12", rest_seconds: 60, notes: "" }]);
     
@@ -255,10 +258,30 @@ export default function WorkoutFormModal({ workout, exercises, onClose, isUserCr
     setExpandedExercise(expandedExercise === key ? null : key);
   };
 
-  const filteredExercises = exercises.filter(ex => 
-    ex.name.toLowerCase().includes(bulkSearchQuery.toLowerCase()) ||
-    ex.category.toLowerCase().includes(bulkSearchQuery.toLowerCase())
-  );
+  const filteredExercises = exercises.filter(ex => {
+    const matchesSearch = ex.name.toLowerCase().includes(bulkSearchQuery.toLowerCase()) ||
+                         ex.category.toLowerCase().includes(bulkSearchQuery.toLowerCase());
+    const matchesCategory = bulkCategoryFilter === "all" || ex.category === bulkCategoryFilter;
+    return matchesSearch && matchesCategory;
+  });
+
+  const getFilteredExercisesForSingle = (dayIndex, exerciseIndex) => {
+    const key = `${dayIndex}-${exerciseIndex}`;
+    const categoryFilter = singleExerciseCategoryFilter[key] || "all";
+    
+    if (categoryFilter === "all") {
+      return exercises;
+    }
+    return exercises.filter(ex => ex.category === categoryFilter);
+  };
+
+  const setSingleExerciseCategory = (dayIndex, exerciseIndex, category) => {
+    const key = `${dayIndex}-${exerciseIndex}`;
+    setSingleExerciseCategoryFilter({
+      ...singleExerciseCategoryFilter,
+      [key]: category
+    });
+  };
 
   const categoryColors = {
     chest: "bg-red-500/20 text-red-400",
@@ -269,6 +292,17 @@ export default function WorkoutFormModal({ workout, exercises, onClose, isUserCr
     core: "bg-orange-500/20 text-orange-400",
     cardio: "bg-pink-500/20 text-pink-400",
     full_body: "bg-indigo-500/20 text-indigo-400",
+  };
+
+  const categoryLabels = {
+    chest: "Peito",
+    back: "Costas",
+    legs: "Pernas",
+    shoulders: "Ombros",
+    arms: "Braços",
+    core: "Core",
+    cardio: "Cardio",
+    full_body: "Corpo Inteiro",
   };
 
   return (
@@ -498,6 +532,10 @@ export default function WorkoutFormModal({ workout, exercises, onClose, isUserCr
                           {/* Exercise cards */}
                           {day.exercises.map((exercise, exerciseIndex) => {
                             const isExpanded = expandedExercise === `${dayIndex}-${exerciseIndex}`;
+                            const key = `${dayIndex}-${exerciseIndex}`;
+                            const categoryFilter = singleExerciseCategoryFilter[key] || "all";
+                            const filteredExercisesForThis = getFilteredExercisesForSingle(dayIndex, exerciseIndex);
+                            
                             return (
                               <Card key={exerciseIndex} className="bg-slate-900/50 border-slate-600">
                                 <CardHeader className="p-2">
@@ -535,6 +573,24 @@ export default function WorkoutFormModal({ workout, exercises, onClose, isUserCr
                                 {isExpanded && (
                                   <CardContent className="p-2 space-y-2 border-t border-slate-700">
                                     <div className="space-y-1">
+                                      <Label className="text-slate-300 text-xs">Categoria</Label>
+                                      <Select
+                                        value={categoryFilter}
+                                        onValueChange={(value) => setSingleExerciseCategory(dayIndex, exerciseIndex, value)}
+                                      >
+                                        <SelectTrigger className="bg-slate-800 border-slate-600 text-white h-10 text-sm">
+                                          <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent className="z-[150]" position="popper" sideOffset={5}>
+                                          <SelectItem value="all">Todas as Categorias</SelectItem>
+                                          {Object.keys(categoryLabels).map((cat) => (
+                                            <SelectItem key={cat} value={cat}>{categoryLabels[cat]}</SelectItem>
+                                          ))}
+                                        </SelectContent>
+                                      </Select>
+                                    </div>
+
+                                    <div className="space-y-1">
                                       <Label className="text-slate-300 text-xs">Exercício</Label>
                                       <Select
                                         value={exercise.exercise_id}
@@ -544,7 +600,7 @@ export default function WorkoutFormModal({ workout, exercises, onClose, isUserCr
                                           <SelectValue placeholder="Selecione..." />
                                         </SelectTrigger>
                                         <SelectContent className="max-h-60 z-[150]" position="popper" sideOffset={5}>
-                                          {exercises.map((ex) => (
+                                          {filteredExercisesForThis.map((ex) => (
                                             <SelectItem key={ex.id} value={ex.id} className="text-sm">
                                               {ex.name}
                                             </SelectItem>
@@ -722,6 +778,21 @@ export default function WorkoutFormModal({ workout, exercises, onClose, isUserCr
                 <>
                   <CardContent className="p-4 overflow-y-auto flex-1"> {/* flex-1 and overflow-y-auto for scrollable content */}
                     <div className="space-y-3">
+                      <div className="space-y-2">
+                        <Label className="text-slate-300 text-xs">Filtrar por Categoria</Label>
+                        <Select value={bulkCategoryFilter} onValueChange={setBulkCategoryFilter}>
+                          <SelectTrigger className="bg-slate-800 border-slate-700 text-white h-10">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent className="z-[150]" position="popper" sideOffset={5}>
+                            <SelectItem value="all">Todas as Categorias</SelectItem>
+                            {Object.keys(categoryLabels).map((cat) => (
+                              <SelectItem key={cat} value={cat}>{categoryLabels[cat]}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+
                       <div className="relative">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                         <Input
@@ -762,7 +833,7 @@ export default function WorkoutFormModal({ workout, exercises, onClose, isUserCr
                                 <p className="text-white font-medium text-sm truncate">{exercise.name}</p>
                                 <div className="flex items-center gap-1.5 mt-0.5">
                                   <Badge className={`${categoryColors[exercise.category]} text-xs py-0`}>
-                                    {exercise.category}
+                                    {categoryLabels[exercise.category] || exercise.category}
                                   </Badge>
                                 </div>
                               </div>
