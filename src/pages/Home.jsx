@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { createPageUrl } from "@/utils";
@@ -113,7 +114,7 @@ export default function Home() {
           <img 
             src={logoUrl} 
             alt="IA Coach Fitness" 
-            className="h-10"
+            className="h-10 md:h-14"
           />
         </div>
       </header>
