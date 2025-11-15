@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -70,7 +69,7 @@ export default function AdminSettings({ user }) {
     updateLogoMutation.mutate(logoUrl);
   };
 
-  const currentLogo = user?.app_logo_url || "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6904da724b4ce40db58404e7/c84efc51a_LogoIA.png";
+  const currentLogo = user?.app_logo_url || "https://base44.app/api/apps/6904da724b4ce40db58404e7/files/public/6904da724b4ce40db58404e7/901d97ae0_Untitleddesign3.png";
 
   return (
     <div className="space-y-6">
