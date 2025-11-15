@@ -1,3 +1,4 @@
+
 import React, { useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { createPageUrl } from "@/utils";
@@ -84,8 +85,8 @@ export default function Home() {
               <Dumbbell className="w-6 h-6 text-white" />
             </div>
             <h1 className="text-2xl font-bold">
-              <span className="text-blue-400">IA</span>
-              <span className="text-white"> COACH</span>
+              <span className="text-blue-400">IA Coach</span>
+              <span className="text-white"> Fitness</span>
             </h1>
           </div>
         </div>
@@ -312,7 +313,7 @@ export default function Home() {
       {/* Footer */}
       <footer className="py-8 px-4 border-t border-slate-800">
         <div className="max-w-7xl mx-auto text-center text-slate-400 text-sm">
-          <p>© 2025 IA Coach. Todos os direitos reservados.</p>
+          <p>© 2025 IA Coach Fitness. Todos os direitos reservados.</p>
         </div>
       </footer>
     </div>

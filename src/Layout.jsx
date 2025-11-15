@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { Link, useLocation } from "react-router-dom";
@@ -137,8 +138,8 @@ export default function Layout({ children, currentPageName }) {
                 <Dumbbell className="w-5 h-5 text-white" />
               </div>
               <h1 className="text-xl font-bold">
-                <span className="text-blue-400">IA</span>
-                <span className="text-white"> COACH</span>
+                <span className="text-blue-400">IA Coach</span>
+                <span className="text-white"> Fitness</span>
               </h1>
             </Link>
             <div className="flex items-center gap-2">
