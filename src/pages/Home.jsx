@@ -10,7 +10,7 @@ import { motion } from "framer-motion";
 
 export default function Home() {
   const navigate = useNavigate();
-  const [logoUrl, setLogoUrl] = useState("https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6904da724b4ce40db58404e7/c84efc51a_LogoIA.png");
+  const [logoUrl, setLogoUrl] = useState("https://base44.app/api/apps/6904da724b4ce40db58404e7/files/public/6904da724b4ce40db58404e7/901d97ae0_Untitleddesign3.png");
 
   useEffect(() => {
     const checkAuth = async () => {
