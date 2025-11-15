@@ -80,15 +80,11 @@ export default function Home() {
       {/* Header with Logo */}
       <header className="fixed top-0 left-0 right-0 z-50 bg-slate-950/80 backdrop-blur-xl border-b border-slate-800/50">
         <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-center">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-blue-800 rounded-xl flex items-center justify-center shadow-lg shadow-blue-900/50">
-              <Dumbbell className="w-6 h-6 text-white" />
-            </div>
-            <div className="flex flex-col leading-tight">
-              <span className="text-blue-400 font-bold text-xl">IA Coach</span>
-              <span className="text-white font-bold text-xl">Fitness</span>
-            </div>
-          </div>
+          <img 
+            src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6904da724b4ce40db58404e7/c84efc51a_LogoIA.png" 
+            alt="IA Coach Fitness" 
+            className="h-10"
+          />
         </div>
       </header>
 
