@@ -99,16 +99,15 @@ export default function WorkoutExecution() {
             navigator.vibrate([200, 100, 200]);
           }
           
-          // Avançar automaticamente
-          const currentSet = currentDay.exercises?.[currentExerciseIndex]?.sets?.[currentSetIndex];
+          // Verificar se precisa avançar automaticamente
           const timesToDo = currentSet?.times || 1;
           
           if (currentSetRepetition + 1 < timesToDo) {
-            // Ainda tem repetições da mesma série
+            // Ainda tem repetições da mesma série - NÃO avançar automaticamente
+            // Apenas incrementar o contador para o usuário ver
             setCurrentSetRepetition(currentSetRepetition + 1);
-            handleStartRestAutomatically();
           } else {
-            // Passar para próxima série ou exercício
+            // Completou todas as repetições, avançar para próxima série
             setCurrentSetRepetition(0);
             handleNextSetAutomatically();
           }
@@ -187,13 +186,6 @@ export default function WorkoutExecution() {
     setTimeRemaining(restTime);
   };
 
-  const handleStartRestAutomatically = () => {
-    const restTime = currentSet?.rest_seconds || 60;
-    setIsResting(true);
-    setRestStartTime(Date.now());
-    setTimeRemaining(restTime);
-  };
-
   const handlePauseRest = () => {
     setIsResting(false);
     setRestStartTime(null);
@@ -208,7 +200,7 @@ export default function WorkoutExecution() {
 
   const handleNextSetAutomatically = () => {
     if (isLastSet) {
-      // Não avança automaticamente no último exercício, espera usuário confirmar
+      // Não avança automaticamente no último set
       return;
     } else {
       setCurrentSetIndex(currentSetIndex + 1);
@@ -260,6 +252,16 @@ export default function WorkoutExecution() {
     setCurrentSetIndex(0);
     setCurrentSetRepetition(0);
     handleNextExercise();
+  };
+
+  const handleGoBackToSkipped = () => {
+    setShowSkipWarning(false);
+    if (skippedExercises.length > 0) {
+      setCurrentExerciseIndex(skippedExercises[0]);
+      setCurrentSetIndex(0);
+      setCurrentSetRepetition(0);
+      setSkippedExercises(skippedExercises.slice(1));
+    }
   };
 
   const handleFinishWithSkipped = () => {
@@ -400,25 +402,29 @@ export default function WorkoutExecution() {
             </div>
             <div>
               <h2 className="text-xl font-bold text-white mb-2">Atenção!</h2>
-              <p className="text-slate-400 text-sm">
+              <p className="text-slate-400 text-sm mb-3">
                 Você pulou {skippedExercises.length} exercício(s). 
-                Tem certeza que deseja finalizar?
               </p>
+              <div className="bg-blue-900/30 border border-blue-700/50 rounded-lg p-3">
+                <p className="text-blue-300 text-sm">
+                  Deseja voltar e concluir os exercícios pendentes?
+                </p>
+              </div>
             </div>
             
             <div className="space-y-2">
               <Button
-                onClick={() => setShowSkipWarning(false)}
-                variant="outline"
-                className="w-full border-slate-700 text-slate-300"
+                onClick={handleGoBackToSkipped}
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white"
               >
-                Voltar
+                Voltar e Concluir
               </Button>
               <Button
                 onClick={handleFinishWithSkipped}
-                className="w-full bg-orange-600 hover:bg-orange-700"
+                variant="outline"
+                className="w-full border-slate-700 text-slate-300"
               >
-                Finalizar
+                Finalizar Mesmo Assim
               </Button>
             </div>
           </CardContent>
@@ -723,13 +729,35 @@ export default function WorkoutExecution() {
       <div className="flex-shrink-0 bg-slate-900/95 backdrop-blur-sm border-t border-slate-800 px-4 py-4 safe-area-inset-bottom">
         {!isResting ? (
           <div className="space-y-3">
-            <Button
-              onClick={handleStartRest}
-              className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white h-14 font-bold text-base shadow-lg"
-            >
-              <Play className="w-5 h-5 mr-2" />
-              Iniciar Descanso ({restTimeFormatted})
-            </Button>
+            {/* Botão Iniciar Descanso OU Próximo Exercício */}
+            {!isLastSet ? (
+              <Button
+                onClick={handleStartRest}
+                className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white h-14 font-bold text-base shadow-lg"
+              >
+                <Play className="w-5 h-5 mr-2" />
+                Iniciar Descanso ({restTimeFormatted})
+              </Button>
+            ) : (
+              <Button
+                onClick={handleNextExercise}
+                className="w-full bg-gradient-to-r from-yellow-600 to-orange-600 hover:from-yellow-500 hover:to-orange-500 text-white h-14 font-bold text-base shadow-lg shadow-yellow-900/50 border-2 border-yellow-400"
+              >
+                {isLastExercise ? (
+                  <>
+                    <CheckCircle className="w-5 h-5 mr-2" />
+                    Finalizar Treino
+                  </>
+                ) : (
+                  <>
+                    <ChevronRight className="w-5 h-5 mr-2" />
+                    Próximo Exercício
+                  </>
+                )}
+              </Button>
+            )}
+            
+            {/* Botões secundários */}
             <div className="grid grid-cols-2 gap-3">
               <Button
                 onClick={handleSkipExercise}
@@ -738,37 +766,17 @@ export default function WorkoutExecution() {
               >
                 Pular Exercício
               </Button>
-              <Button
-                onClick={() => {
-                  if (isLastSet) {
-                    handleNextExercise();
-                  } else {
+              {!isLastSet && (
+                <Button
+                  onClick={() => {
                     setCurrentSetRepetition(0);
                     handleNextSet();
-                  }
-                }}
-                className={`h-12 font-semibold text-sm ${
-                  isLastSet
-                    ? 'bg-gradient-to-r from-yellow-600 to-orange-600 hover:from-yellow-500 hover:to-orange-500 text-white shadow-lg shadow-yellow-900/50 border-2 border-yellow-400'
-                    : 'bg-green-600 hover:bg-green-700 text-white'
-                }`}
-              >
-                {isLastExercise && isLastSet ? (
-                  <>
-                    <CheckCircle className="w-4 h-4 mr-2" />
-                    Finalizar Treino
-                  </>
-                ) : isLastSet ? (
-                  <>
-                    <ChevronRight className="w-5 h-5 mr-1" />
-                    Próximo Exercício
-                  </>
-                ) : (
-                  <>
-                    Próxima Série
-                  </>
-                )}
-              </Button>
+                  }}
+                  className="bg-green-600 hover:bg-green-700 text-white h-12 font-semibold text-sm"
+                >
+                  Próxima Série
+                </Button>
+              )}
             </div>
           </div>
         ) : null}
