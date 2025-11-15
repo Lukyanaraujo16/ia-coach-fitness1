@@ -110,11 +110,11 @@ export default function Home() {
     <div className="min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950">
       {/* Header with Logo */}
       <header className="fixed top-0 left-0 right-0 z-50 bg-slate-950/80 backdrop-blur-xl border-b border-slate-800/50">
-        <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-center">
+        <div className="max-w-7xl mx-auto px-4 py-6 flex items-center justify-center">
           <img 
             src={logoUrl} 
             alt="IA Coach Fitness" 
-            className="h-10 md:h-14"
+            className="h-16 md:h-20"
           />
         </div>
       </header>
