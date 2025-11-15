@@ -8,8 +8,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { X, Plus, Trash2, ChevronDown, ChevronUp, GripVertical, CheckSquare, Square, Search, ArrowRight, ArrowLeft } from "lucide-react";
+import { X, Plus, Trash2, ChevronDown, ChevronUp, GripVertical, CheckSquare, Square, Search, ArrowRight, ArrowLeft, ArrowUp, ArrowDown } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 
 export default function WorkoutFormModal({ workout, exercises, onClose, isUserCreated = false, userEmail = null }) {
   const queryClient = useQueryClient();
@@ -25,6 +26,9 @@ export default function WorkoutFormModal({ workout, exercises, onClose, isUserCr
     { times: 3, reps: "10-12", rest_seconds: 60, notes: "" }
   ]);
   const [singleExerciseCategoryFilter, setSingleExerciseCategoryFilter] = useState({});
+
+  // Helper to generate a unique ID for exercises within a day for DND
+  const generateUniqueId = () => crypto.randomUUID();
   
   const [formData, setFormData] = useState(
     workout || {
@@ -98,6 +102,31 @@ export default function WorkoutFormModal({ workout, exercises, onClose, isUserCr
     createWorkoutMutation.mutate(formData);
   };
 
+  const onDragEnd = (result, dayIndex) => {
+    if (!result.destination) return;
+    
+    const newDays = [...formData.days];
+    const items = Array.from(newDays[dayIndex].exercises);
+    const [reorderedItem] = items.splice(result.source.index, 1);
+    items.splice(result.destination.index, 0, reorderedItem);
+    
+    newDays[dayIndex].exercises = items;
+    setFormData({ ...formData, days: newDays });
+  };
+
+  const moveExercise = (dayIndex, exerciseIndex, direction) => {
+    const newDays = [...formData.days];
+    const exercises = [...newDays[dayIndex].exercises];
+    const newIndex = direction === 'up' ? exerciseIndex - 1 : exerciseIndex + 1;
+    
+    if (newIndex < 0 || newIndex >= exercises.length) return;
+    
+    // Swap elements
+    [exercises[exerciseIndex], exercises[newIndex]] = [exercises[newIndex], exercises[exerciseIndex]];
+    newDays[dayIndex].exercises = exercises;
+    setFormData({ ...formData, days: newDays });
+  };
+
   const addDay = () => {
     setFormData({
       ...formData,
@@ -127,6 +156,7 @@ export default function WorkoutFormModal({ workout, exercises, onClose, isUserCr
   const addExercise = (dayIndex) => {
     const newDays = [...formData.days];
     newDays[dayIndex].exercises.push({
+      unique_instance_id: generateUniqueId(), // Add unique instance ID
       exercise_id: "",
       exercise_name: "",
       exercise_category: "",
@@ -194,6 +224,7 @@ export default function WorkoutFormModal({ workout, exercises, onClose, isUserCr
     
     exercisesToAdd.forEach(exercise => {
       newDays[currentDayForBulk].exercises.push({
+        unique_instance_id: generateUniqueId(), // Add unique instance ID
         exercise_id: exercise.id,
         exercise_name: exercise.name,
         exercise_category: exercise.category,
@@ -529,179 +560,226 @@ export default function WorkoutFormModal({ workout, exercises, onClose, isUserCr
                             </div>
                           </div>
 
-                          {/* Exercise cards */}
-                          {day.exercises.map((exercise, exerciseIndex) => {
-                            const isExpanded = expandedExercise === `${dayIndex}-${exerciseIndex}`;
-                            const key = `${dayIndex}-${exerciseIndex}`;
-                            const categoryFilter = singleExerciseCategoryFilter[key] || "all";
-                            const filteredExercisesForThis = getFilteredExercisesForSingle(dayIndex, exerciseIndex);
-                            
-                            return (
-                              <Card key={exerciseIndex} className="bg-slate-900/50 border-slate-600">
-                                <CardHeader className="p-2">
-                                  <div className="flex items-start gap-2">
-                                    <button
-                                      type="button"
-                                      onClick={() => toggleExercise(dayIndex, exerciseIndex)}
-                                      className="flex-1 text-left"
-                                    >
-                                      <div className="flex items-center gap-2 mb-1">
-                                        <Badge className="bg-blue-600/20 text-blue-400 text-xs">
-                                          {exerciseIndex + 1}
-                                        </Badge>
-                                        <span className="text-white font-medium text-sm">
-                                          {exercise.exercise_name || "Selecionar..."}
-                                        </span>
-                                      </div>
-                                      <div className="flex items-center gap-2 text-xs text-slate-400">
-                                        <span>{exercise.sets?.length || 0} séries</span>
-                                        {!isExpanded ? <ChevronDown className="w-3 h-3" /> : <ChevronUp className="w-3 h-3" />}
-                                      </div>
-                                    </button>
-                                    <Button
-                                      type="button"
-                                      variant="ghost"
-                                      size="icon"
-                                      onClick={() => removeExercise(dayIndex, exerciseIndex)}
-                                      className="text-red-400 hover:text-red-300 hover:bg-red-900/20 h-8 w-8 flex-shrink-0"
-                                    >
-                                      <Trash2 className="w-3 h-3" />
-                                    </Button>
-                                  </div>
-                                </CardHeader>
+                          {/* Exercise cards with drag and drop */}
+                          <DragDropContext onDragEnd={(result) => onDragEnd(result, dayIndex)}>
+                            <Droppable droppableId={`day-${dayIndex}`}>
+                              {(provided) => (
+                                <div {...provided.droppableProps} ref={provided.innerRef} className="space-y-2">
+                                  {day.exercises.map((exercise, exerciseIndex) => {
+                                    const isExpanded = expandedExercise === `${dayIndex}-${exerciseIndex}`;
+                                    const key = `${dayIndex}-${exerciseIndex}`;
+                                    const categoryFilter = singleExerciseCategoryFilter[key] || "all";
+                                    const filteredExercisesForThis = getFilteredExercisesForSingle(dayIndex, exerciseIndex);
+                                    
+                                    // Ensure unique_instance_id exists for DND
+                                    if (!exercise.unique_instance_id) {
+                                      exercise.unique_instance_id = generateUniqueId();
+                                    }
 
-                                {isExpanded && (
-                                  <CardContent className="p-2 space-y-2 border-t border-slate-700">
-                                    <div className="space-y-1">
-                                      <Label className="text-slate-300 text-xs">Categoria</Label>
-                                      <Select
-                                        value={categoryFilter}
-                                        onValueChange={(value) => setSingleExerciseCategory(dayIndex, exerciseIndex, value)}
-                                      >
-                                        <SelectTrigger className="bg-slate-800 border-slate-600 text-white h-10 text-sm">
-                                          <SelectValue />
-                                        </SelectTrigger>
-                                        <SelectContent className="z-[150]" position="popper" sideOffset={5}>
-                                          <SelectItem value="all">Todas as Categorias</SelectItem>
-                                          {Object.keys(categoryLabels).map((cat) => (
-                                            <SelectItem key={cat} value={cat}>{categoryLabels[cat]}</SelectItem>
-                                          ))}
-                                        </SelectContent>
-                                      </Select>
-                                    </div>
-
-                                    <div className="space-y-1">
-                                      <Label className="text-slate-300 text-xs">Exercício</Label>
-                                      <Select
-                                        value={exercise.exercise_id}
-                                        onValueChange={(v) => updateExercise(dayIndex, exerciseIndex, "exercise_id", v)}
-                                      >
-                                        <SelectTrigger className="bg-slate-800 border-slate-600 text-white h-10 text-sm">
-                                          <SelectValue placeholder="Selecione..." />
-                                        </SelectTrigger>
-                                        <SelectContent className="max-h-60 z-[150]" position="popper" sideOffset={5}>
-                                          {filteredExercisesForThis.map((ex) => (
-                                            <SelectItem key={ex.id} value={ex.id} className="text-sm">
-                                              {ex.name}
-                                            </SelectItem>
-                                          ))}
-                                        </SelectContent>
-                                      </Select>
-                                    </div>
-
-                                    {/* Séries */}
-                                    <div className="space-y-2">
-                                      <div className="flex items-center justify-between">
-                                        <Label className="text-slate-300 text-xs">Séries</Label>
-                                        <Button
-                                          type="button"
-                                          onClick={() => addSet(dayIndex, exerciseIndex)}
-                                          size="sm"
-                                          className="bg-purple-600 hover:bg-purple-700 h-7 text-xs px-2"
-                                        >
-                                          <Plus className="w-3 h-3 mr-1" />
-                                          Série
-                                        </Button>
-                                      </div>
-
-                                      {exercise.sets?.map((set, setIndex) => (
-                                        <Card key={setIndex} className="bg-slate-800/50 border-slate-600 p-2">
-                                          <div className="space-y-2">
-                                            <div className="flex items-center justify-between">
-                                              <span className="text-white text-xs font-medium">Série {setIndex + 1}</span>
-                                              {exercise.sets.length > 1 && (
+                                    return (
+                                      <Draggable key={exercise.unique_instance_id} draggableId={exercise.unique_instance_id} index={exerciseIndex}>
+                                        {(provided) => (
+                                          <Card 
+                                            ref={provided.innerRef} 
+                                            {...provided.draggableProps} 
+                                            className="bg-slate-900/50 border-slate-600"
+                                          >
+                                            <CardHeader className="p-2">
+                                              <div className="flex items-start gap-2">
+                                                <div {...provided.dragHandleProps} className="cursor-grab active:cursor-grabbing mt-1 p-1">
+                                                  <GripVertical className="w-4 h-4 text-slate-500" />
+                                                </div>
+                                                <button
+                                                  type="button"
+                                                  onClick={() => toggleExercise(dayIndex, exerciseIndex)}
+                                                  className="flex-1 text-left"
+                                                >
+                                                  <div className="flex items-center gap-2 mb-1">
+                                                    <Badge className="bg-blue-600/20 text-blue-400 text-xs">
+                                                      {exerciseIndex + 1}
+                                                    </Badge>
+                                                    <span className="text-white font-medium text-sm">
+                                                      {exercise.exercise_name || "Selecionar..."}
+                                                    </span>
+                                                  </div>
+                                                  <div className="flex items-center gap-2 text-xs text-slate-400">
+                                                    <span>{exercise.sets?.length || 0} séries</span>
+                                                    {!isExpanded ? <ChevronDown className="w-3 h-3" /> : <ChevronUp className="w-3 h-3" />}
+                                                  </div>
+                                                </button>
+                                                <div className="flex flex-col gap-1 items-center">
+                                                  <Button
+                                                    type="button"
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    onClick={(e) => { e.stopPropagation(); moveExercise(dayIndex, exerciseIndex, 'up'); }}
+                                                    disabled={exerciseIndex === 0}
+                                                    className="text-slate-400 hover:text-white hover:bg-slate-800 h-6 w-6"
+                                                  >
+                                                    <ArrowUp className="w-3 h-3" />
+                                                  </Button>
+                                                  <Button
+                                                    type="button"
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    onClick={(e) => { e.stopPropagation(); moveExercise(dayIndex, exerciseIndex, 'down'); }}
+                                                    disabled={exerciseIndex === day.exercises.length - 1}
+                                                    className="text-slate-400 hover:text-white hover:bg-slate-800 h-6 w-6"
+                                                  >
+                                                    <ArrowDown className="w-3 h-3" />
+                                                  </Button>
+                                                </div>
                                                 <Button
                                                   type="button"
                                                   variant="ghost"
                                                   size="icon"
-                                                  onClick={() => removeSet(dayIndex, exerciseIndex, setIndex)}
-                                                  className="text-red-400 hover:text-red-300 hover:bg-red-900/20 h-6 w-6"
+                                                  onClick={(e) => { e.stopPropagation(); removeExercise(dayIndex, exerciseIndex); }}
+                                                  className="text-red-400 hover:text-red-300 hover:bg-red-900/20 h-8 w-8 flex-shrink-0"
                                                 >
-                                                  <X className="w-3 h-3" />
+                                                  <Trash2 className="w-3 h-3" />
                                                 </Button>
-                                              )}
-                                            </div>
-
-                                            <div className="grid grid-cols-2 gap-2">
-                                              <div className="space-y-1">
-                                                <Label className="text-slate-400 text-xs">Vezes</Label>
-                                                <Input
-                                                  type="number"
-                                                  value={set.times}
-                                                  onChange={(e) => updateSet(dayIndex, exerciseIndex, setIndex, "times", parseInt(e.target.value))}
-                                                  className="bg-slate-700 border-slate-600 text-white h-9 text-sm"
-                                                  min="1"
-                                                />
                                               </div>
-                                              <div className="space-y-1">
-                                                <Label className="text-slate-400 text-xs">Reps</Label>
-                                                <Input
-                                                  value={set.reps}
-                                                  onChange={(e) => updateSet(dayIndex, exerciseIndex, setIndex, "reps", e.target.value)}
-                                                  className="bg-slate-700 border-slate-600 text-white h-9 text-sm"
-                                                  placeholder="10-12"
-                                                />
-                                              </div>
-                                            </div>
+                                            </CardHeader>
 
-                                            <div className="space-y-1">
-                                              <Label className="text-slate-400 text-xs">Descanso (seg)</Label>
-                                              <Input
-                                                type="number"
-                                                value={set.rest_seconds}
-                                                onChange={(e) => updateSet(dayIndex, exerciseIndex, setIndex, "rest_seconds", parseInt(e.target.value))}
-                                                className="bg-slate-700 border-slate-600 text-white h-9 text-sm"
-                                              />
-                                            </div>
+                                            {isExpanded && (
+                                              <CardContent className="p-2 space-y-2 border-t border-slate-700">
+                                                <div className="space-y-1">
+                                                  <Label className="text-slate-300 text-xs">Categoria</Label>
+                                                  <Select
+                                                    value={categoryFilter}
+                                                    onValueChange={(value) => setSingleExerciseCategory(dayIndex, exerciseIndex, value)}
+                                                  >
+                                                    <SelectTrigger className="bg-slate-800 border-slate-600 text-white h-10 text-sm">
+                                                      <SelectValue />
+                                                    </SelectTrigger>
+                                                    <SelectContent className="z-[150]" position="popper" sideOffset={5}>
+                                                      <SelectItem value="all">Todas as Categorias</SelectItem>
+                                                      {Object.keys(categoryLabels).map((cat) => (
+                                                        <SelectItem key={cat} value={cat}>{categoryLabels[cat]}</SelectItem>
+                                                      ))}
+                                                    </SelectContent>
+                                                  </Select>
+                                                </div>
 
-                                            <div className="space-y-1">
-                                              <Label className="text-slate-400 text-xs">Observações</Label>
-                                              <Input
-                                                value={set.notes}
-                                                onChange={(e) => updateSet(dayIndex, exerciseIndex, setIndex, "notes", e.target.value)}
-                                                className="bg-slate-700 border-slate-600 text-white h-9 text-sm"
-                                                placeholder="Ex: aumentar carga"
-                                              />
-                                            </div>
-                                          </div>
-                                        </Card>
-                                      ))}
-                                    </div>
+                                                <div className="space-y-1">
+                                                  <Label className="text-slate-300 text-xs">Exercício</Label>
+                                                  <Select
+                                                    value={exercise.exercise_id}
+                                                    onValueChange={(v) => updateExercise(dayIndex, exerciseIndex, "exercise_id", v)}
+                                                  >
+                                                    <SelectTrigger className="bg-slate-800 border-slate-600 text-white h-10 text-sm">
+                                                      <SelectValue placeholder="Selecione..." />
+                                                    </SelectTrigger>
+                                                    <SelectContent className="max-h-60 z-[150]" position="popper" sideOffset={5}>
+                                                      {filteredExercisesForThis.map((ex) => (
+                                                        <SelectItem key={ex.id} value={ex.id} className="text-sm">
+                                                          {ex.name}
+                                                        </SelectItem>
+                                                      ))}
+                                                    </SelectContent>
+                                                  </Select>
+                                                </div>
 
-                                    <div className="space-y-1">
-                                      <Label className="text-slate-300 text-xs">Notas do Exercício</Label>
-                                      <Textarea
-                                        value={exercise.notes}
-                                        onChange={(e) => updateExercise(dayIndex, exerciseIndex, "notes", e.target.value)}
-                                        className="bg-slate-800 border-slate-600 text-white min-h-16 text-sm"
-                                        placeholder="Dicas de execução..."
-                                      />
-                                    </div>
-                                  </CardContent>
-                                )}
-                              </Card>
-                            );
-                          })}
+                                                {/* Séries */}
+                                                <div className="space-y-2">
+                                                  <div className="flex items-center justify-between">
+                                                    <Label className="text-slate-300 text-xs">Séries</Label>
+                                                    <Button
+                                                      type="button"
+                                                      onClick={() => addSet(dayIndex, exerciseIndex)}
+                                                      size="sm"
+                                                      className="bg-purple-600 hover:bg-purple-700 h-7 text-xs px-2"
+                                                    >
+                                                      <Plus className="w-3 h-3 mr-1" />
+                                                      Série
+                                                    </Button>
+                                                  </div>
+
+                                                  {exercise.sets?.map((set, setIndex) => (
+                                                    <Card key={setIndex} className="bg-slate-800/50 border-slate-600 p-2">
+                                                      <div className="space-y-2">
+                                                        <div className="flex items-center justify-between">
+                                                          <span className="text-white text-xs font-medium">Série {setIndex + 1}</span>
+                                                          {exercise.sets.length > 1 && (
+                                                            <Button
+                                                              type="button"
+                                                              variant="ghost"
+                                                              size="icon"
+                                                              onClick={() => removeSet(dayIndex, exerciseIndex, setIndex)}
+                                                              className="text-red-400 hover:text-red-300 hover:bg-red-900/20 h-6 w-6"
+                                                            >
+                                                              <X className="w-3 h-3" />
+                                                            </Button>
+                                                          )}
+                                                        </div>
+
+                                                        <div className="grid grid-cols-2 gap-2">
+                                                          <div className="space-y-1">
+                                                            <Label className="text-slate-400 text-xs">Vezes</Label>
+                                                            <Input
+                                                              type="number"
+                                                              value={set.times}
+                                                              onChange={(e) => updateSet(dayIndex, exerciseIndex, setIndex, "times", parseInt(e.target.value))}
+                                                              className="bg-slate-700 border-slate-600 text-white h-9 text-sm"
+                                                              min="1"
+                                                            />
+                                                          </div>
+                                                          <div className="space-y-1">
+                                                            <Label className="text-slate-400 text-xs">Reps</Label>
+                                                            <Input
+                                                              value={set.reps}
+                                                              onChange={(e) => updateSet(dayIndex, exerciseIndex, setIndex, "reps", e.target.value)}
+                                                              className="bg-slate-700 border-slate-600 text-white h-9 text-sm"
+                                                              placeholder="10-12"
+                                                            />
+                                                          </div>
+                                                        </div>
+
+                                                        <div className="space-y-1">
+                                                          <Label className="text-slate-400 text-xs">Descanso (seg)</Label>
+                                                          <Input
+                                                            type="number"
+                                                            value={set.rest_seconds}
+                                                            onChange={(e) => updateSet(dayIndex, exerciseIndex, setIndex, "rest_seconds", parseInt(e.target.value))}
+                                                            className="bg-slate-700 border-slate-600 text-white h-9 text-sm"
+                                                          />
+                                                        </div>
+
+                                                        <div className="space-y-1">
+                                                          <Label className="text-slate-400 text-xs">Observações</Label>
+                                                          <Input
+                                                            value={set.notes}
+                                                            onChange={(e) => updateSet(dayIndex, exerciseIndex, setIndex, "notes", e.target.value)}
+                                                            className="bg-slate-700 border-slate-600 text-white h-9 text-sm"
+                                                            placeholder="Ex: aumentar carga"
+                                                          />
+                                                        </div>
+                                                      </div>
+                                                    </Card>
+                                                  ))}
+                                                </div>
+
+                                                <div className="space-y-1">
+                                                  <Label className="text-slate-300 text-xs">Notas do Exercício</Label>
+                                                  <Textarea
+                                                    value={exercise.notes}
+                                                    onChange={(e) => updateExercise(dayIndex, exerciseIndex, "notes", e.target.value)}
+                                                    className="bg-slate-800 border-slate-600 text-white min-h-16 text-sm"
+                                                    placeholder="Dicas de execução..."
+                                                  />
+                                                </div>
+                                              </CardContent>
+                                            )}
+                                          </Card>
+                                        )}
+                                      </Draggable>
+                                    );
+                                  })}
+                                  {provided.placeholder}
+                                </div>
+                              )}
+                            </Droppable>
+                          </DragDropContext>
 
                           {day.exercises.length === 0 && (
                             <p className="text-slate-500 text-center py-4 text-xs">
