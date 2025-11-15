@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from "react";
 import { base44 } from "@/api/base44Client";
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
@@ -22,6 +23,7 @@ export default function WorkoutExecution() {
   const [currentExerciseIndex, setCurrentExerciseIndex] = useState(0);
   const [currentSetIndex, setCurrentSetIndex] = useState(0);
   const [currentSetRepetition, setCurrentSetRepetition] = useState(0);
+  const [completedLastSetRest, setCompletedLastSetRest] = useState(false); // New state variable
   const [skippedExercises, setSkippedExercises] = useState([]);
   const [isResting, setIsResting] = useState(false);
   const [restStartTime, setRestStartTime] = useState(null);
@@ -87,8 +89,9 @@ export default function WorkoutExecution() {
       interval = setInterval(() => {
         const now = Date.now();
         const elapsed = Math.floor((now - restStartTime) / 1000);
-        const currentSet = currentDay.exercises?.[currentExerciseIndex]?.sets?.[currentSetIndex];
-        const restTime = currentSet?.rest_seconds || 60;
+        const currentExerciseInEffect = currentDay.exercises?.[currentExerciseIndex]; // Get currentExercise for this effect run
+        const currentSetInEffect = currentExerciseInEffect?.sets?.[currentSetIndex];
+        const restTime = currentSetInEffect?.rest_seconds || 60;
         const remaining = restTime - elapsed;
         
         if (remaining <= 0) {
@@ -100,11 +103,14 @@ export default function WorkoutExecution() {
           }
           
           // Verificar se precisa avançar automaticamente
-          const timesToDo = currentSet?.times || 1;
+          const timesToDo = currentSetInEffect?.times || 1;
+          const isLastSetInEffect = currentSetIndex === (currentExerciseInEffect?.sets?.length || 0) - 1;
           
-          if (currentSetRepetition + 1 < timesToDo) {
-            // Ainda tem repetições da mesma série - NÃO avançar automaticamente
-            // Apenas incrementar o contador para o usuário ver
+          if (isLastSetInEffect) {
+            // Última série - apenas marca como completo para permitir o botão "Próximo Exercício" manualmente
+            setCompletedLastSetRest(true);
+          } else if (currentSetRepetition + 1 < timesToDo) {
+            // Ainda tem repetições da mesma série
             setCurrentSetRepetition(currentSetRepetition + 1);
           } else {
             // Completou todas as repetições, avançar para próxima série
@@ -120,7 +126,7 @@ export default function WorkoutExecution() {
     return () => {
       if (interval) clearInterval(interval);
     };
-  }, [isResting, restStartTime, currentExerciseIndex, currentSetIndex, currentDay, currentSetRepetition]);
+  }, [isResting, restStartTime, currentExerciseIndex, currentSetIndex, currentDay, currentSetRepetition]); // completedLastSetRest doesn't need to be a dependency here, as setCompletedLastSetRest is stable.
 
   const createWorkoutLogMutation = useMutation({
     mutationFn: (data) => base44.entities.WorkoutLog.create(data),
@@ -195,12 +201,16 @@ export default function WorkoutExecution() {
     setIsResting(false);
     setRestStartTime(null);
     setCurrentSetRepetition(0);
-    handleNextSet();
+    
+    if (isLastSet) {
+      setCompletedLastSetRest(true); // Mark rest as completed for the last set
+    } else {
+      handleNextSet();
+    }
   };
 
   const handleNextSetAutomatically = () => {
     if (isLastSet) {
-      // Não avança automaticamente no último set
       return;
     } else {
       setCurrentSetIndex(currentSetIndex + 1);
@@ -227,6 +237,7 @@ export default function WorkoutExecution() {
   const handleNextExercise = () => {
     setIsResting(false);
     setRestStartTime(null);
+    setCompletedLastSetRest(false); // Reset when moving to a new exercise
     
     if (isLastExercise) {
       if (skippedExercises.length > 0) {
@@ -251,6 +262,7 @@ export default function WorkoutExecution() {
     }
     setCurrentSetIndex(0);
     setCurrentSetRepetition(0);
+    setCompletedLastSetRest(false); // Reset when skipping exercise
     handleNextExercise();
   };
 
@@ -260,6 +272,7 @@ export default function WorkoutExecution() {
       setCurrentExerciseIndex(skippedExercises[0]);
       setCurrentSetIndex(0);
       setCurrentSetRepetition(0);
+      setCompletedLastSetRest(false); // Reset when going back to skipped exercise
       setSkippedExercises(skippedExercises.slice(1));
     }
   };
@@ -645,19 +658,19 @@ export default function WorkoutExecution() {
       {/* Registro de Peso - Fixo e DESTACADO se última série */}
       <div className="flex-shrink-0 bg-slate-900/95 backdrop-blur-sm border-t border-slate-800 px-4 py-3">
         <div className={`rounded-xl p-3 border-2 transition-all ${
-          isLastSet 
+          isLastSet && completedLastSetRest
             ? 'bg-gradient-to-br from-yellow-900/40 to-orange-900/40 border-yellow-600/60 shadow-lg shadow-yellow-900/50' 
             : 'bg-gradient-to-br from-cyan-900/30 to-blue-900/30 border-cyan-700/50'
         }`}>
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-2">
-              <Weight className={`w-4 h-4 ${isLastSet ? 'text-yellow-400' : 'text-cyan-400'}`} />
-              <span className={`text-sm font-semibold ${isLastSet ? 'text-yellow-300' : 'text-slate-300'}`}>
-                Carga Máxima (kg) {isLastSet && '⚡'}
+              <Weight className={`w-4 h-4 ${isLastSet && completedLastSetRest ? 'text-yellow-400' : 'text-cyan-400'}`} />
+              <span className={`text-sm font-semibold ${isLastSet && completedLastSetRest ? 'text-yellow-300' : 'text-slate-300'}`}>
+                Carga Máxima (kg) {isLastSet && completedLastSetRest && '⚡'}
               </span>
             </div>
             {lastWeight && (
-              <span className={`text-xs font-semibold ${isLastSet ? 'text-yellow-400' : 'text-cyan-400'}`}>
+              <span className={`text-xs font-semibold ${isLastSet && completedLastSetRest ? 'text-yellow-400' : 'text-cyan-400'}`}>
                 Última: {lastWeight}kg
               </span>
             )}
@@ -669,7 +682,7 @@ export default function WorkoutExecution() {
             value={currentExerciseWeight}
             onChange={(e) => handleWeightChange(e.target.value)}
             className={`text-center h-12 text-lg font-bold ${
-              isLastSet 
+              isLastSet && completedLastSetRest
                 ? 'bg-slate-800 border-yellow-600/50 text-yellow-100' 
                 : 'bg-slate-800 border-slate-700 text-white'
             }`}
@@ -729,8 +742,8 @@ export default function WorkoutExecution() {
       <div className="flex-shrink-0 bg-slate-900/95 backdrop-blur-sm border-t border-slate-800 px-4 py-4 safe-area-inset-bottom">
         {!isResting ? (
           <div className="space-y-3">
-            {/* Botão Iniciar Descanso OU Próximo Exercício */}
-            {!isLastSet ? (
+            {/* Botão Iniciar Descanso OU Próximo Exercício (só após descanso) */}
+            {!(isLastSet && completedLastSetRest) ? (
               <Button
                 onClick={handleStartRest}
                 className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white h-14 font-bold text-base shadow-lg"
