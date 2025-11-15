@@ -1,15 +1,14 @@
-
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft, Play, Pause, SkipForward, CheckCircle, Plus, Minus, AlertTriangle, Trophy, Clock, Zap, X, Weight, Video } from "lucide-react";
-import { motion } from "framer-motion";
+import { ArrowLeft, CheckCircle, AlertTriangle, Trophy, Clock, Zap, X, Weight, Video, Timer, Play, Pause } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 
 export default function WorkoutExecution() {
   const navigate = useNavigate();
@@ -30,11 +29,21 @@ export default function WorkoutExecution() {
   const [caloriesInput, setCaloriesInput] = useState("");
   const [showSkipWarning, setShowSkipWarning] = useState(false);
   const [showExitConfirm, setShowExitConfirm] = useState(false);
-  const [showVideoModal, setShowVideoModal] = useState(false); // New state variable
+  const [showVideoModal, setShowVideoModal] = useState(false);
   const [user, setUser] = useState(null);
   const [startTime, setStartTime] = useState(null);
   const [endTime, setEndTime] = useState(null);
   const [exerciseWeights, setExerciseWeights] = useState({});
+
+  const { data: previousLogs = [] } = useQuery({
+    queryKey: ['previous-exercise-logs', user?.email],
+    queryFn: async () => {
+      if (!user?.email) return [];
+      const logs = await base44.entities.WorkoutLog.list('-date', 50);
+      return logs.filter(log => log.user_email === user.email);
+    },
+    enabled: !!user?.email,
+  });
 
   useEffect(() => {
     const loadWorkout = async () => {
@@ -61,7 +70,6 @@ export default function WorkoutExecution() {
     loadWorkout();
   }, [workoutId, dayNumber]);
 
-  // Timer com controle baseado em timestamp real
   useEffect(() => {
     let interval;
     
@@ -75,6 +83,10 @@ export default function WorkoutExecution() {
           setTimeRemaining(0);
           setIsResting(false);
           setRestStartTime(null);
+          // Vibrar quando o tempo acabar (se disponível)
+          if (navigator.vibrate) {
+            navigator.vibrate([200, 100, 200]);
+          }
         } else {
           setTimeRemaining(remaining);
         }
@@ -104,7 +116,6 @@ export default function WorkoutExecution() {
         completed_workout_days: completedDays,
       });
       
-      // Navegar para Dashboard após salvar
       navigate(createPageUrl("Dashboard"));
     },
   });
@@ -119,6 +130,19 @@ export default function WorkoutExecution() {
 
   const currentExercise = currentDay.exercises?.[currentExerciseIndex];
   const isLastExercise = currentExerciseIndex === (currentDay.exercises?.length || 0) - 1;
+
+  // Buscar última carga do exercício atual
+  const getLastWeight = (exerciseName) => {
+    for (const log of previousLogs) {
+      const exercise = log.exercises_completed?.find(ex => ex.exercise_name === exerciseName);
+      if (exercise?.max_weight) {
+        return exercise.max_weight;
+      }
+    }
+    return null;
+  };
+
+  const lastWeight = currentExercise ? getLastWeight(currentExercise.exercise_name) : null;
 
   const handleStartRest = () => {
     setIsResting(true);
@@ -137,6 +161,12 @@ export default function WorkoutExecution() {
       setIsResting(false);
       setRestStartTime(null);
     }
+  };
+
+  const handleSkipRest = () => {
+    setIsResting(false);
+    setRestStartTime(null);
+    setTimeRemaining(restTime);
   };
 
   const handleNextExercise = () => {
@@ -183,7 +213,6 @@ export default function WorkoutExecution() {
       ? Math.round((endTime - startTime) / 1000 / 60)
       : workout.duration_minutes;
 
-    // Preparar dados dos exercícios com peso máximo
     const exercisesCompleted = [];
     currentDay.exercises?.forEach((exercise, originalIdx) => {
       if (!skippedExercises.includes(originalIdx)) {
@@ -206,14 +235,6 @@ export default function WorkoutExecution() {
       notes: skippedExercises.length > 0 ? `${skippedExercises.length} exercícios pulados` : "",
       exercises_completed: exercisesCompleted,
     });
-  };
-
-  const adjustRestTime = (delta) => {
-    const newTime = Math.max(30, restTime + delta);
-    setRestTime(newTime);
-    if (!isResting) {
-      setTimeRemaining(newTime);
-    }
   };
 
   const handleExitWorkout = () => {
@@ -431,190 +452,226 @@ export default function WorkoutExecution() {
     return null;
   }
 
+  const progressPercentage = ((currentExerciseIndex + 1) / (currentDay.exercises?.length || 1)) * 100;
+
   return (
     <div className="fixed inset-0 flex flex-col bg-gradient-to-b from-slate-950 to-slate-900 z-[60]">
       {/* Header Fixo */}
-      <div className="flex-shrink-0 bg-slate-900/95 backdrop-blur-sm border-b border-slate-800 px-3 py-2.5">
-        <div className="flex items-center justify-between">
+      <div className="flex-shrink-0 bg-slate-900/95 backdrop-blur-sm border-b border-slate-800 px-4 py-3">
+        <div className="flex items-center justify-between mb-2">
           <Button
             variant="ghost"
             size="icon"
             onClick={handleExitWorkout}
-            className="text-slate-400 hover:text-white h-8 w-8"
+            className="text-slate-400 hover:text-white h-9 w-9"
           >
             <X className="w-5 h-5" />
           </Button>
           <div className="text-center">
-            <p className="text-slate-400 text-xs">Dia {dayNumber}</p>
-            <p className="text-white font-bold text-xs">
-              Exercício {currentExerciseIndex + 1}/{currentDay.exercises?.length || 0}
+            <p className="text-white font-bold text-sm">
+              {currentExerciseIndex + 1}/{currentDay.exercises?.length || 0}
             </p>
+            <p className="text-slate-400 text-xs">Dia {dayNumber}</p>
           </div>
           {currentExercise?.video_url ? (
             <Button
               variant="ghost"
               size="icon"
               onClick={() => setShowVideoModal(true)}
-              className="text-blue-400 hover:text-blue-300 h-8 w-8"
+              className="text-blue-400 hover:text-blue-300 h-9 w-9"
             >
               <Video className="w-5 h-5" />
             </Button>
           ) : (
-            <div className="w-8" /> // Placeholder to maintain spacing
+            <div className="w-9" />
           )}
+        </div>
+        <div className="relative h-1.5 bg-slate-800 rounded-full overflow-hidden">
+          <motion.div
+            className="absolute inset-y-0 left-0 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full"
+            initial={{ width: 0 }}
+            animate={{ width: `${progressPercentage}%` }}
+            transition={{ duration: 0.5 }}
+          />
         </div>
       </div>
 
       {/* Nome do Exercício - Fixo */}
-      <div className="flex-shrink-0 text-center px-3 py-2 border-b border-slate-800 bg-slate-900/50">
-        <h2 className="text-base font-bold text-white leading-tight">
+      <div className="flex-shrink-0 text-center px-4 py-4 border-b border-slate-800 bg-slate-900/50">
+        <h2 className="text-xl font-bold text-white leading-tight mb-1">
           {currentExercise?.exercise_name}
         </h2>
         {currentExercise?.notes && (
-          <p className="text-slate-400 text-xs mt-0.5">💡 {currentExercise.notes}</p>
+          <p className="text-slate-400 text-sm">💡 {currentExercise.notes}</p>
         )}
       </div>
 
       {/* Séries - Área Rolável */}
-      <div className="flex-1 overflow-y-auto px-3 py-2" style={{ minHeight: 0 }}>
-        <div className="space-y-1.5 pb-2">
+      <div className="flex-1 overflow-y-auto px-4 py-3" style={{ minHeight: 0 }}>
+        <div className="space-y-2.5">
           {currentExercise?.sets?.map((set, index) => (
-            <div
+            <motion.div
               key={index}
-              className="w-full p-2 rounded-lg border-2 border-slate-700 bg-slate-800/50"
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: index * 0.1 }}
+              className="w-full p-3 rounded-xl border-2 border-slate-700 bg-gradient-to-br from-slate-800/80 to-slate-900/80"
             >
-              <div className="space-y-1.5">
-                <span className="text-white font-bold text-xs">Série {index + 1}</span>
-                
-                <div className="grid grid-cols-3 gap-1.5 text-xs">
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-white font-bold text-sm">Série {index + 1}</span>
                   {set.times > 1 && (
-                    <div className="bg-yellow-900/30 rounded px-1.5 py-1">
-                      <p className="text-yellow-400 text-xs">Fazer</p>
-                      <p className="text-yellow-300 font-bold text-sm">{set.times}x</p>
-                    </div>
+                    <span className="px-2 py-0.5 bg-yellow-600/20 text-yellow-400 text-xs rounded-full font-semibold">
+                      Fazer {set.times}x
+                    </span>
                   )}
-                  
-                  <div className="bg-slate-900/50 rounded px-1.5 py-1">
-                    <p className="text-slate-400 text-xs">Reps</p>
-                    <p className="text-white font-bold text-sm">{set.reps}</p>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="bg-blue-900/30 rounded-lg px-3 py-2 border border-blue-700/30">
+                    <p className="text-blue-400 text-xs mb-0.5">Repetições</p>
+                    <p className="text-white font-bold text-lg">{set.reps}</p>
                   </div>
                   
-                  <div className="bg-slate-900/50 rounded px-1.5 py-1">
-                    <p className="text-slate-400 text-xs">Descanso</p>
-                    <p className="text-purple-400 font-bold text-sm">{set.rest_seconds}s</p>
+                  <div className="bg-purple-900/30 rounded-lg px-3 py-2 border border-purple-700/30">
+                    <p className="text-purple-400 text-xs mb-0.5">Descanso</p>
+                    <p className="text-white font-bold text-lg">{set.rest_seconds}s</p>
                   </div>
                 </div>
                 
                 {set.notes && (
-                  <div className="bg-orange-900/30 border border-orange-700/50 rounded p-1.5">
-                    <p className="text-orange-400 text-xs font-semibold mb-0.5">📌 Atenção:</p>
+                  <div className="bg-orange-900/30 border border-orange-700/50 rounded-lg p-2">
+                    <p className="text-orange-400 text-xs font-semibold mb-0.5">📌 Importante:</p>
                     <p className="text-orange-200 text-xs leading-relaxed">{set.notes}</p>
                   </div>
                 )}
               </div>
-            </div>
+            </motion.div>
           ))}
         </div>
       </div>
 
       {/* Registro de Peso - Fixo */}
-      <div className="flex-shrink-0 bg-slate-900/95 backdrop-blur-sm border-t border-slate-800 px-3 py-2">
-        <div className="bg-gradient-to-br from-blue-900/30 to-cyan-900/30 border border-blue-700/50 rounded-lg p-2.5">
-          <div className="flex items-center gap-2 mb-2">
-            <Weight className="w-4 h-4 text-blue-400" />
-            <span className="text-slate-300 text-xs font-semibold">Carga Máxima (kg)</span>
+      <div className="flex-shrink-0 bg-slate-900/95 backdrop-blur-sm border-t border-slate-800 px-4 py-3">
+        <div className="bg-gradient-to-br from-cyan-900/30 to-blue-900/30 border border-cyan-700/50 rounded-xl p-3">
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-2">
+              <Weight className="w-4 h-4 text-cyan-400" />
+              <span className="text-slate-300 text-sm font-semibold">Carga Máxima (kg)</span>
+            </div>
+            {lastWeight && (
+              <span className="text-cyan-400 text-xs font-semibold">
+                Última: {lastWeight}kg
+              </span>
+            )}
           </div>
           <Input
             type="number"
             step="0.5"
-            placeholder="Ex: 40"
+            placeholder={lastWeight ? `Última: ${lastWeight}kg` : "Ex: 40"}
             value={currentExerciseWeight}
             onChange={(e) => handleWeightChange(e.target.value)}
-            className="bg-slate-800 border-slate-700 text-white text-center h-10 text-base font-semibold"
+            className="bg-slate-800 border-slate-700 text-white text-center h-12 text-lg font-bold"
           />
         </div>
       </div>
 
-      {/* Timer de Descanso - Fixo */}
-      <div className="flex-shrink-0 bg-slate-900/95 backdrop-blur-sm border-t border-slate-800 px-3 py-2">
-        <div className="bg-gradient-to-br from-purple-900/30 to-blue-900/30 border border-purple-700/50 rounded-lg p-2">
-          <div className="text-center">
-            <p className="text-slate-300 text-xs mb-0.5">Descanso</p>
-            <div className="text-3xl font-bold text-white mb-1">
-              {Math.floor(timeRemaining / 60)}:{(timeRemaining % 60).toString().padStart(2, '0')}
-            </div>
-            
-            {!isResting && (
-              <div className="flex items-center justify-center gap-2 mb-1.5">
+      {/* Timer de Descanso - Fixo e MAIOR */}
+      <AnimatePresence>
+        {isResting && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            className="flex-shrink-0 bg-gradient-to-br from-purple-600 to-blue-600 border-t-4 border-purple-400 px-4 py-6 overflow-hidden"
+          >
+            <div className="text-center">
+              <div className="flex items-center justify-center gap-2 mb-3">
+                <Timer className="w-6 h-6 text-white animate-pulse" />
+                <p className="text-white text-lg font-bold">DESCANSANDO</p>
+              </div>
+              <motion.div
+                animate={{ scale: [1, 1.05, 1] }}
+                transition={{ repeat: Infinity, duration: 1 }}
+                className="text-7xl font-bold text-white mb-4 tabular-nums"
+              >
+                {Math.floor(timeRemaining / 60)}:{(timeRemaining % 60).toString().padStart(2, '0')}
+              </motion.div>
+              
+              <div className="flex gap-3">
                 <Button
+                  onClick={handlePauseRest}
                   variant="outline"
-                  size="icon"
-                  onClick={() => adjustRestTime(-30)}
-                  className="border-slate-700 text-slate-300 h-7 w-7"
+                  className="flex-1 bg-white/10 border-white/30 text-white hover:bg-white/20 h-12 text-base font-semibold backdrop-blur"
                 >
-                  <Minus className="w-3 h-3" />
+                  <Pause className="w-5 h-5 mr-2" />
+                  Pausar
                 </Button>
-                <span className="text-slate-300 text-xs min-w-[40px]">{restTime}s</span>
                 <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={() => adjustRestTime(30)}
-                  className="border-slate-700 text-slate-300 h-7 w-7"
+                  onClick={handleSkipRest}
+                  className="flex-1 bg-white text-purple-600 hover:bg-white/90 h-12 text-base font-semibold"
                 >
-                  <Plus className="w-3 h-3" />
+                  Pular Descanso
                 </Button>
               </div>
-            )}
-          </div>
-
-          {!isResting ? (
-            <Button
-              onClick={handleStartRest}
-              className="w-full bg-purple-600 hover:bg-purple-700 h-8 text-xs"
-            >
-              <Play className="w-3 h-3 mr-1" />
-              Iniciar Descanso
-            </Button>
-          ) : (
-            <Button
-              onClick={handlePauseRest}
-              variant="outline"
-              className="w-full border-slate-700 text-slate-300 h-8 text-xs"
-            >
-              <Pause className="w-3 h-3 mr-1" />
-              Pausar
-            </Button>
-          )}
-        </div>
-      </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Botões Fixos no Bottom */}
-      <div className="flex-shrink-0 bg-slate-900/95 backdrop-blur-sm border-t border-slate-800 px-3 py-3 safe-area-inset-bottom">
-        <div className="flex gap-2">
-          <Button
-            onClick={handleSkipExercise}
-            variant="outline"
-            className="flex-1 bg-slate-800 border-slate-600 text-slate-200 h-12 text-sm font-semibold"
-          >
-            Pular
-          </Button>
+      <div className="flex-shrink-0 bg-slate-900/95 backdrop-blur-sm border-t border-slate-800 px-4 py-4 safe-area-inset-bottom">
+        {!isResting ? (
+          <div className="space-y-3">
+            <Button
+              onClick={handleStartRest}
+              className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white h-14 font-bold text-base shadow-lg"
+            >
+              <Play className="w-5 h-5 mr-2" />
+              Iniciar Descanso ({restTime}s)
+            </Button>
+            <div className="grid grid-cols-2 gap-3">
+              <Button
+                onClick={handleSkipExercise}
+                variant="outline"
+                className="bg-slate-800 border-slate-600 text-slate-200 h-12 text-sm font-semibold"
+              >
+                Pular Exercício
+              </Button>
+              <Button
+                onClick={handleNextExercise}
+                className="bg-green-600 hover:bg-green-700 text-white h-12 font-semibold text-sm"
+              >
+                {isLastExercise ? (
+                  <>
+                    <CheckCircle className="w-4 h-4 mr-2" />
+                    Finalizar
+                  </>
+                ) : (
+                  <>
+                    Próximo Exercício
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+        ) : (
           <Button
             onClick={handleNextExercise}
-            className="flex-1 bg-blue-600 hover:bg-blue-700 text-white h-12 font-semibold text-sm"
+            className="w-full bg-green-600 hover:bg-green-700 text-white h-14 font-bold text-base"
           >
             {isLastExercise ? (
               <>
-                <CheckCircle className="w-4 h-4 mr-1" />
-                Finalizar
+                <CheckCircle className="w-5 h-5 mr-2" />
+                Finalizar Treino
               </>
             ) : (
               <>
-                <SkipForward className="w-4 h-4 mr-1" />
-                Próximo
+                Próximo Exercício
               </>
             )}
           </Button>
-        </div>
+        )}
       </div>
     </div>
   );
