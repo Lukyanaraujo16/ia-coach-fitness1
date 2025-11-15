@@ -14,14 +14,32 @@ export default function AdminSettings({ user }) {
   const queryClient = useQueryClient();
 
   const updateLogoMutation = useMutation({
-    mutationFn: (url) => base44.auth.updateMe({ app_logo_url: url }),
+    mutationFn: async (url) => {
+      // Atualizar o admin atual
+      await base44.auth.updateMe({ app_logo_url: url });
+      
+      // Buscar todos os usuários admin e atualizar a logo para todos
+      const allUsers = await base44.entities.User.list();
+      const adminUsers = allUsers.filter(u => u.role === 'admin');
+      
+      // Atualizar todos os admins
+      await Promise.all(
+        adminUsers.map(admin => 
+          base44.entities.User.update(admin.id, { app_logo_url: url })
+        )
+      );
+    },
     onSuccess: () => {
       queryClient.invalidateQueries(['all-users']);
-      setMessage({ type: "success", text: "Logo atualizada com sucesso!" });
+      setMessage({ type: "success", text: "Logo atualizada em todo o sistema!" });
       setTimeout(() => setMessage({ type: "", text: "" }), 3000);
       // Recarregar a página para atualizar a logo no layout
       setTimeout(() => window.location.reload(), 1000);
     },
+    onError: (error) => {
+      setMessage({ type: "error", text: "Erro ao atualizar logo." });
+      console.error(error);
+    }
   });
 
   const handleLogoUpload = async (e) => {
@@ -34,7 +52,7 @@ export default function AdminSettings({ user }) {
     try {
       const { file_url } = await base44.integrations.Core.UploadFile({ file });
       setLogoUrl(file_url);
-      setMessage({ type: "info", text: "Imagem carregada. Clique em Salvar para aplicar." });
+      setMessage({ type: "info", text: "Imagem carregada. Clique em Salvar para aplicar em todo o sistema." });
     } catch (error) {
       console.error("Error uploading logo:", error);
       setMessage({ type: "error", text: "Erro ao fazer upload da imagem." });
@@ -82,7 +100,8 @@ export default function AdminSettings({ user }) {
               <li>• Proporção recomendada: <strong>5:1</strong> (largura x altura)</li>
               <li>• Resolução sugerida: <strong>500x100px</strong> ou maior</li>
               <li>• Formato: PNG com fundo transparente</li>
-              <li>• A logo será exibida com altura de <strong>32px</strong> (layout) e <strong>40px</strong> (home)</li>
+              <li>• A logo será exibida em: Layout (32px), Home (40px)</li>
+              <li>• <strong>Será aplicada em todos os lugares do sistema</strong></li>
             </ul>
           </div>
 
@@ -171,7 +190,7 @@ export default function AdminSettings({ user }) {
             disabled={updateLogoMutation.isPending || !logoUrl || logoUrl === currentLogo}
             className="w-full bg-blue-600 hover:bg-blue-700"
           >
-            {updateLogoMutation.isPending ? "Salvando..." : "Salvar Nova Logo"}
+            {updateLogoMutation.isPending ? "Aplicando em Todo o Sistema..." : "Salvar e Aplicar em Todo o Sistema"}
           </Button>
         </CardContent>
       </Card>
