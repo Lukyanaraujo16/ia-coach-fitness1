@@ -10,7 +10,7 @@ export default function ProfileStats({ user }) {
     queryFn: async () => {
       if (!user?.email) return [];
       const allLogs = await base44.entities.WorkoutLog.list('-date');
-      return allLogs.filter(log => log.created_by === user.email);
+      return allLogs.filter(log => log.user_email === user.email || log.created_by === user.email);
     },
     enabled: !!user?.email,
   });
