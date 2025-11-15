@@ -10,14 +10,12 @@ import { Input } from "@/components/ui/input";
 import StatsCard from "../components/home/StatsCard";
 import QuickActionCard from "../components/home/QuickActionCard";
 import NextWorkoutCard from "../components/home/NextWorkoutCard";
-import PWAInstallPrompt from "../components/home/PWAInstallPrompt";
 
 export default function Dashboard() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [user, setUser] = useState(null);
   const [challengeInput, setChallengeInput] = useState("");
-  const [showPWAPrompt, setShowPWAPrompt] = useState(false);
 
   useEffect(() => {
     const loadUser = async () => {
@@ -31,13 +29,6 @@ export default function Dashboard() {
           navigate(createPageUrl("NutritionSetup"));
         } else if (!currentUser.workout_setup_completed) {
           navigate(createPageUrl("WorkoutSetup"));
-        } else {
-          const hasSeenPrompt = localStorage.getItem('pwa_prompt_shown');
-          if (!hasSeenPrompt && currentUser.workout_setup_completed) {
-            setTimeout(() => {
-              setShowPWAPrompt(true);
-            }, 1000);
-          }
         }
       } catch (error) {
         base44.auth.redirectToLogin(createPageUrl("Dashboard"));
@@ -122,16 +113,6 @@ export default function Dashboard() {
     });
   };
 
-  const handleClosePWAPrompt = () => {
-    setShowPWAPrompt(false);
-    localStorage.setItem('pwa_prompt_shown', 'true');
-  };
-
-  const handlePWAInstalled = () => {
-    setShowPWAPrompt(false);
-    localStorage.setItem('pwa_prompt_shown', 'true');
-  };
-
   const thisWeekWorkouts = workoutLogs.filter(log => {
     const logDate = new Date(log.date + 'T00:00:00');
     const today = new Date();
@@ -201,13 +182,6 @@ export default function Dashboard() {
 
   return (
     <div className="py-6 space-y-6">
-      {showPWAPrompt && (
-        <PWAInstallPrompt 
-          onClose={handleClosePWAPrompt}
-          onInstalled={handlePWAInstalled}
-        />
-      )}
-
       <div className="space-y-3">
         <h2 className="text-3xl font-bold text-white">
           {getGreeting()}, {user?.nome_completo?.split(' ')[0] || 'Atleta'}! 👋
