@@ -1,5 +1,4 @@
-
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { createPageUrl } from "@/utils";
 import { useNavigate } from "react-router-dom";
@@ -10,16 +9,47 @@ import { motion } from "framer-motion";
 
 export default function Home() {
   const navigate = useNavigate();
+  const [logoUrl, setLogoUrl] = useState("https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6904da724b4ce40db58404e7/c84efc51a_LogoIA.png");
 
   useEffect(() => {
     const checkAuth = async () => {
       try {
         const isAuthenticated = await base44.auth.isAuthenticated();
         if (isAuthenticated) {
+          // Se autenticado, busca a logo personalizada antes de redirecionar
+          try {
+            const user = await base44.auth.me();
+            if (user?.app_logo_url) {
+              setLogoUrl(user.app_logo_url);
+            }
+          } catch (error) {
+            // Ignora erro ao buscar logo
+          }
           navigate(createPageUrl("Dashboard"));
+        } else {
+          // Se não autenticado, tenta buscar a logo de qualquer usuário admin
+          try {
+            const users = await base44.entities.User.list();
+            const adminUser = users.find(u => u.role === 'admin' && u.app_logo_url);
+            if (adminUser?.app_logo_url) {
+              setLogoUrl(adminUser.app_logo_url);
+            }
+          } catch (error) {
+            // Ignora erro ao buscar logo
+          }
         }
       } catch (error) {
         // Usuário não está logado, continua na página Home
+        // Tenta buscar a logo de qualquer usuário admin
+        try {
+          const users = await base44.entities.User.list();
+          const adminUser = users.find(u => u.role === 'admin' && u.app_logo_url);
+          if (adminUser?.app_logo_url) {
+            setLogoUrl(adminUser.app_logo_url);
+          }
+        } catch (error) {
+          // Ignora erro ao buscar logo
+        }
       }
     };
     checkAuth();
@@ -81,7 +111,7 @@ export default function Home() {
       <header className="fixed top-0 left-0 right-0 z-50 bg-slate-950/80 backdrop-blur-xl border-b border-slate-800/50">
         <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-center">
           <img 
-            src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6904da724b4ce40db58404e7/c84efc51a_LogoIA.png" 
+            src={logoUrl} 
             alt="IA Coach Fitness" 
             className="h-10"
           />
