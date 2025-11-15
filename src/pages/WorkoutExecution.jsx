@@ -197,6 +197,7 @@ export default function WorkoutExecution() {
     });
 
     createWorkoutLogMutation.mutate({
+      user_email: user.email,
       workout_id: workout.id,
       workout_title: `${workout.title} - Dia ${dayNumber}`,
       date: localDate,

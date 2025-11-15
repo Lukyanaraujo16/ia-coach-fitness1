@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -42,7 +43,7 @@ export default function Dashboard() {
     queryFn: async () => {
       if (!user?.email) return [];
       const allLogs = await base44.entities.WorkoutLog.list('-date');
-      return allLogs.filter(log => log.created_by === user.email);
+      return allLogs.filter(log => log.user_email === user.email || log.created_by === user.email);
     },
     enabled: !!user?.email,
   });
