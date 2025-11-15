@@ -7,7 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft, CheckCircle, AlertTriangle, Trophy, Clock, Zap, X, Weight, Video, Timer, Play, Pause } from "lucide-react";
+import { ArrowLeft, CheckCircle, AlertTriangle, Trophy, Clock, Zap, X, Weight, Video, Timer, Play, Pause, ChevronRight } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 export default function WorkoutExecution() {
@@ -20,8 +20,8 @@ export default function WorkoutExecution() {
   const [workout, setWorkout] = useState(null);
   const [currentDay, setCurrentDay] = useState(null);
   const [currentExerciseIndex, setCurrentExerciseIndex] = useState(0);
+  const [currentSetIndex, setCurrentSetIndex] = useState(0);
   const [skippedExercises, setSkippedExercises] = useState([]);
-  const [restTime, setRestTime] = useState(60);
   const [isResting, setIsResting] = useState(false);
   const [restStartTime, setRestStartTime] = useState(null);
   const [timeRemaining, setTimeRemaining] = useState(60);
@@ -60,9 +60,7 @@ export default function WorkoutExecution() {
           const day = foundWorkout.days.find(d => d.day_number === dayNumber);
           setCurrentDay(day);
           if (day?.exercises?.[0]?.sets?.[0]?.rest_seconds) {
-            const firstRest = day.exercises[0].sets[0].rest_seconds;
-            setRestTime(firstRest);
-            setTimeRemaining(firstRest);
+            setTimeRemaining(day.exercises[0].sets[0].rest_seconds);
           }
         }
       }
@@ -77,13 +75,14 @@ export default function WorkoutExecution() {
       interval = setInterval(() => {
         const now = Date.now();
         const elapsed = Math.floor((now - restStartTime) / 1000);
+        const currentSet = currentDay.exercises?.[currentExerciseIndex]?.sets?.[currentSetIndex];
+        const restTime = currentSet?.rest_seconds || 60;
         const remaining = restTime - elapsed;
         
         if (remaining <= 0) {
           setTimeRemaining(0);
           setIsResting(false);
           setRestStartTime(null);
-          // Vibrar quando o tempo acabar (se disponível)
           if (navigator.vibrate) {
             navigator.vibrate([200, 100, 200]);
           }
@@ -96,7 +95,7 @@ export default function WorkoutExecution() {
     return () => {
       if (interval) clearInterval(interval);
     };
-  }, [isResting, restStartTime, restTime]);
+  }, [isResting, restStartTime, currentExerciseIndex, currentSetIndex, currentDay]);
 
   const createWorkoutLogMutation = useMutation({
     mutationFn: (data) => base44.entities.WorkoutLog.create(data),
@@ -129,9 +128,11 @@ export default function WorkoutExecution() {
   }
 
   const currentExercise = currentDay.exercises?.[currentExerciseIndex];
+  const currentSet = currentExercise?.sets?.[currentSetIndex];
   const isLastExercise = currentExerciseIndex === (currentDay.exercises?.length || 0) - 1;
+  const isLastSet = currentSetIndex === (currentExercise?.sets?.length || 0) - 1;
+  const nextExercise = !isLastExercise ? currentDay.exercises?.[currentExerciseIndex + 1] : null;
 
-  // Buscar última carga do exercício atual
   const getLastWeight = (exerciseName) => {
     for (const log of previousLogs) {
       const exercise = log.exercises_completed?.find(ex => ex.exercise_name === exerciseName);
@@ -144,29 +145,43 @@ export default function WorkoutExecution() {
 
   const lastWeight = currentExercise ? getLastWeight(currentExercise.exercise_name) : null;
 
+  const formatTime = (seconds) => {
+    if (seconds < 60) {
+      return `${seconds}s`;
+    }
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return secs > 0 ? `${mins}min ${secs}s` : `${mins}min`;
+  };
+
   const handleStartRest = () => {
+    const restTime = currentSet?.rest_seconds || 60;
     setIsResting(true);
     setRestStartTime(Date.now());
     setTimeRemaining(restTime);
   };
 
   const handlePauseRest = () => {
-    if (isResting && restStartTime) {
-      const now = Date.now();
-      const elapsed = Math.floor((now - restStartTime) / 1000);
-      const remaining = restTime - elapsed;
-      
-      setRestTime(Math.max(remaining, 0));
-      setTimeRemaining(Math.max(remaining, 0));
-      setIsResting(false);
-      setRestStartTime(null);
-    }
+    setIsResting(false);
+    setRestStartTime(null);
   };
 
   const handleSkipRest = () => {
     setIsResting(false);
     setRestStartTime(null);
-    setTimeRemaining(restTime);
+    handleNextSet();
+  };
+
+  const handleNextSet = () => {
+    if (isLastSet) {
+      handleNextExercise();
+    } else {
+      setCurrentSetIndex(currentSetIndex + 1);
+      const nextSet = currentExercise?.sets?.[currentSetIndex + 1];
+      if (nextSet?.rest_seconds) {
+        setTimeRemaining(nextSet.rest_seconds);
+      }
+    }
   };
 
   const handleNextExercise = () => {
@@ -180,12 +195,11 @@ export default function WorkoutExecution() {
         setShowCaloriesInput(true);
       }
     } else {
-      const nextExercise = currentDay.exercises[currentExerciseIndex + 1];
       setCurrentExerciseIndex(currentExerciseIndex + 1);
+      setCurrentSetIndex(0);
+      const nextExercise = currentDay.exercises[currentExerciseIndex + 1];
       if (nextExercise?.sets?.[0]?.rest_seconds) {
-        const nextRest = nextExercise.sets[0].rest_seconds;
-        setRestTime(nextRest);
-        setTimeRemaining(nextRest);
+        setTimeRemaining(nextExercise.sets[0].rest_seconds);
       }
     }
   };
@@ -194,6 +208,7 @@ export default function WorkoutExecution() {
     if (!skippedExercises.includes(currentExerciseIndex)) {
       setSkippedExercises([...skippedExercises, currentExerciseIndex]);
     }
+    setCurrentSetIndex(0);
     handleNextExercise();
   };
 
@@ -289,7 +304,6 @@ export default function WorkoutExecution() {
     );
   }
 
-  // Exit Confirmation Modal
   if (showExitConfirm) {
     return (
       <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[70] flex items-center justify-center p-4">
@@ -327,7 +341,6 @@ export default function WorkoutExecution() {
     );
   }
 
-  // Skip Warning Modal
   if (showSkipWarning) {
     return (
       <div className="min-h-screen flex items-center justify-center p-4">
@@ -365,7 +378,6 @@ export default function WorkoutExecution() {
     );
   }
 
-  // Completion Screen
   if (showCaloriesInput && endTime) {
     const duration = Math.round((endTime - startTime) / 1000 / 60);
     const startTimeStr = startTime.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
@@ -453,6 +465,7 @@ export default function WorkoutExecution() {
   }
 
   const progressPercentage = ((currentExerciseIndex + 1) / (currentDay.exercises?.length || 1)) * 100;
+  const restTimeFormatted = currentSet?.rest_seconds ? formatTime(currentSet.rest_seconds) : "1min";
 
   return (
     <div className="fixed inset-0 flex flex-col bg-gradient-to-b from-slate-950 to-slate-900 z-[60]">
@@ -502,7 +515,14 @@ export default function WorkoutExecution() {
           {currentExercise?.exercise_name}
         </h2>
         {currentExercise?.notes && (
-          <p className="text-slate-400 text-sm">💡 {currentExercise.notes}</p>
+          <p className="text-slate-400 text-sm mb-2">💡 {currentExercise.notes}</p>
+        )}
+        {nextExercise && (
+          <div className="flex items-center justify-center gap-2 text-slate-400 text-xs mt-2">
+            <span>Próximo:</span>
+            <ChevronRight className="w-3 h-3" />
+            <span className="text-blue-400 font-medium">{nextExercise.exercise_name}</span>
+          </div>
         )}
       </div>
 
@@ -515,32 +535,34 @@ export default function WorkoutExecution() {
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: index * 0.1 }}
-              className="w-full p-3 rounded-xl border-2 border-slate-700 bg-gradient-to-br from-slate-800/80 to-slate-900/80"
+              className={`w-full p-3 rounded-xl border-2 ${
+                index === currentSetIndex 
+                  ? 'border-blue-500 bg-gradient-to-br from-blue-900/40 to-slate-900/80' 
+                  : 'border-slate-700 bg-gradient-to-br from-slate-800/80 to-slate-900/80'
+              }`}
             >
               <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-white font-bold text-sm">Série {index + 1}</span>
-                  {set.times > 1 && (
-                    <span className="px-2 py-0.5 bg-yellow-600/20 text-yellow-400 text-xs rounded-full font-semibold">
-                      Fazer {set.times}x
-                    </span>
-                  )}
-                </div>
+                <div className="text-white font-bold text-sm mb-2">Série {index + 1}</div>
                 
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="bg-blue-900/30 rounded-lg px-3 py-2 border border-blue-700/30">
-                    <p className="text-blue-400 text-xs mb-0.5">Repetições</p>
-                    <p className="text-white font-bold text-lg">{set.reps}</p>
+                <div className="grid grid-cols-3 gap-2">
+                  <div className="text-center">
+                    <p className="text-slate-400 text-xs mb-1">Fazer</p>
+                    <p className="text-white font-bold text-base">{set.times}x</p>
                   </div>
                   
-                  <div className="bg-purple-900/30 rounded-lg px-3 py-2 border border-purple-700/30">
-                    <p className="text-purple-400 text-xs mb-0.5">Descanso</p>
-                    <p className="text-white font-bold text-lg">{set.rest_seconds}s</p>
+                  <div className="text-center">
+                    <p className="text-slate-400 text-xs mb-1">Repetições</p>
+                    <p className="text-white font-bold text-base">{set.reps}</p>
+                  </div>
+                  
+                  <div className="text-center">
+                    <p className="text-slate-400 text-xs mb-1">Descanso</p>
+                    <p className="text-purple-400 font-bold text-base">{formatTime(set.rest_seconds)}</p>
                   </div>
                 </div>
                 
                 {set.notes && (
-                  <div className="bg-orange-900/30 border border-orange-700/50 rounded-lg p-2">
+                  <div className="bg-orange-900/30 border border-orange-700/50 rounded-lg p-2 mt-2">
                     <p className="text-orange-400 text-xs font-semibold mb-0.5">📌 Importante:</p>
                     <p className="text-orange-200 text-xs leading-relaxed">{set.notes}</p>
                   </div>
@@ -595,7 +617,7 @@ export default function WorkoutExecution() {
                 transition={{ repeat: Infinity, duration: 1 }}
                 className="text-7xl font-bold text-white mb-4 tabular-nums"
               >
-                {Math.floor(timeRemaining / 60)}:{(timeRemaining % 60).toString().padStart(2, '0')}
+                {formatTime(timeRemaining)}
               </motion.div>
               
               <div className="flex gap-3">
@@ -628,7 +650,7 @@ export default function WorkoutExecution() {
               className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white h-14 font-bold text-base shadow-lg"
             >
               <Play className="w-5 h-5 mr-2" />
-              Iniciar Descanso ({restTime}s)
+              Iniciar Descanso ({restTimeFormatted})
             </Button>
             <div className="grid grid-cols-2 gap-3">
               <Button
@@ -639,17 +661,27 @@ export default function WorkoutExecution() {
                 Pular Exercício
               </Button>
               <Button
-                onClick={handleNextExercise}
+                onClick={() => {
+                  if (isLastSet) {
+                    handleNextExercise();
+                  } else {
+                    handleNextSet();
+                  }
+                }}
                 className="bg-green-600 hover:bg-green-700 text-white h-12 font-semibold text-sm"
               >
-                {isLastExercise ? (
+                {isLastExercise && isLastSet ? (
                   <>
                     <CheckCircle className="w-4 h-4 mr-2" />
                     Finalizar
                   </>
-                ) : (
+                ) : isLastSet ? (
                   <>
                     Próximo Exercício
+                  </>
+                ) : (
+                  <>
+                    Próxima Série
                   </>
                 )}
               </Button>
@@ -657,17 +689,29 @@ export default function WorkoutExecution() {
           </div>
         ) : (
           <Button
-            onClick={handleNextExercise}
+            onClick={() => {
+              setIsResting(false);
+              setRestStartTime(null);
+              if (isLastSet) {
+                handleNextExercise();
+              } else {
+                handleNextSet();
+              }
+            }}
             className="w-full bg-green-600 hover:bg-green-700 text-white h-14 font-bold text-base"
           >
-            {isLastExercise ? (
+            {isLastExercise && isLastSet ? (
               <>
                 <CheckCircle className="w-5 h-5 mr-2" />
                 Finalizar Treino
               </>
-            ) : (
+            ) : isLastSet ? (
               <>
                 Próximo Exercício
+              </>
+            ) : (
+              <>
+                Próxima Série
               </>
             )}
           </Button>
