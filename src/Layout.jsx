@@ -116,6 +116,8 @@ export default function Layout({ children, currentPageName }) {
     await base44.auth.logout();
   };
 
+  const logoUrl = user?.app_logo_url || "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6904da724b4ce40db58404e7/c84efc51a_LogoIA.png";
+
   return (
     <div className={`min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 ${!hideNavigation ? 'pb-20 md:pb-0' : ''}`}>
       <style>{`
@@ -135,7 +137,7 @@ export default function Layout({ children, currentPageName }) {
           <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
             <Link to={createPageUrl("Dashboard")} className="flex items-center gap-2">
               <img 
-                src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6904da724b4ce40db58404e7/c84efc51a_LogoIA.png" 
+                src={logoUrl} 
                 alt="IA Coach Fitness" 
                 className="h-8"
               />

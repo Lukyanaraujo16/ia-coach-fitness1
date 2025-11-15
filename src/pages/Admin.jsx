@@ -5,7 +5,7 @@ import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
-import { Users, DollarSign, Dumbbell, Crown, MessageSquare, MessageCircle, BarChart, Target, Activity, Apple } from "lucide-react";
+import { Users, DollarSign, Dumbbell, Crown, MessageSquare, MessageCircle, BarChart, Target, Activity, Apple, Settings } from "lucide-react";
 import AdminUsers from "../components/admin/AdminUsers";
 import AdminWorkouts from "../components/admin/AdminWorkouts";
 import AdminExercises from "../components/admin/AdminExercises";
@@ -14,6 +14,7 @@ import AdminMetrics from "../components/admin/AdminMetrics";
 import AdminCommunity from "../components/admin/AdminCommunity";
 import AdminNutrition from "../components/admin/AdminNutrition";
 import AdminWhatsAppCoach from "../components/admin/AdminWhatsAppCoach";
+import AdminSettings from "../components/admin/AdminSettings";
 
 export default function Admin() {
   const navigate = useNavigate();
@@ -87,6 +88,7 @@ export default function Admin() {
     { value: "challenges", label: "Desafios", icon: Target },
     { value: "community", label: "Comunidade", icon: MessageSquare },
     { value: "whatsapp", label: "WhatsApp Coach", icon: MessageCircle },
+    { value: "settings", label: "Configurações", icon: Settings },
   ];
 
   return (
@@ -163,7 +165,7 @@ export default function Admin() {
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="bg-slate-900/50 border border-slate-800 grid grid-cols-4 md:grid-cols-8 gap-1">
+        <TabsList className="bg-slate-900/50 border border-slate-800 grid grid-cols-3 md:grid-cols-9 gap-1">
           {tabs.map((tab) => {
             const Icon = tab.icon;
             return (
@@ -190,6 +192,7 @@ export default function Admin() {
         {activeTab === "challenges" && <AdminChallenges challenges={challenges} />}
         {activeTab === "community" && <AdminCommunity posts={posts} />}
         {activeTab === "whatsapp" && <AdminWhatsAppCoach />}
+        {activeTab === "settings" && <AdminSettings user={user} />}
       </div>
     </div>
   );
