@@ -84,10 +84,10 @@ export default function Home() {
             <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-blue-800 rounded-xl flex items-center justify-center shadow-lg shadow-blue-900/50">
               <Dumbbell className="w-6 h-6 text-white" />
             </div>
-            <h1 className="text-2xl font-bold">
-              <span className="text-blue-400">IA Coach</span>
-              <span className="text-white"> Fitness</span>
-            </h1>
+            <div className="flex flex-col leading-tight">
+              <span className="text-blue-400 font-bold text-xl">IA Coach</span>
+              <span className="text-white font-bold text-xl">Fitness</span>
+            </div>
           </div>
         </div>
       </header>

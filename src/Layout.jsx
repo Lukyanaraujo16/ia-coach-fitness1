@@ -137,10 +137,10 @@ export default function Layout({ children, currentPageName }) {
               <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-blue-800 rounded-xl flex items-center justify-center shadow-lg shadow-blue-900/50">
                 <Dumbbell className="w-5 h-5 text-white" />
               </div>
-              <h1 className="text-xl font-bold">
-                <span className="text-blue-400">IA Coach</span>
-                <span className="text-white"> Fitness</span>
-              </h1>
+              <div className="flex flex-col leading-tight">
+                <span className="text-blue-400 font-bold text-base">IA Coach</span>
+                <span className="text-white font-bold text-base">Fitness</span>
+              </div>
             </Link>
             <div className="flex items-center gap-2">
               <nav className="hidden md:flex items-center gap-1">
