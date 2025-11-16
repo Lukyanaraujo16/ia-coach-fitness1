@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
-import { Users, DollarSign, Dumbbell, Crown, MessageSquare, MessageCircle, BarChart, Target, Activity, Apple, Settings } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Users, DollarSign, Dumbbell, Crown, MessageSquare, MessageCircle, BarChart, Target, Activity, Apple, Settings, Bell } from "lucide-react";
 import AdminUsers from "../components/admin/AdminUsers";
 import AdminWorkouts from "../components/admin/AdminWorkouts";
 import AdminExercises from "../components/admin/AdminExercises";
@@ -98,9 +99,17 @@ export default function Admin() {
           <h2 className="text-3xl font-bold text-white">Painel Admin</h2>
           <p className="text-slate-400 mt-1">Gerencie usuários e conteúdo</p>
         </div>
-        <div className="flex items-center gap-2 px-4 py-2 bg-blue-600/20 border border-blue-600/30 rounded-full">
-          <Crown className="w-4 h-4 text-blue-400" />
-          <span className="text-blue-400 font-medium text-sm">Administrador</span>
+        <div className="flex items-center gap-3">
+          <Link to={createPageUrl("AdminNotifications")}>
+            <Button className="bg-purple-600 hover:bg-purple-700">
+              <Bell className="w-4 h-4 mr-2" />
+              Notificações
+            </Button>
+          </Link>
+          <div className="flex items-center gap-2 px-4 py-2 bg-blue-600/20 border border-blue-600/30 rounded-full">
+            <Crown className="w-4 h-4 text-blue-400" />
+            <span className="text-blue-400 font-medium text-sm">Administrador</span>
+          </div>
         </div>
       </div>
 
