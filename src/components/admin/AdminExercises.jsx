@@ -75,6 +75,13 @@ export default function AdminExercises({ exercises = [] }) {
     return acc;
   }, {});
 
+  // Sort exercises alphabetically within each category
+  Object.keys(exercisesByCategory).forEach(category => {
+    exercisesByCategory[category].sort((a, b) => 
+      a.name.localeCompare(b.name)
+    );
+  });
+
   return (
     <div className="space-y-4">
       <Card className="bg-slate-900/50 border-slate-800">

@@ -1,14 +1,44 @@
-
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { TrendingUp, Loader2, Calendar, Zap, AlertCircle } from "lucide-react";
 import { motion } from "framer-motion";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 export default function WeeklyInsights({ workoutLogs, progressEntries, user }) {
   const [insights, setInsights] = useState(null);
   const [loading, setLoading] = useState(false);
+  const queryClient = useQueryClient();
+
+  // Buscar análise salva
+  const { data: savedAnalysis } = useQuery({
+    queryKey: ['weekly-analysis', user?.email],
+    queryFn: async () => {
+      if (!user?.email) return null;
+      const analyses = await base44.entities.WeeklyAnalysis?.list('-created_date', 1);
+      if (analyses && analyses.length > 0 && analyses[0].created_by === user.email) {
+        return analyses[0];
+      }
+      return null;
+    },
+    enabled: !!user?.email,
+  });
+
+  // Carregar análise salva quando disponível
+  useEffect(() => {
+    if (savedAnalysis?.analysis_data) {
+      setInsights(savedAnalysis.analysis_data);
+    }
+  }, [savedAnalysis]);
+
+  // Mutation para salvar análise
+  const saveAnalysisMutation = useMutation({
+    mutationFn: (data) => base44.entities.WeeklyAnalysis?.create(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['weekly-analysis']);
+    },
+  });
 
   const generateInsights = async () => {
     setLoading(true);
@@ -115,6 +145,17 @@ Seja específico, use dados concretos e seja motivacional mas realista.`;
       });
 
       setInsights(response);
+      
+      // Salvar análise
+      try {
+        await saveAnalysisMutation.mutateAsync({
+          analysis_data: response,
+          week_start: weekAgo.toISOString().split('T')[0],
+          workouts_count: recentLogs.length,
+        });
+      } catch (error) {
+        console.error("Erro ao salvar análise:", error);
+      }
     } catch (error) {
       console.error("Error generating insights:", error);
       alert("Erro ao gerar insights. Tente novamente.");

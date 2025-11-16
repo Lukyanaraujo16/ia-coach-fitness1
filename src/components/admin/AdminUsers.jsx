@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -103,10 +104,16 @@ export default function AdminUsers({ users = [] }) {
     });
   };
 
-  const filteredUsers = users.filter(user => 
-    user.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    user.nome_completo?.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredUsers = users
+    .filter(user => 
+      user.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      user.nome_completo?.toLowerCase().includes(searchQuery.toLowerCase())
+    )
+    .sort((a, b) => {
+      const nameA = (a.nome_completo || a.email || '').toLowerCase();
+      const nameB = (b.nome_completo || b.email || '').toLowerCase();
+      return nameA.localeCompare(nameB);
+    });
 
   const communityEnabled = users.length > 0 ? users[0]?.community_enabled !== false : true;
   const leaderboardEnabled = users.length > 0 ? users[0]?.leaderboard_enabled !== false : true;

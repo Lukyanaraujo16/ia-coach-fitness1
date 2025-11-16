@@ -62,11 +62,23 @@ export default function Workouts() {
   const freeWorkouts = workouts.filter(w => !w.is_premium).slice(0, 5);
   const availableWorkouts = isPremium ? workouts : freeWorkouts;
 
-  const filteredWorkouts = availableWorkouts.filter(workout => {
-    const matchesSearch = workout.title.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesCategory = categoryFilter === "all" || workout.category === categoryFilter;
-    return matchesSearch && matchesCategory;
-  });
+  const filteredWorkouts = availableWorkouts
+    .filter(workout => {
+      const matchesSearch = workout.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                          workout.description?.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesCategory = categoryFilter === "all" || workout.category === categoryFilter;
+      return matchesSearch && matchesCategory;
+    })
+    .sort((a, b) => a.title.localeCompare(b.title)); // Ordenar alfabeticamente
+
+  const filteredExercises = exercises
+    .filter(ex => {
+      const matchesSearch = ex.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                          ex.description?.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesCategory = categoryFilter === "all" || ex.category === categoryFilter;
+      return matchesSearch && matchesCategory;
+    })
+    .sort((a, b) => a.name.localeCompare(b.name)); // Ordenar alfabeticamente
 
   const categories = [
     { value: "all", label: "Todos" },
@@ -170,7 +182,7 @@ export default function Workouts() {
           )}
         </>
       ) : (
-        <ExerciseLibrary exercises={exercises} loading={loadingExercises} searchQuery={searchQuery} />
+        <ExerciseLibrary exercises={filteredExercises} loading={loadingExercises} searchQuery={searchQuery} />
       )}
     </div>
   );

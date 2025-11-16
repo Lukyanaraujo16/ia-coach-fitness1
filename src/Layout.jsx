@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { Link, useLocation } from "react-router-dom";
@@ -7,17 +8,30 @@ import { Button } from "@/components/ui/button";
 import TrialChecker from "./components/TrialChecker";
 import PWAManager from "./components/PWAManager";
 import NotificationChecker from "./components/NotificationChecker";
+import NotificationPermissionModal from "./components/pwa/NotificationPermissionModal";
 
 export default function Layout({ children, currentPageName }) {
   const location = useLocation();
   const [user, setUser] = useState(null);
   const [showMenu, setShowMenu] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [showNotificationModal, setShowNotificationModal] = useState(false);
 
   const loadUser = async () => {
     try {
       const currentUser = await base44.auth.me();
       setUser(currentUser);
+      
+      // Verificar se é primeira vez no PWA e ainda não pediu notificação
+      const isPWA = window.matchMedia('(display-mode: standalone)').matches || 
+                    window.navigator.standalone === true;
+      const hasAskedPermission = localStorage.getItem('notification-permission-asked');
+      
+      if (isPWA && !hasAskedPermission && Notification.permission === 'default') {
+        setTimeout(() => {
+          setShowNotificationModal(true);
+        }, 2000);
+      }
     } catch (error) {
       console.error("Error loading user:", error);
     } finally {
@@ -155,6 +169,9 @@ export default function Layout({ children, currentPageName }) {
     <div className={`min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 ${!hideNavigation ? 'pb-20 md:pb-0' : ''}`}>
       <PWAManager />
       {user && <NotificationChecker user={user} />}
+      {showNotificationModal && (
+        <NotificationPermissionModal onClose={() => setShowNotificationModal(false)} />
+      )}
 
       <style>{`
         :root {

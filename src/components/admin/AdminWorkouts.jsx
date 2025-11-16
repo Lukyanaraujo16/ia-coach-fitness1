@@ -56,6 +56,10 @@ export default function AdminWorkouts({ workouts = [], exercises = [] }) {
     },
   });
 
+  const sortedWorkouts = [...workouts].sort((a, b) => 
+    a.title.localeCompare(b.title)
+  );
+
   const handleEdit = (workout) => {
     setEditingWorkout(workout);
     setShowForm(true);
@@ -132,7 +136,7 @@ export default function AdminWorkouts({ workouts = [], exercises = [] }) {
         </CardHeader>
         <CardContent>
           <div className="grid md:grid-cols-2 gap-4">
-            {workouts.map((workout) => (
+            {sortedWorkouts.map((workout) => (
               <Card key={workout.id} className="bg-slate-800/50 border-slate-700">
                 <CardContent className="p-4">
                   <div className="flex items-start justify-between gap-3 mb-3">
@@ -203,7 +207,7 @@ export default function AdminWorkouts({ workouts = [], exercises = [] }) {
             ))}
           </div>
 
-          {workouts.length === 0 && (
+          {sortedWorkouts.length === 0 && (
             <p className="text-slate-400 text-center py-12">
               Nenhum treino cadastrado ainda
             </p>
