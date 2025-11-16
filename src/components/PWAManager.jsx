@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { manifestData } from './pwa/manifest-data';
 import { serviceWorkerCode } from './pwa/service-worker-code';
+import InstallPWAModal from './pwa/InstallPWAModal';
 
 export default function PWAManager() {
   useEffect(() => {
@@ -59,5 +60,5 @@ export default function PWAManager() {
     };
   }, []);
 
-  return null;
+  return <InstallPWAModal />;
 }
