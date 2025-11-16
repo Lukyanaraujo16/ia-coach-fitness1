@@ -14,7 +14,6 @@ export default function NotificationChecker({ user }) {
     if (!user || !notifications.length) return;
 
     const isPremium = user.subscription_status === 'premium';
-    const now = Date.now();
 
     console.log('🔍 Verificando notificações...', notifications.length, 'encontradas');
 
@@ -42,24 +41,28 @@ export default function NotificationChecker({ user }) {
       }
 
       if (notif.schedule_type === 'immediate' && notif.status === 'sent') {
-        const createdTime = new Date(notif.created_date).getTime();
-        const twoMinutesInMs = 2 * 60 * 1000;
-        const ageInMs = now - createdTime;
+        // Criar Date objects e comparar corretamente
+        const createdDate = new Date(notif.created_date);
+        const nowDate = new Date();
+        const ageInSeconds = Math.floor((nowDate - createdDate) / 1000);
         
-        console.log(`  📅 Idade: ${Math.floor(ageInMs / 1000)}s (limite: 120s)`);
+        console.log(`  📅 Idade: ${ageInSeconds}s (limite: 120s)`);
+        console.log(`  🕐 Criada em: ${createdDate.toISOString()}`);
+        console.log(`  🕐 Agora: ${nowDate.toISOString()}`);
         
-        if (ageInMs <= twoMinutesInMs) {
+        if (ageInSeconds >= 0 && ageInSeconds <= 120) {
           console.log('  ✅ Notificação NOVA!');
           return true;
         } else {
-          console.log('  ❌ Notificação antiga');
+          console.log(`  ❌ Notificação ${ageInSeconds < 0 ? 'do futuro(?!)' : 'antiga'}`);
           return false;
         }
       }
 
       if (notif.schedule_type === 'scheduled' && notif.scheduled_date) {
         const scheduledDate = new Date(notif.scheduled_date);
-        if (now >= scheduledDate.getTime() && notif.status === 'pending') {
+        const nowDate = new Date();
+        if (nowDate >= scheduledDate && notif.status === 'pending') {
           console.log('  ✅ Hora de enviar agendada!');
           return true;
         }
@@ -75,7 +78,7 @@ export default function NotificationChecker({ user }) {
           const scheduledTime = new Date();
           scheduledTime.setHours(parseInt(hours), parseInt(minutes), 0, 0);
           
-          if (now >= scheduledTime.getTime()) {
+          if (new Date() >= scheduledTime) {
             console.log('  ✅ Recorrente hora certa!');
             return true;
           }
