@@ -5,69 +5,79 @@ import { Bell, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { base44 } from '@/api/base44Client';
 
+const VAPID_PUBLIC_KEY = 'BNJg8Uw8qpWl9GvHLheJP0VKEXe7yWU0XHlS9-xdmQPf8WHmvKELB1j7JYEIbWr4xKDKIqOPYL1KZ9-8_cFV6Yw';
+
+function urlBase64ToUint8Array(base64String) {
+  const padding = '='.repeat((4 - base64String.length % 4) % 4);
+  const base64 = (base64String + padding)
+    .replace(/\-/g, '+')
+    .replace(/_/g, '/');
+  const rawData = window.atob(base64);
+  const outputArray = new Uint8Array(rawData.length);
+  for (let i = 0; i < rawData.length; ++i) {
+    outputArray[i] = rawData.charCodeAt(i);
+  }
+  return outputArray;
+}
+
 export default function NotificationPermissionModal({ onClose }) {
   const handleActivate = async () => {
-    console.log('🔔 Solicitando permissão de notificação...');
+    console.log('🔔 Ativando notificações...');
     
     try {
       const permission = await Notification.requestPermission();
       console.log('✅ Permissão:', permission);
       
       if (permission === 'granted') {
-        console.log('💾 Salvando subscription no banco...');
+        const registration = await navigator.serviceWorker.ready;
         
-        // Salvar no banco de dados
-        try {
-          const currentUser = await base44.auth.me();
-          
-          // Verificar se já existe subscription
-          const existingSubscriptions = await base44.entities.PushSubscription.list();
-          const userSubscription = existingSubscriptions.find(s => s.user_email === currentUser.email);
-          
-          if (!userSubscription) {
-            await base44.entities.PushSubscription.create({
-              user_email: currentUser.email,
-              subscription: { enabled: true },
-              is_active: true
-            });
-            console.log('✅ Subscription salva no banco!');
-          } else {
-            console.log('✅ Subscription já existe no banco');
-          }
-        } catch (error) {
-          console.error('❌ Erro ao salvar subscription:', error);
-        }
+        let subscription = await registration.pushManager.getSubscription();
         
-        // Enviar notificação de boas-vindas
-        if ('serviceWorker' in navigator && 'PushManager' in window) {
-          const registration = await navigator.serviceWorker.ready;
-          await registration.showNotification('🎉 Notificações Ativadas!', {
-            body: 'Você receberá lembretes de treino e motivação diária.',
-            icon: 'https://base44.app/api/apps/6904da724b4ce40db58404e7/files/public/6904da724b4ce40db58404e7/901d97ae0_Untitleddesign3.png',
-            badge: 'https://base44.app/api/apps/6904da724b4ce40db58404e7/files/public/6904da724b4ce40db58404e7/901d97ae0_Untitleddesign3.png',
-            vibrate: [200, 100, 200],
-            tag: 'welcome'
+        if (!subscription) {
+          subscription = await registration.pushManager.subscribe({
+            userVisibleOnly: true,
+            applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
           });
+        }
+
+        const currentUser = await base44.auth.me();
+        
+        const existingSubscriptions = await base44.entities.PushSubscription.list();
+        const userSubscription = existingSubscriptions.find(s => s.user_email === currentUser.email);
+        
+        const subscriptionData = {
+          user_email: currentUser.email,
+          subscription: subscription.toJSON(),
+          is_active: true
+        };
+
+        if (userSubscription) {
+          await base44.entities.PushSubscription.update(userSubscription.id, subscriptionData);
         } else {
-          new Notification('🎉 Notificações Ativadas!', {
-            body: 'Você receberá lembretes de treino e motivação diária.',
-            icon: 'https://base44.app/api/apps/6904da724b4ce40db58404e7/files/public/6904da724b4ce40db58404e7/901d97ae0_Untitleddesign3.png',
-            vibrate: [200, 100, 200]
-          });
+          await base44.entities.PushSubscription.create(subscriptionData);
         }
+        
+        console.log('✅ Subscription salva!');
+
+        // Notificação de boas-vindas
+        await registration.showNotification('🎉 Notificações Ativadas!', {
+          body: 'Você receberá lembretes de treino e motivação.',
+          icon: 'https://base44.app/api/apps/6904da724b4ce40db58404e7/files/public/6904da724b4ce40db58404e7/901d97ae0_Untitleddesign3.png',
+          badge: 'https://base44.app/api/apps/6904da724b4ce40db58404e7/files/public/6904da724b4ce40db58404e7/901d97ae0_Untitleddesign3.png',
+          vibrate: [200, 100, 200]
+        });
       }
       
       localStorage.setItem('notification-permission-asked', 'true');
       onClose();
     } catch (error) {
-      console.error('❌ Erro ao solicitar permissão:', error);
+      console.error('❌ Erro:', error);
       localStorage.setItem('notification-permission-asked', 'true');
       onClose();
     }
   };
 
   const handleLater = () => {
-    console.log('⏭️ Usuário optou por decidir depois');
     localStorage.setItem('notification-permission-asked', 'true');
     onClose();
   };
