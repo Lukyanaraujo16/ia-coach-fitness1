@@ -41,20 +41,20 @@ export default function NotificationChecker({ user }) {
       }
 
       if (notif.schedule_type === 'immediate' && notif.status === 'sent') {
-        // Criar Date objects e comparar corretamente
+        // Usar UTC para evitar problemas de timezone
         const createdDate = new Date(notif.created_date);
         const nowDate = new Date();
-        const ageInSeconds = Math.floor((nowDate - createdDate) / 1000);
         
-        console.log(`  📅 Idade: ${ageInSeconds}s (limite: 120s)`);
-        console.log(`  🕐 Criada em: ${createdDate.toISOString()}`);
-        console.log(`  🕐 Agora: ${nowDate.toISOString()}`);
+        // Calcular diferença em segundos usando getTime() para comparação UTC
+        const ageInSeconds = Math.abs((nowDate.getTime() - createdDate.getTime()) / 1000);
         
-        if (ageInSeconds >= 0 && ageInSeconds <= 120) {
+        console.log(`  📅 Idade absoluta: ${Math.floor(ageInSeconds)}s (limite: 120s)`);
+        
+        if (ageInSeconds <= 120) {
           console.log('  ✅ Notificação NOVA!');
           return true;
         } else {
-          console.log(`  ❌ Notificação ${ageInSeconds < 0 ? 'do futuro(?!)' : 'antiga'}`);
+          console.log('  ❌ Notificação antiga');
           return false;
         }
       }
