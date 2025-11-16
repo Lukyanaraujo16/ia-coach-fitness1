@@ -4,7 +4,6 @@ import { Link, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Home, Dumbbell, TrendingUp, Users, User, Shield, Apple, Sparkles, Menu, X, LogOut, Trophy, Award } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Helmet } from "react-helmet";
 import TrialChecker from "./components/TrialChecker";
 import PWAManager from "./components/PWAManager";
 
@@ -27,6 +26,42 @@ export default function Layout({ children, currentPageName }) {
 
   useEffect(() => {
     loadUser();
+  }, []);
+
+  useEffect(() => {
+    // Adicionar meta tags do PWA dinamicamente
+    const addMetaTag = (name, content) => {
+      let meta = document.querySelector(`meta[name="${name}"]`);
+      if (!meta) {
+        meta = document.createElement('meta');
+        meta.name = name;
+        document.head.appendChild(meta);
+      }
+      meta.content = content;
+    };
+
+    addMetaTag('theme-color', '#1E40AF');
+    addMetaTag('apple-mobile-web-app-capable', 'yes');
+    addMetaTag('apple-mobile-web-app-status-bar-style', 'black-translucent');
+    addMetaTag('apple-mobile-web-app-title', 'IA Coach');
+
+    // Adicionar link para manifest
+    let manifestLink = document.querySelector('link[rel="manifest"]');
+    if (!manifestLink) {
+      manifestLink = document.createElement('link');
+      manifestLink.rel = 'manifest';
+      manifestLink.href = '/manifest.json';
+      document.head.appendChild(manifestLink);
+    }
+
+    // Adicionar link para ícone
+    let iconLink = document.querySelector('link[rel="apple-touch-icon"]');
+    if (!iconLink) {
+      iconLink = document.createElement('link');
+      iconLink.rel = 'apple-touch-icon';
+      iconLink.href = '/icon-192.png';
+      document.head.appendChild(iconLink);
+    }
   }, []);
 
   const handleTrialExpired = () => {
@@ -117,16 +152,6 @@ export default function Layout({ children, currentPageName }) {
 
   return (
     <div className={`min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 ${!hideNavigation ? 'pb-20 md:pb-0' : ''}`}>
-      {/* PWA Meta Tags e Service Worker */}
-      <Helmet>
-        <meta name="theme-color" content="#1E40AF" />
-        <meta name="apple-mobile-web-app-capable" content="yes" />
-        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-        <meta name="apple-mobile-web-app-title" content="IA Coach" />
-        <link rel="manifest" href="/manifest.json" />
-        <link rel="apple-touch-icon" href="/icon-192.png" />
-      </Helmet>
-      
       <PWAManager />
 
       <style>{`
