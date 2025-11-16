@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -63,11 +64,12 @@ export default function AdminNotifications() {
         last_sent_date: data.schedule_type === 'immediate' ? new Date().toISOString() : null
       });
       
-      console.log('✅ Notificação salva no banco:', notification.id);
+      console.log('✅ Notificação salva:', notification.id);
       return notification;
     },
     onSuccess: () => {
       queryClient.invalidateQueries(['notifications']);
+      queryClient.invalidateQueries(['pending-notifications']);
       setFormData({
         title: "",
         message: "",
@@ -77,10 +79,10 @@ export default function AdminNotifications() {
         recurrence_pattern: "daily",
         recurrence_time: "09:00"
       });
-      toast.success('✅ Notificação registrada! Os usuários verão quando abrirem o app.');
+      toast.success('✅ Notificação registrada! Usuários com app aberto receberão em instantes.');
     },
     onError: (error) => {
-      console.error('❌ Erro ao registrar notificação:', error);
+      console.error('❌ Erro:', error);
       toast.error('❌ Erro: ' + error.message);
     }
   });
@@ -98,13 +100,13 @@ export default function AdminNotifications() {
     mutationFn: (id) => base44.entities.NotificationSchedule.update(id, { status: 'cancelled' }),
     onSuccess: () => {
       queryClient.invalidateQueries(['notifications']);
+      queryClient.invalidateQueries(['pending-notifications']);
       toast.success('Notificação cancelada!');
     }
   });
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    console.log('🚀 Enviando notificação:', formData);
     
     if (!formData.title || !formData.message) {
       toast.error('❌ Preencha título e mensagem');
@@ -115,17 +117,17 @@ export default function AdminNotifications() {
   };
 
   const handleTestNotification = async () => {
-    console.log('🧪 Testando notificação push local...');
+    console.log('🧪 Testando notificação push...');
     
     if (!formData.title || !formData.message) {
-      toast.error('❌ Preencha título e mensagem para testar');
+      toast.error('❌ Preencha título e mensagem');
       return;
     }
 
     try {
       // Verificar se notificações são suportadas
       if (!('Notification' in window)) {
-        toast.error('❌ Notificações não suportadas neste navegador');
+        toast.error('❌ Notificações não suportadas');
         return;
       }
 
@@ -137,35 +139,36 @@ export default function AdminNotifications() {
       }
 
       if (permission !== 'granted') {
-        toast.error('❌ Permissão de notificações negada');
+        toast.error('❌ Permissão negada');
         return;
       }
 
-      console.log('✅ Permissão concedida, enviando notificação...');
+      console.log('✅ Enviando notificação de teste...');
 
       // Tentar usar Service Worker primeiro
       if ('serviceWorker' in navigator && 'PushManager' in window) {
-        try {
-          const registration = await navigator.serviceWorker.ready;
-          await registration.showNotification(formData.title, {
-            body: formData.message,
-            icon: 'https://base44.app/api/apps/6904da724b4ce40db58404e7/files/public/6904da724b4ce40db58404e7/901d97ae0_Untitleddesign3.png',
-            badge: 'https://base44.app/api/apps/6904da724b4ce40db58404e7/files/public/6904da724b4ce40db58404e7/901d97ae0_Untitleddesign3.png',
-            vibrate: [200, 100, 200],
-            tag: 'test-notification',
-            requireInteraction: false
-          });
-          console.log('✅ Notificação enviada via Service Worker!');
-        } catch (swError) {
-          console.log('⚠️ Service Worker falhou, usando Notification API direta:', swError);
-          // Fallback para Notification API
+        const registrations = await navigator.serviceWorker.getRegistrations();
+        
+        if (registrations.length === 0) {
+          // No service worker registered, fallback to direct Notification API
           new Notification(formData.title, {
             body: formData.message,
             icon: 'https://base44.app/api/apps/6904da724b4ce40db58404e7/files/public/6904da724b4ce40db58404e7/901d97ae0_Untitleddesign3.png',
             vibrate: [200, 100, 200]
           });
-          console.log('✅ Notificação enviada via API direta!');
+          toast.success('✅ Notificação enviada!');
+          return;
         }
+        
+        const registration = await navigator.serviceWorker.ready;
+        await registration.showNotification(formData.title, {
+          body: formData.message,
+          icon: 'https://base44.app/api/apps/6904da724b4ce40db58404e7/files/public/6904da724b4ce40db58404e7/901d97ae0_Untitleddesign3.png',
+          badge: 'https://base44.app/api/apps/6904da724b4ce40db58404e7/files/public/6904da724b4ce40db58404e7/901d97ae0_Untitleddesign3.png',
+          vibrate: [200, 100, 200],
+          tag: 'test',
+          requireInteraction: false
+        });
       } else {
         // Usar Notification API direta
         new Notification(formData.title, {
@@ -173,12 +176,11 @@ export default function AdminNotifications() {
           icon: 'https://base44.app/api/apps/6904da724b4ce40db58404e7/files/public/6904da724b4ce40db58404e7/901d97ae0_Untitleddesign3.png',
           vibrate: [200, 100, 200]
         });
-        console.log('✅ Notificação enviada via API direta!');
       }
 
       toast.success('✅ Notificação de teste enviada!');
     } catch (error) {
-      console.error('❌ Erro ao testar notificação:', error);
+      console.error('❌ Erro:', error);
       toast.error('❌ Erro: ' + error.message);
     }
   };
@@ -243,8 +245,7 @@ export default function AdminNotifications() {
           <div className="flex-1">
             <h4 className="text-blue-400 font-semibold mb-1">Como funcionam as notificações</h4>
             <p className="text-slate-300 text-sm">
-              As notificações são salvas no banco de dados e serão exibidas para os usuários quando abrirem o PWA. 
-              Use "Testar Comigo" para ver uma prévia da notificação no seu navegador.
+              As notificações são enviadas automaticamente para usuários com o app aberto. Use "Testar Comigo" para ver como ficará.
             </p>
           </div>
         </CardContent>
@@ -369,7 +370,7 @@ export default function AdminNotifications() {
                 className="flex-1 bg-blue-600 hover:bg-blue-700"
               >
                 <Send className="w-4 h-4 mr-2" />
-                {sendNotificationMutation.isPending ? 'Registrando...' : formData.schedule_type === 'immediate' ? 'Enviar Agora' : 'Agendar Notificação'}
+                {sendNotificationMutation.isPending ? 'Enviando...' : formData.schedule_type === 'immediate' ? 'Enviar Agora' : 'Agendar'}
               </Button>
             </div>
           </form>
