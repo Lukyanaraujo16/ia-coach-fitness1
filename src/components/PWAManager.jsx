@@ -37,6 +37,7 @@ export default function PWAManager() {
     manifestLink.href = manifestURL;
     console.log('✅ Manifest criado');
 
+    // Criar Service Worker dinamicamente
     const swCode = `
       console.log('[SW] Service Worker iniciado');
 
@@ -139,15 +140,13 @@ export default function PWAManager() {
             }
             
             const hasAskedPermission = localStorage.getItem('notification-permission-asked');
+            const isPWA = window.matchMedia('(display-mode: standalone)').matches || 
+                          window.navigator.standalone === true;
             
-            console.log('🔔 Permissão:', Notification.permission);
-            console.log('📋 Já perguntou?', hasAskedPermission);
-            
-            if (Notification.permission === 'default' && !hasAskedPermission) {
-              console.log('⏱️ Modal em 5s');
+            if (isPWA && Notification.permission === 'default' && !hasAskedPermission) {
               setTimeout(() => {
                 setShowNotificationModal(true);
-              }, 5000);
+              }, 3000);
             }
           }
         })
