@@ -37,6 +37,11 @@ export default function AdminNotifications() {
     queryFn: () => base44.entities.User.list(),
   });
 
+  const { data: subscriptions = [] } = useQuery({
+    queryKey: ['push-subscriptions'],
+    queryFn: () => base44.entities.PushSubscription.list(),
+  });
+
   useEffect(() => {
     const loadUser = async () => {
       try {
@@ -52,24 +57,30 @@ export default function AdminNotifications() {
     loadUser();
   }, [navigate]);
 
-  const sendNotificationMutation = useMutation({
+  const sendImmediateNotificationMutation = useMutation({
     mutationFn: async (data) => {
-      console.log('📤 Criando registro de notificação:', data);
+      console.log('🚀 Enviando notificação imediata (sem salvar):', data);
       
-      // Criar registro da notificação
-      const notification = await base44.entities.NotificationSchedule.create({
-        ...data,
-        status: data.schedule_type === 'immediate' ? 'sent' : 'pending',
-        sent_count: data.schedule_type === 'immediate' ? 1 : 0,
-        last_sent_date: data.schedule_type === 'immediate' ? new Date().toISOString() : null
-      });
+      // Salvar no localStorage para broadcast
+      const notificationBroadcast = {
+        id: `immediate-${Date.now()}`,
+        title: data.title,
+        message: data.message,
+        target_audience: data.target_audience,
+        timestamp: Date.now()
+      };
       
-      console.log('✅ Notificação salva:', notification.id);
-      return notification;
+      localStorage.setItem('broadcast-notification', JSON.stringify(notificationBroadcast));
+      
+      // Limpar após 5 segundos
+      setTimeout(() => {
+        localStorage.removeItem('broadcast-notification');
+      }, 5000);
+      
+      console.log('✅ Broadcast enviado!');
+      return notificationBroadcast;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries(['notifications']);
-      queryClient.invalidateQueries(['pending-notifications']);
       setFormData({
         title: "",
         message: "",
@@ -79,7 +90,38 @@ export default function AdminNotifications() {
         recurrence_pattern: "daily",
         recurrence_time: "09:00"
       });
-      toast.success('✅ Notificação registrada! Usuários com app aberto receberão em instantes.');
+      toast.success('✅ Notificação enviada para todos com app aberto!');
+    },
+    onError: (error) => {
+      console.error('❌ Erro:', error);
+      toast.error('❌ Erro: ' + error.message);
+    }
+  });
+
+  const scheduleNotificationMutation = useMutation({
+    mutationFn: async (data) => {
+      console.log('📤 Salvando notificação agendada:', data);
+      
+      const notification = await base44.entities.NotificationSchedule.create({
+        ...data,
+        status: 'pending'
+      });
+      
+      console.log('✅ Notificação agendada:', notification.id);
+      return notification;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(['notifications']);
+      setFormData({
+        title: "",
+        message: "",
+        target_audience: "all",
+        schedule_type: "immediate",
+        scheduled_date: "",
+        recurrence_pattern: "daily",
+        recurrence_time: "09:00"
+      });
+      toast.success('✅ Notificação agendada!');
     },
     onError: (error) => {
       console.error('❌ Erro:', error);
@@ -100,7 +142,6 @@ export default function AdminNotifications() {
     mutationFn: (id) => base44.entities.NotificationSchedule.update(id, { status: 'cancelled' }),
     onSuccess: () => {
       queryClient.invalidateQueries(['notifications']);
-      queryClient.invalidateQueries(['pending-notifications']);
       toast.success('Notificação cancelada!');
     }
   });
@@ -112,8 +153,12 @@ export default function AdminNotifications() {
       toast.error('❌ Preencha título e mensagem');
       return;
     }
-    
-    sendNotificationMutation.mutate(formData);
+
+    if (formData.schedule_type === 'immediate') {
+      sendImmediateNotificationMutation.mutate(formData);
+    } else {
+      scheduleNotificationMutation.mutate(formData);
+    }
   };
 
   const handleTestNotification = async () => {
@@ -125,13 +170,11 @@ export default function AdminNotifications() {
     }
 
     try {
-      // Verificar se notificações são suportadas
       if (!('Notification' in window)) {
         toast.error('❌ Notificações não suportadas');
         return;
       }
 
-      // Solicitar permissão se necessário
       let permission = Notification.permission;
       if (permission === 'default') {
         console.log('📋 Solicitando permissão...');
@@ -145,12 +188,10 @@ export default function AdminNotifications() {
 
       console.log('✅ Enviando notificação de teste...');
 
-      // Tentar usar Service Worker primeiro
       if ('serviceWorker' in navigator && 'PushManager' in window) {
         const registrations = await navigator.serviceWorker.getRegistrations();
         
         if (registrations.length === 0) {
-          // No service worker registered, fallback to direct Notification API
           new Notification(formData.title, {
             body: formData.message,
             icon: 'https://base44.app/api/apps/6904da724b4ce40db58404e7/files/public/6904da724b4ce40db58404e7/901d97ae0_Untitleddesign3.png',
@@ -170,7 +211,6 @@ export default function AdminNotifications() {
           requireInteraction: false
         });
       } else {
-        // Usar Notification API direta
         new Notification(formData.title, {
           body: formData.message,
           icon: 'https://base44.app/api/apps/6904da724b4ce40db58404e7/files/public/6904da724b4ce40db58404e7/901d97ae0_Untitleddesign3.png',
@@ -186,9 +226,9 @@ export default function AdminNotifications() {
   };
 
   const getTargetCount = () => {
-    if (formData.target_audience === 'all') return users.length;
-    if (formData.target_audience === 'premium') return users.filter(u => u.subscription_status === 'premium').length;
-    if (formData.target_audience === 'free') return users.filter(u => u.subscription_status !== 'premium').length;
+    if (formData.target_audience === 'all') return subscriptions.filter(s => s.is_active).length;
+    if (formData.target_audience === 'premium') return subscriptions.filter(s => s.is_active && users.find(u => u.email === s.user_email)?.subscription_status === 'premium').length;
+    if (formData.target_audience === 'free') return subscriptions.filter(s => s.is_active && users.find(u => u.email === s.user_email)?.subscription_status !== 'premium').length;
     return 0;
   };
 
@@ -233,8 +273,8 @@ export default function AdminNotifications() {
         </div>
         <div className="flex items-center gap-2 px-4 py-2 bg-blue-900/30 rounded-lg border border-blue-700/50">
           <Users className="w-5 h-5 text-blue-400" />
-          <span className="text-white font-semibold">{users.length}</span>
-          <span className="text-slate-400 text-sm">usuários</span>
+          <span className="text-white font-semibold">{subscriptions.filter(s => s.is_active).length}</span>
+          <span className="text-slate-400 text-sm">com push ativo</span>
         </div>
       </div>
 
@@ -245,7 +285,8 @@ export default function AdminNotifications() {
           <div className="flex-1">
             <h4 className="text-blue-400 font-semibold mb-1">Como funcionam as notificações</h4>
             <p className="text-slate-300 text-sm">
-              As notificações são enviadas automaticamente para usuários com o app aberto. Use "Testar Comigo" para ver como ficará.
+              <strong>Enviar Agora:</strong> Envia imediatamente para todos os usuários com app aberto (não salva no banco).<br/>
+              <strong>Agendar/Recorrente:</strong> Salva no banco e envia automaticamente na data/hora definida.
             </p>
           </div>
         </CardContent>
@@ -295,7 +336,7 @@ export default function AdminNotifications() {
                   </SelectContent>
                 </Select>
                 <p className="text-slate-400 text-xs mt-1">
-                  {getTargetCount()} usuários receberão
+                  {getTargetCount()} usuários com push ativo
                 </p>
               </div>
 
@@ -366,11 +407,11 @@ export default function AdminNotifications() {
               </Button>
               <Button
                 type="submit"
-                disabled={sendNotificationMutation.isPending}
+                disabled={sendImmediateNotificationMutation.isPending || scheduleNotificationMutation.isPending}
                 className="flex-1 bg-blue-600 hover:bg-blue-700"
               >
                 <Send className="w-4 h-4 mr-2" />
-                {sendNotificationMutation.isPending ? 'Enviando...' : formData.schedule_type === 'immediate' ? 'Enviar Agora' : 'Agendar'}
+                {formData.schedule_type === 'immediate' ? 'Enviar Agora' : 'Agendar'}
               </Button>
             </div>
           </form>
@@ -468,12 +509,12 @@ export default function AdminNotifications() {
         <CardHeader>
           <CardTitle className="text-white flex items-center gap-2">
             <Clock className="w-5 h-5 text-green-400" />
-            Histórico de Notificações
+            Histórico de Notificações Agendadas
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
           {sentNotifications.length === 0 ? (
-            <p className="text-slate-400 text-center py-8">Nenhuma notificação enviada ainda</p>
+            <p className="text-slate-400 text-center py-8">Nenhuma notificação agendada enviada ainda</p>
           ) : (
             sentNotifications.map((notif) => (
               <div key={notif.id} className="p-4 bg-slate-800/50 rounded-lg border border-slate-700">
