@@ -5,8 +5,8 @@ import { useQuery } from '@tanstack/react-query';
 export default function NotificationChecker({ user }) {
   const { data: notifications = [] } = useQuery({
     queryKey: ['pending-notifications'],
-    queryFn: () => base44.entities.NotificationSchedule.list('-created_date', 10),
-    refetchInterval: 60000, // Verificar a cada 1 minuto
+    queryFn: () => base44.entities.NotificationSchedule.list('-created_date', 20),
+    refetchInterval: 5000, // Verificar a cada 5 segundos
     enabled: !!user,
   });
 
@@ -16,7 +16,6 @@ export default function NotificationChecker({ user }) {
     const isPremium = user.subscription_status === 'premium';
     const now = new Date();
 
-    // Filtrar notificações que devem ser mostradas
     const notificationsToShow = notifications.filter(notif => {
       if (notif.status === 'cancelled') return false;
 
@@ -39,8 +38,6 @@ export default function NotificationChecker({ user }) {
       }
 
       if (notif.schedule_type === 'recurring' && notif.is_active) {
-        // Lógica de recorrência seria implementada aqui
-        // Por simplicidade, mostrar se não foi mostrada hoje
         const lastShownKey = `notif-last-shown-${notif.id}`;
         const lastShown = localStorage.getItem(lastShownKey);
         const today = now.toDateString();
@@ -61,6 +58,8 @@ export default function NotificationChecker({ user }) {
     notificationsToShow.forEach(async (notif) => {
       try {
         if ('Notification' in window && Notification.permission === 'granted') {
+          console.log('🔔 Mostrando notificação:', notif.title);
+          
           if ('serviceWorker' in navigator && 'PushManager' in window) {
             try {
               const registration = await navigator.serviceWorker.ready;
@@ -72,12 +71,15 @@ export default function NotificationChecker({ user }) {
                 tag: `notification-${notif.id}`,
                 requireInteraction: false
               });
+              console.log('✅ Notificação enviada via Service Worker!');
             } catch (swError) {
+              console.log('⚠️ Fallback para Notification API:', swError);
               new Notification(notif.title, {
                 body: notif.message,
                 icon: 'https://base44.app/api/apps/6904da724b4ce40db58404e7/files/public/6904da724b4ce40db58404e7/901d97ae0_Untitleddesign3.png',
                 vibrate: [200, 100, 200]
               });
+              console.log('✅ Notificação enviada via API direta!');
             }
           } else {
             new Notification(notif.title, {
@@ -85,6 +87,7 @@ export default function NotificationChecker({ user }) {
               icon: 'https://base44.app/api/apps/6904da724b4ce40db58404e7/files/public/6904da724b4ce40db58404e7/901d97ae0_Untitleddesign3.png',
               vibrate: [200, 100, 200]
             });
+            console.log('✅ Notificação enviada via API direta!');
           }
 
           // Marcar como mostrada
@@ -93,8 +96,6 @@ export default function NotificationChecker({ user }) {
           } else {
             localStorage.setItem(`notif-shown-${notif.id}`, 'true');
           }
-
-          console.log('✅ Notificação mostrada:', notif.title);
         }
       } catch (error) {
         console.error('❌ Erro ao mostrar notificação:', error);

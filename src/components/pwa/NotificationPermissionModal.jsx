@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Bell, X, CheckCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { base44 } from '@/api/base44Client';
 
 export default function NotificationPermissionModal({ onClose }) {
   const handleRequestPermission = async () => {
@@ -10,19 +11,28 @@ export default function NotificationPermissionModal({ onClose }) {
     
     if ('Notification' in window && 'serviceWorker' in navigator) {
       try {
-        // Solicitar permissão
         const permission = await Notification.requestPermission();
         console.log('📊 Permissão de notificação:', permission);
         
         if (permission === 'granted') {
           console.log('✅ Permissão concedida');
           
-          // Obter registration do Service Worker
+          // Salvar subscription do usuário
+          try {
+            const currentUser = await base44.auth.me();
+            await base44.entities.PushSubscription.create({
+              user_email: currentUser.email,
+              subscription: { enabled: true },
+              is_active: true
+            });
+            console.log('✅ Subscription salva no banco!');
+          } catch (error) {
+            console.log('⚠️ Erro ao salvar subscription:', error);
+          }
+          
           const registration = await navigator.serviceWorker.ready;
           console.log('✅ Service Worker pronto:', registration);
           
-          // Para iOS/Safari: mostrar notificação imediatamente após permissão
-          // (Safari revoga permissão se não mostrar notificação)
           await registration.showNotification('IA Coach Fitness', {
             body: '🎉 Perfeito! Agora você receberá lembretes de treino.',
             icon: 'https://base44.app/api/apps/6904da724b4ce40db58404e7/files/public/6904da724b4ce40db58404e7/901d97ae0_Untitleddesign3.png',
