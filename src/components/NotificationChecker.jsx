@@ -5,8 +5,8 @@ import { useQuery } from '@tanstack/react-query';
 export default function NotificationChecker({ user }) {
   const { data: notifications = [] } = useQuery({
     queryKey: ['pending-notifications'],
-    queryFn: () => base44.entities.NotificationSchedule.list('-created_date', 20),
-    refetchInterval: 5000, // Verificar a cada 5 segundos
+    queryFn: () => base44.entities.NotificationSchedule.list('-created_date', 50),
+    refetchInterval: 2000, // Verificar a cada 2 segundos
     enabled: !!user,
   });
 
@@ -16,27 +16,66 @@ export default function NotificationChecker({ user }) {
     const isPremium = user.subscription_status === 'premium';
     const now = new Date();
 
+    console.log('🔍 Verificando notificações...', notifications.length, 'encontradas');
+
     const notificationsToShow = notifications.filter(notif => {
-      if (notif.status === 'cancelled') return false;
+      // Debug para cada notificação
+      console.log('📋 Verificando:', notif.title, {
+        status: notif.status,
+        schedule_type: notif.schedule_type,
+        target_audience: notif.target_audience,
+        created: notif.created_date
+      });
+
+      if (notif.status === 'cancelled') {
+        console.log('  ❌ Cancelada');
+        return false;
+      }
 
       // Verificar público alvo
-      if (notif.target_audience === 'premium' && !isPremium) return false;
-      if (notif.target_audience === 'free' && isPremium) return false;
-
-      // Verificar se já foi mostrada (localStorage)
-      const shownKey = `notif-shown-${notif.id}`;
-      if (localStorage.getItem(shownKey)) return false;
-
-      // Verificar tipo de agendamento
-      if (notif.schedule_type === 'immediate' && notif.status === 'sent') {
-        return true;
+      if (notif.target_audience === 'premium' && !isPremium) {
+        console.log('  ❌ Premium only, usuário não é premium');
+        return false;
+      }
+      if (notif.target_audience === 'free' && isPremium) {
+        console.log('  ❌ Free only, usuário é premium');
+        return false;
       }
 
+      // Verificar se já foi mostrada
+      const shownKey = `notif-shown-${notif.id}`;
+      const alreadyShown = localStorage.getItem(shownKey);
+      
+      if (alreadyShown) {
+        console.log('  ❌ Já foi mostrada');
+        return false;
+      }
+
+      // Notificações imediatas
+      if (notif.schedule_type === 'immediate' && notif.status === 'sent') {
+        // Verificar se foi criada nos últimos 5 minutos
+        const createdDate = new Date(notif.created_date);
+        const fiveMinutesAgo = new Date(now.getTime() - 5 * 60 * 1000);
+        
+        if (createdDate > fiveMinutesAgo) {
+          console.log('  ✅ Notificação imediata recente!');
+          return true;
+        } else {
+          console.log('  ❌ Notificação imediata antiga');
+          return false;
+        }
+      }
+
+      // Notificações agendadas
       if (notif.schedule_type === 'scheduled' && notif.scheduled_date) {
         const scheduledDate = new Date(notif.scheduled_date);
-        return now >= scheduledDate && notif.status === 'pending';
+        if (now >= scheduledDate && notif.status === 'pending') {
+          console.log('  ✅ Notificação agendada chegou a hora!');
+          return true;
+        }
       }
 
+      // Notificações recorrentes
       if (notif.schedule_type === 'recurring' && notif.is_active) {
         const lastShownKey = `notif-last-shown-${notif.id}`;
         const lastShown = localStorage.getItem(lastShownKey);
@@ -47,12 +86,17 @@ export default function NotificationChecker({ user }) {
           const scheduledTime = new Date();
           scheduledTime.setHours(parseInt(hours), parseInt(minutes), 0, 0);
           
-          return now >= scheduledTime;
+          if (now >= scheduledTime) {
+            console.log('  ✅ Notificação recorrente hora certa!');
+            return true;
+          }
         }
       }
 
       return false;
     });
+
+    console.log('📬 Notificações para mostrar:', notificationsToShow.length);
 
     // Mostrar notificações
     notificationsToShow.forEach(async (notif) => {
@@ -93,9 +137,13 @@ export default function NotificationChecker({ user }) {
           // Marcar como mostrada
           if (notif.schedule_type === 'recurring') {
             localStorage.setItem(`notif-last-shown-${notif.id}`, now.toDateString());
+            console.log('💾 Marcada como mostrada hoje (recorrente)');
           } else {
             localStorage.setItem(`notif-shown-${notif.id}`, 'true');
+            console.log('💾 Marcada como mostrada permanentemente');
           }
+        } else {
+          console.log('❌ Notificações não permitidas ou não suportadas');
         }
       } catch (error) {
         console.error('❌ Erro ao mostrar notificação:', error);
