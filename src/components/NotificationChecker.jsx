@@ -5,7 +5,7 @@ import { useQuery } from '@tanstack/react-query';
 export default function NotificationChecker({ user }) {
   const { data: notifications = [] } = useQuery({
     queryKey: ['pending-notifications'],
-    queryFn: () => base44.entities.NotificationSchedule.list('-created_date', 50),
+    queryFn: () => base44.entities.NotificationSchedule.list('-created_date', 20),
     refetchInterval: 2000, // Verificar a cada 2 segundos
     enabled: !!user,
   });
@@ -19,7 +19,6 @@ export default function NotificationChecker({ user }) {
     console.log('🔍 Verificando notificações...', notifications.length, 'encontradas');
 
     const notificationsToShow = notifications.filter(notif => {
-      // Debug para cada notificação
       console.log('📋 Verificando:', notif.title, {
         status: notif.status,
         schedule_type: notif.schedule_type,
@@ -42,26 +41,25 @@ export default function NotificationChecker({ user }) {
         return false;
       }
 
-      // Verificar se já foi mostrada
+      // Verificar se já foi mostrada (localStorage por dispositivo)
       const shownKey = `notif-shown-${notif.id}`;
       const alreadyShown = localStorage.getItem(shownKey);
       
       if (alreadyShown) {
-        console.log('  ❌ Já foi mostrada');
+        console.log('  ❌ Já foi mostrada neste dispositivo');
         return false;
       }
 
-      // Notificações imediatas
+      // Notificações imediatas - APENAS dos últimos 2 minutos
       if (notif.schedule_type === 'immediate' && notif.status === 'sent') {
-        // Verificar se foi criada nos últimos 5 minutos
         const createdDate = new Date(notif.created_date);
-        const fiveMinutesAgo = new Date(now.getTime() - 5 * 60 * 1000);
+        const twoMinutesAgo = new Date(now.getTime() - 2 * 60 * 1000);
         
-        if (createdDate > fiveMinutesAgo) {
-          console.log('  ✅ Notificação imediata recente!');
+        if (createdDate > twoMinutesAgo) {
+          console.log('  ✅ Notificação imediata NOVA (últimos 2min)!');
           return true;
         } else {
-          console.log('  ❌ Notificação imediata antiga');
+          console.log('  ❌ Notificação imediata antiga (mais de 2min)');
           return false;
         }
       }
@@ -134,13 +132,14 @@ export default function NotificationChecker({ user }) {
             console.log('✅ Notificação enviada via API direta!');
           }
 
-          // Marcar como mostrada
+          // Marcar como mostrada permanentemente neste dispositivo
+          localStorage.setItem(`notif-shown-${notif.id}`, 'true');
+          console.log('💾 Marcada como mostrada neste dispositivo');
+          
+          // Para recorrentes, também marcar o dia
           if (notif.schedule_type === 'recurring') {
             localStorage.setItem(`notif-last-shown-${notif.id}`, now.toDateString());
             console.log('💾 Marcada como mostrada hoje (recorrente)');
-          } else {
-            localStorage.setItem(`notif-shown-${notif.id}`, 'true');
-            console.log('💾 Marcada como mostrada permanentemente');
           }
         } else {
           console.log('❌ Notificações não permitidas ou não suportadas');
