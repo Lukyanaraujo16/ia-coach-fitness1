@@ -4,7 +4,9 @@ import { Link, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Home, Dumbbell, TrendingUp, Users, User, Shield, Apple, Sparkles, Menu, X, LogOut, Trophy, Award } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Helmet } from "react-helmet";
 import TrialChecker from "./components/TrialChecker";
+import PWAManager from "./components/PWAManager";
 
 export default function Layout({ children, currentPageName }) {
   const location = useLocation();
@@ -28,13 +30,11 @@ export default function Layout({ children, currentPageName }) {
   }, []);
 
   const handleTrialExpired = () => {
-    // Recarregar dados do usuário quando o trial expirar
     loadUser();
   };
 
   const isPremium = user?.subscription_status === 'premium' || user?.subscription_status === 'trial';
 
-  // Menu desktop - todas as opções
   const desktopNavigationItems = [
     { name: "Home", path: createPageUrl("Dashboard"), icon: Home },
     { name: "Treinos", path: createPageUrl("Workouts"), icon: Dumbbell },
@@ -58,7 +58,6 @@ export default function Layout({ children, currentPageName }) {
     });
   }
 
-  // Menu mobile - apenas 4 opções principais
   const mobileNavigationItems = [
     { name: "Home", path: createPageUrl("Dashboard"), icon: Home },
     { name: "Treinos", path: createPageUrl("Workouts"), icon: Dumbbell },
@@ -73,7 +72,6 @@ export default function Layout({ children, currentPageName }) {
     });
   }
 
-  // Menu lateral (hamburger) - TODAS as opções
   const sideMenuItems = [
     { name: "Home", path: createPageUrl("Dashboard"), icon: Home },
     { name: "Treinos", path: createPageUrl("Workouts"), icon: Dumbbell },
@@ -119,6 +117,18 @@ export default function Layout({ children, currentPageName }) {
 
   return (
     <div className={`min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 ${!hideNavigation ? 'pb-20 md:pb-0' : ''}`}>
+      {/* PWA Meta Tags e Service Worker */}
+      <Helmet>
+        <meta name="theme-color" content="#1E40AF" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+        <meta name="apple-mobile-web-app-title" content="IA Coach" />
+        <link rel="manifest" href="/manifest.json" />
+        <link rel="apple-touch-icon" href="/icon-192.png" />
+      </Helmet>
+      
+      <PWAManager />
+
       <style>{`
         :root {
           --primary: #1E40AF;
@@ -128,7 +138,6 @@ export default function Layout({ children, currentPageName }) {
         }
       `}</style>
 
-      {/* Trial Checker - verifica automaticamente se o trial expirou */}
       {user && <TrialChecker user={user} onTrialExpired={handleTrialExpired} />}
 
       {!hideNavigation && (
