@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from "react";
 import { base44 } from "@/api/base44Client";
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
@@ -35,6 +36,7 @@ export default function WorkoutExecution() {
   const [startTime, setStartTime] = useState(null);
   const [endTime, setEndTime] = useState(null);
   const [exerciseWeights, setExerciseWeights] = useState({});
+  const [notificationSent, setNotificationSent] = useState(false);
 
   const setRefs = useRef({});
 
@@ -92,10 +94,27 @@ export default function WorkoutExecution() {
         const restTime = currentSetInEffect?.rest_seconds || 60;
         const remaining = restTime - elapsed;
         
+        // Notificação quando faltam 10 segundos
+        if (remaining === 10 && !notificationSent && 'Notification' in window && Notification.permission === 'granted') {
+          try {
+            new Notification('Descanso Terminando!', {
+              body: 'Faltam 10 segundos para voltar ao treino',
+              icon: 'https://base44.app/api/apps/6904da724b4ce40db58404e7/files/public/6904da724b4ce40db58404e7/901d97ae0_Untitleddesign3.png',
+              badge: 'https://base44.app/api/apps/6904da724b4ce40db58404e7/files/public/6904da724b4ce40db58404e7/901d97ae0_Untitleddesign3.png',
+              vibrate: [200, 100, 200],
+              tag: 'rest-warning'
+            });
+            setNotificationSent(true);
+          } catch (error) {
+            console.log('Erro ao enviar notificação:', error);
+          }
+        }
+        
         if (remaining <= 0) {
           setTimeRemaining(0);
           setIsResting(false);
           setRestStartTime(null);
+          setNotificationSent(false);
           if (navigator.vibrate) {
             navigator.vibrate([200, 100, 200]);
           }
@@ -125,7 +144,7 @@ export default function WorkoutExecution() {
     return () => {
       if (interval) clearInterval(interval);
     };
-  }, [isResting, restStartTime, currentExerciseIndex, currentSetIndex, currentDay, currentSetRepetition]);
+  }, [isResting, restStartTime, currentExerciseIndex, currentSetIndex, currentDay, currentSetRepetition, notificationSent]);
 
   const createWorkoutLogMutation = useMutation({
     mutationFn: (data) => base44.entities.WorkoutLog.create(data),
@@ -164,8 +183,8 @@ export default function WorkoutExecution() {
   const nextExercise = !isLastExercise ? currentDay.exercises?.[currentExerciseIndex + 1] : null;
   const timesToDo = currentSet?.times || 1;
   
-  // Verifica se completou todas as repetições da última série
-  const completedAllRepsOfLastSet = isLastSet && (currentSetRepetition + 1 >= timesToDo);
+  // Verifica se completou todas as repetições - CORRIGIDO: só após descansar todas as vezes
+  const completedAllRepsOfLastSet = isLastSet && !isResting && (currentSetRepetition >= timesToDo);
 
   const getLastWeight = (exerciseName) => {
     for (const log of previousLogs) {
@@ -193,16 +212,19 @@ export default function WorkoutExecution() {
     setIsResting(true);
     setRestStartTime(Date.now());
     setTimeRemaining(restTime);
+    setNotificationSent(false);
   };
 
   const handlePauseRest = () => {
     setIsResting(false);
     setRestStartTime(null);
+    setNotificationSent(false);
   };
 
   const handleSkipRest = () => {
     setIsResting(false);
     setRestStartTime(null);
+    setNotificationSent(false);
     
     // Se ainda tem repetições, avança a repetição
     if (currentSetRepetition + 1 < timesToDo) {

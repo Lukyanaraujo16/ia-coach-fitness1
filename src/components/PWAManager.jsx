@@ -24,6 +24,9 @@ export default function PWAManager() {
 
   useEffect(() => {
     console.log('🚀 PWAManager iniciado');
+    console.log('📱 User Agent:', navigator.userAgent);
+    console.log('🔔 Notification support:', 'Notification' in window);
+    console.log('📮 Push support:', 'PushManager' in window);
     
     const manifestBlob = new Blob([JSON.stringify(manifestData)], { type: 'application/json' });
     const manifestURL = URL.createObjectURL(manifestBlob);
@@ -52,7 +55,7 @@ export default function PWAManager() {
       });
 
       self.addEventListener('push', (event) => {
-        console.log('[SW] Push recebido');
+        console.log('[SW] Push recebido:', event.data ? event.data.text() : 'sem data');
         
         let data = { title: 'Notificação', message: 'Nova mensagem' };
         
@@ -60,7 +63,7 @@ export default function PWAManager() {
           try {
             data = event.data.json();
           } catch (e) {
-            console.log('[SW] Erro parse JSON');
+            console.log('[SW] Erro parse JSON:', e);
           }
         }
 
@@ -70,7 +73,8 @@ export default function PWAManager() {
             icon: 'https://base44.app/api/apps/6904da724b4ce40db58404e7/files/public/6904da724b4ce40db58404e7/901d97ae0_Untitleddesign3.png',
             badge: 'https://base44.app/api/apps/6904da724b4ce40db58404e7/files/public/6904da724b4ce40db58404e7/901d97ae0_Untitleddesign3.png',
             vibrate: [200, 100, 200],
-            tag: 'notification'
+            tag: 'notification',
+            requireInteraction: false
           })
         );
       });
@@ -101,13 +105,19 @@ export default function PWAManager() {
         .register(swURL, { scope: '/' })
         .then(async (registration) => {
           console.log('✅ Service Worker registrado');
+          console.log('📍 SW scope:', registration.scope);
+          console.log('🔄 SW state:', registration.active?.state);
           
           if ('Notification' in window && 'PushManager' in window) {
+            console.log('🔔 Permissão atual:', Notification.permission);
+            
             if (Notification.permission === 'granted') {
               try {
                 const currentUser = await base44.auth.me();
+                console.log('👤 Usuário:', currentUser.email);
                 
                 let subscription = await registration.pushManager.getSubscription();
+                console.log('📮 Subscription existente:', !!subscription);
                 
                 if (!subscription) {
                   console.log('📝 Criando subscription...');
@@ -115,9 +125,10 @@ export default function PWAManager() {
                     userVisibleOnly: true,
                     applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
                   });
+                  console.log('✅ Subscription criada');
                 }
 
-                console.log('💾 Salvando subscription...');
+                console.log('💾 Salvando subscription no banco...');
                 const existingSubscriptions = await base44.entities.PushSubscription.list();
                 const userSubscription = existingSubscriptions.find(s => s.user_email === currentUser.email);
                 
@@ -132,7 +143,7 @@ export default function PWAManager() {
                   console.log('✅ Subscription atualizada!');
                 } else {
                   await base44.entities.PushSubscription.create(subscriptionData);
-                  console.log('✅ Subscription criada!');
+                  console.log('✅ Subscription criada no banco!');
                 }
               } catch (error) {
                 console.error('❌ Erro subscription:', error);
@@ -143,16 +154,23 @@ export default function PWAManager() {
             const isPWA = window.matchMedia('(display-mode: standalone)').matches || 
                           window.navigator.standalone === true;
             
+            console.log('🏠 É PWA?', isPWA);
+            console.log('❓ Já perguntou?', hasAskedPermission);
+            
             if (isPWA && Notification.permission === 'default' && !hasAskedPermission) {
               setTimeout(() => {
                 setShowNotificationModal(true);
               }, 3000);
             }
+          } else {
+            console.warn('⚠️ Push notifications não suportadas neste navegador');
           }
         })
         .catch((error) => {
           console.error('❌ Erro SW:', error);
         });
+    } else {
+      console.error('❌ Service Workers não suportados');
     }
 
     return () => {
