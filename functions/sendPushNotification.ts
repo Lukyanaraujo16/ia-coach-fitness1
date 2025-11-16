@@ -37,7 +37,11 @@ Deno.serve(async (req) => {
         let sent = 0;
         let failed = 0;
 
-        const payload = JSON.stringify({ title, message });
+        const payload = JSON.stringify({ 
+            title, 
+            message,
+            badge: 'https://base44.app/api/apps/6904da724b4ce40db58404e7/files/public/6904da724b4ce40db58404e7/901d97ae0_Untitleddesign3.png'
+        });
 
         for (const sub of activeSubscriptions) {
             try {
