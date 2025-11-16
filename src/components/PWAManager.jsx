@@ -50,6 +50,7 @@ export default function PWAManager() {
             console.log('📋 Já pediu antes?', hasAskedPermission);
             
             // Mostrar modal após 3 segundos se for PWA, primeira vez e permissão não concedida
+            // REMOVIDA RESTRIÇÃO DE iOS - agora funciona para todos
             if (isPWA && Notification.permission === 'default' && !hasAskedPermission) {
               console.log('⏱️ Agendando modal de notificação em 3s');
               setTimeout(() => {
