@@ -41,7 +41,6 @@ export default function NotificationChecker({ user }) {
       }
 
       if (notif.schedule_type === 'immediate' && notif.status === 'sent') {
-        // Usar last_sent_date ao invés de created_date para immediate
         const sentDate = new Date(notif.last_sent_date || notif.created_date);
         const nowDate = new Date();
         const ageInSeconds = Math.floor(Math.abs(nowDate.getTime() - sentDate.getTime()) / 1000);
@@ -89,47 +88,61 @@ export default function NotificationChecker({ user }) {
     console.log('📬 Para mostrar:', notificationsToShow.length);
 
     notificationsToShow.forEach(async (notif) => {
+      console.log('🔔 Mostrando:', notif.title);
+      
+      if (!('Notification' in window)) {
+        console.error('❌ Notification API não suportada');
+        return;
+      }
+
+      const permission = Notification.permission;
+      console.log('📊 Permissão atual:', permission);
+
+      if (permission !== 'granted') {
+        console.error('❌ Permissão não concedida');
+        return;
+      }
+
       try {
-        if ('Notification' in window && Notification.permission === 'granted') {
-          console.log('🔔 Mostrando:', notif.title);
-          
-          if ('serviceWorker' in navigator && 'PushManager' in window) {
-            try {
-              const registration = await navigator.serviceWorker.ready;
-              await registration.showNotification(notif.title, {
-                body: notif.message,
-                icon: 'https://base44.app/api/apps/6904da724b4ce40db58404e7/files/public/6904da724b4ce40db58404e7/901d97ae0_Untitleddesign3.png',
-                badge: 'https://base44.app/api/apps/6904da724b4ce40db58404e7/files/public/6904da724b4ce40db58404e7/901d97ae0_Untitleddesign3.png',
-                vibrate: [200, 100, 200],
-                tag: `notification-${notif.id}`,
-                requireInteraction: false
-              });
-              console.log('✅ Enviada via SW!');
-            } catch (swError) {
-              new Notification(notif.title, {
-                body: notif.message,
-                icon: 'https://base44.app/api/apps/6904da724b4ce40db58404e7/files/public/6904da724b4ce40db58404e7/901d97ae0_Untitleddesign3.png',
-                vibrate: [200, 100, 200]
-              });
-              console.log('✅ Enviada via API!');
-            }
-          } else {
+        if ('serviceWorker' in navigator && 'PushManager' in window) {
+          try {
+            const registration = await navigator.serviceWorker.ready;
+            console.log('✅ Service Worker pronto');
+            
+            await registration.showNotification(notif.title, {
+              body: notif.message,
+              icon: 'https://base44.app/api/apps/6904da724b4ce40db58404e7/files/public/6904da724b4ce40db58404e7/901d97ae0_Untitleddesign3.png',
+              badge: 'https://base44.app/api/apps/6904da724b4ce40db58404e7/files/public/6904da724b4ce40db58404e7/901d97ae0_Untitleddesign3.png',
+              vibrate: [200, 100, 200],
+              tag: `notification-${notif.id}`,
+              requireInteraction: false
+            });
+            console.log('✅ Notificação enviada via SW!');
+          } catch (swError) {
+            console.error('⚠️ Erro no SW, tentando API direta:', swError);
             new Notification(notif.title, {
               body: notif.message,
               icon: 'https://base44.app/api/apps/6904da724b4ce40db58404e7/files/public/6904da724b4ce40db58404e7/901d97ae0_Untitleddesign3.png',
               vibrate: [200, 100, 200]
             });
-            console.log('✅ Enviada!');
+            console.log('✅ Notificação enviada via API!');
           }
+        } else {
+          new Notification(notif.title, {
+            body: notif.message,
+            icon: 'https://base44.app/api/apps/6904da724b4ce40db58404e7/files/public/6904da724b4ce40db58404e7/901d97ae0_Untitleddesign3.png',
+            vibrate: [200, 100, 200]
+          });
+          console.log('✅ Notificação enviada via API direta!');
+        }
 
-          localStorage.setItem(`notif-shown-${notif.id}`, 'true');
-          
-          if (notif.schedule_type === 'recurring') {
-            localStorage.setItem(`notif-last-shown-${notif.id}`, new Date().toDateString());
-          }
+        localStorage.setItem(`notif-shown-${notif.id}`, 'true');
+        
+        if (notif.schedule_type === 'recurring') {
+          localStorage.setItem(`notif-last-shown-${notif.id}`, new Date().toDateString());
         }
       } catch (error) {
-        console.error('❌ Erro:', error);
+        console.error('❌ Erro ao enviar notificação:', error);
       }
     });
   }, [notifications, user]);
