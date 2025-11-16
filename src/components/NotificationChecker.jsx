@@ -15,7 +15,7 @@ export default function NotificationChecker({ user }) {
 
     const isPremium = user.subscription_status === 'premium';
 
-    console.log('🔍 Verificando notificações...', notifications.length, 'encontradas');
+    console.log('🔍 Verificando notificações...', notifications.length);
 
     const notificationsToShow = notifications.filter(notif => {
       console.log('📋 Verificando:', notif.title);
@@ -45,13 +45,13 @@ export default function NotificationChecker({ user }) {
         const nowDate = new Date();
         const ageInSeconds = Math.floor(Math.abs(nowDate.getTime() - sentDate.getTime()) / 1000);
         
-        console.log(`  📅 Idade: ${ageInSeconds}s (limite: 120s)`);
+        console.log(`  📅 Idade: ${ageInSeconds}s`);
         
         if (ageInSeconds <= 120) {
-          console.log('  ✅ Notificação NOVA!');
+          console.log('  ✅ NOVA!');
           return true;
         } else {
-          console.log(`  ❌ Muito antiga (${ageInSeconds}s)`);
+          console.log(`  ❌ Antiga`);
           return false;
         }
       }
@@ -60,7 +60,7 @@ export default function NotificationChecker({ user }) {
         const scheduledDate = new Date(notif.scheduled_date);
         const nowDate = new Date();
         if (nowDate >= scheduledDate && notif.status === 'pending') {
-          console.log('  ✅ Hora de enviar agendada!');
+          console.log('  ✅ Agendada!');
           return true;
         }
       }
@@ -76,7 +76,7 @@ export default function NotificationChecker({ user }) {
           scheduledTime.setHours(parseInt(hours), parseInt(minutes), 0, 0);
           
           if (new Date() >= scheduledTime) {
-            console.log('  ✅ Recorrente hora certa!');
+            console.log('  ✅ Recorrente!');
             return true;
           }
         }
@@ -85,56 +85,30 @@ export default function NotificationChecker({ user }) {
       return false;
     });
 
-    console.log('📬 Para mostrar:', notificationsToShow.length);
+    console.log('📬 Mostrar:', notificationsToShow.length);
 
     notificationsToShow.forEach(async (notif) => {
-      console.log('🔔 Mostrando:', notif.title);
+      console.log('🔔 Enviando:', notif.title);
       
       if (!('Notification' in window)) {
-        console.error('❌ Notification API não suportada');
+        console.error('❌ API não suportada');
         return;
       }
 
-      const permission = Notification.permission;
-      console.log('📊 Permissão atual:', permission);
-
-      if (permission !== 'granted') {
-        console.error('❌ Permissão não concedida');
+      if (Notification.permission !== 'granted') {
+        console.error('❌ Permissão:', Notification.permission);
         return;
       }
 
       try {
-        if ('serviceWorker' in navigator && 'PushManager' in window) {
-          try {
-            const registration = await navigator.serviceWorker.ready;
-            console.log('✅ Service Worker pronto');
-            
-            await registration.showNotification(notif.title, {
-              body: notif.message,
-              icon: 'https://base44.app/api/apps/6904da724b4ce40db58404e7/files/public/6904da724b4ce40db58404e7/901d97ae0_Untitleddesign3.png',
-              badge: 'https://base44.app/api/apps/6904da724b4ce40db58404e7/files/public/6904da724b4ce40db58404e7/901d97ae0_Untitleddesign3.png',
-              vibrate: [200, 100, 200],
-              tag: `notification-${notif.id}`,
-              requireInteraction: false
-            });
-            console.log('✅ Notificação enviada via SW!');
-          } catch (swError) {
-            console.error('⚠️ Erro no SW, tentando API direta:', swError);
-            new Notification(notif.title, {
-              body: notif.message,
-              icon: 'https://base44.app/api/apps/6904da724b4ce40db58404e7/files/public/6904da724b4ce40db58404e7/901d97ae0_Untitleddesign3.png',
-              vibrate: [200, 100, 200]
-            });
-            console.log('✅ Notificação enviada via API!');
-          }
-        } else {
-          new Notification(notif.title, {
-            body: notif.message,
-            icon: 'https://base44.app/api/apps/6904da724b4ce40db58404e7/files/public/6904da724b4ce40db58404e7/901d97ae0_Untitleddesign3.png',
-            vibrate: [200, 100, 200]
-          });
-          console.log('✅ Notificação enviada via API direta!');
-        }
+        // Tentar com Notification API direta (mais confiável)
+        new Notification(notif.title, {
+          body: notif.message,
+          icon: 'https://base44.app/api/apps/6904da724b4ce40db58404e7/files/public/6904da724b4ce40db58404e7/901d97ae0_Untitleddesign3.png',
+          vibrate: [200, 100, 200],
+          tag: `notif-${notif.id}`
+        });
+        console.log('✅ Enviada!');
 
         localStorage.setItem(`notif-shown-${notif.id}`, 'true');
         
@@ -142,7 +116,7 @@ export default function NotificationChecker({ user }) {
           localStorage.setItem(`notif-last-shown-${notif.id}`, new Date().toDateString());
         }
       } catch (error) {
-        console.error('❌ Erro ao enviar notificação:', error);
+        console.error('❌ Erro:', error.message);
       }
     });
   }, [notifications, user]);

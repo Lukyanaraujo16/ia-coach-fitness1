@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import { manifestData } from './pwa/manifest-data';
-import { serviceWorkerCode } from './pwa/service-worker-code';
 import InstallPWAModal from './pwa/InstallPWAModal';
 import NotificationPermissionModal from './pwa/NotificationPermissionModal';
 import { base44 } from '@/api/base44Client';
@@ -21,41 +20,36 @@ export default function PWAManager() {
       document.head.appendChild(manifestLink);
     }
     manifestLink.href = manifestURL;
-    console.log('✅ Manifest criado:', manifestURL);
+    console.log('✅ Manifest criado');
 
-    if ('serviceWorker' in navigator && 'PushManager' in window) {
-      console.log('✅ Service Worker e Push API suportados');
-      
-      const swBlob = new Blob([serviceWorkerCode], { type: 'application/javascript' });
-      const swURL = URL.createObjectURL(swBlob);
+    if ('serviceWorker' in navigator) {
+      console.log('✅ Service Worker suportado');
       
       navigator.serviceWorker
-        .register(swURL, { scope: '/' })
+        .register('/service-worker.js', { scope: '/' })
         .then(async (registration) => {
-          console.log('✅ Service Worker registrado:', registration);
+          console.log('✅ Service Worker registrado:', registration.scope);
           
           if ('Notification' in window) {
             console.log('✅ Notificações suportadas');
-            console.log('📊 Status atual:', Notification.permission);
+            console.log('📊 Status:', Notification.permission);
             
             const hasAskedPermission = localStorage.getItem('notification-permission-asked');
             const isPWA = window.matchMedia('(display-mode: standalone)').matches || 
                           window.navigator.standalone === true;
             
-            console.log('📱 Rodando como PWA?', isPWA);
-            console.log('📋 Já pediu antes?', hasAskedPermission);
+            console.log('📱 PWA?', isPWA);
             
-            // Salvar subscription se permissão já está concedida
             if (Notification.permission === 'granted') {
               try {
                 const currentUser = await base44.auth.me();
-                console.log('👤 Usuário logado:', currentUser.email);
+                console.log('👤 Usuário:', currentUser.email);
                 
                 const existingSubscriptions = await base44.entities.PushSubscription.list();
                 const userSubscription = existingSubscriptions.find(s => s.user_email === currentUser.email);
                 
                 if (!userSubscription) {
-                  console.log('💾 Salvando subscription do usuário...');
+                  console.log('💾 Salvando subscription...');
                   await base44.entities.PushSubscription.create({
                     user_email: currentUser.email,
                     subscription: { enabled: true },
@@ -63,29 +57,26 @@ export default function PWAManager() {
                   });
                   console.log('✅ Subscription salva!');
                 } else {
-                  console.log('✅ Subscription já existe');
+                  console.log('✅ Subscription existe');
                 }
               } catch (error) {
-                console.log('⚠️ Usuário não logado ou erro ao salvar subscription:', error);
+                console.log('⚠️ Erro subscription:', error.message);
               }
             }
             
             if (isPWA && Notification.permission === 'default' && !hasAskedPermission) {
-              console.log('⏱️ Agendando modal de notificação em 3s');
+              console.log('⏱️ Modal em 3s');
               setTimeout(() => {
-                console.log('🔔 Mostrando modal de notificação');
                 setShowNotificationModal(true);
               }, 3000);
             }
-          } else {
-            console.log('❌ Notificações NÃO suportadas');
           }
         })
         .catch((error) => {
-          console.error('❌ Erro ao registrar Service Worker:', error);
+          console.error('❌ Erro SW:', error);
         });
     } else {
-      console.log('❌ Service Worker ou Push API NÃO suportados');
+      console.log('❌ Service Worker não suportado');
     }
 
     return () => {
