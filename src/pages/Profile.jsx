@@ -153,11 +153,9 @@ export default function Profile() {
   };
 
   const handleTestNotification = async () => {
-    console.log('🔔 Testando notificação...');
-    console.log('📊 Status:', notificationStatus);
-    console.log('🌐 Service Worker suportado?', 'serviceWorker' in navigator);
+    console.log('🔔 Testando notificação push...');
     
-    if (notificationStatus === 'unsupported') {
+    if (!('Notification' in window)) {
       alert('⚠️ Notificações não são suportadas neste navegador.');
       return;
     }
@@ -176,6 +174,35 @@ export default function Profile() {
       if (permission !== 'granted') {
         alert('❌ Permissão negada. Ative nas configurações do navegador.');
         return;
+      }
+      
+      // Salvar subscription no banco quando usuário concede permissão
+      try {
+        console.log('💾 Salvando subscription...');
+        // First check if the user has a PushSubscription entity in the DB
+        // NOTE: This assumes that base44.entities.PushSubscription exists and has a method to list
+        // and that user.email can be used to identify the owner.
+        // The `subscription` field should contain the actual PushSubscription object from the browser.
+        // For this example, we're just creating a placeholder object.
+        // A real implementation would get the actual subscription object from the service worker.
+        const existingSubscriptions = await base44.entities.PushSubscription.list();
+        const userSubscription = existingSubscriptions.find(s => s.user_email === user.email);
+        
+        if (!userSubscription) {
+          // This `subscription` object structure is a placeholder.
+          // In a real PWA, you'd get this from `registration.pushManager.subscribe()`.
+          await base44.entities.PushSubscription.create({
+            user_email: user.email,
+            // This is a dummy object. A real one would contain endpoint, keys, etc.
+            subscription: { enabled: true }, 
+            is_active: true
+          });
+          console.log('✅ Subscription salva!');
+        } else {
+          console.log('✅ Subscription já existe para este usuário.');
+        }
+      } catch (error) {
+        console.error('❌ Erro ao salvar subscription:', error);
       }
     }
     

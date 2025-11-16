@@ -45,13 +45,12 @@ export default function PWAManager() {
             console.log('📱 Rodando como PWA?', isPWA);
             console.log('📋 Já pediu antes?', hasAskedPermission);
             
-            // Verificar se permissão foi concedida e salvar subscription
+            // Salvar subscription se permissão já está concedida
             if (Notification.permission === 'granted') {
               try {
                 const currentUser = await base44.auth.me();
                 console.log('👤 Usuário logado:', currentUser.email);
                 
-                // Verificar se já tem subscription salva
                 const existingSubscriptions = await base44.entities.PushSubscription.list();
                 const userSubscription = existingSubscriptions.find(s => s.user_email === currentUser.email);
                 
@@ -63,6 +62,8 @@ export default function PWAManager() {
                     is_active: true
                   });
                   console.log('✅ Subscription salva!');
+                } else {
+                  console.log('✅ Subscription já existe');
                 }
               } catch (error) {
                 console.log('⚠️ Usuário não logado ou erro ao salvar subscription:', error);
