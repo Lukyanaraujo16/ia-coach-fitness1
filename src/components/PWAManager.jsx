@@ -30,10 +30,11 @@ export default function PWAManager() {
       const swBlob = new Blob([serviceWorkerCode], { type: 'application/javascript' });
       const swURL = URL.createObjectURL(swBlob);
       
+      // Remover scope para funcionar com Blob URL
       navigator.serviceWorker
         .register(swURL)
         .then((registration) => {
-          console.log('✅ Service Worker registrado:', registration.scope);
+          console.log('✅ Service Worker registrado:', registration);
           
           // Verificar suporte a notificações
           if ('Notification' in window) {

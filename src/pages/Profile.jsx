@@ -19,7 +19,7 @@ export default function Profile() {
   const [newName, setNewName] = useState("");
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showResetOnboardingConfirm, setShowResetOnboardingConfirm] = useState(false);
-  const [notificationStatus, setNotificationStatus] = useState('loading'); // Added state
+  const [notificationStatus, setNotificationStatus] = useState('loading');
 
   const { data: selectedWorkout } = useQuery({
     queryKey: ['selected-workout', user?.selected_workout_id],
@@ -53,7 +53,7 @@ export default function Profile() {
     };
     loadUser();
     
-    // Verificar status das notificações - Added logic
+    // Verificar status das notificações
     if ('Notification' in window) {
       const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream; // More robust iOS check
       if (isIOS) {
@@ -157,7 +157,10 @@ export default function Profile() {
     resetOnboardingMutation.mutate();
   };
 
-  const handleTestNotification = async () => { // Added handler
+  const handleTestNotification = async () => {
+    console.log('🔔 Testando notificação...');
+    console.log('📊 Status:', notificationStatus);
+    
     if (notificationStatus === 'unsupported') {
       alert('⚠️ Notificações não são suportadas neste dispositivo/navegador.\n\niOS Safari não suporta notificações web.');
       return;
@@ -169,7 +172,9 @@ export default function Profile() {
     }
     
     if (notificationStatus === 'default') {
+      console.log('📋 Solicitando permissão...');
       const permission = await Notification.requestPermission();
+      console.log('✅ Permissão:', permission);
       setNotificationStatus(permission);
       
       if (permission !== 'granted') {
@@ -178,9 +183,13 @@ export default function Profile() {
       }
     }
     
-    if ('serviceWorker' in navigator && Notification.permission === 'granted') {
-      try {
+    try {
+      console.log('🚀 Enviando notificação...');
+      
+      if ('serviceWorker' in navigator) {
         const registration = await navigator.serviceWorker.ready;
+        console.log('✅ Service Worker pronto:', registration);
+        
         await registration.showNotification('🔥 Teste de Notificação', {
           body: 'Perfeito! As notificações estão funcionando. Você receberá lembretes de treino!',
           icon: 'https://base44.app/api/apps/6904da724b4ce40db58404e7/files/public/6904da724b4ce40db58404e7/901d97ae0_Untitleddesign3.png',
@@ -189,12 +198,20 @@ export default function Profile() {
           tag: 'test',
           requireInteraction: false
         });
-      } catch (error) {
-        console.error("Erro ao mostrar notificação de teste:", error);
-        alert("Erro ao enviar notificação de teste. Verifique o Service Worker e as permissões.");
+        
+        console.log('✅ Notificação enviada!');
+      } else {
+        console.log('⚠️ Service Worker não disponível, enviando via Notification API direta.');
+        // Fallback for browsers without Service Worker support or if SW is not registered
+        new Notification('🔥 Teste de Notificação', {
+          body: 'Perfeito! As notificações estão funcionando.',
+          icon: 'https://base44.app/api/apps/6904da724b4ce40db58404e7/files/public/6904da724b4ce40db58404e7/901d97ae0_Untitleddesign3.png'
+        });
+        console.log('✅ Notificação enviada via API direta!');
       }
-    } else if (Notification.permission === 'granted') {
-        alert('Notificações estão ativadas, mas o Service Worker pode não estar disponível ou registrado para enviar a notificação de teste.');
+    } catch (error) {
+      console.error('❌ Erro ao enviar notificação:', error);
+      alert('Erro ao enviar notificação: ' + error.message);
     }
   };
 
@@ -312,7 +329,7 @@ export default function Profile() {
                 <span className="text-yellow-400 text-sm">Não configuradas</span>
               )}
               {notificationStatus === 'unsupported' && (
-                <span className="text-orange-400 text-sm">⚠️ Não suportadas</span>
+                <span className="text-orange-400 text-sm">⚠️ Não suportadas (iOS)</span>
               )}
                {notificationStatus === 'loading' && (
                 <span className="text-slate-400 text-sm">Carregando...</span>
@@ -321,14 +338,14 @@ export default function Profile() {
             <Button
               onClick={handleTestNotification}
               className="bg-purple-600 hover:bg-purple-700"
-              disabled={notificationStatus === 'loading' || notificationStatus === 'denied'}
+              // Removed disabled prop from original, as per outline to allow re-attempts
             >
               {notificationStatus === 'granted' ? 'Testar' : 'Ativar'}
             </Button>
           </div>
           {notificationStatus === 'unsupported' && (
             <p className="text-orange-300 text-xs">
-              ℹ️ Seu navegador/dispositivo não suporta notificações web (ex: iOS Safari).
+              ℹ️ iOS Safari não suporta notificações web. Use o app no Android ou Desktop.
             </p>
           )}
           {notificationStatus === 'denied' && (
@@ -388,7 +405,7 @@ export default function Profile() {
         <Button
           variant="outline"
           className="w-full justify-start bg-slate-800 border-slate-700 text-slate-200 hover:bg-slate-700 hover:text-white"
-          onClick={() => navigate(createPageUrl("Settings"))} // Added navigation for Settings
+          onClick={() => navigate(createPageUrl("Settings"))} // Preserved original navigation
         >
           <Settings className="w-5 h-5 mr-3" />
           Configurações
