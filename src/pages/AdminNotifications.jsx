@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -53,6 +54,8 @@ export default function AdminNotifications() {
 
   const sendNotificationMutation = useMutation({
     mutationFn: async (data) => {
+      console.log('📤 Iniciando envio de notificação:', data);
+      
       // Criar registro da notificação
       const notification = await base44.entities.NotificationSchedule.create({
         ...data,
@@ -60,6 +63,8 @@ export default function AdminNotifications() {
         sent_count: data.schedule_type === 'immediate' ? 1 : 0,
         last_sent_date: data.schedule_type === 'immediate' ? new Date().toISOString() : null
       });
+      
+      console.log('✅ Notificação registrada:', notification.id);
 
       // Se for envio imediato, enviar emails
       if (data.schedule_type === 'immediate') {
@@ -70,24 +75,37 @@ export default function AdminNotifications() {
           return false;
         });
 
-        // Enviar emails para todos os usuários alvo
-        const emailPromises = targetUsers.map(targetUser => 
-          base44.integrations.Core.SendEmail({
-            to: targetUser.email,
-            subject: `🔔 ${data.title}`,
-            body: `
-              <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-                <h2 style="color: #1E40AF;">${data.title}</h2>
-                <p style="color: #334155; font-size: 16px; line-height: 1.6;">${data.message}</p>
-                <br>
-                <p style="color: #64748B; font-size: 14px;">Enviado via IA Coach Fitness</p>
-              </div>
-            `,
-            from_name: "IA Coach Fitness"
-          })
-        );
+        console.log(`📧 Enviando para ${targetUsers.length} usuários`);
 
-        await Promise.all(emailPromises);
+        // Enviar emails para todos os usuários alvo
+        const emailPromises = targetUsers.map(async (targetUser, index) => {
+          try {
+            console.log(`📨 Enviando email ${index + 1}/${targetUsers.length} para:`, targetUser.email);
+            
+            const result = await base44.integrations.Core.SendEmail({
+              to: targetUser.email,
+              subject: `🔔 ${data.title}`,
+              body: `
+                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                  <h2 style="color: #1E40AF;">${data.title}</h2>
+                  <p style="color: #334155; font-size: 16px; line-height: 1.6;">${data.message}</p>
+                  <br>
+                  <p style="color: #64748B; font-size: 14px;">Enviado via IA Coach Fitness</p>
+                </div>
+              `,
+              from_name: "IA Coach Fitness"
+            });
+            
+            console.log(`✅ Email enviado para ${targetUser.email}:`, result);
+            return result;
+          } catch (error) {
+            console.error(`❌ Erro ao enviar email para ${targetUser.email}:`, error);
+            throw error;
+          }
+        });
+
+        const results = await Promise.all(emailPromises);
+        console.log('✅ Todos os emails enviados:', results.length);
       }
 
       return notification;
@@ -103,11 +121,11 @@ export default function AdminNotifications() {
         recurrence_pattern: "daily",
         recurrence_time: "09:00"
       });
-      toast.success('Notificação enviada com sucesso!');
+      toast.success('✅ Notificação enviada com sucesso!');
     },
     onError: (error) => {
-      console.error('Erro ao enviar notificação:', error);
-      toast.error('Erro ao enviar notificação');
+      console.error('❌ Erro ao enviar notificação:', error);
+      toast.error('❌ Erro ao enviar: ' + error.message);
     }
   });
 
@@ -130,21 +148,28 @@ export default function AdminNotifications() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    console.log('🚀 Formulário submetido:', formData);
+    
     if (!formData.title || !formData.message) {
-      toast.error('Preencha título e mensagem');
+      toast.error('❌ Preencha título e mensagem');
       return;
     }
+    
     sendNotificationMutation.mutate(formData);
   };
 
   const handleTestNotification = async () => {
+    console.log('🧪 Testando notificação...');
+    
     if (!formData.title || !formData.message) {
-      toast.error('Preencha título e mensagem para testar');
+      toast.error('❌ Preencha título e mensagem para testar');
       return;
     }
 
     try {
-      await base44.integrations.Core.SendEmail({
+      console.log('📧 Enviando email de teste para:', user.email);
+      
+      const result = await base44.integrations.Core.SendEmail({
         to: user.email,
         subject: `🧪 TESTE: ${formData.title}`,
         body: `
@@ -158,9 +183,12 @@ export default function AdminNotifications() {
         `,
         from_name: "IA Coach Fitness"
       });
-      toast.success('Teste enviado para seu email!');
+      
+      console.log('✅ Teste enviado com sucesso:', result);
+      toast.success('✅ Teste enviado para seu email!');
     } catch (error) {
-      toast.error('Erro ao enviar teste');
+      console.error('❌ Erro ao enviar teste:', error);
+      toast.error('❌ Erro ao enviar: ' + error.message);
     }
   };
 
@@ -217,7 +245,6 @@ export default function AdminNotifications() {
         </div>
       </div>
 
-      {/* Form */}
       <Card className="bg-slate-900/50 border-slate-800">
         <CardHeader>
           <CardTitle className="text-white flex items-center gap-2">
@@ -335,14 +362,13 @@ export default function AdminNotifications() {
                 className="flex-1 bg-blue-600 hover:bg-blue-700"
               >
                 <Send className="w-4 h-4 mr-2" />
-                {formData.schedule_type === 'immediate' ? 'Enviar Agora' : 'Agendar Notificação'}
+                {sendNotificationMutation.isPending ? 'Enviando...' : formData.schedule_type === 'immediate' ? 'Enviar Agora' : 'Agendar Notificação'}
               </Button>
             </div>
           </form>
         </CardContent>
       </Card>
 
-      {/* Recurring Notifications */}
       {recurringNotifications.length > 0 && (
         <Card className="bg-slate-900/50 border-slate-800">
           <CardHeader>
@@ -395,7 +421,6 @@ export default function AdminNotifications() {
         </Card>
       )}
 
-      {/* Pending Notifications */}
       {pendingNotifications.length > 0 && (
         <Card className="bg-slate-900/50 border-slate-800">
           <CardHeader>
@@ -428,7 +453,6 @@ export default function AdminNotifications() {
         </Card>
       )}
 
-      {/* History */}
       <Card className="bg-slate-900/50 border-slate-800">
         <CardHeader>
           <CardTitle className="text-white flex items-center gap-2">
