@@ -6,6 +6,7 @@ import { Home, Dumbbell, TrendingUp, Users, User, Shield, Apple, Sparkles, Menu,
 import { Button } from "@/components/ui/button";
 import TrialChecker from "./components/TrialChecker";
 import PWAManager from "./components/PWAManager";
+import NotificationChecker from "./components/NotificationChecker";
 
 export default function Layout({ children, currentPageName }) {
   const location = useLocation();
@@ -153,6 +154,7 @@ export default function Layout({ children, currentPageName }) {
   return (
     <div className={`min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 ${!hideNavigation ? 'pb-20 md:pb-0' : ''}`}>
       <PWAManager />
+      {user && <NotificationChecker user={user} />}
 
       <style>{`
         :root {

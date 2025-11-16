@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -10,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Bell, Send, Clock, Users, Calendar, CheckCircle, XCircle, AlertCircle, Repeat } from "lucide-react";
+import { Bell, Send, Clock, Users, Calendar, CheckCircle, XCircle, AlertCircle, Repeat, Info } from "lucide-react";
 import { toast } from "sonner";
 
 export default function AdminNotifications() {
@@ -54,7 +53,7 @@ export default function AdminNotifications() {
 
   const sendNotificationMutation = useMutation({
     mutationFn: async (data) => {
-      console.log('📤 Iniciando envio de notificação:', data);
+      console.log('📤 Criando registro de notificação:', data);
       
       // Criar registro da notificação
       const notification = await base44.entities.NotificationSchedule.create({
@@ -64,50 +63,7 @@ export default function AdminNotifications() {
         last_sent_date: data.schedule_type === 'immediate' ? new Date().toISOString() : null
       });
       
-      console.log('✅ Notificação registrada:', notification.id);
-
-      // Se for envio imediato, enviar emails
-      if (data.schedule_type === 'immediate') {
-        const targetUsers = users.filter(u => {
-          if (data.target_audience === 'all') return true;
-          if (data.target_audience === 'premium') return u.subscription_status === 'premium';
-          if (data.target_audience === 'free') return u.subscription_status !== 'premium';
-          return false;
-        });
-
-        console.log(`📧 Enviando para ${targetUsers.length} usuários`);
-
-        // Enviar emails para todos os usuários alvo
-        const emailPromises = targetUsers.map(async (targetUser, index) => {
-          try {
-            console.log(`📨 Enviando email ${index + 1}/${targetUsers.length} para:`, targetUser.email);
-            
-            const result = await base44.integrations.Core.SendEmail({
-              to: targetUser.email,
-              subject: `🔔 ${data.title}`,
-              body: `
-                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-                  <h2 style="color: #1E40AF;">${data.title}</h2>
-                  <p style="color: #334155; font-size: 16px; line-height: 1.6;">${data.message}</p>
-                  <br>
-                  <p style="color: #64748B; font-size: 14px;">Enviado via IA Coach Fitness</p>
-                </div>
-              `,
-              from_name: "IA Coach Fitness"
-            });
-            
-            console.log(`✅ Email enviado para ${targetUser.email}:`, result);
-            return result;
-          } catch (error) {
-            console.error(`❌ Erro ao enviar email para ${targetUser.email}:`, error);
-            throw error;
-          }
-        });
-
-        const results = await Promise.all(emailPromises);
-        console.log('✅ Todos os emails enviados:', results.length);
-      }
-
+      console.log('✅ Notificação salva no banco:', notification.id);
       return notification;
     },
     onSuccess: () => {
@@ -121,11 +77,11 @@ export default function AdminNotifications() {
         recurrence_pattern: "daily",
         recurrence_time: "09:00"
       });
-      toast.success('✅ Notificação enviada com sucesso!');
+      toast.success('✅ Notificação registrada! Os usuários verão quando abrirem o app.');
     },
     onError: (error) => {
-      console.error('❌ Erro ao enviar notificação:', error);
-      toast.error('❌ Erro ao enviar: ' + error.message);
+      console.error('❌ Erro ao registrar notificação:', error);
+      toast.error('❌ Erro: ' + error.message);
     }
   });
 
@@ -148,7 +104,7 @@ export default function AdminNotifications() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    console.log('🚀 Formulário submetido:', formData);
+    console.log('🚀 Enviando notificação:', formData);
     
     if (!formData.title || !formData.message) {
       toast.error('❌ Preencha título e mensagem');
@@ -159,7 +115,7 @@ export default function AdminNotifications() {
   };
 
   const handleTestNotification = async () => {
-    console.log('🧪 Testando notificação...');
+    console.log('🧪 Testando notificação push local...');
     
     if (!formData.title || !formData.message) {
       toast.error('❌ Preencha título e mensagem para testar');
@@ -167,28 +123,63 @@ export default function AdminNotifications() {
     }
 
     try {
-      console.log('📧 Enviando email de teste para:', user.email);
-      
-      const result = await base44.integrations.Core.SendEmail({
-        to: user.email,
-        subject: `🧪 TESTE: ${formData.title}`,
-        body: `
-          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-            <div style="background: #FEF3C7; padding: 10px; border-radius: 5px; margin-bottom: 15px;">
-              <p style="color: #92400E; margin: 0;">⚠️ Esta é uma notificação de TESTE</p>
-            </div>
-            <h2 style="color: #1E40AF;">${formData.title}</h2>
-            <p style="color: #334155; font-size: 16px; line-height: 1.6;">${formData.message}</p>
-          </div>
-        `,
-        from_name: "IA Coach Fitness"
-      });
-      
-      console.log('✅ Teste enviado com sucesso:', result);
-      toast.success('✅ Teste enviado para seu email!');
+      // Verificar se notificações são suportadas
+      if (!('Notification' in window)) {
+        toast.error('❌ Notificações não suportadas neste navegador');
+        return;
+      }
+
+      // Solicitar permissão se necessário
+      let permission = Notification.permission;
+      if (permission === 'default') {
+        console.log('📋 Solicitando permissão...');
+        permission = await Notification.requestPermission();
+      }
+
+      if (permission !== 'granted') {
+        toast.error('❌ Permissão de notificações negada');
+        return;
+      }
+
+      console.log('✅ Permissão concedida, enviando notificação...');
+
+      // Tentar usar Service Worker primeiro
+      if ('serviceWorker' in navigator && 'PushManager' in window) {
+        try {
+          const registration = await navigator.serviceWorker.ready;
+          await registration.showNotification(formData.title, {
+            body: formData.message,
+            icon: 'https://base44.app/api/apps/6904da724b4ce40db58404e7/files/public/6904da724b4ce40db58404e7/901d97ae0_Untitleddesign3.png',
+            badge: 'https://base44.app/api/apps/6904da724b4ce40db58404e7/files/public/6904da724b4ce40db58404e7/901d97ae0_Untitleddesign3.png',
+            vibrate: [200, 100, 200],
+            tag: 'test-notification',
+            requireInteraction: false
+          });
+          console.log('✅ Notificação enviada via Service Worker!');
+        } catch (swError) {
+          console.log('⚠️ Service Worker falhou, usando Notification API direta:', swError);
+          // Fallback para Notification API
+          new Notification(formData.title, {
+            body: formData.message,
+            icon: 'https://base44.app/api/apps/6904da724b4ce40db58404e7/files/public/6904da724b4ce40db58404e7/901d97ae0_Untitleddesign3.png',
+            vibrate: [200, 100, 200]
+          });
+          console.log('✅ Notificação enviada via API direta!');
+        }
+      } else {
+        // Usar Notification API direta
+        new Notification(formData.title, {
+          body: formData.message,
+          icon: 'https://base44.app/api/apps/6904da724b4ce40db58404e7/files/public/6904da724b4ce40db58404e7/901d97ae0_Untitleddesign3.png',
+          vibrate: [200, 100, 200]
+        });
+        console.log('✅ Notificação enviada via API direta!');
+      }
+
+      toast.success('✅ Notificação de teste enviada!');
     } catch (error) {
-      console.error('❌ Erro ao enviar teste:', error);
-      toast.error('❌ Erro ao enviar: ' + error.message);
+      console.error('❌ Erro ao testar notificação:', error);
+      toast.error('❌ Erro: ' + error.message);
     }
   };
 
@@ -235,8 +226,8 @@ export default function AdminNotifications() {
     <div className="py-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-white">Gerenciar Notificações</h1>
-          <p className="text-slate-400">Envie notificações push para seus usuários</p>
+          <h1 className="text-3xl font-bold text-white">Gerenciar Notificações Push</h1>
+          <p className="text-slate-400">Envie notificações para seus usuários no PWA</p>
         </div>
         <div className="flex items-center gap-2 px-4 py-2 bg-blue-900/30 rounded-lg border border-blue-700/50">
           <Users className="w-5 h-5 text-blue-400" />
@@ -245,11 +236,26 @@ export default function AdminNotifications() {
         </div>
       </div>
 
+      {/* Info Alert */}
+      <Card className="bg-blue-900/20 border-blue-700/50">
+        <CardContent className="p-4 flex items-start gap-3">
+          <Info className="w-5 h-5 text-blue-400 flex-shrink-0 mt-0.5" />
+          <div className="flex-1">
+            <h4 className="text-blue-400 font-semibold mb-1">Como funcionam as notificações</h4>
+            <p className="text-slate-300 text-sm">
+              As notificações são salvas no banco de dados e serão exibidas para os usuários quando abrirem o PWA. 
+              Use "Testar Comigo" para ver uma prévia da notificação no seu navegador.
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Form */}
       <Card className="bg-slate-900/50 border-slate-800">
         <CardHeader>
           <CardTitle className="text-white flex items-center gap-2">
             <Bell className="w-5 h-5 text-blue-400" />
-            Nova Notificação
+            Nova Notificação Push
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -354,6 +360,7 @@ export default function AdminNotifications() {
                 onClick={handleTestNotification}
                 className="border-slate-700 text-slate-300"
               >
+                <Bell className="w-4 h-4 mr-2" />
                 Testar Comigo
               </Button>
               <Button
@@ -362,13 +369,14 @@ export default function AdminNotifications() {
                 className="flex-1 bg-blue-600 hover:bg-blue-700"
               >
                 <Send className="w-4 h-4 mr-2" />
-                {sendNotificationMutation.isPending ? 'Enviando...' : formData.schedule_type === 'immediate' ? 'Enviar Agora' : 'Agendar Notificação'}
+                {sendNotificationMutation.isPending ? 'Registrando...' : formData.schedule_type === 'immediate' ? 'Enviar Agora' : 'Agendar Notificação'}
               </Button>
             </div>
           </form>
         </CardContent>
       </Card>
 
+      {/* Recurring Notifications */}
       {recurringNotifications.length > 0 && (
         <Card className="bg-slate-900/50 border-slate-800">
           <CardHeader>
@@ -421,6 +429,7 @@ export default function AdminNotifications() {
         </Card>
       )}
 
+      {/* Pending Notifications */}
       {pendingNotifications.length > 0 && (
         <Card className="bg-slate-900/50 border-slate-800">
           <CardHeader>
@@ -453,11 +462,12 @@ export default function AdminNotifications() {
         </Card>
       )}
 
+      {/* History */}
       <Card className="bg-slate-900/50 border-slate-800">
         <CardHeader>
           <CardTitle className="text-white flex items-center gap-2">
             <Clock className="w-5 h-5 text-green-400" />
-            Histórico de Envios
+            Histórico de Notificações
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
