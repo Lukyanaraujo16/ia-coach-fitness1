@@ -15,18 +15,15 @@ export default function NotificationPermissionModal({ onClose }) {
         if (permission === 'granted') {
           console.log('✅ Permissão concedida');
           
-          // Enviar notificação de teste
-          if ('serviceWorker' in navigator) {
-            const registration = await navigator.serviceWorker.ready;
-            await registration.showNotification('IA Coach Fitness', {
-              body: '🎉 Perfeito! Agora você receberá lembretes de treino.',
-              icon: 'https://base44.app/api/apps/6904da724b4ce40db58404e7/files/public/6904da724b4ce40db58404e7/901d97ae0_Untitleddesign3.png',
-              badge: 'https://base44.app/api/apps/6904da724b4ce40db58404e7/files/public/6904da724b4ce40db58404e7/901d97ae0_Untitleddesign3.png',
-              vibrate: [200, 100, 200],
-              tag: 'welcome',
-              requireInteraction: false
-            });
-          }
+          // Enviar notificação de teste diretamente
+          new Notification('IA Coach Fitness', {
+            body: '🎉 Perfeito! Agora você receberá lembretes de treino.',
+            icon: 'https://base44.app/api/apps/6904da724b4ce40db58404e7/files/public/6904da724b4ce40db58404e7/901d97ae0_Untitleddesign3.png',
+            badge: 'https://base44.app/api/apps/6904da724b4ce40db58404e7/files/public/6904da724b4ce40db58404e7/901d97ae0_Untitleddesign3.png',
+            vibrate: [200, 100, 200],
+            tag: 'welcome',
+            requireInteraction: false
+          });
         }
         
         onClose();
