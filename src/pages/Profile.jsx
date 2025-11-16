@@ -20,6 +20,7 @@ export default function Profile() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showResetOnboardingConfirm, setShowResetOnboardingConfirm] = useState(false);
   const [notificationStatus, setNotificationStatus] = useState('loading');
+  const [isIOS, setIsIOS] = useState(false);
 
   const { data: selectedWorkout } = useQuery({
     queryKey: ['selected-workout', user?.selected_workout_id],
@@ -53,14 +54,12 @@ export default function Profile() {
     };
     loadUser();
     
+    const isiOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+    setIsIOS(isiOS);
+    
     // Verificar status das notificações
-    if ('Notification' in window) {
-      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent); // Changed iOS check
-      if (isIOS) {
-        setNotificationStatus('unsupported');
-      } else {
-        setNotificationStatus(Notification.permission);
-      }
+    if ('Notification' in window && !isiOS) {
+      setNotificationStatus(Notification.permission);
     } else {
       setNotificationStatus('unsupported');
     }
@@ -160,11 +159,6 @@ export default function Profile() {
   const handleTestNotification = async () => {
     console.log('🔔 Testando notificação...');
     console.log('📊 Status:', notificationStatus);
-    
-    if (notificationStatus === 'unsupported') {
-      alert('⚠️ Notificações não são suportadas neste dispositivo/navegador.\n\niOS Safari não suporta notificações web.');
-      return;
-    }
     
     if (notificationStatus === 'denied') {
       alert('⚠️ Você negou as notificações.\n\nPara ativar, vá em Configurações do navegador > Notificações > Permitir para este site.');
@@ -296,60 +290,50 @@ export default function Profile() {
         </CardContent>
       </Card>
 
-      {/* Test Notification Button */}
-      <Card className="bg-gradient-to-br from-purple-900/30 to-pink-900/30 border-purple-700/50">
-        <CardHeader>
-          <CardTitle className="text-white flex items-center gap-2">
-            <Bell className="w-5 h-5 text-purple-400" />
-            Notificações Push
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-slate-300 text-sm mb-1">Status:</p>
-              {notificationStatus === 'granted' && (
-                <div className="flex items-center gap-2 text-green-400 text-sm">
-                  <CheckCircle className="w-4 h-4" />
-                  <span>Ativadas</span>
-                </div>
-              )}
-              {notificationStatus === 'denied' && (
-                <div className="flex items-center gap-2 text-red-400 text-sm">
-                  <X className="w-4 h-4" />
-                  <span>Bloqueadas</span>
-                </div>
-              )}
-              {notificationStatus === 'default' && (
-                <span className="text-yellow-400 text-sm">Não configuradas</span>
-              )}
-              {notificationStatus === 'unsupported' && (
-                <span className="text-orange-400 text-sm">⚠️ Não suportadas (iOS)</span>
-              )}
-               {notificationStatus === 'loading' && (
-                <span className="text-slate-400 text-sm">Carregando...</span>
-              )}
+      {/* Notification Card - Only show if not iOS */}
+      {!isIOS && (
+        <Card className="bg-gradient-to-br from-purple-900/30 to-pink-900/30 border-purple-700/50">
+          <CardHeader>
+            <CardTitle className="text-white flex items-center gap-2">
+              <Bell className="w-5 h-5 text-purple-400" />
+              Notificações Push
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-slate-300 text-sm mb-1">Status:</p>
+                {notificationStatus === 'granted' && (
+                  <div className="flex items-center gap-2 text-green-400 text-sm">
+                    <CheckCircle className="w-4 h-4" />
+                    <span>Ativadas</span>
+                  </div>
+                )}
+                {notificationStatus === 'denied' && (
+                  <div className="flex items-center gap-2 text-red-400 text-sm">
+                    <X className="w-4 h-4" />
+                    <span>Bloqueadas</span>
+                  </div>
+                )}
+                {notificationStatus === 'default' && (
+                  <span className="text-yellow-400 text-sm">Não configuradas</span>
+                )}
+              </div>
+              <Button
+                onClick={handleTestNotification}
+                className="bg-purple-600 hover:bg-purple-700"
+              >
+                {notificationStatus === 'granted' ? 'Testar' : 'Ativar'}
+              </Button>
             </div>
-            <Button
-              onClick={handleTestNotification}
-              className="bg-purple-600 hover:bg-purple-700"
-              // Removed disabled prop from original, as per outline to allow re-attempts
-            >
-              {notificationStatus === 'granted' ? 'Testar' : 'Ativar'}
-            </Button>
-          </div>
-          {notificationStatus === 'unsupported' && (
-            <p className="text-orange-300 text-xs">
-              ℹ️ iOS Safari não suporta notificações web. Use o app no Android ou Desktop.
-            </p>
-          )}
-          {notificationStatus === 'denied' && (
-            <p className="text-red-300 text-xs">
-              💡 Vá em Configurações do navegador → Notificações → Permitir para este site
-            </p>
-          )}
-        </CardContent>
-      </Card>
+            {notificationStatus === 'denied' && (
+              <p className="text-red-300 text-xs">
+                💡 Vá em Configurações do navegador → Notificações → Permitir para este site
+              </p>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       {/* Current Workout */}
       {selectedWorkout && (

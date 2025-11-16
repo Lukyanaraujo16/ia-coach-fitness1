@@ -22,7 +22,7 @@ export default function PWAManager() {
     manifestLink.href = manifestURL;
     console.log('✅ Manifest criado:', manifestURL);
 
-    // Verificar suporte a notificações (sem Service Worker)
+    // Verificar suporte a notificações
     if ('Notification' in window) {
       console.log('✅ Notificações suportadas');
       console.log('📊 Status atual:', Notification.permission);
@@ -37,13 +37,19 @@ export default function PWAManager() {
         return;
       }
       
-      // Mostrar modal após 5 segundos se ainda não pediu
-      if (Notification.permission === 'default' && !hasAskedPermission) {
-        console.log('⏱️ Agendando modal de notificação em 5s');
+      // Verificar se está rodando como PWA
+      const isPWA = window.matchMedia('(display-mode: standalone)').matches || 
+                    window.navigator.standalone === true;
+      
+      console.log('📱 Rodando como PWA?', isPWA);
+      
+      // Mostrar modal após 3 segundos se for PWA, primeira vez e permissão não concedida
+      if (isPWA && Notification.permission === 'default' && !hasAskedPermission) {
+        console.log('⏱️ Agendando modal de notificação em 3s');
         setTimeout(() => {
           console.log('🔔 Mostrando modal de notificação');
           setShowNotificationModal(true);
-        }, 5000);
+        }, 3000);
       }
     } else {
       console.log('❌ Notificações NÃO suportadas');
