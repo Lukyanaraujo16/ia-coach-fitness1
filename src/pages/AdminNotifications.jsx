@@ -59,26 +59,25 @@ export default function AdminNotifications() {
 
   const sendImmediateNotificationMutation = useMutation({
     mutationFn: async (data) => {
-      console.log('🚀 Enviando notificação imediata (sem salvar):', data);
+      console.log('🚀 Enviando notificação imediata (broadcast):', data);
       
-      // Salvar no localStorage para broadcast
-      const notificationBroadcast = {
-        id: `immediate-${Date.now()}`,
+      const notificationData = {
+        id: `broadcast-${Date.now()}`,
         title: data.title,
         message: data.message,
         target_audience: data.target_audience,
         timestamp: Date.now()
       };
       
-      localStorage.setItem('broadcast-notification', JSON.stringify(notificationBroadcast));
+      // Usar BroadcastChannel para comunicação entre tabs
+      if ('BroadcastChannel' in window) {
+        const channel = new BroadcastChannel('push-notifications');
+        channel.postMessage(notificationData);
+        channel.close();
+        console.log('✅ Broadcast enviado via BroadcastChannel!');
+      }
       
-      // Limpar após 5 segundos
-      setTimeout(() => {
-        localStorage.removeItem('broadcast-notification');
-      }, 5000);
-      
-      console.log('✅ Broadcast enviado!');
-      return notificationBroadcast;
+      return notificationData;
     },
     onSuccess: () => {
       setFormData({
