@@ -20,7 +20,6 @@ export default function Profile() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showResetOnboardingConfirm, setShowResetOnboardingConfirm] = useState(false);
   const [notificationStatus, setNotificationStatus] = useState('loading');
-  const [isIOS, setIsIOS] = useState(false);
 
   const { data: selectedWorkout } = useQuery({
     queryKey: ['selected-workout', user?.selected_workout_id],
@@ -54,11 +53,8 @@ export default function Profile() {
     };
     loadUser();
     
-    const isiOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-    setIsIOS(isiOS);
-    
     // Verificar status das notificações
-    if ('Notification' in window && !isiOS) {
+    if ('Notification' in window) {
       setNotificationStatus(Notification.permission);
     } else {
       setNotificationStatus('unsupported');
@@ -160,6 +156,11 @@ export default function Profile() {
     console.log('🔔 Testando notificação...');
     console.log('📊 Status:', notificationStatus);
     
+    if (notificationStatus === 'unsupported') {
+      alert('⚠️ Notificações não são suportadas neste navegador.');
+      return;
+    }
+    
     if (notificationStatus === 'denied') {
       alert('⚠️ Você negou as notificações.\n\nPara ativar, vá em Configurações do navegador > Notificações > Permitir para este site.');
       return;
@@ -178,26 +179,29 @@ export default function Profile() {
     }
     
     try {
-      console.log('🚀 Enviando notificação direta...');
+      console.log('🚀 Enviando notificação...');
       
-      const notification = new Notification('🔥 Teste de Notificação', {
-        body: 'Perfeito! As notificações estão funcionando. Você receberá lembretes de treino!',
-        icon: 'https://base44.app/api/apps/6904da724b4ce40db58404e7/files/public/6904da724b4ce40db58404e7/901d97ae0_Untitleddesign3.png',
-        badge: 'https://base44.app/api/apps/6904da724b4ce40db58404e7/files/public/6904da724b4ce40db58404e7/901d97ae0_Untitleddesign3.png',
-        tag: 'test',
-        requireInteraction: false,
-        vibrate: [200, 100, 200]
-      });
-      
-      console.log('✅ Notificação criada:', notification);
-      
-      notification.onclick = () => {
-        window.focus();
-        notification.close();
-      };
-      
-      setTimeout(() => notification.close(), 5000); // Close notification after 5 seconds
-      
+      if ('serviceWorker' in navigator) {
+        const registration = await navigator.serviceWorker.ready;
+        console.log('✅ Service Worker pronto:', registration);
+        
+        await registration.showNotification('🔥 Teste de Notificação', {
+          body: 'Perfeito! As notificações estão funcionando. Você receberá lembretes de treino!',
+          icon: 'https://base44.app/api/apps/6904da724b4ce40db58404e7/files/public/6904da724b4ce40db58404e7/901d97ae0_Untitleddesign3.png',
+          badge: 'https://base44.app/api/apps/6904da724b4ce40db58404e7/files/public/6904da724b4ce40db58404e7/901d97ae0_Untitleddesign3.png',
+          vibrate: [200, 100, 200],
+          tag: 'test',
+          requireInteraction: false
+        });
+        
+        console.log('✅ Notificação enviada via Service Worker!');
+      } else {
+        // Fallback para navegadores sem Service Worker
+        new Notification('🔥 Teste de Notificação', {
+          body: 'Perfeito! As notificações estão funcionando.',
+          icon: 'https://base44.app/api/apps/6904da724b4ce40db58404e7/files/public/6904da724b4ce40db58404e7/901d97ae0_Untitleddesign3.png'
+        });
+      }
     } catch (error) {
       console.error('❌ Erro ao enviar notificação:', error);
       alert('Erro ao enviar notificação: ' + error.message);
@@ -290,8 +294,8 @@ export default function Profile() {
         </CardContent>
       </Card>
 
-      {/* Notification Card - Only show if not iOS */}
-      {!isIOS && (
+      {/* Notification Card - Show for all devices if supported */}
+      {notificationStatus !== 'unsupported' && (
         <Card className="bg-gradient-to-br from-purple-900/30 to-pink-900/30 border-purple-700/50">
           <CardHeader>
             <CardTitle className="text-white flex items-center gap-2">

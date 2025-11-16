@@ -8,15 +8,22 @@ export default function NotificationPermissionModal({ onClose }) {
   const handleRequestPermission = async () => {
     localStorage.setItem('notification-permission-asked', 'true');
     
-    if ('Notification' in window) {
+    if ('Notification' in window && 'serviceWorker' in navigator) {
       try {
+        // Solicitar permissão
         const permission = await Notification.requestPermission();
+        console.log('📊 Permissão de notificação:', permission);
         
         if (permission === 'granted') {
           console.log('✅ Permissão concedida');
           
-          // Enviar notificação de teste diretamente
-          new Notification('IA Coach Fitness', {
+          // Obter registration do Service Worker
+          const registration = await navigator.serviceWorker.ready;
+          console.log('✅ Service Worker pronto:', registration);
+          
+          // Para iOS/Safari: mostrar notificação imediatamente após permissão
+          // (Safari revoga permissão se não mostrar notificação)
+          await registration.showNotification('IA Coach Fitness', {
             body: '🎉 Perfeito! Agora você receberá lembretes de treino.',
             icon: 'https://base44.app/api/apps/6904da724b4ce40db58404e7/files/public/6904da724b4ce40db58404e7/901d97ae0_Untitleddesign3.png',
             badge: 'https://base44.app/api/apps/6904da724b4ce40db58404e7/files/public/6904da724b4ce40db58404e7/901d97ae0_Untitleddesign3.png',
@@ -24,11 +31,15 @@ export default function NotificationPermissionModal({ onClose }) {
             tag: 'welcome',
             requireInteraction: false
           });
+          
+          console.log('✅ Notificação de boas-vindas enviada');
+        } else {
+          console.log('❌ Permissão negada');
         }
         
         onClose();
       } catch (error) {
-        console.error('Erro ao solicitar permissão:', error);
+        console.error('❌ Erro ao solicitar permissão:', error);
         onClose();
       }
     } else {
