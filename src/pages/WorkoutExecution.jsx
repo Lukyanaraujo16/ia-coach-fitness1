@@ -133,8 +133,10 @@ export default function WorkoutExecution() {
             if (nextSet?.rest_seconds) {
               setTimeRemaining(nextSet.rest_seconds);
             }
+          } else {
+            // É a última série E última repetição - incrementa para sinalizar conclusão
+            setCurrentSetRepetition(timesToDo);
           }
-          // Se é a última série, não faz nada automaticamente
         } else {
           setTimeRemaining(remaining);
         }
@@ -183,7 +185,7 @@ export default function WorkoutExecution() {
   const nextExercise = !isLastExercise ? currentDay.exercises?.[currentExerciseIndex + 1] : null;
   const timesToDo = currentSet?.times || 1;
   
-  // CORRIGIDO: Verifica se completou todas as repetições da última série
+  // Verifica se completou todas as repetições da última série
   const completedAllRepsOfLastSet = isLastSet && (currentSetRepetition >= timesToDo);
 
   const getLastWeight = (exerciseName) => {
@@ -237,8 +239,10 @@ export default function WorkoutExecution() {
       if (nextSet?.rest_seconds) {
         setTimeRemaining(nextSet.rest_seconds);
       }
+    } else {
+      // É a última série e última repetição
+      setCurrentSetRepetition(timesToDo);
     }
-    // Se é a última série e última repetição, não faz nada
   };
 
   const handleNextExercise = () => {
@@ -745,7 +749,6 @@ export default function WorkoutExecution() {
       <div className="flex-shrink-0 bg-slate-900/95 backdrop-blur-sm border-t border-slate-800 px-4 py-4 safe-area-inset-bottom">
         {!isResting ? (
           <div className="space-y-3">
-            {/* Botão Iniciar Descanso OU Próximo Exercício (só após completar todas repetições) */}
             {!completedAllRepsOfLastSet ? (
               <Button
                 onClick={handleStartRest}
@@ -773,7 +776,6 @@ export default function WorkoutExecution() {
               </Button>
             )}
             
-            {/* Botão secundário: Pular Exercício */}
             <Button
               onClick={handleSkipExercise}
               variant="outline"
