@@ -55,7 +55,7 @@ export default function Profile() {
     
     // Verificar status das notificações
     if ('Notification' in window) {
-      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream; // More robust iOS check
+      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent); // Changed iOS check
       if (isIOS) {
         setNotificationStatus('unsupported');
       } else {
@@ -184,31 +184,26 @@ export default function Profile() {
     }
     
     try {
-      console.log('🚀 Enviando notificação...');
+      console.log('🚀 Enviando notificação direta...');
       
-      if ('serviceWorker' in navigator) {
-        const registration = await navigator.serviceWorker.ready;
-        console.log('✅ Service Worker pronto:', registration);
-        
-        await registration.showNotification('🔥 Teste de Notificação', {
-          body: 'Perfeito! As notificações estão funcionando. Você receberá lembretes de treino!',
-          icon: 'https://base44.app/api/apps/6904da724b4ce40db58404e7/files/public/6904da724b4ce40db58404e7/901d97ae0_Untitleddesign3.png',
-          badge: 'https://base44.app/api/apps/6904da724b4ce40db58404e7/files/public/6904da724b4ce40db58404e7/901d97ae0_Untitleddesign3.png',
-          vibrate: [200, 100, 200, 100, 200],
-          tag: 'test',
-          requireInteraction: false
-        });
-        
-        console.log('✅ Notificação enviada!');
-      } else {
-        console.log('⚠️ Service Worker não disponível, enviando via Notification API direta.');
-        // Fallback for browsers without Service Worker support or if SW is not registered
-        new Notification('🔥 Teste de Notificação', {
-          body: 'Perfeito! As notificações estão funcionando.',
-          icon: 'https://base44.app/api/apps/6904da724b4ce40db58404e7/files/public/6904da724b4ce40db58404e7/901d97ae0_Untitleddesign3.png'
-        });
-        console.log('✅ Notificação enviada via API direta!');
-      }
+      const notification = new Notification('🔥 Teste de Notificação', {
+        body: 'Perfeito! As notificações estão funcionando. Você receberá lembretes de treino!',
+        icon: 'https://base44.app/api/apps/6904da724b4ce40db58404e7/files/public/6904da724b4ce40db58404e7/901d97ae0_Untitleddesign3.png',
+        badge: 'https://base44.app/api/apps/6904da724b4ce40db58404e7/files/public/6904da724b4ce40db58404e7/901d97ae0_Untitleddesign3.png',
+        tag: 'test',
+        requireInteraction: false,
+        vibrate: [200, 100, 200]
+      });
+      
+      console.log('✅ Notificação criada:', notification);
+      
+      notification.onclick = () => {
+        window.focus();
+        notification.close();
+      };
+      
+      setTimeout(() => notification.close(), 5000); // Close notification after 5 seconds
+      
     } catch (error) {
       console.error('❌ Erro ao enviar notificação:', error);
       alert('Erro ao enviar notificação: ' + error.message);
@@ -405,7 +400,7 @@ export default function Profile() {
         <Button
           variant="outline"
           className="w-full justify-start bg-slate-800 border-slate-700 text-slate-200 hover:bg-slate-700 hover:text-white"
-          onClick={() => navigate(createPageUrl("Settings"))} // Preserved original navigation
+          onClick={() => navigate(createPageUrl("Settings"))}
         >
           <Settings className="w-5 h-5 mr-3" />
           Configurações
