@@ -59,27 +59,21 @@ export default function AdminNotifications() {
 
   const sendImmediateNotificationMutation = useMutation({
     mutationFn: async (data) => {
-      console.log('🚀 Enviando notificação imediata (broadcast):', data);
+      console.log('🚀 Enviando notificação imediata para todos:', data);
       
-      const notificationData = {
-        id: `broadcast-${Date.now()}`,
-        title: data.title,
-        message: data.message,
-        target_audience: data.target_audience,
-        timestamp: Date.now()
-      };
+      const notification = await base44.entities.NotificationSchedule.create({
+        ...data,
+        status: 'sent',
+        sent_count: 1,
+        last_sent_date: new Date().toISOString()
+      });
       
-      // Usar BroadcastChannel para comunicação entre tabs
-      if ('BroadcastChannel' in window) {
-        const channel = new BroadcastChannel('push-notifications');
-        channel.postMessage(notificationData);
-        channel.close();
-        console.log('✅ Broadcast enviado via BroadcastChannel!');
-      }
-      
-      return notificationData;
+      console.log('✅ Notificação salva:', notification.id);
+      return notification;
     },
     onSuccess: () => {
+      queryClient.invalidateQueries(['notifications']);
+      queryClient.invalidateQueries(['pending-notifications']);
       setFormData({
         title: "",
         message: "",
@@ -89,7 +83,7 @@ export default function AdminNotifications() {
         recurrence_pattern: "daily",
         recurrence_time: "09:00"
       });
-      toast.success('✅ Notificação enviada para todos com app aberto!');
+      toast.success('✅ Notificação enviada! Usuários com app aberto receberão em até 2 segundos.');
     },
     onError: (error) => {
       console.error('❌ Erro:', error);
@@ -141,6 +135,7 @@ export default function AdminNotifications() {
     mutationFn: (id) => base44.entities.NotificationSchedule.update(id, { status: 'cancelled' }),
     onSuccess: () => {
       queryClient.invalidateQueries(['notifications']);
+      queryClient.invalidateQueries(['pending-notifications']);
       toast.success('Notificação cancelada!');
     }
   });
