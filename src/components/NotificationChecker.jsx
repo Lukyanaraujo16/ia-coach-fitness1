@@ -41,9 +41,10 @@ export default function NotificationChecker({ user }) {
       }
 
       if (notif.schedule_type === 'immediate' && notif.status === 'sent') {
-        const createdDate = new Date(notif.created_date);
+        // Usar last_sent_date ao invés de created_date para immediate
+        const sentDate = new Date(notif.last_sent_date || notif.created_date);
         const nowDate = new Date();
-        const ageInSeconds = Math.floor(Math.abs(nowDate.getTime() - createdDate.getTime()) / 1000);
+        const ageInSeconds = Math.floor(Math.abs(nowDate.getTime() - sentDate.getTime()) / 1000);
         
         console.log(`  📅 Idade: ${ageInSeconds}s (limite: 120s)`);
         
