@@ -183,8 +183,8 @@ export default function WorkoutExecution() {
   const nextExercise = !isLastExercise ? currentDay.exercises?.[currentExerciseIndex + 1] : null;
   const timesToDo = currentSet?.times || 1;
   
-  // Verifica se completou todas as repetições - CORRIGIDO: só após descansar todas as vezes
-  const completedAllRepsOfLastSet = isLastSet && !isResting && (currentSetRepetition >= timesToDo);
+  // CORRIGIDO: Verifica se completou todas as repetições da última série
+  const completedAllRepsOfLastSet = isLastSet && (currentSetRepetition >= timesToDo);
 
   const getLastWeight = (exerciseName) => {
     for (const log of previousLogs) {
