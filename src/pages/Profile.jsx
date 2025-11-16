@@ -5,7 +5,7 @@ import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Crown, LogOut, User, Settings, Edit2, Save, X, Dumbbell, Trash2, AlertTriangle } from "lucide-react";
+import { Crown, LogOut, User, Settings, Edit2, Save, X, Dumbbell, Trash2, AlertTriangle, Bell, CheckCircle } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import ProfileStats from "../components/profile/ProfileStats";
@@ -19,6 +19,7 @@ export default function Profile() {
   const [newName, setNewName] = useState("");
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showResetOnboardingConfirm, setShowResetOnboardingConfirm] = useState(false);
+  const [notificationStatus, setNotificationStatus] = useState('loading'); // Added state
 
   const { data: selectedWorkout } = useQuery({
     queryKey: ['selected-workout', user?.selected_workout_id],
@@ -51,12 +52,23 @@ export default function Profile() {
       }
     };
     loadUser();
+    
+    // Verificar status das notificações - Added logic
+    if ('Notification' in window) {
+      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream; // More robust iOS check
+      if (isIOS) {
+        setNotificationStatus('unsupported');
+      } else {
+        setNotificationStatus(Notification.permission);
+      }
+    } else {
+      setNotificationStatus('unsupported');
+    }
   }, []);
 
   const updateNameMutation = useMutation({
     mutationFn: async (name) => {
       await base44.auth.updateMe({ nome_completo: name });
-      // Recarregar os dados do usuário após atualizar
       const updatedUser = await base44.auth.me();
       return updatedUser;
     },
@@ -145,6 +157,47 @@ export default function Profile() {
     resetOnboardingMutation.mutate();
   };
 
+  const handleTestNotification = async () => { // Added handler
+    if (notificationStatus === 'unsupported') {
+      alert('⚠️ Notificações não são suportadas neste dispositivo/navegador.\n\niOS Safari não suporta notificações web.');
+      return;
+    }
+    
+    if (notificationStatus === 'denied') {
+      alert('⚠️ Você negou as notificações.\n\nPara ativar, vá em Configurações do navegador > Notificações > Permitir para este site.');
+      return;
+    }
+    
+    if (notificationStatus === 'default') {
+      const permission = await Notification.requestPermission();
+      setNotificationStatus(permission);
+      
+      if (permission !== 'granted') {
+        alert('❌ Permissão negada. Ative nas configurações do navegador.');
+        return;
+      }
+    }
+    
+    if ('serviceWorker' in navigator && Notification.permission === 'granted') {
+      try {
+        const registration = await navigator.serviceWorker.ready;
+        await registration.showNotification('🔥 Teste de Notificação', {
+          body: 'Perfeito! As notificações estão funcionando. Você receberá lembretes de treino!',
+          icon: 'https://base44.app/api/apps/6904da724b4ce40db58404e7/files/public/6904da724b4ce40db58404e7/901d97ae0_Untitleddesign3.png',
+          badge: 'https://base44.app/api/apps/6904da724b4ce40db58404e7/files/public/6904da724b4ce40db58404e7/901d97ae0_Untitleddesign3.png',
+          vibrate: [200, 100, 200, 100, 200],
+          tag: 'test',
+          requireInteraction: false
+        });
+      } catch (error) {
+        console.error("Erro ao mostrar notificação de teste:", error);
+        alert("Erro ao enviar notificação de teste. Verifique o Service Worker e as permissões.");
+      }
+    } else if (Notification.permission === 'granted') {
+        alert('Notificações estão ativadas, mas o Service Worker pode não estar disponível ou registrado para enviar a notificação de teste.');
+    }
+  };
+
   const isPremium = user?.subscription_status === 'premium';
 
   if (!user) {
@@ -231,6 +284,61 @@ export default function Profile() {
         </CardContent>
       </Card>
 
+      {/* Test Notification Button */}
+      <Card className="bg-gradient-to-br from-purple-900/30 to-pink-900/30 border-purple-700/50">
+        <CardHeader>
+          <CardTitle className="text-white flex items-center gap-2">
+            <Bell className="w-5 h-5 text-purple-400" />
+            Notificações Push
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-slate-300 text-sm mb-1">Status:</p>
+              {notificationStatus === 'granted' && (
+                <div className="flex items-center gap-2 text-green-400 text-sm">
+                  <CheckCircle className="w-4 h-4" />
+                  <span>Ativadas</span>
+                </div>
+              )}
+              {notificationStatus === 'denied' && (
+                <div className="flex items-center gap-2 text-red-400 text-sm">
+                  <X className="w-4 h-4" />
+                  <span>Bloqueadas</span>
+                </div>
+              )}
+              {notificationStatus === 'default' && (
+                <span className="text-yellow-400 text-sm">Não configuradas</span>
+              )}
+              {notificationStatus === 'unsupported' && (
+                <span className="text-orange-400 text-sm">⚠️ Não suportadas</span>
+              )}
+               {notificationStatus === 'loading' && (
+                <span className="text-slate-400 text-sm">Carregando...</span>
+              )}
+            </div>
+            <Button
+              onClick={handleTestNotification}
+              className="bg-purple-600 hover:bg-purple-700"
+              disabled={notificationStatus === 'loading' || notificationStatus === 'denied'}
+            >
+              {notificationStatus === 'granted' ? 'Testar' : 'Ativar'}
+            </Button>
+          </div>
+          {notificationStatus === 'unsupported' && (
+            <p className="text-orange-300 text-xs">
+              ℹ️ Seu navegador/dispositivo não suporta notificações web (ex: iOS Safari).
+            </p>
+          )}
+          {notificationStatus === 'denied' && (
+            <p className="text-red-300 text-xs">
+              💡 Vá em Configurações do navegador → Notificações → Permitir para este site
+            </p>
+          )}
+        </CardContent>
+      </Card>
+
       {/* Current Workout */}
       {selectedWorkout && (
         <Card className="bg-slate-900/50 border-slate-800">
@@ -280,6 +388,7 @@ export default function Profile() {
         <Button
           variant="outline"
           className="w-full justify-start bg-slate-800 border-slate-700 text-slate-200 hover:bg-slate-700 hover:text-white"
+          onClick={() => navigate(createPageUrl("Settings"))} // Added navigation for Settings
         >
           <Settings className="w-5 h-5 mr-3" />
           Configurações
