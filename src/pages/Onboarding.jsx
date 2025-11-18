@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useNavigate } from "react-router-dom";
@@ -129,11 +128,8 @@ export default function Onboarding() {
         onboarding_completed: true,
         nutrition_setup_completed: skipSetup,
         workout_setup_completed: skipSetup,
-        // Iniciar trial premium de 7 dias
-        subscription_status: "trial",
-        premium_trial_start_date: trialStartDate,
-        premium_trial_end_date: trialEndDate.toISOString(),
-        has_had_trial: true,
+        // Todos os novos usuários começam como premium
+        subscription_status: "premium",
       });
       
       if (skipSetup) {

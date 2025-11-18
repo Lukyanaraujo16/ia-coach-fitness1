@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from "react";
 import { base44 } from "@/api/base44Client";
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
@@ -548,14 +547,21 @@ export default function WorkoutExecution() {
       {/* Header Fixo */}
       <div className="flex-shrink-0 bg-slate-900/95 backdrop-blur-sm border-b border-slate-800 px-4 py-3">
         <div className="flex items-center justify-between mb-2">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={handleExitWorkout}
-            className="text-slate-400 hover:text-white h-9 w-9"
-          >
-            <X className="w-5 h-5" />
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={handleExitWorkout}
+              className="text-slate-400 hover:text-white h-9 w-9"
+            >
+              <X className="w-5 h-5" />
+            </Button>
+            <img 
+              src={user?.app_logo_url || "https://base44.app/api/apps/6904da724b4ce40db58404e7/files/public/6904da724b4ce40db58404e7/901d97ae0_Untitleddesign3.png"} 
+              alt="Logo" 
+              className="h-7"
+            />
+          </div>
           <div className="text-center">
             <p className="text-white font-bold text-sm">
               {currentExerciseIndex + 1}/{currentDay.exercises?.length || 0}
