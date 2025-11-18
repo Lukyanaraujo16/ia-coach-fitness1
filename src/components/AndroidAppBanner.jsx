@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { X, Smartphone, Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { base44 } from '@/api/base44Client';
 
 export default function AndroidAppBanner() {
   const [show, setShow] = useState(false);
@@ -27,8 +28,70 @@ export default function AndroidAppBanner() {
       }
     }
     
+    // Se for WebView do app Android, inicializar OneSignal
+    if (isWebView) {
+      initializeOneSignal();
+    }
+    
     console.log('🤖 Android App Banner:', isWebView ? 'APP' : 'NAVEGADOR');
   }, []);
+
+  const initializeOneSignal = async () => {
+    try {
+      // Verificar se o OneSignal já foi inicializado pelo app Android
+      if (window.plugins && window.plugins.OneSignal) {
+        console.log('📱 OneSignal detectado no app Android');
+        
+        // Obter o Player ID do OneSignal
+        window.plugins.OneSignal.getDeviceState((deviceState) => {
+          if (deviceState && deviceState.userId) {
+            const playerId = deviceState.userId;
+            console.log('🆔 OneSignal Player ID:', playerId);
+            
+            // Salvar no banco de dados
+            saveOneSignalPlayerId(playerId);
+          }
+        });
+      } else {
+        console.log('⚠️ OneSignal não encontrado - aguardando inicialização do app');
+        
+        // Tentar novamente após 2 segundos
+        setTimeout(initializeOneSignal, 2000);
+      }
+    } catch (error) {
+      console.error('❌ Erro ao inicializar OneSignal:', error);
+    }
+  };
+
+  const saveOneSignalPlayerId = async (playerId) => {
+    try {
+      const user = await base44.auth.me();
+      if (!user) return;
+
+      console.log('💾 Salvando Player ID para:', user.email);
+
+      // Verificar se já existe uma subscription para este usuário
+      const existingSubscriptions = await base44.entities.OneSignalSubscription.list();
+      const userSubscription = existingSubscriptions.find(s => s.user_email === user.email);
+
+      if (userSubscription) {
+        await base44.entities.OneSignalSubscription.update(userSubscription.id, {
+          player_id: playerId,
+          is_active: true
+        });
+        console.log('✅ OneSignal subscription atualizada!');
+      } else {
+        await base44.entities.OneSignalSubscription.create({
+          user_email: user.email,
+          player_id: playerId,
+          is_active: true
+        });
+        console.log('✅ OneSignal subscription criada!');
+      }
+    } catch (error) {
+      console.error('❌ Erro ao salvar Player ID:', error);
+    }
+  };
 
   const handleDismiss = () => {
     setShow(false);
