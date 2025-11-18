@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { Link, useLocation } from "react-router-dom";
@@ -5,7 +6,7 @@ import { createPageUrl } from "@/utils";
 import { Home, Dumbbell, TrendingUp, Users, User, Shield, Apple, Sparkles, Menu, X, LogOut, Trophy, Award } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import TrialChecker from "./components/TrialChecker";
-import PlatformManager from "./components/PlatformManager";
+import PWAManager from "./components/PWAManager";
 import NotificationChecker from "./components/NotificationChecker";
 import NotificationPermissionModal from "./components/pwa/NotificationPermissionModal";
 
@@ -21,15 +22,12 @@ export default function Layout({ children, currentPageName }) {
       const currentUser = await base44.auth.me();
       setUser(currentUser);
       
-      // Verificar se é iOS e primeira vez no PWA
-      const isIOS = /iphone|ipad|ipod/.test(navigator.userAgent.toLowerCase()) || 
-                    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+      // Verificar se é primeira vez no PWA e ainda não pediu notificação
       const isPWA = window.matchMedia('(display-mode: standalone)').matches || 
                     window.navigator.standalone === true;
       const hasAskedPermission = localStorage.getItem('notification-permission-asked');
       
-      // Só pedir permissão no iOS PWA
-      if (isIOS && isPWA && !hasAskedPermission && Notification.permission === 'default') {
+      if (isPWA && !hasAskedPermission && Notification.permission === 'default') {
         setTimeout(() => {
           setShowNotificationModal(true);
         }, 2000);
@@ -61,6 +59,24 @@ export default function Layout({ children, currentPageName }) {
     addMetaTag('apple-mobile-web-app-capable', 'yes');
     addMetaTag('apple-mobile-web-app-status-bar-style', 'black-translucent');
     addMetaTag('apple-mobile-web-app-title', 'IA Coach');
+
+    // Adicionar link para manifest
+    let manifestLink = document.querySelector('link[rel="manifest"]');
+    if (!manifestLink) {
+      manifestLink = document.createElement('link');
+      manifestLink.rel = 'manifest';
+      manifestLink.href = '/manifest.json';
+      document.head.appendChild(manifestLink);
+    }
+
+    // Adicionar link para ícone
+    let iconLink = document.querySelector('link[rel="apple-touch-icon"]');
+    if (!iconLink) {
+      iconLink = document.createElement('link');
+      iconLink.rel = 'apple-touch-icon';
+      iconLink.href = '/icon-192.png';
+      document.head.appendChild(iconLink);
+    }
   }, []);
 
   const handleTrialExpired = () => {
@@ -151,7 +167,7 @@ export default function Layout({ children, currentPageName }) {
 
   return (
     <div className={`min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 ${!hideNavigation ? 'pb-20 md:pb-0' : ''}`}>
-      <PlatformManager />
+      <PWAManager />
       {user && <NotificationChecker user={user} />}
       {showNotificationModal && (
         <NotificationPermissionModal onClose={() => setShowNotificationModal(false)} />
