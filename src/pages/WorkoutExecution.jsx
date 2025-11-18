@@ -547,7 +547,28 @@ export default function WorkoutExecution() {
       {/* Header Fixo */}
       <div className="flex-shrink-0 bg-slate-900/95 backdrop-blur-sm border-b border-slate-800 px-4 py-3">
         <div className="flex items-center justify-between mb-2">
+          <img 
+            src={user?.app_logo_url || "https://base44.app/api/apps/6904da724b4ce40db58404e7/files/public/6904da724b4ce40db58404e7/901d97ae0_Untitleddesign3.png"} 
+            alt="Logo" 
+            className="h-7"
+          />
+          <div className="absolute left-1/2 transform -translate-x-1/2 text-center">
+            <p className="text-white font-bold text-sm">
+              {currentExerciseIndex + 1}/{currentDay.exercises?.length || 0}
+            </p>
+            <p className="text-slate-400 text-xs">Dia {dayNumber}</p>
+          </div>
           <div className="flex items-center gap-2">
+            {currentExercise?.video_url && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setShowVideoModal(true)}
+                className="text-blue-400 hover:text-blue-300 h-9 w-9"
+              >
+                <Video className="w-5 h-5" />
+              </Button>
+            )}
             <Button
               variant="ghost"
               size="icon"
@@ -556,30 +577,7 @@ export default function WorkoutExecution() {
             >
               <X className="w-5 h-5" />
             </Button>
-            <img 
-              src={user?.app_logo_url || "https://base44.app/api/apps/6904da724b4ce40db58404e7/files/public/6904da724b4ce40db58404e7/901d97ae0_Untitleddesign3.png"} 
-              alt="Logo" 
-              className="h-7"
-            />
           </div>
-          <div className="text-center">
-            <p className="text-white font-bold text-sm">
-              {currentExerciseIndex + 1}/{currentDay.exercises?.length || 0}
-            </p>
-            <p className="text-slate-400 text-xs">Dia {dayNumber}</p>
-          </div>
-          {currentExercise?.video_url ? (
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setShowVideoModal(true)}
-              className="text-blue-400 hover:text-blue-300 h-9 w-9"
-            >
-              <Video className="w-5 h-5" />
-            </Button>
-          ) : (
-            <div className="w-9" />
-          )}
         </div>
         <div className="relative h-1.5 bg-slate-800 rounded-full overflow-hidden">
           <motion.div
