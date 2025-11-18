@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { Link, useLocation } from "react-router-dom";
@@ -58,16 +59,6 @@ export default function Layout({ children, currentPageName }) {
     addMetaTag('apple-mobile-web-app-capable', 'yes');
     addMetaTag('apple-mobile-web-app-status-bar-style', 'black-translucent');
     addMetaTag('apple-mobile-web-app-title', 'IA Coach');
-    
-    // Bloquear rotação da tela (manter vertical)
-    addMetaTag('screen-orientation', 'portrait');
-    addMetaTag('x5-orientation', 'portrait');
-    
-    // Para iOS
-    const viewportMeta = document.querySelector('meta[name="viewport"]');
-    if (viewportMeta) {
-      viewportMeta.content = 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no';
-    }
 
     // Adicionar link para manifest
     let manifestLink = document.querySelector('link[rel="manifest"]');
@@ -296,7 +287,7 @@ export default function Layout({ children, currentPageName }) {
       )}
 
       {!hideNavigation && (
-        <nav className="fixed bottom-0 left-0 right-0 bg-slate-950 backdrop-blur-xl border-t border-slate-800/50 z-50 md:hidden shadow-2xl">
+        <nav className="fixed bottom-0 left-0 right-0 bg-slate-950/95 backdrop-blur-xl border-t border-slate-800/50 z-50 md:hidden">
           <div className="max-w-7xl mx-auto">
             <div className="grid grid-cols-4 gap-1 p-2">
               {mobileNavigationItems.map((item) => {

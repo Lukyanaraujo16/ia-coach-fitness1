@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -83,24 +84,7 @@ export default function Dashboard() {
   });
 
   const activeChallenge = challenges.find(c => c.is_active);
-  let userProgress = challengeProgress.find(p => p.challenge_id === activeChallenge?.id);
-  
-  // Resetar progresso do desafio se for nova semana
-  if (userProgress && activeChallenge) {
-    const today = new Date();
-    const currentDay = today.getDay();
-    const daysSinceMonday = currentDay === 0 ? 6 : currentDay - 1;
-    const thisMonday = new Date(today);
-    thisMonday.setDate(today.getDate() - daysSinceMonday);
-    thisMonday.setHours(0, 0, 0, 0);
-    
-    const lastUpdated = userProgress.updated_date ? new Date(userProgress.updated_date) : null;
-    
-    // Se última atualização foi antes desta segunda, resetar progresso
-    if (lastUpdated && lastUpdated < thisMonday) {
-      userProgress = { ...userProgress, current_progress: 0, completed: false };
-    }
-  }
+  const userProgress = challengeProgress.find(p => p.challenge_id === activeChallenge?.id);
 
   const updateProgressMutation = useMutation({
     mutationFn: (data) => {
@@ -121,23 +105,7 @@ export default function Dashboard() {
     const toAdd = parseInt(challengeInput);
     if (isNaN(toAdd) || toAdd <= 0) return;
 
-    // Verificar se precisa resetar o progresso (nova semana)
-    const today = new Date();
-    const currentDay = today.getDay();
-    const daysSinceMonday = currentDay === 0 ? 6 : currentDay - 1;
-    const thisMonday = new Date(today);
-    thisMonday.setDate(today.getDate() - daysSinceMonday);
-    thisMonday.setHours(0, 0, 0, 0);
-    
-    let currentProgress = userProgress?.current_progress || 0;
-    const lastUpdated = userProgress?.updated_date ? new Date(userProgress.updated_date) : null;
-    
-    // Se o último update foi antes desta segunda-feira, resetar
-    if (lastUpdated && lastUpdated < thisMonday) {
-      currentProgress = 0;
-    }
-
-    const newProgress = currentProgress + toAdd;
+    const newProgress = (userProgress?.current_progress || 0) + toAdd;
     
     updateProgressMutation.mutate({
       challenge_id: activeChallenge.id,
@@ -146,25 +114,13 @@ export default function Dashboard() {
     });
   };
 
-  // Calcular treinos da semana (segunda a domingo)
   const thisWeekWorkouts = workoutLogs.filter(log => {
     const logDate = new Date(log.date + 'T00:00:00');
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    
-    // Pegar a segunda-feira da semana atual
-    const currentDay = today.getDay(); // 0 = domingo, 1 = segunda, etc
-    const daysSinceMonday = currentDay === 0 ? 6 : currentDay - 1; // Se domingo, é 6 dias depois da segunda
-    const thisMonday = new Date(today);
-    thisMonday.setDate(today.getDate() - daysSinceMonday);
-    thisMonday.setHours(0, 0, 0, 0);
-    
-    // Próximo domingo
-    const thisSunday = new Date(thisMonday);
-    thisSunday.setDate(thisMonday.getDate() + 6);
-    thisSunday.setHours(23, 59, 59, 999);
-    
-    return logDate >= thisMonday && logDate <= thisSunday;
+    const weekAgo = new Date(today);
+    weekAgo.setDate(weekAgo.getDate() - 7);
+    return logDate >= weekAgo && logDate <= today;
   });
 
   const totalCalories = thisWeekWorkouts.reduce((sum, log) => sum + (log.calories_burned || 0), 0);

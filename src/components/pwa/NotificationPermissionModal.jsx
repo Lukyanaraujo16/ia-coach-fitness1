@@ -24,10 +24,6 @@ export default function NotificationPermissionModal({ onClose }) {
   const handleActivate = async () => {
     console.log('🔔 Ativando notificações...');
     
-    // Marcar como já perguntado e fechar modal IMEDIATAMENTE
-    localStorage.setItem('notification-permission-asked', 'true');
-    onClose();
-    
     try {
       const permission = await Notification.requestPermission();
       console.log('✅ Permissão:', permission);
@@ -71,8 +67,13 @@ export default function NotificationPermissionModal({ onClose }) {
           vibrate: [200, 100, 200]
         });
       }
+      
+      localStorage.setItem('notification-permission-asked', 'true');
+      onClose();
     } catch (error) {
       console.error('❌ Erro:', error);
+      localStorage.setItem('notification-permission-asked', 'true');
+      onClose();
     }
   };
 
