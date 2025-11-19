@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -84,7 +83,19 @@ export default function Dashboard() {
   });
 
   const activeChallenge = challenges.find(c => c.is_active);
-  const userProgress = challengeProgress.find(p => p.challenge_id === activeChallenge?.id);
+  
+  // Pegar progresso do usuário e verificar se precisa resetar
+  let userProgress = challengeProgress.find(p => p.challenge_id === activeChallenge?.id);
+  
+  if (userProgress && activeChallenge) {
+    const monday = getMondayOfCurrentWeek();
+    const lastUpdate = new Date(userProgress.updated_date);
+    
+    // Se última atualização foi antes da segunda-feira desta semana, resetar visualização
+    if (lastUpdate < monday) {
+      userProgress = { ...userProgress, current_progress: 0, completed: false };
+    }
+  }
 
   const updateProgressMutation = useMutation({
     mutationFn: (data) => {
@@ -105,7 +116,18 @@ export default function Dashboard() {
     const toAdd = parseInt(challengeInput);
     if (isNaN(toAdd) || toAdd <= 0) return;
 
-    const newProgress = (userProgress?.current_progress || 0) + toAdd;
+    // Verificar se precisa resetar (nova semana)
+    const monday = getMondayOfCurrentWeek();
+    const lastUpdate = userProgress?.updated_date ? new Date(userProgress.updated_date) : null;
+    
+    let currentProgress = userProgress?.current_progress || 0;
+    
+    // Se última atualização foi antes da segunda-feira desta semana, resetar
+    if (lastUpdate && lastUpdate < monday) {
+      currentProgress = 0;
+    }
+
+    const newProgress = currentProgress + toAdd;
     
     updateProgressMutation.mutate({
       challenge_id: activeChallenge.id,
@@ -114,13 +136,23 @@ export default function Dashboard() {
     });
   };
 
-  const thisWeekWorkouts = workoutLogs.filter(log => {
-    const logDate = new Date(log.date + 'T00:00:00');
+  // Função para pegar a segunda-feira da semana atual
+  const getMondayOfCurrentWeek = () => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    const weekAgo = new Date(today);
-    weekAgo.setDate(weekAgo.getDate() - 7);
-    return logDate >= weekAgo && logDate <= today;
+    const dayOfWeek = today.getDay();
+    const diff = dayOfWeek === 0 ? -6 : 1 - dayOfWeek; // Se domingo, volta 6 dias
+    const monday = new Date(today);
+    monday.setDate(today.getDate() + diff);
+    return monday;
+  };
+
+  const thisWeekWorkouts = workoutLogs.filter(log => {
+    const logDate = new Date(log.date + 'T00:00:00');
+    const monday = getMondayOfCurrentWeek();
+    const today = new Date();
+    today.setHours(23, 59, 59, 999);
+    return logDate >= monday && logDate <= today;
   });
 
   const totalCalories = thisWeekWorkouts.reduce((sum, log) => sum + (log.calories_burned || 0), 0);
@@ -165,6 +197,17 @@ export default function Dashboard() {
     if (hour < 12) return "Bom dia";
     if (hour < 18) return "Boa tarde";
     return "Boa noite";
+  };
+
+  // Função auxiliar para calcular progresso do desafio
+  const getMondayOfCurrentWeek = () => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const dayOfWeek = today.getDay();
+    const diff = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+    const monday = new Date(today);
+    monday.setDate(today.getDate() + diff);
+    return monday;
   };
 
   const challengePercentage = activeChallenge 
