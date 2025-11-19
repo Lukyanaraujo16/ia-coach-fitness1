@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { Link, useLocation } from "react-router-dom";
@@ -58,15 +59,6 @@ export default function Layout({ children, currentPageName }) {
     addMetaTag('apple-mobile-web-app-capable', 'yes');
     addMetaTag('apple-mobile-web-app-status-bar-style', 'black-translucent');
     addMetaTag('apple-mobile-web-app-title', 'IA Coach');
-
-    // Bloquear zoom e rotação de tela
-    let viewport = document.querySelector('meta[name="viewport"]');
-    if (!viewport) {
-      viewport = document.createElement('meta');
-      viewport.name = 'viewport';
-      document.head.appendChild(viewport);
-    }
-    viewport.content = 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover';
 
     // Adicionar link para manifest
     let manifestLink = document.querySelector('link[rel="manifest"]');
