@@ -21,59 +21,62 @@ function urlBase64ToUint8Array(base64String) {
 }
 
 export default function NotificationPermissionModal({ onClose }) {
-  const handleActivate = async () => {
+  const handleActivate = () => {
     console.log('🔔 Ativando notificações...');
     
-    // Fechar imediatamente para melhor UX
+    // Fechar imediatamente
     localStorage.setItem('notification-permission-asked', 'true');
     onClose();
     
-    try {
-      const permission = await Notification.requestPermission();
-      console.log('✅ Permissão:', permission);
-      
-      if (permission === 'granted') {
-        const registration = await navigator.serviceWorker.ready;
+    // Executar em background
+    setTimeout(async () => {
+      try {
+        const permission = await Notification.requestPermission();
+        console.log('✅ Permissão:', permission);
         
-        let subscription = await registration.pushManager.getSubscription();
-        
-        if (!subscription) {
-          subscription = await registration.pushManager.subscribe({
-            userVisibleOnly: true,
-            applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
+        if (permission === 'granted') {
+          const registration = await navigator.serviceWorker.ready;
+          
+          let subscription = await registration.pushManager.getSubscription();
+          
+          if (!subscription) {
+            subscription = await registration.pushManager.subscribe({
+              userVisibleOnly: true,
+              applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
+            });
+          }
+
+          const currentUser = await base44.auth.me();
+          
+          const existingSubscriptions = await base44.entities.PushSubscription.list();
+          const userSubscription = existingSubscriptions.find(s => s.user_email === currentUser.email);
+          
+          const subscriptionData = {
+            user_email: currentUser.email,
+            subscription: subscription.toJSON(),
+            is_active: true
+          };
+
+          if (userSubscription) {
+            await base44.entities.PushSubscription.update(userSubscription.id, subscriptionData);
+          } else {
+            await base44.entities.PushSubscription.create(subscriptionData);
+          }
+          
+          console.log('✅ Subscription salva!');
+
+          // Notificação de boas-vindas
+          await registration.showNotification('🎉 Notificações Ativadas!', {
+            body: 'Você receberá lembretes de treino e motivação.',
+            icon: 'https://base44.app/api/apps/6904da724b4ce40db58404e7/files/public/6904da724b4ce40db58404e7/901d97ae0_Untitleddesign3.png',
+            badge: 'https://base44.app/api/apps/6904da724b4ce40db58404e7/files/public/6904da724b4ce40db58404e7/901d97ae0_Untitleddesign3.png',
+            vibrate: [200, 100, 200]
           });
         }
-
-        const currentUser = await base44.auth.me();
-        
-        const existingSubscriptions = await base44.entities.PushSubscription.list();
-        const userSubscription = existingSubscriptions.find(s => s.user_email === currentUser.email);
-        
-        const subscriptionData = {
-          user_email: currentUser.email,
-          subscription: subscription.toJSON(),
-          is_active: true
-        };
-
-        if (userSubscription) {
-          await base44.entities.PushSubscription.update(userSubscription.id, subscriptionData);
-        } else {
-          await base44.entities.PushSubscription.create(subscriptionData);
-        }
-        
-        console.log('✅ Subscription salva!');
-
-        // Notificação de boas-vindas
-        await registration.showNotification('🎉 Notificações Ativadas!', {
-          body: 'Você receberá lembretes de treino e motivação.',
-          icon: 'https://base44.app/api/apps/6904da724b4ce40db58404e7/files/public/6904da724b4ce40db58404e7/901d97ae0_Untitleddesign3.png',
-          badge: 'https://base44.app/api/apps/6904da724b4ce40db58404e7/files/public/6904da724b4ce40db58404e7/901d97ae0_Untitleddesign3.png',
-          vibrate: [200, 100, 200]
-        });
+      } catch (error) {
+        console.error('❌ Erro:', error);
       }
-    } catch (error) {
-      console.error('❌ Erro:', error);
-    }
+    }, 100);
   };
 
   const handleLater = () => {
