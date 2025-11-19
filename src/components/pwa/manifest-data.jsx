@@ -1,3 +1,4 @@
+
 export const manifestData = {
   "name": "IA Coach Fitness",
   "short_name": "IA Coach",

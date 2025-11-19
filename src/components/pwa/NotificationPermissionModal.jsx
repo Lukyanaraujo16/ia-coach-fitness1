@@ -24,6 +24,10 @@ export default function NotificationPermissionModal({ onClose }) {
   const handleActivate = async () => {
     console.log('🔔 Ativando notificações...');
     
+    // Fechar imediatamente para melhor UX
+    localStorage.setItem('notification-permission-asked', 'true');
+    onClose();
+    
     try {
       const permission = await Notification.requestPermission();
       console.log('✅ Permissão:', permission);
@@ -66,17 +70,9 @@ export default function NotificationPermissionModal({ onClose }) {
           badge: 'https://base44.app/api/apps/6904da724b4ce40db58404e7/files/public/6904da724b4ce40db58404e7/901d97ae0_Untitleddesign3.png',
           vibrate: [200, 100, 200]
         });
-        
-        localStorage.setItem('notification-permission-asked', 'true');
-        onClose();
-      } else {
-        localStorage.setItem('notification-permission-asked', 'true');
-        onClose();
       }
     } catch (error) {
       console.error('❌ Erro:', error);
-      localStorage.setItem('notification-permission-asked', 'true');
-      onClose();
     }
   };
 
