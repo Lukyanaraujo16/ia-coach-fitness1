@@ -82,6 +82,17 @@ export default function Dashboard() {
     enabled: !!user?.email,
   });
 
+  // Função para pegar a segunda-feira da semana atual
+  const getMondayOfCurrentWeek = () => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const dayOfWeek = today.getDay();
+    const diff = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+    const monday = new Date(today);
+    monday.setDate(today.getDate() + diff);
+    return monday;
+  };
+
   const activeChallenge = challenges.find(c => c.is_active);
   
   // Pegar progresso do usuário e verificar se precisa resetar
@@ -134,17 +145,6 @@ export default function Dashboard() {
       current_progress: newProgress,
       completed: newProgress >= activeChallenge.target,
     });
-  };
-
-  // Função para pegar a segunda-feira da semana atual
-  const getMondayOfCurrentWeek = () => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const dayOfWeek = today.getDay();
-    const diff = dayOfWeek === 0 ? -6 : 1 - dayOfWeek; // Se domingo, volta 6 dias
-    const monday = new Date(today);
-    monday.setDate(today.getDate() + diff);
-    return monday;
   };
 
   const thisWeekWorkouts = workoutLogs.filter(log => {
