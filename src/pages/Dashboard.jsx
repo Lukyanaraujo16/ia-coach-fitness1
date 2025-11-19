@@ -199,17 +199,6 @@ export default function Dashboard() {
     return "Boa noite";
   };
 
-  // Função auxiliar para calcular progresso do desafio
-  const getMondayOfCurrentWeek = () => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const dayOfWeek = today.getDay();
-    const diff = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
-    const monday = new Date(today);
-    monday.setDate(today.getDate() + diff);
-    return monday;
-  };
-
   const challengePercentage = activeChallenge 
     ? Math.min(((userProgress?.current_progress || 0) / activeChallenge.target) * 100, 100)
     : 0;
