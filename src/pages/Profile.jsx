@@ -447,6 +447,9 @@ export default function Profile() {
       {/* Profile Info */}
       <ProfileInfo user={user} setUser={setUser} />
 
+      {/* Wearables Sync */}
+      <WearablesSync user={user} />
+
       {/* Actions */}
       <div className="space-y-3">
         <Button

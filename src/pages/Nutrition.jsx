@@ -8,6 +8,7 @@ import NutritionStats from "../components/nutrition/NutritionStats";
 import MealHistory from "../components/nutrition/MealHistory";
 import NutritionPlans from "../components/nutrition/NutritionPlans";
 import MyNutritionPlan from "../components/nutrition/MyNutritionPlan.jsx";
+import ActivityNutritionSummary from "../components/nutrition/ActivityNutritionSummary";
 
 export default function Nutrition() {
   const [activeTab, setActiveTab] = useState("my-plan");
@@ -59,20 +60,23 @@ export default function Nutrition() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="bg-slate-900/50 border border-slate-800 grid grid-cols-5">
-          <TabsTrigger value="my-plan" className="data-[state=active]:bg-green-600">
-            Meu Plano
+        <TabsList className="bg-slate-900/50 border border-slate-800 grid grid-cols-3 md:grid-cols-6">
+          <TabsTrigger value="my-plan" className="data-[state=active]:bg-green-600 text-xs md:text-sm">
+            Plano
           </TabsTrigger>
-          <TabsTrigger value="counter" className="data-[state=active]:bg-green-600">
+          <TabsTrigger value="counter" className="data-[state=active]:bg-green-600 text-xs md:text-sm">
             Contador
           </TabsTrigger>
-          <TabsTrigger value="stats" className="data-[state=active]:bg-green-600">
-            Estatísticas
+          <TabsTrigger value="summary" className="data-[state=active]:bg-green-600 text-xs md:text-sm">
+            Resumo
           </TabsTrigger>
-          <TabsTrigger value="history" className="data-[state=active]:bg-green-600">
+          <TabsTrigger value="stats" className="data-[state=active]:bg-green-600 text-xs md:text-sm">
+            Stats
+          </TabsTrigger>
+          <TabsTrigger value="history" className="data-[state=active]:bg-green-600 text-xs md:text-sm">
             Histórico
           </TabsTrigger>
-          <TabsTrigger value="plans" className="data-[state=active]:bg-green-600">
+          <TabsTrigger value="plans" className="data-[state=active]:bg-green-600 text-xs md:text-sm">
             Explorar
           </TabsTrigger>
         </TabsList>
@@ -81,6 +85,7 @@ export default function Nutrition() {
       <div className="mt-6">
         {activeTab === "my-plan" && <MyNutritionPlan user={user} />}
         {activeTab === "counter" && <CalorieCounter />}
+        {activeTab === "summary" && <ActivityNutritionSummary user={user} />}
         {activeTab === "stats" && <NutritionStats mealLogs={mealLogs} calorieGoal={calorieGoal} />}
         {activeTab === "history" && <MealHistory mealLogs={mealLogs} />}
         {activeTab === "plans" && <NutritionPlans />}
