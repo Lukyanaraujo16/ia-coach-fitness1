@@ -24,7 +24,7 @@ Deno.serve(async (req) => {
     doc.setFillColor(15, 23, 42);
     doc.rect(0, 0, 210, 45, 'F');
     
-    // Logo
+    // Logo (proporção corrigida)
     const logoUrl = 'https://base44.app/api/apps/6904da724b4ce40db58404e7/files/public/6904da724b4ce40db58404e7/901d97ae0_Untitleddesign3.png';
     try {
       const logoResponse = await fetch(logoUrl);
@@ -35,7 +35,7 @@ Deno.serve(async (req) => {
           new Uint8Array(logoArrayBuffer)
             .reduce((data, byte) => data + String.fromCharCode(byte), '')
         );
-        doc.addImage(`data:image/png;base64,${logoBase64}`, 'PNG', 15, 10, 25, 25);
+        doc.addImage(`data:image/png;base64,${logoBase64}`, 'PNG', 15, 12, 30, 20);
       }
     } catch (e) {
       console.log('Logo nao carregada:', e);
