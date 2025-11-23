@@ -32,7 +32,7 @@ Deno.serve(async (req) => {
       targetUsers = targetUsers.filter(u => u.subscription_status === 'free');
     }
 
-    console.log(`Enviando para ${targetUsers.length} usuarios via WhatsApp`);
+    console.log(`Tentando enviar WhatsApp para ${targetUsers.length} usuarios`);
 
     const results = {
       sent: 0,
@@ -40,42 +40,51 @@ Deno.serve(async (req) => {
       errors: []
     };
 
-    // Enviar mensagem via WhatsApp usando o numero do usuario
-    // Nota: Base44 agents envia automaticamente via WhatsApp para usuarios conectados
+    const formattedMessage = `*${title}*\n\n${message}`;
+
+    // Enviar mensagem para cada usuario via WhatsApp do agent
     for (const targetUser of targetUsers) {
       try {
-        const formattedMessage = `*${title}*\n\n${message}`;
-        
-        // Tentar enviar via API do WhatsApp do agent
-        const response = await fetch(
-          `https://base44.app/api/apps/${Deno.env.get('BASE44_APP_ID')}/agents/fitness_coach/send-message`,
+        // Criar uma conversa com o agent para o usuario
+        let conversation;
+        try {
+          // Tentar buscar conversa existente
+          const conversations = await base44.asServiceRole.agents.listConversations({
+            agent_name: 'fitness_coach',
+            user_email: targetUser.email
+          });
+          
+          if (conversations && conversations.length > 0) {
+            conversation = conversations[0];
+          }
+        } catch (e) {
+          console.log('Nenhuma conversa existente para', targetUser.email);
+        }
+
+        // Se nao tem conversa, criar uma
+        if (!conversation) {
+          conversation = await base44.asServiceRole.agents.createConversation({
+            agent_name: 'fitness_coach',
+            user_email: targetUser.email,
+            metadata: {
+              source: 'admin_broadcast'
+            }
+          });
+        }
+
+        // Adicionar mensagem do sistema (admin)
+        await base44.asServiceRole.agents.addMessage(
+          conversation.id,
           {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${Deno.env.get('BASE44_SERVICE_ROLE_KEY')}`
-            },
-            body: JSON.stringify({
-              user_email: targetUser.email,
-              message: formattedMessage
-            })
+            role: 'assistant',
+            content: formattedMessage
           }
         );
 
-        if (response.ok) {
-          results.sent++;
-          console.log(`Enviado para ${targetUser.email}`);
-        } else {
-          const error = await response.text();
-          console.error(`Erro ao enviar para ${targetUser.email}:`, error);
-          results.failed++;
-          results.errors.push({
-            user: targetUser.email,
-            error: error
-          });
-        }
+        results.sent++;
+        console.log(`✅ Enviado para ${targetUser.email}`);
       } catch (error) {
-        console.error(`Erro ao enviar para ${targetUser.email}:`, error);
+        console.error(`❌ Erro ao enviar para ${targetUser.email}:`, error);
         results.failed++;
         results.errors.push({
           user: targetUser.email,

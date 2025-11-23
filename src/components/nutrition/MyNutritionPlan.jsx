@@ -19,22 +19,19 @@ export default function MyNutritionPlan({ user }) {
   const handleGeneratePDF = async () => {
     setGeneratingPDF(true);
     try {
-      console.log('Gerando PDF...');
       const response = await base44.functions.invoke('generateNutritionPDF', {});
-      console.log('Resposta da função:', response);
       
-      // Criar link direto para download
+      // response.data é um data URL (data:application/pdf;base64,...)
       const link = document.createElement('a');
-      link.href = response.data;
-      link.download = `plano-nutricional-${user.nome_completo?.replace(/\s+/g, '-') || 'usuario'}.pdf`;
-      link.target = '_blank';
+      link.href = response.data.data;
+      link.download = response.data.filename || `plano-nutricional-${user.nome_completo?.replace(/\s+/g, '-') || 'usuario'}.pdf`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
       
       toast.success('✅ PDF gerado com sucesso!');
     } catch (error) {
-      console.error('Erro completo ao gerar PDF:', error);
+      console.error('Erro ao gerar PDF:', error);
       toast.error('❌ Erro ao gerar PDF: ' + (error.response?.data?.error || error.message || 'Tente novamente'));
     } finally {
       setGeneratingPDF(false);
@@ -163,17 +160,17 @@ Gere o novo plano de refeições com a substituição solicitada:`;
     <div className="space-y-4">
       {/* Header */}
       <Card className="bg-gradient-to-br from-green-900/30 to-emerald-900/20 border-green-700/50">
-        <CardContent className="p-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="w-16 h-16 bg-green-600/20 rounded-full flex items-center justify-center">
-                <Sparkles className="w-8 h-8 text-green-400" />
+        <CardContent className="p-4 md:p-6">
+          <div className="flex flex-col md:flex-row items-start md:items-center gap-4 md:justify-between">
+            <div className="flex items-center gap-3 md:gap-4">
+              <div className="w-12 h-12 md:w-16 md:h-16 bg-green-600/20 rounded-full flex items-center justify-center flex-shrink-0">
+                <Sparkles className="w-6 h-6 md:w-8 md:h-8 text-green-400" />
               </div>
               <div>
-                <h2 className="text-2xl font-bold text-white mb-1">
+                <h2 className="text-lg md:text-2xl font-bold text-white mb-1">
                   Seu Plano Nutricional Personalizado
                 </h2>
-                <p className="text-slate-300">
+                <p className="text-slate-300 text-sm md:text-base">
                   Criado especialmente para você com IA
                 </p>
               </div>
@@ -181,7 +178,7 @@ Gere o novo plano de refeições com a substituição solicitada:`;
             <Button
               onClick={handleGeneratePDF}
               disabled={generatingPDF}
-              className="bg-green-600 hover:bg-green-700"
+              className="bg-green-600 hover:bg-green-700 w-full md:w-auto"
             >
               {generatingPDF ? (
                 <>
