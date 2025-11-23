@@ -23,7 +23,8 @@ export default function AdminNotifications() {
     schedule_type: "immediate",
     scheduled_date: "",
     recurrence_pattern: "daily",
-    recurrence_time: "09:00"
+    recurrence_time: "09:00",
+    channel: "push"
   });
 
   const { data: notifications = [] } = useQuery({
@@ -58,15 +59,33 @@ export default function AdminNotifications() {
 
   const sendImmediateNotificationMutation = useMutation({
     mutationFn: async (data) => {
-      console.log('🚀 Enviando push via backend:', data);
+      const channel = data.channel || 'push';
+      let pushResult = { sent: 0, failed: 0 };
+      let whatsappResult = { sent: 0, failed: 0 };
       
-      const response = await base44.functions.invoke('sendPushNotification', {
-        title: data.title,
-        message: data.message,
-        target_audience: data.target_audience
-      });
+      // Enviar Push
+      if (channel === 'push' || channel === 'both') {
+        console.log('🚀 Enviando push via backend:', data);
+        const response = await base44.functions.invoke('sendPushNotification', {
+          title: data.title,
+          message: data.message,
+          target_audience: data.target_audience
+        });
+        pushResult = response.data;
+        console.log('✅ Push enviado:', pushResult);
+      }
       
-      console.log('✅ Resposta:', response.data);
+      // Enviar WhatsApp
+      if (channel === 'whatsapp' || channel === 'both') {
+        console.log('💬 Enviando WhatsApp via backend:', data);
+        const response = await base44.functions.invoke('sendWhatsAppMessage', {
+          title: data.title,
+          message: data.message,
+          target_audience: data.target_audience
+        });
+        whatsappResult = response.data;
+        console.log('✅ WhatsApp enviado:', whatsappResult);
+      }
       
       await base44.entities.NotificationSchedule.create({
         ...data,
@@ -75,7 +94,11 @@ export default function AdminNotifications() {
         last_sent_date: new Date().toISOString()
       });
       
-      return response.data;
+      return {
+        sent: pushResult.sent + whatsappResult.sent,
+        failed: pushResult.failed + whatsappResult.failed,
+        channel
+      };
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries(['notifications']);
@@ -87,9 +110,11 @@ export default function AdminNotifications() {
         schedule_type: "immediate",
         scheduled_date: "",
         recurrence_pattern: "daily",
-        recurrence_time: "09:00"
+        recurrence_time: "09:00",
+        channel: "push"
       });
-      toast.success(`✅ Enviado! ${data.sent} receberam, ${data.failed} falhas`);
+      const channelLabel = data.channel === 'both' ? 'Push + WhatsApp' : data.channel === 'whatsapp' ? 'WhatsApp' : 'Push';
+      toast.success(`✅ ${channelLabel} enviado! ${data.sent} receberam, ${data.failed} falhas`);
     },
     onError: (error) => {
       console.error('❌ Erro:', error);
@@ -114,7 +139,8 @@ export default function AdminNotifications() {
         schedule_type: "immediate",
         scheduled_date: "",
         recurrence_pattern: "daily",
-        recurrence_time: "09:00"
+        recurrence_time: "09:00",
+        channel: "push"
       });
       toast.success('✅ Notificação agendada!');
     },
@@ -337,7 +363,10 @@ export default function AdminNotifications() {
                 className="flex-1 bg-blue-600 hover:bg-blue-700"
               >
                 <Send className="w-4 h-4 mr-2" />
-                {sendImmediateNotificationMutation.isPending ? 'Enviando...' : 'Enviar Push para Todos'}
+                {sendImmediateNotificationMutation.isPending ? 'Enviando...' : 
+                  formData.channel === 'push' ? 'Enviar Push' : 
+                  formData.channel === 'whatsapp' ? 'Enviar WhatsApp' : 
+                  'Enviar Ambos'}
               </Button>
             </div>
           </form>

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useNavigate } from "react-router-dom";
@@ -110,10 +109,10 @@ export default function Onboarding() {
   const handleComplete = async (skipSetup) => {
     setIsLoading(true);
     try {
-      // Calcular datas do trial (7 dias)
+      // Calcular datas do trial (3 dias)
       const trialStartDate = new Date().toISOString();
       const trialEndDate = new Date();
-      trialEndDate.setDate(trialEndDate.getDate() + 7);
+      trialEndDate.setDate(trialEndDate.getDate() + 3);
       
       await base44.auth.updateMe({
         nome_completo: answers.nome_completo.trim(),
@@ -129,7 +128,7 @@ export default function Onboarding() {
         onboarding_completed: true,
         nutrition_setup_completed: skipSetup,
         workout_setup_completed: skipSetup,
-        // Iniciar trial premium de 7 dias
+        // Iniciar trial premium de 3 dias
         subscription_status: "trial",
         premium_trial_start_date: trialStartDate,
         premium_trial_end_date: trialEndDate.toISOString(),
