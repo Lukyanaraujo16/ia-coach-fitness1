@@ -5,14 +5,40 @@ import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { base44 } from "@/api/base44Client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Check, Target, TrendingUp, RefreshCw, Loader2, ChefHat, Sparkles } from "lucide-react";
+import { Check, Target, TrendingUp, RefreshCw, Loader2, ChefHat, Sparkles, Download } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { toast } from "sonner";
 
 export default function MyNutritionPlan({ user }) {
   const queryClient = useQueryClient();
   const [showSubstitution, setShowSubstitution] = useState(false);
   const [substitutionRequest, setSubstitutionRequest] = useState("");
   const [substituting, setSubstituting] = useState(false);
+  const [generatingPDF, setGeneratingPDF] = useState(false);
+
+  const handleGeneratePDF = async () => {
+    setGeneratingPDF(true);
+    try {
+      const response = await base44.functions.invoke('generateNutritionPDF', {});
+      
+      const blob = new Blob([response.data], { type: 'application/pdf' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `plano-nutricional-${user.nome_completo || 'usuario'}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      a.remove();
+      
+      toast.success('PDF gerado com sucesso!');
+    } catch (error) {
+      console.error('Erro ao gerar PDF:', error);
+      toast.error('Erro ao gerar PDF. Tente novamente.');
+    } finally {
+      setGeneratingPDF(false);
+    }
+  };
 
   const nutritionPlan = user?.selected_nutrition_plan_data;
   const hasNutritionPlan = nutritionPlan && nutritionPlan.meal_timing;
@@ -136,16 +162,39 @@ Gere o novo plano de refeições com a substituição solicitada:`;
     <div className="space-y-4">
       {/* Header */}
       <Card className="bg-gradient-to-br from-green-900/30 to-emerald-900/20 border-green-700/50">
-        <CardContent className="p-6 text-center">
-          <div className="w-16 h-16 bg-green-600/20 rounded-full flex items-center justify-center mx-auto mb-3">
-            <Sparkles className="w-8 h-8 text-green-400" />
+        <CardContent className="p-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="w-16 h-16 bg-green-600/20 rounded-full flex items-center justify-center">
+                <Sparkles className="w-8 h-8 text-green-400" />
+              </div>
+              <div>
+                <h2 className="text-2xl font-bold text-white mb-1">
+                  Seu Plano Nutricional Personalizado
+                </h2>
+                <p className="text-slate-300">
+                  Criado especialmente para você com IA
+                </p>
+              </div>
+            </div>
+            <Button
+              onClick={handleGeneratePDF}
+              disabled={generatingPDF}
+              className="bg-green-600 hover:bg-green-700"
+            >
+              {generatingPDF ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Gerando...
+                </>
+              ) : (
+                <>
+                  <Download className="w-4 h-4 mr-2" />
+                  Baixar PDF
+                </>
+              )}
+            </Button>
           </div>
-          <h2 className="text-2xl font-bold text-white mb-2">
-            Seu Plano Nutricional Personalizado
-          </h2>
-          <p className="text-slate-300">
-            Criado especialmente para você com IA
-          </p>
         </CardContent>
       </Card>
 

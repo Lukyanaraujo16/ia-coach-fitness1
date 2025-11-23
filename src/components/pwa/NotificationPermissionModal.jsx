@@ -66,12 +66,11 @@ export default function NotificationPermissionModal({ onClose }) {
           badge: 'https://base44.app/api/apps/6904da724b4ce40db58404e7/files/public/6904da724b4ce40db58404e7/901d97ae0_Untitleddesign3.png',
           vibrate: [200, 100, 200]
         });
-        
-        // Fechar modal automaticamente após ativar
-        localStorage.setItem('notification-permission-asked', 'true');
-        onClose();
-        return;
       }
+      
+      // Fechar modal automaticamente após clicar em ativar
+      localStorage.setItem('notification-permission-asked', 'true');
+      onClose();
       
       localStorage.setItem('notification-permission-asked', 'true');
       onClose();
