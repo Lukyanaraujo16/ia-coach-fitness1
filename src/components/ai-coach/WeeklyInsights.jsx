@@ -9,28 +9,32 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 export default function WeeklyInsights({ workoutLogs, progressEntries, user }) {
   const [insights, setInsights] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [selectedAnalysisId, setSelectedAnalysisId] = useState(null);
   const queryClient = useQueryClient();
 
-  // Buscar análise salva
-  const { data: savedAnalysis } = useQuery({
-    queryKey: ['weekly-analysis', user?.email],
+  // Buscar todas as análises salvas
+  const { data: allAnalyses = [] } = useQuery({
+    queryKey: ['weekly-analyses', user?.email],
     queryFn: async () => {
-      if (!user?.email) return null;
-      const analyses = await base44.entities.WeeklyAnalysis?.list('-created_date', 1);
-      if (analyses && analyses.length > 0 && analyses[0].created_by === user.email) {
-        return analyses[0];
-      }
-      return null;
+      if (!user?.email) return [];
+      const analyses = await base44.entities.WeeklyAnalysis?.list('-created_date');
+      return analyses.filter(a => a.created_by === user.email);
     },
     enabled: !!user?.email,
   });
 
-  // Carregar análise salva quando disponível
+  // Carregar análise mais recente ou selecionada
   useEffect(() => {
-    if (savedAnalysis?.analysis_data) {
-      setInsights(savedAnalysis.analysis_data);
+    if (allAnalyses.length > 0) {
+      const targetAnalysis = selectedAnalysisId 
+        ? allAnalyses.find(a => a.id === selectedAnalysisId)
+        : allAnalyses[0];
+      
+      if (targetAnalysis?.analysis_data) {
+        setInsights(targetAnalysis.analysis_data);
+      }
     }
-  }, [savedAnalysis]);
+  }, [allAnalyses, selectedAnalysisId]);
 
   // Mutation para salvar análise
   const saveAnalysisMutation = useMutation({
@@ -204,6 +208,44 @@ Seja específico, use dados concretos e seja motivacional mas realista.`;
 
   return (
     <div className="space-y-4">
+      {/* Histórico de Análises */}
+      {allAnalyses.length > 1 && (
+        <Card className="bg-slate-900/50 border-slate-800">
+          <CardHeader>
+            <CardTitle className="text-white text-sm">📊 Histórico de Análises</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              {allAnalyses.map((analysis) => (
+                <button
+                  key={analysis.id}
+                  onClick={() => setSelectedAnalysisId(analysis.id)}
+                  className={`w-full text-left p-3 rounded-lg border transition-all ${
+                    selectedAnalysisId === analysis.id || (!selectedAnalysisId && analysis.id === allAnalyses[0].id)
+                      ? 'bg-blue-900/30 border-blue-700 shadow-md'
+                      : 'bg-slate-800/30 border-slate-700 hover:bg-slate-800/50'
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-white font-medium text-sm">
+                        Semana de {new Date(analysis.week_start).toLocaleDateString('pt-BR')}
+                      </p>
+                      <p className="text-slate-400 text-xs">
+                        {analysis.workouts_count} treinos • Criada em {new Date(analysis.created_date).toLocaleDateString('pt-BR')}
+                      </p>
+                    </div>
+                    {(selectedAnalysisId === analysis.id || (!selectedAnalysisId && analysis.id === allAnalyses[0].id)) && (
+                      <div className="w-2 h-2 bg-blue-400 rounded-full" />
+                    )}
+                  </div>
+                </button>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Consistency Score */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}

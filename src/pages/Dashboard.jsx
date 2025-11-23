@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -87,7 +86,26 @@ export default function Dashboard() {
   const userProgress = challengeProgress.find(p => p.challenge_id === activeChallenge?.id);
 
   const updateProgressMutation = useMutation({
-    mutationFn: (data) => {
+    mutationFn: async (data) => {
+      // Verificar se é uma nova semana e resetar progresso
+      const today = new Date();
+      const currentDay = today.getDay();
+      const isMonday = currentDay === 1;
+      
+      if (userProgress && isMonday) {
+        const lastUpdate = new Date(userProgress.updated_date);
+        const daysDiff = Math.floor((today - lastUpdate) / (1000 * 60 * 60 * 24));
+        
+        // Se última atualização foi antes desta segunda-feira, resetar
+        if (daysDiff >= 7 || lastUpdate.getDay() !== 1) {
+          return base44.entities.ChallengeProgress.update(userProgress.id, {
+            ...data,
+            current_progress: data.current_progress,
+            completed: data.current_progress >= activeChallenge.target,
+          });
+        }
+      }
+      
       if (userProgress) {
         return base44.entities.ChallengeProgress.update(userProgress.id, data);
       }
@@ -118,9 +136,15 @@ export default function Dashboard() {
     const logDate = new Date(log.date + 'T00:00:00');
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    const weekAgo = new Date(today);
-    weekAgo.setDate(weekAgo.getDate() - 7);
-    return logDate >= weekAgo && logDate <= today;
+    
+    // Calcular segunda-feira da semana atual
+    const currentDay = today.getDay();
+    const daysFromMonday = currentDay === 0 ? 6 : currentDay - 1;
+    const monday = new Date(today);
+    monday.setDate(today.getDate() - daysFromMonday);
+    monday.setHours(0, 0, 0, 0);
+    
+    return logDate >= monday && logDate <= today;
   });
 
   const totalCalories = thisWeekWorkouts.reduce((sum, log) => sum + (log.calories_burned || 0), 0);
