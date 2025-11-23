@@ -67,11 +67,10 @@ export default function NotificationPermissionModal({ onClose }) {
           vibrate: [200, 100, 200]
         });
       }
-      
-      // Fechar modal automaticamente após clicar em ativar
-      localStorage.setItem('notification-permission-asked', 'true');
-      onClose();
-      
+    } catch (error) {
+      console.error('❌ Erro:', error);
+    } finally {
+      // Sempre fechar o modal após o processo
       localStorage.setItem('notification-permission-asked', 'true');
       onClose();
     } catch (error) {

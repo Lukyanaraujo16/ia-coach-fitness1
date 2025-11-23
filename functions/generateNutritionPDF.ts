@@ -20,7 +20,7 @@ Deno.serve(async (req) => {
     
     let yPos = 20;
     
-    // Header com fundo escuro
+    // Header
     doc.setFillColor(15, 23, 42);
     doc.rect(0, 0, 210, 45, 'F');
     
@@ -28,15 +28,17 @@ Deno.serve(async (req) => {
     const logoUrl = 'https://base44.app/api/apps/6904da724b4ce40db58404e7/files/public/6904da724b4ce40db58404e7/901d97ae0_Untitleddesign3.png';
     try {
       const logoResponse = await fetch(logoUrl);
-      const logoBlob = await logoResponse.blob();
-      const logoBase64 = await new Promise((resolve) => {
-        const reader = new FileReader();
-        reader.onloadend = () => resolve(reader.result);
-        reader.readAsDataURL(logoBlob);
-      });
-      doc.addImage(logoBase64, 'PNG', 15, 10, 25, 25);
+      if (logoResponse.ok) {
+        const logoBlob = await logoResponse.blob();
+        const logoArrayBuffer = await logoBlob.arrayBuffer();
+        const logoBase64 = btoa(
+          new Uint8Array(logoArrayBuffer)
+            .reduce((data, byte) => data + String.fromCharCode(byte), '')
+        );
+        doc.addImage(`data:image/png;base64,${logoBase64}`, 'PNG', 15, 10, 25, 25);
+      }
     } catch (e) {
-      console.log('Erro ao carregar logo:', e);
+      console.log('Logo nao carregada:', e);
     }
     
     doc.setTextColor(255, 255, 255);
@@ -50,7 +52,7 @@ Deno.serve(async (req) => {
     
     yPos = 55;
     
-    // Informacoes do Usuario
+    // Informacoes
     doc.setTextColor(30, 41, 59);
     doc.setFontSize(16);
     doc.setFont('helvetica', 'bold');
@@ -82,7 +84,7 @@ Deno.serve(async (req) => {
     
     yPos += 5;
     
-    // Distribuicao de Macros
+    // Macros
     doc.setFontSize(16);
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(30, 41, 59);
@@ -103,26 +105,23 @@ Deno.serve(async (req) => {
     const carbsG = Math.round((calories * (macros.carbs_percentage / 100)) / 4);
     const fatG = Math.round((calories * (macros.fat_percentage / 100)) / 9);
     
-    // Proteinas
     doc.setFillColor(59, 130, 246);
     doc.rect(20, yPos, macros.protein_percentage * 1.5, 8, 'F');
     doc.setTextColor(255, 255, 255);
     doc.text(`Proteinas: ${macros.protein_percentage}% (${proteinG}g)`, 23, yPos + 6);
     yPos += 12;
     
-    // Carboidratos
     doc.setFillColor(251, 146, 60);
     doc.rect(20, yPos, macros.carbs_percentage * 1.5, 8, 'F');
     doc.text(`Carboidratos: ${macros.carbs_percentage}% (${carbsG}g)`, 23, yPos + 6);
     yPos += 12;
     
-    // Gorduras
     doc.setFillColor(234, 179, 8);
     doc.rect(20, yPos, macros.fat_percentage * 1.5, 8, 'F');
     doc.text(`Gorduras: ${macros.fat_percentage}% (${fatG}g)`, 23, yPos + 6);
     yPos += 15;
     
-    // Refeicoes do meal_timing
+    // Refeicoes
     if (planData.meal_timing && planData.meal_timing.length > 0) {
       doc.setFontSize(16);
       doc.setFont('helvetica', 'bold');
@@ -130,17 +129,15 @@ Deno.serve(async (req) => {
       doc.text('Suas Refeicoes', 20, yPos);
       yPos += 10;
       
-      planData.meal_timing.forEach((meal, index) => {
+      planData.meal_timing.forEach((meal) => {
         if (yPos > 260) {
           doc.addPage();
           yPos = 20;
         }
         
-        // Fundo da refeicao
         doc.setFillColor(226, 232, 240);
         doc.rect(20, yPos - 5, 170, 10, 'F');
         
-        // Horario e tipo
         doc.setTextColor(30, 41, 59);
         doc.setFontSize(12);
         doc.setFont('helvetica', 'bold');
@@ -155,7 +152,6 @@ Deno.serve(async (req) => {
         doc.text(`${meal.time} - ${mealLabel}`, 22, yPos + 1);
         yPos += 10;
         
-        // Sugestao
         doc.setFontSize(10);
         doc.setFont('helvetica', 'normal');
         doc.setTextColor(71, 85, 105);
@@ -171,7 +167,6 @@ Deno.serve(async (req) => {
           yPos += 5;
         });
         
-        // Calorias
         doc.setFontSize(9);
         doc.setTextColor(59, 130, 246);
         doc.setFont('helvetica', 'bold');
@@ -217,7 +212,7 @@ Deno.serve(async (req) => {
       });
     }
     
-    // Footer em todas as paginas
+    // Footer
     const pageCount = doc.internal.pages.length - 1;
     for (let i = 1; i <= pageCount; i++) {
       doc.setPage(i);
@@ -228,15 +223,14 @@ Deno.serve(async (req) => {
       doc.text(`Pagina ${i} de ${pageCount}`, 105, 290, { align: 'center' });
     }
 
-    const pdfBytes = doc.output('arraybuffer');
+    // Retornar como base64 data URL para download direto
+    const pdfDataUrl = doc.output('dataurlstring');
 
-    return new Response(pdfBytes, {
-      status: 200,
-      headers: {
-        'Content-Type': 'application/pdf',
-        'Content-Disposition': `attachment; filename="plano-nutricional-${user.nome_completo?.replace(/\s+/g, '-') || 'usuario'}.pdf"`
-      }
+    return Response.json({ 
+      data: pdfDataUrl,
+      filename: `plano-nutricional-${user.nome_completo?.replace(/\s+/g, '-') || 'usuario'}.pdf`
     });
+
   } catch (error) {
     console.error('Erro ao gerar PDF:', error);
     return Response.json({ 
