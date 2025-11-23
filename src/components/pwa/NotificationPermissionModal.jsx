@@ -70,11 +70,6 @@ export default function NotificationPermissionModal({ onClose }) {
     } catch (error) {
       console.error('❌ Erro:', error);
     } finally {
-      // Sempre fechar o modal após o processo
-      localStorage.setItem('notification-permission-asked', 'true');
-      onClose();
-    } catch (error) {
-      console.error('❌ Erro:', error);
       localStorage.setItem('notification-permission-asked', 'true');
       onClose();
     }
