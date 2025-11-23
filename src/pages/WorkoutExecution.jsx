@@ -551,7 +551,7 @@ export default function WorkoutExecution() {
           exercise={currentExercise} 
           user={user}
           isResting={isResting}
-          previousLogs={previousExerciseLogs}
+          previousLogs={previousLogs}
         />
       )}
 
