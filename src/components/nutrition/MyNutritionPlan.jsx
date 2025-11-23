@@ -21,22 +21,25 @@ export default function MyNutritionPlan({ user }) {
     try {
       const response = await base44.functions.invoke('generateNutritionPDF', {});
       
-      // Abrir em nova aba para mobile/PWA
-      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-      const isPWA = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
-      
-      if (isMobile || isPWA) {
-        // No mobile/PWA, abrir em nova aba
-        window.open(response.data.data, '_blank');
-      } else {
-        // Desktop - download direto
-        const link = document.createElement('a');
-        link.href = response.data.data;
-        link.download = response.data.filename || `plano-nutricional-${user.nome_completo?.replace(/\s+/g, '-') || 'usuario'}.pdf`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+      // Converter data URL para blob e fazer download
+      const dataUrl = response.data.data;
+      const base64 = dataUrl.split(',')[1];
+      const binaryString = window.atob(base64);
+      const bytes = new Uint8Array(binaryString.length);
+      for (let i = 0; i < binaryString.length; i++) {
+        bytes[i] = binaryString.charCodeAt(i);
       }
+      const blob = new Blob([bytes], { type: 'application/pdf' });
+      const blobUrl = URL.createObjectURL(blob);
+      
+      // Download para todos os dispositivos
+      const link = document.createElement('a');
+      link.href = blobUrl;
+      link.download = response.data.filename || `plano-nutricional-${user.nome_completo?.replace(/\s+/g, '-') || 'usuario'}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(blobUrl);
       
       toast.success('✅ PDF gerado com sucesso!');
     } catch (error) {
