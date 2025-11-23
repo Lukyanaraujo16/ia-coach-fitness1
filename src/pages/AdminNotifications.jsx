@@ -291,6 +291,20 @@ export default function AdminNotifications() {
             </div>
 
             <div>
+              <Label className="text-slate-300">Canal de Envio</Label>
+              <Select value={formData.channel || 'push'} onValueChange={(value) => setFormData({...formData, channel: value})}>
+                <SelectTrigger className="bg-slate-800 border-slate-700 text-white">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="push">Push Notification</SelectItem>
+                  <SelectItem value="whatsapp">WhatsApp</SelectItem>
+                  <SelectItem value="both">Ambos (Push + WhatsApp)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
               <Label className="text-slate-300">Público Alvo</Label>
               <Select value={formData.target_audience} onValueChange={(value) => setFormData({...formData, target_audience: value})}>
                 <SelectTrigger className="bg-slate-800 border-slate-700 text-white">
@@ -303,7 +317,7 @@ export default function AdminNotifications() {
                 </SelectContent>
               </Select>
               <p className="text-slate-400 text-xs mt-1">
-                {getTargetCount()} usuários receberão
+                {formData.channel === 'push' ? `${getTargetCount()} com push` : formData.channel === 'whatsapp' ? 'Usuários com WhatsApp ativo' : 'Ambos os canais'}
               </p>
             </div>
 
