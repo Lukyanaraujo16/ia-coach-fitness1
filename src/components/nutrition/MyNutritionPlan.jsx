@@ -21,20 +21,25 @@ export default function MyNutritionPlan({ user }) {
     try {
       const response = await base44.functions.invoke('generateNutritionPDF', {});
       
+      // A resposta já é ArrayBuffer quando vem de uma função que retorna PDF
       const blob = new Blob([response.data], { type: 'application/pdf' });
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `plano-nutricional-${user.nome_completo || 'usuario'}.pdf`;
+      a.download = `plano-nutricional-${user.nome_completo?.replace(/\s+/g, '-') || 'usuario'}.pdf`;
       document.body.appendChild(a);
       a.click();
-      window.URL.revokeObjectURL(url);
-      a.remove();
       
-      toast.success('PDF gerado com sucesso!');
+      // Aguardar um pouco antes de revogar a URL
+      setTimeout(() => {
+        window.URL.revokeObjectURL(url);
+        a.remove();
+      }, 100);
+      
+      toast.success('✅ PDF gerado com sucesso!');
     } catch (error) {
       console.error('Erro ao gerar PDF:', error);
-      toast.error('Erro ao gerar PDF. Tente novamente.');
+      toast.error('❌ Erro ao gerar PDF: ' + (error.message || 'Tente novamente'));
     } finally {
       setGeneratingPDF(false);
     }
