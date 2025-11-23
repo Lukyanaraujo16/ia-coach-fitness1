@@ -21,13 +21,22 @@ export default function MyNutritionPlan({ user }) {
     try {
       const response = await base44.functions.invoke('generateNutritionPDF', {});
       
-      // response.data é um data URL (data:application/pdf;base64,...)
-      const link = document.createElement('a');
-      link.href = response.data.data;
-      link.download = response.data.filename || `plano-nutricional-${user.nome_completo?.replace(/\s+/g, '-') || 'usuario'}.pdf`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+      // Abrir em nova aba para mobile/PWA
+      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+      const isPWA = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+      
+      if (isMobile || isPWA) {
+        // No mobile/PWA, abrir em nova aba
+        window.open(response.data.data, '_blank');
+      } else {
+        // Desktop - download direto
+        const link = document.createElement('a');
+        link.href = response.data.data;
+        link.download = response.data.filename || `plano-nutricional-${user.nome_completo?.replace(/\s+/g, '-') || 'usuario'}.pdf`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      }
       
       toast.success('✅ PDF gerado com sucesso!');
     } catch (error) {

@@ -17,11 +17,7 @@ Deno.serve(async (req) => {
 
     // Buscar usuarios ativos com WhatsApp
     const allUsers = await base44.asServiceRole.entities.User.list();
-    let targetUsers = allUsers.filter(u => 
-      u.whatsapp_coach_activated === true && 
-      u.whatsapp && 
-      u.whatsapp.trim() !== ''
-    );
+    let targetUsers = allUsers.filter(u => u.whatsapp_coach_activated === true);
 
     // Filtrar por publico alvo
     if (target_audience === 'premium') {
@@ -72,13 +68,11 @@ Deno.serve(async (req) => {
           });
         }
 
-        // Adicionar mensagem do sistema (admin)
-        await base44.asServiceRole.agents.addMessage(
-          conversation.id,
-          {
-            role: 'assistant',
-            content: formattedMessage
-          }
+        // Enviar mensagem via WhatsApp
+        await base44.asServiceRole.agents.sendWhatsAppMessage(
+          'fitness_coach',
+          targetUser.email,
+          formattedMessage
         );
 
         results.sent++;
