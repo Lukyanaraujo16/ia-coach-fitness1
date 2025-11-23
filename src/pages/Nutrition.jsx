@@ -18,6 +18,13 @@ export default function Nutrition() {
       try {
         const currentUser = await base44.auth.me();
         setUser(currentUser);
+        
+        // Verificar se veio com tab específica na URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const tabParam = urlParams.get('tab');
+        if (tabParam) {
+          setActiveTab(tabParam);
+        }
       } catch (error) {
         base44.auth.redirectToLogin(createPageUrl("Nutrition"));
       }

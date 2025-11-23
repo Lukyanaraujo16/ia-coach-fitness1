@@ -235,11 +235,14 @@ export default function Dashboard() {
         </Link>
       )}
 
-      {user?.whatsapp_coach_enabled !== false && (
+      {user?.whatsapp_coach_enabled !== false && !user?.whatsapp_coach_activated && (
         <a 
           href={base44.agents.getWhatsAppConnectURL('fitness_coach')} 
           target="_blank"
           rel="noopener noreferrer"
+          onClick={() => {
+            base44.auth.updateMe({ whatsapp_coach_activated: true });
+          }}
         >
           <Card className="bg-gradient-to-r from-green-900/50 to-emerald-900/50 border-green-700/50 hover:from-green-900/60 hover:to-emerald-900/60 transition-all cursor-pointer">
             <CardContent className="p-5 flex items-center justify-between">
@@ -262,7 +265,7 @@ export default function Dashboard() {
       )}
 
       {/* Nutrition Summary Card */}
-      <Link to={createPageUrl("Nutrition")}>
+      <Link to={createPageUrl("Nutrition") + "?tab=counter"}>
         <Card className="bg-gradient-to-br from-green-900/30 to-emerald-900/20 border-green-700/50 hover:from-green-900/40 hover:to-emerald-900/30 transition-all cursor-pointer">
           <CardHeader>
             <div className="flex items-center justify-between">
