@@ -6,7 +6,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Sparkles, TrendingUp, Lightbulb, Dumbbell, Crown } from "lucide-react";
 import WeeklyInsights from "../components/ai-coach/WeeklyInsights";
-import PersonalizedAdvice from "../components/ai-coach/PersonalizedAdvice";
+import CoachChatbot from "../components/ai-coach/CoachChatbot";
 import ExerciseAlternatives from "../components/ai-coach/ExerciseAlternatives";
 import MotivationalSummary from "../components/ai-coach/MotivationalSummary";
 
@@ -156,7 +156,7 @@ export default function AICoach() {
         />
       )}
       {activeTab === "advice" && (
-        <PersonalizedAdvice 
+        <CoachChatbot 
           workoutLogs={workoutLogs}
           progressEntries={progressEntries}
           user={user}

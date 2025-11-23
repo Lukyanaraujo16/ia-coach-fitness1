@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ArrowLeft, CheckCircle, AlertTriangle, Trophy, Clock, Zap, X, Weight, Video, Timer, Play, Pause, ChevronRight } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import AICoachAssistant from "../components/workout/AICoachAssistant";
 
 export default function WorkoutExecution() {
   const navigate = useNavigate();
@@ -544,6 +545,15 @@ export default function WorkoutExecution() {
 
   return (
     <div className="fixed inset-0 flex flex-col bg-gradient-to-b from-slate-950 to-slate-900 z-[60]">
+      {/* AI Coach Assistant */}
+      {currentExercise && (
+        <AICoachAssistant 
+          exercise={currentExercise} 
+          user={user}
+          isResting={isResting}
+        />
+      )}
+
       {/* Header Fixo */}
       <div className="flex-shrink-0 bg-slate-900/95 backdrop-blur-sm border-b border-slate-800 px-4 py-3">
         <div className="flex items-center justify-between mb-2">
