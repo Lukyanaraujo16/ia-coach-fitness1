@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -8,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Search, Crown, User, Trash2, Edit2, X, Save, Power, PowerOff, Trophy } from "lucide-react";
+import { Search, Crown, User, Trash2, Edit2, X, Save, Power, PowerOff, Trophy, Infinity, Clock } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -43,6 +42,31 @@ export default function AdminUsers({ users = [] }) {
       userId: user.id,
       data: { subscription_status: newStatus },
     });
+  };
+
+  const handleSetLifetime = (user) => {
+    if (confirm(`Definir ${user.nome_completo || user.email} como membro vitalício?`)) {
+      updateUserMutation.mutate({
+        userId: user.id,
+        data: { 
+          subscription_status: 'lifetime',
+          subscription_plan: 'lifetime',
+          subscription_end_date: null,
+        },
+      });
+    }
+  };
+
+  const handleRemoveLifetime = (user) => {
+    if (confirm(`Remover acesso vitalício de ${user.nome_completo || user.email}?`)) {
+      updateUserMutation.mutate({
+        userId: user.id,
+        data: { 
+          subscription_status: 'free',
+          subscription_plan: null,
+        },
+      });
+    }
   };
 
   const handleToggleCommunity = (value) => {
@@ -222,10 +246,20 @@ export default function AdminUsers({ users = [] }) {
                     <TableCell className="text-slate-300">{user.email}</TableCell>
                     <TableCell className="text-slate-300">{user.whatsapp || '-'}</TableCell>
                     <TableCell>
-                      {user.subscription_status === 'premium' ? (
+                      {user.subscription_status === 'lifetime' ? (
+                        <Badge className="bg-purple-500/20 text-purple-400 border-purple-500/30">
+                          <Infinity className="w-3 h-3 mr-1" />
+                          Vitalício
+                        </Badge>
+                      ) : user.subscription_status === 'premium' ? (
                         <Badge className="bg-yellow-500/20 text-yellow-400 border-yellow-500/30">
                           <Crown className="w-3 h-3 mr-1" />
                           Premium
+                        </Badge>
+                      ) : user.subscription_status === 'trial' ? (
+                        <Badge className="bg-orange-500/20 text-orange-400 border-orange-500/30">
+                          <Clock className="w-3 h-3 mr-1" />
+                          Trial
                         </Badge>
                       ) : (
                         <Badge variant="outline" className="text-slate-400 border-slate-700">
@@ -254,10 +288,23 @@ export default function AdminUsers({ users = [] }) {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent>
-                            <DropdownMenuItem onClick={() => handleTogglePremium(user)}>
-                              <Crown className="w-4 h-4 mr-2" />
-                              {user.subscription_status === 'premium' ? 'Remover Premium' : 'Tornar Premium'}
-                            </DropdownMenuItem>
+                            {user.subscription_status !== 'lifetime' ? (
+                              <>
+                                <DropdownMenuItem onClick={() => handleTogglePremium(user)}>
+                                  <Crown className="w-4 h-4 mr-2" />
+                                  {user.subscription_status === 'premium' ? 'Remover Premium' : 'Tornar Premium'}
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => handleSetLifetime(user)}>
+                                  <Infinity className="w-4 h-4 mr-2" />
+                                  Definir Vitalício
+                                </DropdownMenuItem>
+                              </>
+                            ) : (
+                              <DropdownMenuItem onClick={() => handleRemoveLifetime(user)}>
+                                <Infinity className="w-4 h-4 mr-2" />
+                                Remover Vitalício
+                              </DropdownMenuItem>
+                            )}
                             <DropdownMenuItem 
                               onClick={() => handleDeleteUser(user.id)}
                               className="text-red-400"
@@ -435,7 +482,7 @@ export default function AdminUsers({ users = [] }) {
               <div>
                 <p className="text-slate-400 text-sm">Assinantes Premium</p>
                 <p className="text-2xl font-bold text-white">
-                  {users.filter(u => u.subscription_status === 'premium').length}
+                  {users.filter(u => u.subscription_status === 'premium' || u.subscription_status === 'lifetime').length}
                 </p>
               </div>
             </div>
@@ -445,11 +492,11 @@ export default function AdminUsers({ users = [] }) {
         <Card className="bg-slate-900/50 border-slate-800">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
-              <User className="w-8 h-8 text-slate-400" />
+              <Infinity className="w-8 h-8 text-purple-400" />
               <div>
-                <p className="text-slate-400 text-sm">Usuários Free</p>
+                <p className="text-slate-400 text-sm">Vitalícios</p>
                 <p className="text-2xl font-bold text-white">
-                  {users.filter(u => u.subscription_status !== 'premium').length}
+                  {users.filter(u => u.subscription_status === 'lifetime').length}
                 </p>
               </div>
             </div>
