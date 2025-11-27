@@ -247,7 +247,7 @@ export default function Profile() {
     }
   };
 
-  const isPremium = user?.subscription_status === 'premium';
+  const isPremium = user?.subscription_status === 'premium' || user?.subscription_status === 'trial' || user?.subscription_status === 'lifetime';
 
   if (!user) {
     return (
@@ -314,12 +314,15 @@ export default function Profile() {
               )}
               <p className="text-slate-400 mb-3">{user?.email}</p>
               <div className="flex flex-wrap gap-2">
-                {isPremium ? (
+                {(isPremium || user?.subscription_status === 'lifetime') && (
                   <div className="flex items-center gap-2 px-3 py-1.5 bg-yellow-500/20 border border-yellow-500/30 rounded-full">
                     <Crown className="w-4 h-4 text-yellow-400" />
-                    <span className="text-yellow-400 text-sm font-medium">Premium</span>
+                    <span className="text-yellow-400 text-sm font-medium">
+                      {user?.subscription_status === 'lifetime' ? 'Vitalício' : 'Premium'}
+                    </span>
                   </div>
-                ) : (
+                )}
+                {!isPremium && user?.subscription_status !== 'lifetime' && (
                   <Link to={createPageUrl("Subscription")}>
                     <Button size="sm" className="bg-blue-600 hover:bg-blue-700">
                       <Crown className="w-4 h-4 mr-2" />

@@ -26,11 +26,12 @@ export default function Layout({ children, currentPageName }) {
                     window.navigator.standalone === true;
       const hasAskedPermission = localStorage.getItem('notification-permission-asked');
       
-      if (isPWA && !hasAskedPermission && Notification.permission === 'default') {
-        setTimeout(() => {
-          setShowNotificationModal(true);
-        }, 2000);
-      }
+      // Desabilitado temporariamente
+      // if (isPWA && !hasAskedPermission && Notification.permission === 'default') {
+      //   setTimeout(() => {
+      //     setShowNotificationModal(true);
+      //   }, 2000);
+      // }
     } catch (error) {
       console.error("Error loading user:", error);
     } finally {
@@ -58,6 +59,18 @@ export default function Layout({ children, currentPageName }) {
     addMetaTag('apple-mobile-web-app-capable', 'yes');
     addMetaTag('apple-mobile-web-app-status-bar-style', 'black-translucent');
     addMetaTag('apple-mobile-web-app-title', 'IA Coach');
+
+    // Desabilitar sugestão de tradução do Chrome
+    let translateMeta = document.querySelector('meta[name="google"]');
+    if (!translateMeta) {
+      translateMeta = document.createElement('meta');
+      translateMeta.name = 'google';
+      document.head.appendChild(translateMeta);
+    }
+    translateMeta.content = 'notranslate';
+
+    // Adicionar lang pt-BR no html
+    document.documentElement.lang = 'pt-BR';
 
     // Adicionar link para manifest
     let manifestLink = document.querySelector('link[rel="manifest"]');
