@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import StatsCard from "../components/home/StatsCard";
 import QuickActionCard from "../components/home/QuickActionCard";
 import NextWorkoutCard from "../components/home/NextWorkoutCard";
+import PaymentFailedBanner from "../components/PaymentFailedBanner";
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -195,7 +196,7 @@ export default function Dashboard() {
     ? Math.min(((userProgress?.current_progress || 0) / activeChallenge.target) * 100, 100)
     : 0;
 
-  const isPremium = user?.subscription_status === 'premium' || user?.subscription_status === 'trial';
+  const isPremium = user?.subscription_status === 'premium' || user?.subscription_status === 'trial' || user?.subscription_status === 'lifetime';
 
   if (!user) {
     return (
@@ -207,6 +208,8 @@ export default function Dashboard() {
 
   return (
     <div className="py-6 space-y-6">
+      <PaymentFailedBanner user={user} />
+      
       <div className="space-y-3">
         <h2 className="text-3xl font-bold text-white">
           {getGreeting()}, {user?.nome_completo?.split(' ')[0] || 'Atleta'}! 👋
