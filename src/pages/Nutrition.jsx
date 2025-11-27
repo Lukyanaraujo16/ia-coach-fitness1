@@ -59,28 +59,30 @@ export default function Nutrition() {
         <h2 className="text-3xl font-bold text-white">Nutrição</h2>
       </div>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="bg-slate-900/50 border border-slate-800 grid grid-cols-3 md:grid-cols-6">
-          <TabsTrigger value="my-plan" className="data-[state=active]:bg-green-600 text-xs md:text-sm">
-            Plano
-          </TabsTrigger>
-          <TabsTrigger value="counter" className="data-[state=active]:bg-green-600 text-xs md:text-sm">
-            Contador
-          </TabsTrigger>
-          <TabsTrigger value="summary" className="data-[state=active]:bg-green-600 text-xs md:text-sm">
-            Resumo
-          </TabsTrigger>
-          <TabsTrigger value="stats" className="data-[state=active]:bg-green-600 text-xs md:text-sm">
-            Stats
-          </TabsTrigger>
-          <TabsTrigger value="history" className="data-[state=active]:bg-green-600 text-xs md:text-sm">
-            Histórico
-          </TabsTrigger>
-          <TabsTrigger value="plans" className="data-[state=active]:bg-green-600 text-xs md:text-sm">
-            Explorar
-          </TabsTrigger>
-        </TabsList>
-      </Tabs>
+      <div className="overflow-x-auto -mx-4 px-4 scrollbar-hide">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="bg-slate-900/50 border border-slate-800 inline-flex w-auto min-w-full md:grid md:grid-cols-6 gap-1 p-1">
+            <TabsTrigger value="my-plan" className="data-[state=active]:bg-green-600 text-xs whitespace-nowrap px-4">
+              Plano
+            </TabsTrigger>
+            <TabsTrigger value="counter" className="data-[state=active]:bg-green-600 text-xs whitespace-nowrap px-4">
+              Contador
+            </TabsTrigger>
+            <TabsTrigger value="summary" className="data-[state=active]:bg-green-600 text-xs whitespace-nowrap px-4">
+              Resumo
+            </TabsTrigger>
+            <TabsTrigger value="stats" className="data-[state=active]:bg-green-600 text-xs whitespace-nowrap px-4">
+              Stats
+            </TabsTrigger>
+            <TabsTrigger value="history" className="data-[state=active]:bg-green-600 text-xs whitespace-nowrap px-4">
+              Histórico
+            </TabsTrigger>
+            <TabsTrigger value="plans" className="data-[state=active]:bg-green-600 text-xs whitespace-nowrap px-4">
+              Explorar
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
+      </div>
 
       <div className="mt-6">
         {activeTab === "my-plan" && <MyNutritionPlan user={user} />}
