@@ -49,7 +49,6 @@ Deno.serve(async (req) => {
     // Criar sessão de checkout
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
-      customer_email: user.email,
       payment_method_types: ['card'],
       line_items: [
         {
