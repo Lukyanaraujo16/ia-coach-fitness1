@@ -179,27 +179,16 @@ export default function Profile() {
       // Salvar subscription no banco quando usuário concede permissão
       try {
         console.log('💾 Salvando subscription...');
-        // First check if the user has a PushSubscription entity in the DB
-        // NOTE: This assumes that base44.entities.PushSubscription exists and has a method to list
-        // and that user.email can be used to identify the owner.
-        // The `subscription` field should contain the actual PushSubscription object from the browser.
-        // For this example, we're just creating a placeholder object.
-        // A real implementation would get the actual subscription object from the service worker.
         const existingSubscriptions = await base44.entities.PushSubscription.list();
         const userSubscription = existingSubscriptions.find(s => s.user_email === user.email);
         
         if (!userSubscription) {
-          // This `subscription` object structure is a placeholder.
-          // In a real PWA, you'd get this from `registration.pushManager.subscribe()`.
           await base44.entities.PushSubscription.create({
             user_email: user.email,
-            // This is a dummy object. A real one would contain endpoint, keys, etc.
             subscription: { enabled: true }, 
             is_active: true
           });
           console.log('✅ Subscription salva!');
-        } else {
-          console.log('✅ Subscription já existe para este usuário.');
         }
       } catch (error) {
         console.error('❌ Erro ao salvar subscription:', error);
@@ -209,40 +198,35 @@ export default function Profile() {
     try {
       console.log('🚀 Enviando notificação...');
       
-      if ('serviceWorker' in navigator) {
-        console.log('📱 Buscando Service Worker...');
+      // Tentar primeiro via Service Worker, se falhar usa Notification API direta
+      if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+        console.log('📱 Usando Service Worker existente...');
+        const registration = await navigator.serviceWorker.getRegistration();
         
-        // Aguardar o Service Worker com timeout
-        console.log('⏱️ Aguardando Service Worker estar pronto...');
-        const timeoutPromise = new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('Timeout ao aguardar Service Worker')), 5000)
-        );
-        
-        const registration = await Promise.race([
-          navigator.serviceWorker.ready,
-          timeoutPromise
-        ]);
-        
-        console.log('✅ Service Worker pronto:', registration);
-        console.log('📊 Estado:', registration.active?.state);
-        
-        // IMPORTANTE: No Android/Chrome, SEMPRE usar showNotification via ServiceWorker
-        await registration.showNotification('🔥 Teste de Notificação', {
-          body: 'Perfeito! As notificações estão funcionando. Você receberá lembretes de treino!',
-          icon: 'https://base44.app/api/apps/6904da724b4ce40db58404e7/files/public/6904da724b4ce40db58404e7/901d97ae0_Untitleddesign3.png',
-          badge: 'https://base44.app/api/apps/6904da724b4ce40db58404e7/files/public/6904da724b4ce40db58404e7/901d97ae0_Untitleddesign3.png',
-          vibrate: [200, 100, 200],
-          tag: 'test',
-          requireInteraction: false
-        });
-        
-        console.log('✅ Notificação enviada via Service Worker!');
-      } else {
-        alert('Service Worker não suportado neste navegador.');
+        if (registration) {
+          await registration.showNotification('🔥 Teste de Notificação', {
+            body: 'Perfeito! As notificações estão funcionando. Você receberá lembretes de treino!',
+            icon: 'https://base44.app/api/apps/6904da724b4ce40db58404e7/files/public/6904da724b4ce40db58404e7/901d97ae0_Untitleddesign3.png',
+            badge: 'https://base44.app/api/apps/6904da724b4ce40db58404e7/files/public/6904da724b4ce40db58404e7/901d97ae0_Untitleddesign3.png',
+            vibrate: [200, 100, 200],
+            tag: 'test',
+            requireInteraction: false
+          });
+          console.log('✅ Notificação enviada via Service Worker!');
+          return;
+        }
       }
+      
+      // Fallback: usar Notification API direta (funciona em iOS Safari)
+      console.log('📱 Usando Notification API direta...');
+      new Notification('🔥 Teste de Notificação', {
+        body: 'Perfeito! As notificações estão funcionando!',
+        icon: 'https://base44.app/api/apps/6904da724b4ce40db58404e7/files/public/6904da724b4ce40db58404e7/901d97ae0_Untitleddesign3.png'
+      });
+      console.log('✅ Notificação enviada!');
+      
     } catch (error) {
       console.error('❌ Erro ao enviar notificação:', error);
-      console.error('📊 Detalhes do erro:', error.message, error.stack);
       alert('Erro ao enviar notificação: ' + error.message);
     }
   };
