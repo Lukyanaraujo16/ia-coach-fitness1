@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { Link, useLocation } from "react-router-dom";
@@ -83,7 +82,7 @@ export default function Layout({ children, currentPageName }) {
     loadUser();
   };
 
-  const isPremium = user?.subscription_status === 'premium' || user?.subscription_status === 'trial';
+  const isPremium = user?.subscription_status === 'premium' || user?.subscription_status === 'trial' || user?.subscription_status === 'lifetime';
 
   const desktopNavigationItems = [
     { name: "Home", path: createPageUrl("Dashboard"), icon: Home },
