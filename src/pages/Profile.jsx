@@ -209,23 +209,8 @@ export default function Profile() {
     try {
       console.log('🚀 Enviando notificação...');
       
-      if ('serviceWorker' in navigator && 'PushManager' in window) {
+      if ('serviceWorker' in navigator) {
         console.log('📱 Buscando Service Worker...');
-        
-        // Verificar se há algum Service Worker registrado
-        const registrations = await navigator.serviceWorker.getRegistrations();
-        console.log('📋 Service Workers registrados:', registrations.length);
-        
-        if (registrations.length === 0) {
-          console.log('⚠️ Nenhum Service Worker encontrado, usando Notification API direta');
-          new Notification('🔥 Teste de Notificação', {
-            body: 'Perfeito! As notificações estão funcionando.',
-            icon: 'https://base44.app/api/apps/6904da724b4ce40db58404e7/files/public/6904da724b4ce40db58404e7/901d97ae0_Untitleddesign3.png',
-            vibrate: [200, 100, 200]
-          });
-          console.log('✅ Notificação enviada via API direta!');
-          return;
-        }
         
         // Aguardar o Service Worker com timeout
         console.log('⏱️ Aguardando Service Worker estar pronto...');
@@ -241,6 +226,7 @@ export default function Profile() {
         console.log('✅ Service Worker pronto:', registration);
         console.log('📊 Estado:', registration.active?.state);
         
+        // IMPORTANTE: No Android/Chrome, SEMPRE usar showNotification via ServiceWorker
         await registration.showNotification('🔥 Teste de Notificação', {
           body: 'Perfeito! As notificações estão funcionando. Você receberá lembretes de treino!',
           icon: 'https://base44.app/api/apps/6904da724b4ce40db58404e7/files/public/6904da724b4ce40db58404e7/901d97ae0_Untitleddesign3.png',
@@ -252,31 +238,12 @@ export default function Profile() {
         
         console.log('✅ Notificação enviada via Service Worker!');
       } else {
-        // Fallback para Notification API direta
-        console.log('📱 Usando Notification API direta');
-        new Notification('🔥 Teste de Notificação', {
-          body: 'Perfeito! As notificações estão funcionando.',
-          icon: 'https://base44.app/api/apps/6904da724b4ce40db58404e7/files/public/6904da724b4ce40db58404e7/901d97ae0_Untitleddesign3.png',
-          vibrate: [200, 100, 200]
-        });
-        console.log('✅ Notificação enviada via API direta!');
+        alert('Service Worker não suportado neste navegador.');
       }
     } catch (error) {
       console.error('❌ Erro ao enviar notificação:', error);
       console.error('📊 Detalhes do erro:', error.message, error.stack);
-      
-      // Tentar com Notification API direta como último recurso
-      try {
-        console.log('🔄 Tentando com Notification API direta...');
-        new Notification('🔥 Teste de Notificação', {
-          body: 'Notificações estão funcionando!',
-          icon: 'https://base44.app/api/apps/6904da724b4ce40db58404e7/files/public/6904da724b4ce40db58404e7/901d97ae0_Untitleddesign3.png'
-        });
-        console.log('✅ Notificação enviada via fallback!');
-      } catch (fallbackError) {
-        console.error('❌ Erro no fallback:', fallbackError);
-        alert('Erro ao enviar notificação: ' + error.message);
-      }
+      alert('Erro ao enviar notificação: ' + error.message);
     }
   };
 

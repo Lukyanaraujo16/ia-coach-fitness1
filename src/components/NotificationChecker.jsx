@@ -101,14 +101,18 @@ export default function NotificationChecker({ user }) {
       }
 
       try {
-        // Tentar com Notification API direta (mais confiável)
-        new Notification(notif.title, {
-          body: notif.message,
-          icon: 'https://base44.app/api/apps/6904da724b4ce40db58404e7/files/public/6904da724b4ce40db58404e7/901d97ae0_Untitleddesign3.png',
-          vibrate: [200, 100, 200],
-          tag: `notif-${notif.id}`
-        });
-        console.log('✅ Enviada!');
+        // IMPORTANTE: No Android/Chrome, usar ServiceWorker.showNotification()
+        if ('serviceWorker' in navigator) {
+          const registration = await navigator.serviceWorker.ready;
+          await registration.showNotification(notif.title, {
+            body: notif.message,
+            icon: 'https://base44.app/api/apps/6904da724b4ce40db58404e7/files/public/6904da724b4ce40db58404e7/901d97ae0_Untitleddesign3.png',
+            badge: 'https://base44.app/api/apps/6904da724b4ce40db58404e7/files/public/6904da724b4ce40db58404e7/901d97ae0_Untitleddesign3.png',
+            vibrate: [200, 100, 200],
+            tag: `notif-${notif.id}`
+          });
+          console.log('✅ Enviada via ServiceWorker!');
+        }
 
         localStorage.setItem(`notif-shown-${notif.id}`, 'true');
         
