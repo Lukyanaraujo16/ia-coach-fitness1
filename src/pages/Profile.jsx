@@ -303,8 +303,8 @@ export default function Profile() {
         </CardContent>
       </Card>
 
-      {/* Notification Card - Show for all devices if supported */}
-      {notificationStatus !== 'unsupported' && (
+      {/* Notification Card - Ocultar no Android por incompatibilidade */}
+      {notificationStatus !== 'unsupported' && !isAndroid && (
         <Card className="bg-gradient-to-br from-purple-900/30 to-pink-900/30 border-purple-700/50">
           <CardHeader>
             <CardTitle className="text-white flex items-center gap-2">
