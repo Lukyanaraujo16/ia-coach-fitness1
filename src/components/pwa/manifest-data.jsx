@@ -5,7 +5,7 @@ export const manifestData = {
   "description": "Seu personal trainer com inteligência artificial",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#0A0A0A",
+  "background_color": "#1E40AF",
   "theme_color": "#1E40AF",
   "orientation": "portrait",
   "icons": [
