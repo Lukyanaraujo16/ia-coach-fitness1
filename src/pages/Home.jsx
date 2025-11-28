@@ -702,8 +702,8 @@ export default function Home() {
       </section>
 
       {/* Final CTA */}
-      <section className="py-20 px-4">
-        <div className="max-w-3xl mx-auto">
+      <section className="py-20 px-4 pb-24">
+        <div className="max-w-3xl mx-auto px-2">
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             whileInView={{ opacity: 1, scale: 1 }}
@@ -712,7 +712,7 @@ export default function Home() {
             <Card className="bg-gradient-to-br from-blue-900/50 to-purple-900/50 border-blue-700/50 overflow-hidden relative">
               <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/20 rounded-full blur-3xl" />
               <div className="absolute bottom-0 left-0 w-64 h-64 bg-purple-500/20 rounded-full blur-3xl" />
-              <CardContent className="p-8 md:p-12 text-center relative">
+              <CardContent className="p-6 sm:p-8 md:p-12 text-center relative">
                 <div className="w-20 h-20 bg-gradient-to-br from-yellow-500 to-yellow-600 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-2xl shadow-yellow-900/50">
                   <Zap className="w-10 h-10 text-white" />
                 </div>
@@ -725,12 +725,12 @@ export default function Home() {
                 <Button
                   onClick={handleLogin}
                   size="lg"
-                  className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white px-12 py-6 text-lg font-semibold shadow-2xl shadow-blue-900/50 hover:scale-105 transition-all"
+                  className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white px-8 sm:px-12 py-6 text-base sm:text-lg font-semibold shadow-2xl shadow-blue-900/50 hover:scale-105 transition-all"
                 >
                   Começar Grátis - 3 Dias Premium
                   <ArrowRight className="w-5 h-5 ml-2" />
                 </Button>
-                <p className="text-slate-400 text-sm mt-4">
+                <p className="text-slate-400 text-xs sm:text-sm mt-4">
                   ✅ Sem compromisso • 💳 Sem cartão de crédito
                 </p>
               </CardContent>
