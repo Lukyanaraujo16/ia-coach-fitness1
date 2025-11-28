@@ -15,60 +15,40 @@ export default function Layout({ children, currentPageName }) {
   const [showMenu, setShowMenu] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [showNotificationModal, setShowNotificationModal] = useState(false);
-  const [hasCheckedAuth, setHasCheckedAuth] = useState(false);
 
   // Páginas públicas que não precisam de autenticação
   const publicPages = ["Home", "LandingPage"];
   const isPublicPage = publicPages.includes(currentPageName);
 
-  useEffect(() => {
-    let isMounted = true;
-
-    const loadUser = async () => {
-      // Se está em página pública, verificar autenticação primeiro
-      if (isPublicPage) {
-        try {
-          const isAuth = await base44.auth.isAuthenticated();
-          if (isAuth && isMounted) {
-            window.location.replace(createPageUrl("Dashboard"));
-            return;
-          }
-        } catch (error) {
-          // Ignora erro silenciosamente
-        }
-        if (isMounted) {
-          setIsLoading(false);
-          setHasCheckedAuth(true);
-        }
-        return;
-      }
-
-      try {
-        const currentUser = await base44.auth.me();
-        if (isMounted) {
-          setUser(currentUser);
-        }
-      } catch (error) {
+  const loadUser = async () => {
+    try {
+      const currentUser = await base44.auth.me();
+      setUser(currentUser);
+      
+      // Verificar se é primeira vez no PWA e ainda não pediu notificação
+      const isPWA = window.matchMedia('(display-mode: standalone)').matches || 
+                    window.navigator.standalone === true;
+      const hasAskedPermission = localStorage.getItem('notification-permission-asked');
+      
+      // Desabilitado temporariamente
+      // if (isPWA && !hasAskedPermission && Notification.permission === 'default') {
+      //   setTimeout(() => {
+      //     setShowNotificationModal(true);
+      //   }, 2000);
+      // }
+    } catch (error) {
+      // Em páginas públicas, ignora o erro silenciosamente
+      if (!isPublicPage) {
         console.error("Error loading user:", error);
-      } finally {
-        if (isMounted) {
-          setIsLoading(false);
-          setHasCheckedAuth(true);
-        }
       }
-    };
-
-    // Só carrega se ainda não verificou ou se mudou de página pública para privada
-    if (!hasCheckedAuth || (!isPublicPage && !user)) {
-      loadUser();
-    } else {
+    } finally {
       setIsLoading(false);
     }
+  };
 
-    return () => {
-      isMounted = false;
-    };
-  }, [currentPageName, isPublicPage]);
+  useEffect(() => {
+    loadUser();
+  }, [currentPageName]);
 
   useEffect(() => {
     // Adicionar meta tags do PWA dinamicamente
@@ -118,13 +98,8 @@ export default function Layout({ children, currentPageName }) {
     }
   }, []);
 
-  const handleTrialExpired = async () => {
-    try {
-      const currentUser = await base44.auth.me();
-      setUser(currentUser);
-    } catch (error) {
-      console.error("Error reloading user:", error);
-    }
+  const handleTrialExpired = () => {
+    loadUser();
   };
 
   const isPremium = user?.subscription_status === 'premium' || user?.subscription_status === 'trial' || user?.subscription_status === 'lifetime';
