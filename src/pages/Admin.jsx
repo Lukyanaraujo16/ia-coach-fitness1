@@ -173,25 +173,23 @@ export default function Admin() {
       </div>
 
       {/* Tabs */}
-      <div className="overflow-x-auto -mx-4 px-4 scrollbar-hide">
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="bg-slate-900/50 border border-slate-800 inline-flex w-auto min-w-full md:grid md:grid-cols-9 gap-1 p-1">
-            {tabs.map((tab) => {
-              const Icon = tab.icon;
-              return (
-                <TabsTrigger
-                  key={tab.value}
-                  value={tab.value}
-                  className="data-[state=active]:bg-blue-600 flex items-center gap-2 whitespace-nowrap px-3"
-                >
-                  <Icon className="w-4 h-4" />
-                  <span className="text-xs">{tab.label}</span>
-                </TabsTrigger>
-              );
-            })}
-          </TabsList>
-        </Tabs>
-      </div>
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList className="bg-slate-900/50 border border-slate-800 grid grid-cols-3 md:grid-cols-9 gap-1 p-1 h-auto">
+          {tabs.map((tab) => {
+            const Icon = tab.icon;
+            return (
+              <TabsTrigger
+                key={tab.value}
+                value={tab.value}
+                className="data-[state=active]:bg-blue-600 flex items-center gap-1 py-2"
+              >
+                <Icon className="w-4 h-4" />
+                <span className="text-xs hidden sm:inline">{tab.label}</span>
+              </TabsTrigger>
+            );
+          })}
+        </TabsList>
+      </Tabs>
 
       {/* Content */}
       <div className="mt-6">
