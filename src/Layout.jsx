@@ -249,7 +249,7 @@ export default function Layout({ children, currentPageName }) {
         </header>
       )}
 
-      <main className={!hideNavigation ? 'pt-20 max-w-7xl mx-auto px-4' : ''}>
+      <main className={!hideNavigation && !isLoading ? 'pt-20 max-w-7xl mx-auto px-4' : ''}>
         {children}
       </main>
 
