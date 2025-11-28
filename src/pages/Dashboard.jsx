@@ -196,6 +196,7 @@ export default function Dashboard() {
     ? Math.min(((userProgress?.current_progress || 0) / activeChallenge.target) * 100, 100)
     : 0;
 
+  // Premium inclui: 'premium', 'trial' e 'lifetime' (vitalício - nunca expira)
   const isPremium = user?.subscription_status === 'premium' || user?.subscription_status === 'trial' || user?.subscription_status === 'lifetime';
 
   if (!user) {

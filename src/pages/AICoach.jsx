@@ -54,6 +54,7 @@ export default function AICoach() {
     );
   }
 
+  // Premium inclui: 'premium', 'trial' e 'lifetime' (vitalício - sem expiração)
   const isPremium = user?.subscription_status === 'premium' || user?.subscription_status === 'trial' || user?.subscription_status === 'lifetime';
 
   if (!isPremium) {
