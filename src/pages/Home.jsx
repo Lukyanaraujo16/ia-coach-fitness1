@@ -725,10 +725,10 @@ export default function Home() {
                 <Button
                   onClick={handleLogin}
                   size="lg"
-                  className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white px-8 sm:px-12 py-6 text-base sm:text-lg font-semibold shadow-2xl shadow-blue-900/50 hover:scale-105 transition-all"
+                  className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white px-6 sm:px-12 py-5 sm:py-6 text-sm sm:text-lg font-semibold shadow-2xl shadow-blue-900/50 hover:scale-105 transition-all w-full sm:w-auto"
                 >
-                  Começar Grátis - 3 Dias Premium
-                  <ArrowRight className="w-5 h-5 ml-2" />
+                  <span className="whitespace-nowrap">Começar Grátis - 3 Dias Premium</span>
+                  <ArrowRight className="w-5 h-5 ml-2 flex-shrink-0" />
                 </Button>
                 <p className="text-slate-400 text-xs sm:text-sm mt-4">
                   ✅ Sem compromisso • 💳 Sem cartão de crédito
