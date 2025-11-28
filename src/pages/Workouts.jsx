@@ -57,7 +57,7 @@ export default function Workouts() {
 
   const isPremium = user?.subscription_status === 'premium' || user?.subscription_status === 'trial' || user?.subscription_status === 'lifetime';
 
-  // Usuários free só veem até 5 treinos
+  // Usuários free só veem até 5 treinos (premium, trial e lifetime veem todos)
   const freeWorkouts = workouts.filter(w => !w.is_premium).slice(0, 5);
   const availableWorkouts = isPremium ? workouts : freeWorkouts;
 
@@ -161,7 +161,7 @@ export default function Workouts() {
             )}
           </div>
           
-          {/* Locked Workouts Preview */}
+          {/* Locked Workouts Preview - Mostrar apenas para usuários realmente free */}
           {!isPremium && workouts.length > 5 && (
             <Card className="bg-slate-900/30 border-slate-800 relative overflow-hidden">
               <div className="absolute inset-0 bg-gradient-to-r from-blue-900/20 to-purple-900/20 backdrop-blur-sm" />
