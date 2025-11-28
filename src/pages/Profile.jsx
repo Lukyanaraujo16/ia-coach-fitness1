@@ -152,6 +152,9 @@ export default function Profile() {
     resetOnboardingMutation.mutate();
   };
 
+  // Detectar se é Android
+  const isAndroid = /android/i.test(navigator.userAgent);
+
   const handleTestNotification = async () => {
     console.log('🔔 Testando notificação push...');
     
@@ -198,28 +201,12 @@ export default function Profile() {
     try {
       console.log('🚀 Enviando notificação...');
       
-      // Tentar Service Worker primeiro (Android e PWA)
-      if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
-        const registration = await navigator.serviceWorker.ready;
-        
-        await registration.showNotification('🔥 Teste de Notificação', {
-          body: 'Perfeito! As notificações estão funcionando. Você receberá lembretes de treino!',
-          icon: 'https://base44.app/api/apps/6904da724b4ce40db58404e7/files/public/6904da724b4ce40db58404e7/901d97ae0_Untitleddesign3.png',
-          badge: 'https://base44.app/api/apps/6904da724b4ce40db58404e7/files/public/6904da724b4ce40db58404e7/901d97ae0_Untitleddesign3.png',
-          vibrate: [200, 100, 200],
-          tag: 'test',
-          requireInteraction: false
-        });
-        console.log('✅ Notificação enviada via Service Worker!');
-      } else {
-        // Fallback para iOS Safari e navegadores sem SW ativo
-        console.log('📱 Usando Notification API direta (iOS fallback)...');
-        new Notification('🔥 Teste de Notificação', {
-          body: 'Perfeito! As notificações estão funcionando!',
-          icon: 'https://base44.app/api/apps/6904da724b4ce40db58404e7/files/public/6904da724b4ce40db58404e7/901d97ae0_Untitleddesign3.png'
-        });
-        console.log('✅ Notificação enviada!');
-      }
+      // iOS: usar Notification API direta
+      new Notification('🔥 Teste de Notificação', {
+        body: 'Perfeito! As notificações estão funcionando!',
+        icon: 'https://base44.app/api/apps/6904da724b4ce40db58404e7/files/public/6904da724b4ce40db58404e7/901d97ae0_Untitleddesign3.png'
+      });
+      console.log('✅ Notificação enviada!');
       
     } catch (error) {
       console.error('❌ Erro ao enviar notificação:', error);
