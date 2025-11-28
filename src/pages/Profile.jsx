@@ -198,9 +198,8 @@ export default function Profile() {
     try {
       console.log('🚀 Enviando notificação...');
       
-      // Sempre usar Service Worker para compatibilidade com Android
-      if ('serviceWorker' in navigator) {
-        // Aguardar o Service Worker estar pronto
+      // Tentar Service Worker primeiro (Android e PWA)
+      if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
         const registration = await navigator.serviceWorker.ready;
         
         await registration.showNotification('🔥 Teste de Notificação', {
@@ -213,7 +212,13 @@ export default function Profile() {
         });
         console.log('✅ Notificação enviada via Service Worker!');
       } else {
-        alert('Service Worker não disponível neste navegador.');
+        // Fallback para iOS Safari e navegadores sem SW ativo
+        console.log('📱 Usando Notification API direta (iOS fallback)...');
+        new Notification('🔥 Teste de Notificação', {
+          body: 'Perfeito! As notificações estão funcionando!',
+          icon: 'https://base44.app/api/apps/6904da724b4ce40db58404e7/files/public/6904da724b4ce40db58404e7/901d97ae0_Untitleddesign3.png'
+        });
+        console.log('✅ Notificação enviada!');
       }
       
     } catch (error) {
