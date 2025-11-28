@@ -253,7 +253,7 @@ export default function Layout({ children, currentPageName }) {
         {children}
       </main>
 
-      {showMenu && !hideNavigation && (
+      {showMenu && !hideNavigation && !isLoading && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60] md:hidden" onClick={() => setShowMenu(false)}>
           <div className="fixed inset-y-0 right-0 w-64 bg-slate-900 shadow-2xl flex flex-col" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between p-4 border-b border-slate-800">
