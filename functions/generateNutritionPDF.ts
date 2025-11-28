@@ -343,23 +343,20 @@ Deno.serve(async (req) => {
         doc.setFillColor(...primaryBlue);
         doc.rect(0, 0, pageWidth, 25, 'F');
         if (logoBase64) {
-          doc.addImage(`data:image/png;base64,${logoBase64}`, 'PNG', margin, 5, 45, 15);
+          doc.addImage(`data:image/png;base64,${logoBase64}`, 'PNG', margin, 7, 40, 11);
         }
         yPos = 35;
       }
       
       yPos += 5;
-      doc.setFillColor(59, 130, 246, 0.1);
+      doc.setFillColor(...primaryBlue);
       doc.roundedRect(margin, yPos, pageWidth - (margin * 2), 20, 2, 2, 'F');
-      doc.setDrawColor(59, 130, 246);
-      doc.roundedRect(margin, yPos, pageWidth - (margin * 2), 20, 2, 2, 'S');
       
-      doc.setTextColor(59, 130, 246);
+      doc.setTextColor(255, 255, 255);
       doc.setFontSize(11);
       doc.setFont('helvetica', 'bold');
       doc.text('HIDRATACAO:', margin + 5, yPos + 12);
       doc.setFont('helvetica', 'normal');
-      doc.setTextColor(...textDark);
       doc.text(planData.hydration_goal, margin + 35, yPos + 12);
     }
     
