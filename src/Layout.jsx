@@ -21,12 +21,6 @@ export default function Layout({ children, currentPageName }) {
   const isPublicPage = publicPages.includes(currentPageName);
 
   const loadUser = async () => {
-    // Não tenta carregar usuário em páginas públicas
-    if (isPublicPage) {
-      setIsLoading(false);
-      return;
-    }
-    
     try {
       const currentUser = await base44.auth.me();
       setUser(currentUser);
@@ -43,7 +37,10 @@ export default function Layout({ children, currentPageName }) {
       //   }, 2000);
       // }
     } catch (error) {
-      console.error("Error loading user:", error);
+      // Em páginas públicas, ignora o erro silenciosamente
+      if (!isPublicPage) {
+        console.error("Error loading user:", error);
+      }
     } finally {
       setIsLoading(false);
     }
