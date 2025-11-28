@@ -289,7 +289,7 @@ export default function Home() {
       </header>
 
       {/* Hero Section */}
-      <section className="relative overflow-hidden min-h-screen flex items-center pt-20">
+      <section className="relative overflow-hidden min-h-screen flex items-center pt-20" aria-label="Apresentação do IA Coach Fitness">
         <div className="absolute inset-0">
           <div className="absolute inset-0 bg-gradient-to-br from-blue-900/30 via-purple-900/20 to-slate-950" />
           <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-blue-600/20 rounded-full blur-3xl" />
@@ -309,7 +309,7 @@ export default function Home() {
             
             <h1 className="text-4xl md:text-6xl font-bold text-white leading-tight">
               Seu Personal Trainer
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400"> com IA</span>
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400"> com Inteligência Artificial</span>
             </h1>
             
             <p className="text-xl text-slate-300 max-w-lg">
@@ -365,8 +365,9 @@ export default function Home() {
               <div className="absolute inset-0 bg-gradient-to-br from-blue-600/20 to-purple-600/20 rounded-3xl blur-2xl" />
               <img
                 src="https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=600&q=80"
-                alt="Fitness App"
+                alt="Mulher treinando com app de fitness - IA Coach Fitness"
                 className="relative rounded-3xl shadow-2xl border border-slate-800"
+                loading="eager"
               />
               <div className="absolute -bottom-6 -left-6 bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-xl">
                 <div className="flex items-center gap-3">
@@ -420,7 +421,7 @@ export default function Home() {
       </section>
 
       {/* Features Section */}
-      <section className="py-20 px-4">
+      <section className="py-20 px-4" aria-label="Recursos do aplicativo">
         <div className="max-w-7xl mx-auto">
           <motion.div
             initial={{ opacity: 0 }}
@@ -430,7 +431,7 @@ export default function Home() {
           >
             <h2 className="text-4xl md:text-5xl font-bold text-white mb-4">
               Tudo para sua
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400"> transformação</span>
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400"> transformação física</span>
             </h2>
             <p className="text-slate-400 text-lg max-w-2xl mx-auto">
               Uma plataforma completa com inteligência artificial para você alcançar seus objetivos fitness
@@ -454,6 +455,7 @@ export default function Home() {
                         src={feature.image}
                         alt={feature.title}
                         className="w-full h-full object-cover opacity-60 group-hover:opacity-80 group-hover:scale-105 transition-all duration-500"
+                        loading="lazy"
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/50 to-transparent" />
                       <div className="absolute bottom-4 left-4">
@@ -475,7 +477,7 @@ export default function Home() {
       </section>
 
       {/* How It Works */}
-      <section className="py-20 px-4 bg-slate-900/30">
+      <section className="py-20 px-4 bg-slate-900/30" aria-label="Como funciona o IA Coach Fitness">
         <div className="max-w-7xl mx-auto">
           <motion.div
             initial={{ opacity: 0 }}
@@ -484,7 +486,7 @@ export default function Home() {
             className="text-center mb-16"
           >
             <h2 className="text-4xl md:text-5xl font-bold text-white mb-4">
-              Como funciona?
+              Como funciona o IA Coach Fitness?
             </h2>
             <p className="text-slate-400 text-lg">
               Em poucos minutos você terá seu plano personalizado
@@ -526,7 +528,7 @@ export default function Home() {
       </section>
 
       {/* Testimonials */}
-      <section className="py-20 px-4">
+      <section className="py-20 px-4" aria-label="Depoimentos de usuários">
         <div className="max-w-7xl mx-auto">
           <motion.div
             initial={{ opacity: 0 }}
@@ -536,7 +538,7 @@ export default function Home() {
           >
             <h2 className="text-4xl md:text-5xl font-bold text-white mb-4">
               Histórias de
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400"> sucesso</span>
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400"> sucesso com IA Coach</span>
             </h2>
             <p className="text-slate-400 text-lg">
               Veja o que nossos usuários estão dizendo
@@ -580,7 +582,7 @@ export default function Home() {
       </section>
 
       {/* Pricing Section */}
-      <section className="py-20 px-4 bg-slate-900/30" id="pricing">
+      <section className="py-20 px-4 bg-slate-900/30" id="pricing" aria-label="Planos e preços">
         <div className="max-w-7xl mx-auto">
           <motion.div
             initial={{ opacity: 0 }}
@@ -738,18 +740,21 @@ export default function Home() {
       </section>
 
       {/* Footer */}
-      <footer className="py-12 px-4 border-t border-slate-800">
+      <footer className="py-12 px-4 border-t border-slate-800" role="contentinfo">
         <div className="max-w-7xl mx-auto">
           <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-            <img src={logoUrl} alt="IA Coach Fitness" className="h-8" />
-            <div className="flex items-center gap-6 text-slate-400 text-sm">
+            <img src={logoUrl} alt="Logo IA Coach Fitness" className="h-8" />
+            <nav className="flex items-center gap-6 text-slate-400 text-sm" aria-label="Links do rodapé">
               <a href="#" className="hover:text-white transition-colors">Termos de Uso</a>
-              <a href="#" className="hover:text-white transition-colors">Privacidade</a>
+              <a href="#" className="hover:text-white transition-colors">Política de Privacidade</a>
               <a href="#" className="hover:text-white transition-colors">Suporte</a>
-            </div>
+            </nav>
           </div>
           <div className="text-center text-slate-500 text-sm mt-8">
-            <p>© 2025 IA Coach Fitness. Todos os direitos reservados.</p>
+            <p>© 2025 IA Coach Fitness - Personal Trainer com Inteligência Artificial. Todos os direitos reservados.</p>
+            <address className="not-italic mt-2">
+              Contato: contato@iacoachfitness.com.br
+            </address>
           </div>
         </div>
       </footer>
