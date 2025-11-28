@@ -82,7 +82,7 @@ Deno.serve(async (req) => {
     
     // Adicionar logo no header
     if (logoBase64) {
-      doc.addImage(`data:image/png;base64,${logoBase64}`, 'PNG', margin, 5, 45, 15);
+      doc.addImage(`data:image/png;base64,${logoBase64}`, 'PNG', margin, 7, 40, 11);
     }
     
     // Título principal
@@ -195,7 +195,7 @@ Deno.serve(async (req) => {
           doc.setFillColor(...primaryBlue);
           doc.rect(0, 0, pageWidth, 25, 'F');
           if (logoBase64) {
-            doc.addImage(`data:image/png;base64,${logoBase64}`, 'PNG', margin, 5, 45, 15);
+            doc.addImage(`data:image/png;base64,${logoBase64}`, 'PNG', margin, 7, 40, 11);
           }
           yPos = 35;
         }
@@ -270,7 +270,7 @@ Deno.serve(async (req) => {
           doc.setFillColor(...primaryBlue);
           doc.rect(0, 0, pageWidth, 25, 'F');
           if (logoBase64) {
-            doc.addImage(`data:image/png;base64,${logoBase64}`, 'PNG', margin, 5, 45, 15);
+            doc.addImage(`data:image/png;base64,${logoBase64}`, 'PNG', margin, 7, 40, 11);
           }
           yPos = 35;
         }
@@ -318,7 +318,7 @@ Deno.serve(async (req) => {
           doc.setFillColor(...primaryBlue);
           doc.rect(0, 0, pageWidth, 25, 'F');
           if (logoBase64) {
-            doc.addImage(`data:image/png;base64,${logoBase64}`, 'PNG', margin, 5, 45, 15);
+            doc.addImage(`data:image/png;base64,${logoBase64}`, 'PNG', margin, 7, 40, 11);
           }
           yPos = 35;
         }
