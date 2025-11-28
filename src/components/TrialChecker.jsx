@@ -4,7 +4,7 @@ import { base44 } from "@/api/base44Client";
 export default function TrialChecker({ user, onTrialExpired }) {
   useEffect(() => {
     const checkTrialStatus = async () => {
-      // Se é vitalício, não faz nada
+      // Se é vitalício, não faz nenhuma verificação de expiração (não tem data de vencimento)
       if (!user || user.subscription_status === 'lifetime') return;
       
       // Verificar trial

@@ -102,6 +102,7 @@ export default function Layout({ children, currentPageName }) {
     loadUser();
   };
 
+  // Premium inclui: 'premium' (assinante), 'trial' (teste), 'lifetime' (vitalício - sem data de expiração)
   const isPremium = user?.subscription_status === 'premium' || user?.subscription_status === 'trial' || user?.subscription_status === 'lifetime';
 
   const desktopNavigationItems = [
