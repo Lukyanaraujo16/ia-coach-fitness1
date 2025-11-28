@@ -15,9 +15,9 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Titulo e mensagem sao obrigatorios' }, { status: 400 });
     }
 
-    // Buscar usuarios ativos com WhatsApp
+    // Buscar usuarios que tem numero de WhatsApp salvo
     const allUsers = await base44.asServiceRole.entities.User.list();
-    let targetUsers = allUsers.filter(u => u.whatsapp_coach_activated === true);
+    let targetUsers = allUsers.filter(u => u.whatsapp_phone_number);
 
     // Filtrar por publico alvo
     if (target_audience === 'premium') {
@@ -38,45 +38,38 @@ Deno.serve(async (req) => {
 
     const formattedMessage = `*${title}*\n\n${message}`;
 
-    // Enviar mensagem para cada usuario via WhatsApp do agent
+    // Buscar todas as conversas do agente
+    const allConversations = await base44.asServiceRole.agents.listConversations({
+      agent_name: 'fitness_coach'
+    });
+
+    console.log(`Total de conversas encontradas: ${allConversations.length}`);
+
+    // Enviar mensagem para cada usuario
     for (const targetUser of targetUsers) {
       try {
-        // Criar uma conversa com o agent para o usuario
-        let conversation;
-        try {
-          // Tentar buscar conversa existente
-          const conversations = await base44.asServiceRole.agents.listConversations({
-            agent_name: 'fitness_coach',
-            user_email: targetUser.email
-          });
-          
-          if (conversations && conversations.length > 0) {
-            conversation = conversations[0];
-          }
-        } catch (e) {
-          console.log('Nenhuma conversa existente para', targetUser.email);
-        }
-
-        // Se nao tem conversa, criar uma
-        if (!conversation) {
-          conversation = await base44.asServiceRole.agents.createConversation({
-            agent_name: 'fitness_coach',
-            user_email: targetUser.email,
-            metadata: {
-              source: 'admin_broadcast'
-            }
-          });
-        }
-
-        // Enviar mensagem via WhatsApp
-        await base44.asServiceRole.agents.sendWhatsAppMessage(
-          'fitness_coach',
-          targetUser.email,
-          formattedMessage
+        // Encontrar conversa do usuario
+        const userConversation = allConversations.find(c => 
+          c.user_email === targetUser.email
         );
 
-        results.sent++;
-        console.log(`✅ Enviado para ${targetUser.email}`);
+        if (userConversation) {
+          // Adicionar mensagem do assistente na conversa
+          await base44.asServiceRole.agents.addMessage(userConversation, {
+            role: 'assistant',
+            content: formattedMessage
+          });
+          
+          results.sent++;
+          console.log(`✅ Enviado para ${targetUser.email}`);
+        } else {
+          console.log(`⚠️ Sem conversa WhatsApp para ${targetUser.email}`);
+          results.failed++;
+          results.errors.push({
+            user: targetUser.email,
+            error: 'Usuario nao tem conversa WhatsApp ativa'
+          });
+        }
       } catch (error) {
         console.error(`❌ Erro ao enviar para ${targetUser.email}:`, error);
         results.failed++;
