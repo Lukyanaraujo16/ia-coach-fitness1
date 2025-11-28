@@ -60,28 +60,26 @@ export default function Nutrition() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <div className="overflow-x-auto -mx-4 px-4 pb-2">
-          <TabsList className="bg-slate-900/50 border border-slate-800 inline-flex w-max md:w-full md:grid md:grid-cols-6 gap-1 p-1">
-            <TabsTrigger value="my-plan" className="data-[state=active]:bg-green-600 text-xs whitespace-nowrap px-4">
-              Plano
-            </TabsTrigger>
-            <TabsTrigger value="counter" className="data-[state=active]:bg-green-600 text-xs whitespace-nowrap px-4">
-              Contador
-            </TabsTrigger>
-            <TabsTrigger value="summary" className="data-[state=active]:bg-green-600 text-xs whitespace-nowrap px-4">
-              Resumo
-            </TabsTrigger>
-            <TabsTrigger value="stats" className="data-[state=active]:bg-green-600 text-xs whitespace-nowrap px-4">
-              Stats
-            </TabsTrigger>
-            <TabsTrigger value="history" className="data-[state=active]:bg-green-600 text-xs whitespace-nowrap px-4">
-              Histórico
-            </TabsTrigger>
-            <TabsTrigger value="plans" className="data-[state=active]:bg-green-600 text-xs whitespace-nowrap px-4">
-              Explorar
-            </TabsTrigger>
-          </TabsList>
-        </div>
+        <TabsList className="bg-slate-900/50 border border-slate-800 grid grid-cols-3 md:grid-cols-6 gap-1 p-1 h-auto">
+          <TabsTrigger value="my-plan" className="data-[state=active]:bg-green-600 text-xs py-2">
+            Plano
+          </TabsTrigger>
+          <TabsTrigger value="counter" className="data-[state=active]:bg-green-600 text-xs py-2">
+            Contador
+          </TabsTrigger>
+          <TabsTrigger value="summary" className="data-[state=active]:bg-green-600 text-xs py-2">
+            Resumo
+          </TabsTrigger>
+          <TabsTrigger value="stats" className="data-[state=active]:bg-green-600 text-xs py-2">
+            Stats
+          </TabsTrigger>
+          <TabsTrigger value="history" className="data-[state=active]:bg-green-600 text-xs py-2">
+            Histórico
+          </TabsTrigger>
+          <TabsTrigger value="plans" className="data-[state=active]:bg-green-600 text-xs py-2">
+            Explorar
+          </TabsTrigger>
+        </TabsList>
       </Tabs>
 
       <div className="mt-6">
