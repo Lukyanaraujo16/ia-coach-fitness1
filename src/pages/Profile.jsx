@@ -118,7 +118,7 @@ export default function Profile() {
   });
 
   const handleLogout = async () => {
-    await base44.auth.logout(createPageUrl("Home"));
+    await base44.auth.logout("https://iacoachfitness.com.br");
   };
 
   const handleSaveName = () => {
