@@ -176,7 +176,8 @@ export default function Layout({ children, currentPageName }) {
   }
 
   const specialPages = ["WorkoutExecution", "Onboarding", "NutritionSetup", "WorkoutSetup", "LandingPage", "Home"];
-  const hideNavigation = specialPages.includes(currentPageName) || (isLoading && !user);
+  // Esconde navegação apenas em páginas especiais OU se está carregando em páginas autenticadas
+  const hideNavigation = specialPages.includes(currentPageName);
 
   const handleLogout = async () => {
     await base44.auth.logout();
