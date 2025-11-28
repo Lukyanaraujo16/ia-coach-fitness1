@@ -16,9 +16,21 @@ export default function Home() {
   const [logoUrl, setLogoUrl] = useState("https://base44.app/api/apps/6904da724b4ce40db58404e7/files/public/6904da724b4ce40db58404e7/901d97ae0_Untitleddesign3.png");
 
   useEffect(() => {
-    const loadLogo = async () => {
+    const checkAuthAndLoadLogo = async () => {
       try {
-        // Apenas tenta carregar o logo do admin, sem redirecionar
+        // Verifica se o usuário está autenticado
+        const isAuthenticated = await base44.auth.isAuthenticated();
+        if (isAuthenticated) {
+          // Usuário logado - redireciona para Dashboard
+          navigate(createPageUrl("Dashboard"));
+          return;
+        }
+      } catch (error) {
+        // Não está autenticado - continua na Home
+      }
+
+      try {
+        // Apenas tenta carregar o logo do admin
         const users = await base44.entities.User.list();
         const adminUser = users.find(u => u.role === 'admin' && u.app_logo_url);
         if (adminUser?.app_logo_url) {
@@ -28,8 +40,8 @@ export default function Home() {
         // Ignora erro - usa logo padrão
       }
     };
-    loadLogo();
-  }, []);
+    checkAuthAndLoadLogo();
+  }, [navigate]);
 
   const handleLogin = () => {
     base44.auth.redirectToLogin(createPageUrl("Dashboard"));
