@@ -16,7 +16,17 @@ export default function Layout({ children, currentPageName }) {
   const [isLoading, setIsLoading] = useState(true);
   const [showNotificationModal, setShowNotificationModal] = useState(false);
 
+  // Páginas públicas que não precisam de autenticação
+  const publicPages = ["Home", "LandingPage"];
+  const isPublicPage = publicPages.includes(currentPageName);
+
   const loadUser = async () => {
+    // Não tenta carregar usuário em páginas públicas
+    if (isPublicPage) {
+      setIsLoading(false);
+      return;
+    }
+    
     try {
       const currentUser = await base44.auth.me();
       setUser(currentUser);
@@ -41,7 +51,7 @@ export default function Layout({ children, currentPageName }) {
 
   useEffect(() => {
     loadUser();
-  }, []);
+  }, [currentPageName]);
 
   useEffect(() => {
     // Adicionar meta tags do PWA dinamicamente
