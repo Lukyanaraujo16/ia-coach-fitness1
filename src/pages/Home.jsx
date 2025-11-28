@@ -16,38 +16,20 @@ export default function Home() {
   const [logoUrl, setLogoUrl] = useState("https://base44.app/api/apps/6904da724b4ce40db58404e7/files/public/6904da724b4ce40db58404e7/901d97ae0_Untitleddesign3.png");
 
   useEffect(() => {
-    const checkAuth = async () => {
+    const loadLogo = async () => {
       try {
-        const isAuthenticated = await base44.auth.isAuthenticated();
-        if (isAuthenticated) {
-          try {
-            const user = await base44.auth.me();
-            if (user?.app_logo_url) {
-              setLogoUrl(user.app_logo_url);
-            }
-          } catch (error) {}
-          navigate(createPageUrl("Dashboard"));
-        } else {
-          try {
-            const users = await base44.entities.User.list();
-            const adminUser = users.find(u => u.role === 'admin' && u.app_logo_url);
-            if (adminUser?.app_logo_url) {
-              setLogoUrl(adminUser.app_logo_url);
-            }
-          } catch (error) {}
+        // Apenas tenta carregar o logo do admin, sem redirecionar
+        const users = await base44.entities.User.list();
+        const adminUser = users.find(u => u.role === 'admin' && u.app_logo_url);
+        if (adminUser?.app_logo_url) {
+          setLogoUrl(adminUser.app_logo_url);
         }
       } catch (error) {
-        try {
-          const users = await base44.entities.User.list();
-          const adminUser = users.find(u => u.role === 'admin' && u.app_logo_url);
-          if (adminUser?.app_logo_url) {
-            setLogoUrl(adminUser.app_logo_url);
-          }
-        } catch (error) {}
+        // Ignora erro - usa logo padrão
       }
     };
-    checkAuth();
-  }, [navigate]);
+    loadLogo();
+  }, []);
 
   const handleLogin = () => {
     base44.auth.redirectToLogin(createPageUrl("Dashboard"));
