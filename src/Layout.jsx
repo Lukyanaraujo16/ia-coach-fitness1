@@ -306,7 +306,7 @@ export default function Layout({ children, currentPageName }) {
         </div>
       )}
 
-      {!hideNavigation && (
+      {!hideNavigation && !isLoading && (
         <nav className="fixed bottom-0 left-0 right-0 bg-slate-950/95 backdrop-blur-xl border-t border-slate-800/50 z-50 md:hidden">
           <div className="max-w-7xl mx-auto">
             <div className="grid grid-cols-4 gap-1 p-2">
