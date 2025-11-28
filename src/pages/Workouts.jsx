@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
@@ -56,7 +55,7 @@ export default function Workouts() {
     );
   }
 
-  const isPremium = user?.subscription_status === 'premium';
+  const isPremium = user?.subscription_status === 'premium' || user?.subscription_status === 'trial' || user?.subscription_status === 'lifetime';
 
   // Usuários free só veem até 5 treinos
   const freeWorkouts = workouts.filter(w => !w.is_premium).slice(0, 5);
