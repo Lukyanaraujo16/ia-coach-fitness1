@@ -7,7 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronRight, Target, TrendingUp, User as UserIcon, Users, Phone } from "lucide-react";
+import { ChevronRight, Target, TrendingUp, User as UserIcon, Users } from "lucide-react";
 
 const STEPS = [
   {
@@ -53,7 +53,6 @@ export default function Onboarding() {
   const [currentStep, setCurrentStep] = useState(0);
   const [answers, setAnswers] = useState({
     nome_completo: "",
-    whatsapp: "",
     current_weight: "",
     height: "",
     weight_goal: "",
@@ -116,7 +115,6 @@ export default function Onboarding() {
       
       await base44.auth.updateMe({
         nome_completo: answers.nome_completo.trim(),
-        whatsapp: answers.whatsapp.trim(),
         current_weight: answers.current_weight ? parseFloat(answers.current_weight) : undefined,
         height: answers.height ? parseFloat(answers.height) : undefined,
         weight_goal: answers.weight_goal ? parseFloat(answers.weight_goal) : undefined,
@@ -150,7 +148,7 @@ export default function Onboarding() {
 
   const canProceed = () => {
     if (currentStepData.type === "form") {
-      return answers.nome_completo.trim() && answers.whatsapp.trim() && answers.current_weight && answers.height && answers.weight_goal && answers.weekly_goal;
+      return answers.nome_completo.trim() && answers.current_weight && answers.height && answers.weight_goal && answers.weekly_goal;
     }
     return answers[currentStepData.id] !== "";
   };
@@ -214,16 +212,6 @@ export default function Onboarding() {
                       onChange={(e) => setAnswers({ ...answers, nome_completo: e.target.value })}
                       className="bg-slate-800 border-slate-700 text-white h-11"
                       placeholder="Digite seu nome"
-                    />
-                  </div>
-                  
-                  <div className="space-y-1.5">
-                    <Label className="text-slate-300 text-sm">WhatsApp *</Label>
-                    <Input
-                      value={answers.whatsapp}
-                      onChange={(e) => setAnswers({ ...answers, whatsapp: e.target.value })}
-                      className="bg-slate-800 border-slate-700 text-white h-11"
-                      placeholder="(11) 99999-9999"
                     />
                   </div>
                   
