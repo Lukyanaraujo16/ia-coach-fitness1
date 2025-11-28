@@ -175,9 +175,14 @@ export default function Layout({ children, currentPageName }) {
     });
   }
 
-  const specialPages = ["WorkoutExecution", "Onboarding", "NutritionSetup", "WorkoutSetup", "LandingPage", "Home"];
-  // Esconde navegação apenas em páginas especiais OU se está carregando em páginas autenticadas
-  const hideNavigation = specialPages.includes(currentPageName);
+  const specialPages = ["WorkoutExecution", "Onboarding", "NutritionSetup", "WorkoutSetup", "LandingPage"];
+  
+  // Verifica se está na página Home pela URL, não pelo currentPageName
+  const isHomePage = location.pathname === "/" || location.pathname === "/page/Home";
+  const isSpecialPage = specialPages.includes(currentPageName);
+  
+  // Esconde navegação em páginas especiais ou na Home (landing page pública)
+  const hideNavigation = isSpecialPage || isHomePage;
 
   const handleLogout = async () => {
     await base44.auth.logout();
