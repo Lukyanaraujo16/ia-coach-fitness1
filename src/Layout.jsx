@@ -25,6 +25,13 @@ export default function Layout({ children, currentPageName }) {
       const currentUser = await base44.auth.me();
       setUser(currentUser);
       
+      // Se o usuário está logado e tenta acessar uma página pública (Home, LandingPage),
+      // redireciona para o Dashboard.
+      if (currentUser && isPublicPage) {
+        window.location.href = createPageUrl("Dashboard");
+        return;
+      }
+
       // Verificar se é primeira vez no PWA e ainda não pediu notificação
       const isPWA = window.matchMedia('(display-mode: standalone)').matches || 
                     window.navigator.standalone === true;
