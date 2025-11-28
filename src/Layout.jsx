@@ -21,16 +21,24 @@ export default function Layout({ children, currentPageName }) {
   const isPublicPage = publicPages.includes(currentPageName);
 
   const loadUser = async () => {
+    // Se está em página pública, verificar autenticação primeiro
+    if (isPublicPage) {
+      try {
+        const isAuth = await base44.auth.isAuthenticated();
+        if (isAuth) {
+          window.location.href = createPageUrl("Dashboard");
+          return;
+        }
+      } catch (error) {
+        // Ignora erro - usuário não está logado
+      }
+      setIsLoading(false);
+      return;
+    }
+
     try {
       const currentUser = await base44.auth.me();
       setUser(currentUser);
-      
-      // Se o usuário está logado e tenta acessar uma página pública (Home, LandingPage),
-      // redireciona para o Dashboard.
-      if (currentUser && isPublicPage) {
-        window.location.href = createPageUrl("Dashboard");
-        return;
-      }
 
       // Verificar se é primeira vez no PWA e ainda não pediu notificação
       const isPWA = window.matchMedia('(display-mode: standalone)').matches || 
@@ -44,10 +52,7 @@ export default function Layout({ children, currentPageName }) {
       //   }, 2000);
       // }
     } catch (error) {
-      // Em páginas públicas, ignora o erro silenciosamente
-      if (!isPublicPage) {
-        console.error("Error loading user:", error);
-      }
+      console.error("Error loading user:", error);
     } finally {
       setIsLoading(false);
     }
