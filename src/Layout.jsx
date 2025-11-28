@@ -23,14 +23,10 @@ export default function Layout({ children, currentPageName }) {
   const loadUser = async () => {
     // Se está em página pública, verificar autenticação primeiro
     if (isPublicPage) {
-      try {
-        const isAuth = await base44.auth.isAuthenticated();
-        if (isAuth) {
-          window.location.href = createPageUrl("Dashboard");
-          return;
-        }
-      } catch (error) {
-        // Ignora erro - usuário não está logado
+      const isAuth = await base44.auth.isAuthenticated();
+      if (isAuth) {
+        window.location.replace(createPageUrl("Dashboard"));
+        return;
       }
       setIsLoading(false);
       return;
