@@ -118,8 +118,13 @@ export default function Layout({ children, currentPageName }) {
     }
   }, []);
 
-  const handleTrialExpired = () => {
-    loadUser();
+  const handleTrialExpired = async () => {
+    try {
+      const currentUser = await base44.auth.me();
+      setUser(currentUser);
+    } catch (error) {
+      console.error("Error reloading user:", error);
+    }
   };
 
   const isPremium = user?.subscription_status === 'premium' || user?.subscription_status === 'trial' || user?.subscription_status === 'lifetime';
