@@ -204,7 +204,7 @@ export default function Layout({ children, currentPageName }) {
 
       {user && <TrialChecker user={user} onTrialExpired={handleTrialExpired} />}
 
-      {!hideNavigation && !isLoading && (
+      {!hideNavigation && (
         <header className="fixed top-0 left-0 right-0 z-50 bg-slate-950/80 backdrop-blur-xl border-b border-slate-800/50">
           <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
             <Link to={createPageUrl("Dashboard")} className="flex items-center gap-2">
@@ -249,11 +249,11 @@ export default function Layout({ children, currentPageName }) {
         </header>
       )}
 
-      <main className={!hideNavigation && !isLoading ? 'pt-20 max-w-7xl mx-auto px-4' : ''}>
+      <main className={!hideNavigation ? 'pt-20 max-w-7xl mx-auto px-4' : ''}>
         {children}
       </main>
 
-      {showMenu && !hideNavigation && !isLoading && (
+      {showMenu && !hideNavigation && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60] md:hidden" onClick={() => setShowMenu(false)}>
           <div className="fixed inset-y-0 right-0 w-64 bg-slate-900 shadow-2xl flex flex-col" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between p-4 border-b border-slate-800">
@@ -306,7 +306,7 @@ export default function Layout({ children, currentPageName }) {
         </div>
       )}
 
-      {!hideNavigation && !isLoading && (
+      {!hideNavigation && (
         <nav className="fixed bottom-0 left-0 right-0 bg-slate-950/95 backdrop-blur-xl border-t border-slate-800/50 z-50 md:hidden">
           <div className="max-w-7xl mx-auto">
             <div className="grid grid-cols-4 gap-1 p-2">
