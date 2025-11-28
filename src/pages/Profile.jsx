@@ -198,9 +198,8 @@ export default function Profile() {
     try {
       console.log('🚀 Enviando notificação...');
       
-      // Tentar primeiro via Service Worker, se falhar usa Notification API direta
-      if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
-        console.log('📱 Usando Service Worker existente...');
+      // Sempre usar Service Worker para compatibilidade com Android
+      if ('serviceWorker' in navigator) {
         const registration = await navigator.serviceWorker.getRegistration();
         
         if (registration) {
@@ -217,8 +216,8 @@ export default function Profile() {
         }
       }
       
-      // Fallback: usar Notification API direta (funciona em iOS Safari)
-      console.log('📱 Usando Notification API direta...');
+      // Fallback apenas para iOS Safari onde Service Worker pode não estar disponível
+      console.log('📱 Usando Notification API direta (iOS fallback)...');
       new Notification('🔥 Teste de Notificação', {
         body: 'Perfeito! As notificações estão funcionando!',
         icon: 'https://base44.app/api/apps/6904da724b4ce40db58404e7/files/public/6904da724b4ce40db58404e7/901d97ae0_Untitleddesign3.png'
