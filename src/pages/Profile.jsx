@@ -200,29 +200,21 @@ export default function Profile() {
       
       // Sempre usar Service Worker para compatibilidade com Android
       if ('serviceWorker' in navigator) {
-        const registration = await navigator.serviceWorker.getRegistration();
+        // Aguardar o Service Worker estar pronto
+        const registration = await navigator.serviceWorker.ready;
         
-        if (registration) {
-          await registration.showNotification('🔥 Teste de Notificação', {
-            body: 'Perfeito! As notificações estão funcionando. Você receberá lembretes de treino!',
-            icon: 'https://base44.app/api/apps/6904da724b4ce40db58404e7/files/public/6904da724b4ce40db58404e7/901d97ae0_Untitleddesign3.png',
-            badge: 'https://base44.app/api/apps/6904da724b4ce40db58404e7/files/public/6904da724b4ce40db58404e7/901d97ae0_Untitleddesign3.png',
-            vibrate: [200, 100, 200],
-            tag: 'test',
-            requireInteraction: false
-          });
-          console.log('✅ Notificação enviada via Service Worker!');
-          return;
-        }
+        await registration.showNotification('🔥 Teste de Notificação', {
+          body: 'Perfeito! As notificações estão funcionando. Você receberá lembretes de treino!',
+          icon: 'https://base44.app/api/apps/6904da724b4ce40db58404e7/files/public/6904da724b4ce40db58404e7/901d97ae0_Untitleddesign3.png',
+          badge: 'https://base44.app/api/apps/6904da724b4ce40db58404e7/files/public/6904da724b4ce40db58404e7/901d97ae0_Untitleddesign3.png',
+          vibrate: [200, 100, 200],
+          tag: 'test',
+          requireInteraction: false
+        });
+        console.log('✅ Notificação enviada via Service Worker!');
+      } else {
+        alert('Service Worker não disponível neste navegador.');
       }
-      
-      // Fallback apenas para iOS Safari onde Service Worker pode não estar disponível
-      console.log('📱 Usando Notification API direta (iOS fallback)...');
-      new Notification('🔥 Teste de Notificação', {
-        body: 'Perfeito! As notificações estão funcionando!',
-        icon: 'https://base44.app/api/apps/6904da724b4ce40db58404e7/files/public/6904da724b4ce40db58404e7/901d97ae0_Untitleddesign3.png'
-      });
-      console.log('✅ Notificação enviada!');
       
     } catch (error) {
       console.error('❌ Erro ao enviar notificação:', error);
