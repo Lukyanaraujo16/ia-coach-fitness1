@@ -59,9 +59,9 @@ export default function Nutrition() {
         <h2 className="text-3xl font-bold text-white">Nutrição</h2>
       </div>
 
-      <div className="overflow-x-auto -mx-4 px-4 scrollbar-hide">
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="bg-slate-900/50 border border-slate-800 inline-flex w-auto min-w-full md:grid md:grid-cols-6 gap-1 p-1">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <div className="overflow-x-auto -mx-4 px-4 pb-2">
+          <TabsList className="bg-slate-900/50 border border-slate-800 inline-flex w-max md:w-full md:grid md:grid-cols-6 gap-1 p-1">
             <TabsTrigger value="my-plan" className="data-[state=active]:bg-green-600 text-xs whitespace-nowrap px-4">
               Plano
             </TabsTrigger>
@@ -81,8 +81,8 @@ export default function Nutrition() {
               Explorar
             </TabsTrigger>
           </TabsList>
-        </Tabs>
-      </div>
+        </div>
+      </Tabs>
 
       <div className="mt-6">
         {activeTab === "my-plan" && <MyNutritionPlan user={user} />}
