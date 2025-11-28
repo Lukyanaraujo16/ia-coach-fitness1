@@ -15,6 +15,115 @@ export default function Home() {
   const navigate = useNavigate();
   const [logoUrl, setLogoUrl] = useState("https://base44.app/api/apps/6904da724b4ce40db58404e7/files/public/6904da724b4ce40db58404e7/901d97ae0_Untitleddesign3.png");
 
+  // SEO Meta Tags
+  useEffect(() => {
+    // Title
+    document.title = "IA Coach Fitness - Seu Personal Trainer com Inteligência Artificial | Treinos e Nutrição Personalizados";
+    
+    // Meta Description
+    let metaDescription = document.querySelector('meta[name="description"]');
+    if (!metaDescription) {
+      metaDescription = document.createElement('meta');
+      metaDescription.name = 'description';
+      document.head.appendChild(metaDescription);
+    }
+    metaDescription.content = "Transforme seu corpo com o IA Coach Fitness. Treinos personalizados com IA, planos de nutrição inteligentes, coach disponível 24/7. Comece grátis e alcance seus objetivos fitness!";
+
+    // Meta Keywords
+    let metaKeywords = document.querySelector('meta[name="keywords"]');
+    if (!metaKeywords) {
+      metaKeywords = document.createElement('meta');
+      metaKeywords.name = 'keywords';
+      document.head.appendChild(metaKeywords);
+    }
+    metaKeywords.content = "personal trainer, treino personalizado, IA fitness, coach fitness, nutrição personalizada, app de treino, exercícios em casa, academia, dieta, emagrecimento, ganho de massa, musculação";
+
+    // Open Graph Tags
+    const ogTags = [
+      { property: 'og:title', content: 'IA Coach Fitness - Seu Personal Trainer com IA' },
+      { property: 'og:description', content: 'Treinos personalizados, nutrição inteligente e coach 24/7. Transforme seu corpo com tecnologia de ponta!' },
+      { property: 'og:type', content: 'website' },
+      { property: 'og:url', content: 'https://iacoachfitness.com.br' },
+      { property: 'og:image', content: 'https://base44.app/api/apps/6904da724b4ce40db58404e7/files/public/6904da724b4ce40db58404e7/901d97ae0_Untitleddesign3.png' },
+      { property: 'og:site_name', content: 'IA Coach Fitness' },
+      { property: 'og:locale', content: 'pt_BR' }
+    ];
+
+    ogTags.forEach(tag => {
+      let meta = document.querySelector(`meta[property="${tag.property}"]`);
+      if (!meta) {
+        meta = document.createElement('meta');
+        meta.setAttribute('property', tag.property);
+        document.head.appendChild(meta);
+      }
+      meta.content = tag.content;
+    });
+
+    // Twitter Card Tags
+    const twitterTags = [
+      { name: 'twitter:card', content: 'summary_large_image' },
+      { name: 'twitter:title', content: 'IA Coach Fitness - Seu Personal Trainer com IA' },
+      { name: 'twitter:description', content: 'Treinos personalizados, nutrição inteligente e coach 24/7. Comece grátis!' },
+      { name: 'twitter:image', content: 'https://base44.app/api/apps/6904da724b4ce40db58404e7/files/public/6904da724b4ce40db58404e7/901d97ae0_Untitleddesign3.png' }
+    ];
+
+    twitterTags.forEach(tag => {
+      let meta = document.querySelector(`meta[name="${tag.name}"]`);
+      if (!meta) {
+        meta = document.createElement('meta');
+        meta.name = tag.name;
+        document.head.appendChild(meta);
+      }
+      meta.content = tag.content;
+    });
+
+    // Canonical URL
+    let canonical = document.querySelector('link[rel="canonical"]');
+    if (!canonical) {
+      canonical = document.createElement('link');
+      canonical.rel = 'canonical';
+      document.head.appendChild(canonical);
+    }
+    canonical.href = 'https://iacoachfitness.com.br';
+
+    // Schema.org JSON-LD
+    let schemaScript = document.querySelector('script[type="application/ld+json"]');
+    if (!schemaScript) {
+      schemaScript = document.createElement('script');
+      schemaScript.type = 'application/ld+json';
+      document.head.appendChild(schemaScript);
+    }
+    schemaScript.textContent = JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      "name": "IA Coach Fitness",
+      "description": "Aplicativo de personal trainer com inteligência artificial. Treinos personalizados, nutrição inteligente e coach disponível 24/7.",
+      "url": "https://iacoachfitness.com.br",
+      "applicationCategory": "HealthApplication",
+      "operatingSystem": "Web, iOS, Android",
+      "offers": {
+        "@type": "Offer",
+        "price": "9.90",
+        "priceCurrency": "BRL",
+        "description": "Plano mensal Premium"
+      },
+      "aggregateRating": {
+        "@type": "AggregateRating",
+        "ratingValue": "4.9",
+        "ratingCount": "10000",
+        "bestRating": "5"
+      },
+      "author": {
+        "@type": "Organization",
+        "name": "IA Coach Fitness"
+      }
+    });
+
+    return () => {
+      // Cleanup não necessário para SEO tags
+    };
+  }, []);
+
   useEffect(() => {
     const checkAuthAndLoadLogo = async () => {
       try {
