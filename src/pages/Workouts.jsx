@@ -3,9 +3,8 @@ import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
-import { Search, Lock, MessageCircle } from "lucide-react";
+import { Search, Lock } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { createPageUrl } from "@/utils";
 import WorkoutCard from "../components/workouts/WorkoutCard";
 import ExerciseLibrary from "../components/workouts/ExerciseLibrary";
@@ -94,26 +93,12 @@ export default function Workouts() {
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <h2 className="text-3xl font-bold text-white">Treinos</h2>
-          <div className="flex items-center gap-3">
-            {!isPremium && (
-              <div className="flex items-center gap-2 text-yellow-400 text-sm">
-                <Lock className="w-4 h-4" />
-                <span>5/{workouts.length} treinos disponíveis</span>
-              </div>
-            )}
-            {!user?.whatsapp_coach_enabled && (
-              <a 
-                href={base44.agents.getWhatsAppConnectURL('fitness_coach')} 
-                target="_blank" 
-                rel="noopener noreferrer"
-              >
-                <Button size="sm" className="bg-green-600 hover:bg-green-700 gap-2">
-                  <MessageCircle className="w-4 h-4" />
-                  <span className="hidden sm:inline">WhatsApp Coach</span>
-                </Button>
-              </a>
-            )}
-          </div>
+          {!isPremium && (
+            <div className="flex items-center gap-2 text-yellow-400 text-sm">
+              <Lock className="w-4 h-4" />
+              <span>5/{workouts.length} treinos disponíveis</span>
+            </div>
+          )}
         </div>
         
         {/* Tabs */}
