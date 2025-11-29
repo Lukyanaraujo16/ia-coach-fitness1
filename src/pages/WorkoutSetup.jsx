@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useNavigate } from "react-router-dom";
@@ -366,6 +365,13 @@ LEMBRE-SE: ${daysOfWeek} dias, numerados de 1 a ${daysOfWeek}, SEM EXCEÇÃO!`;
         completed_workout_days: [],
         workout_setup_completed: true,
       });
+
+      // Sincronizar UserProfile para o agente WhatsApp
+      try {
+        await base44.functions.invoke('syncUserProfile');
+      } catch (e) {
+        console.error('Erro ao sincronizar UserProfile:', e);
+      }
 
       navigate(createPageUrl("Dashboard"));
     } catch (error) {

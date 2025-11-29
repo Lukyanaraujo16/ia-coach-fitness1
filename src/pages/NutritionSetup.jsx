@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useNavigate } from "react-router-dom";
@@ -411,6 +410,14 @@ Gere o novo plano de refeições com a substituição solicitada:`;
         selected_nutrition_plan_data: generatedPlan,
         nutrition_setup_completed: true,
       });
+      
+      // Sincronizar UserProfile para o agente WhatsApp
+      try {
+        await base44.functions.invoke('syncUserProfile');
+      } catch (e) {
+        console.error('Erro ao sincronizar UserProfile:', e);
+      }
+      
       navigate(createPageUrl("WorkoutSetup"));
     } catch (error) {
       console.error("Error saving:", error);
