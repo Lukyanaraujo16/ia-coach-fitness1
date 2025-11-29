@@ -79,61 +79,12 @@ export default function Layout({ children, currentPageName }) {
     // Adicionar lang pt-BR no html
     document.documentElement.lang = 'pt-BR';
 
-    // Adicionar link para manifest (inline como data URL)
+    // Adicionar link para manifest
     let manifestLink = document.querySelector('link[rel="manifest"]');
     if (!manifestLink) {
-      const manifestData = {
-        "name": "IA Coach Fitness",
-        "short_name": "IA Coach",
-        "description": "Seu personal trainer com inteligência artificial",
-        "start_url": "/",
-        "display": "standalone",
-        "background_color": "#1E40AF",
-        "theme_color": "#1E40AF",
-        "orientation": "portrait",
-        "icons": [
-          {
-            "src": "https://base44.app/api/apps/6904da724b4ce40db58404e7/files/public/6904da724b4ce40db58404e7/901d97ae0_Untitleddesign3.png",
-            "sizes": "192x192",
-            "type": "image/png",
-            "purpose": "any"
-          },
-          {
-            "src": "https://base44.app/api/apps/6904da724b4ce40db58404e7/files/public/6904da724b4ce40db58404e7/901d97ae0_Untitleddesign3.png",
-            "sizes": "512x512",
-            "type": "image/png",
-            "purpose": "any"
-          }
-        ],
-        "categories": ["health", "fitness", "lifestyle"],
-        "shortcuts": [
-          {
-            "name": "Iniciar Treino",
-            "short_name": "Treino",
-            "description": "Comece seu treino agora",
-            "url": "/workouts",
-            "icons": [{ 
-              "src": "https://base44.app/api/apps/6904da724b4ce40db58404e7/files/public/6904da724b4ce40db58404e7/901d97ae0_Untitleddesign3.png", 
-              "sizes": "192x192" 
-            }]
-          },
-          {
-            "name": "Ver Progresso",
-            "short_name": "Progresso",
-            "description": "Acompanhe sua evolução",
-            "url": "/progress",
-            "icons": [{ 
-              "src": "https://base44.app/api/apps/6904da724b4ce40db58404e7/files/public/6904da724b4ce40db58404e7/901d97ae0_Untitleddesign3.png", 
-              "sizes": "192x192" 
-            }]
-          }
-        ]
-      };
-      const manifestBlob = new Blob([JSON.stringify(manifestData)], { type: 'application/json' });
-      const manifestUrl = URL.createObjectURL(manifestBlob);
       manifestLink = document.createElement('link');
       manifestLink.rel = 'manifest';
-      manifestLink.href = manifestUrl;
+      manifestLink.href = '/manifest.json';
       document.head.appendChild(manifestLink);
     }
 
