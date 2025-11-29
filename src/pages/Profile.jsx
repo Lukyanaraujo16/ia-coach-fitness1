@@ -64,6 +64,12 @@ export default function Profile() {
   const updateNameMutation = useMutation({
     mutationFn: async (name) => {
       await base44.auth.updateMe({ nome_completo: name });
+      // Sincronizar UserProfile para o agente WhatsApp
+      try {
+        await base44.functions.invoke('syncUserProfile');
+      } catch (e) {
+        console.error('Erro ao sincronizar UserProfile:', e);
+      }
       const updatedUser = await base44.auth.me();
       return updatedUser;
     },

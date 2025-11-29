@@ -133,6 +133,13 @@ export default function Onboarding() {
         has_had_trial: true,
       });
       
+      // Sincronizar UserProfile para o agente WhatsApp
+      try {
+        await base44.functions.invoke('syncUserProfile');
+      } catch (e) {
+        console.error('Erro ao sincronizar UserProfile:', e);
+      }
+      
       if (skipSetup) {
         navigate(createPageUrl("Dashboard"));
       } else {
