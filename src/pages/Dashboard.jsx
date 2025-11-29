@@ -242,10 +242,15 @@ export default function Dashboard() {
       {/* WhatsApp Coach - Mostrar se está habilitado no admin e usuário ainda não ativou o agente */}
       {user?.whatsapp_coach_enabled !== false && !user?.fitness_coach_activated && (
         <a 
-          href={base44.agents.getWhatsAppConnectURL('fitness_coach')} 
-          target="_blank" 
-          rel="noopener noreferrer"
-        >
+                        href={base44.agents.getWhatsAppConnectURL('fitness_coach')} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        onClick={async () => {
+                          try {
+                            await base44.auth.updateMe({ fitness_coach_activated: true });
+                          } catch (e) {}
+                        }}
+                      >
           <Card className="bg-gradient-to-r from-green-900/50 to-emerald-900/50 border-green-700/50 hover:from-green-900/60 hover:to-emerald-900/60 transition-all cursor-pointer">
             <CardContent className="p-5 flex items-center justify-between">
               <div className="flex items-center gap-3">
