@@ -83,6 +83,11 @@ export default function Dashboard() {
     enabled: !!user?.email,
   });
 
+  // Verificar se o usuário já usou o coach (tem dados criados pelo agente ou marcou como ativado)
+  const hasUsedCoach = user?.fitness_coach_activated || 
+    mealLogs.some(log => log.created_by?.includes('@')) || // Logs criados pelo próprio usuário via agente
+    workoutLogs.some(log => log.created_by?.includes('@'));
+
   const activeChallenge = challenges.find(c => c.is_active);
   const userProgress = challengeProgress.find(p => p.challenge_id === activeChallenge?.id);
 
