@@ -6,7 +6,8 @@ import { createPageUrl } from "@/utils";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Users, DollarSign, Dumbbell, Crown, MessageSquare, MessageCircle, BarChart, Target, Activity, Apple, Settings, Bell } from "lucide-react";
+import { Users, DollarSign, Dumbbell, Crown, MessageSquare, MessageCircle, BarChart, Target, Activity, Apple, Settings, Bell, RefreshCw, Loader2 } from "lucide-react";
+import { toast } from "sonner";
 import AdminUsers from "../components/admin/AdminUsers";
 import AdminWorkouts from "../components/admin/AdminWorkouts";
 import AdminExercises from "../components/admin/AdminExercises";
@@ -21,6 +22,7 @@ export default function Admin() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("metrics");
   const [user, setUser] = useState(null);
+  const [syncingProfiles, setSyncingProfiles] = useState(false);
 
   const { data: users = [] } = useQuery({
     queryKey: ['all-users'],
@@ -69,6 +71,57 @@ export default function Admin() {
     loadUser();
   }, [navigate]);
 
+  const handleSyncAllProfiles = async () => {
+    setSyncingProfiles(true);
+    let synced = 0;
+    let errors = 0;
+    
+    try {
+      for (const u of users) {
+        try {
+          // Buscar se já existe um UserProfile para este usuário
+          const existingProfiles = await base44.entities.UserProfile.filter({
+            user_email: u.email
+          });
+
+          const profileData = {
+            user_email: u.email,
+            nome_completo: u.nome_completo || u.full_name || '',
+            objetivo: u.fitness_goal || null,
+            nivel_fitness: u.fitness_level || null,
+            peso_atual: u.current_weight || null,
+            peso_meta: u.target_weight || u.weight_goal || null,
+            altura: u.height || null,
+            meta_calorica_diaria: u.daily_calorie_goal || null,
+            meta_proteina: u.macro_protein_percentage ? Math.round((u.daily_calorie_goal || 2000) * (u.macro_protein_percentage / 100) / 4) : null,
+            meta_treinos_semana: u.weekly_goal || null,
+            restricoes_alimentares: u.allergies || u.food_allergies || [],
+            preferencias_dieta: u.diet_preference || null,
+            local_treino: u.training_location || null,
+            subscription_status: u.subscription_status || 'free'
+          };
+
+          if (existingProfiles && existingProfiles.length > 0) {
+            await base44.entities.UserProfile.update(existingProfiles[0].id, profileData);
+          } else {
+            await base44.entities.UserProfile.create(profileData);
+          }
+          synced++;
+        } catch (e) {
+          console.error(`Erro ao sincronizar ${u.email}:`, e);
+          errors++;
+        }
+      }
+      
+      toast.success(`Sincronização concluída: ${synced} usuários sincronizados${errors > 0 ? `, ${errors} erros` : ''}`);
+    } catch (error) {
+      console.error('Erro geral na sincronização:', error);
+      toast.error('Erro na sincronização');
+    } finally {
+      setSyncingProfiles(false);
+    }
+  };
+
   if (!user || user.role !== 'admin') {
     return (
       <div className="py-6">
@@ -100,6 +153,18 @@ export default function Admin() {
           <p className="text-slate-400 mt-1">Gerencie usuários e conteúdo</p>
         </div>
         <div className="flex items-center gap-3">
+          <Button 
+            onClick={handleSyncAllProfiles}
+            disabled={syncingProfiles}
+            className="bg-green-600 hover:bg-green-700"
+          >
+            {syncingProfiles ? (
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+            ) : (
+              <RefreshCw className="w-4 h-4 mr-2" />
+            )}
+            {syncingProfiles ? 'Sincronizando...' : 'Sync Perfis'}
+          </Button>
           <Link to={createPageUrl("AdminNotifications")}>
             <Button className="bg-purple-600 hover:bg-purple-700">
               <Bell className="w-4 h-4 mr-2" />
