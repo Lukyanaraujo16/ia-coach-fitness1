@@ -3,7 +3,7 @@ import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { Calendar, Flame, Trophy, TrendingUp, ChevronRight, Zap, Target, Crown, Apple } from "lucide-react";
+import { Calendar, Flame, Trophy, TrendingUp, ChevronRight, Zap, Target, Crown, Apple, MessageCircle } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -239,7 +239,29 @@ export default function Dashboard() {
         </Link>
       )}
 
-      {/* WhatsApp Coach desabilitado temporariamente */}
+      {/* WhatsApp Coach - Mostrar apenas se não ativou ainda */}
+      {isPremium && !user?.whatsapp_coach_enabled && (
+        <a 
+          href={base44.agents.getWhatsAppConnectURL('fitness_coach')} 
+          target="_blank" 
+          rel="noopener noreferrer"
+        >
+          <Card className="bg-gradient-to-r from-green-900/50 to-emerald-900/50 border-green-700/50 hover:from-green-900/60 hover:to-emerald-900/60 transition-all cursor-pointer">
+            <CardContent className="p-5 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 bg-green-500/20 rounded-xl flex items-center justify-center">
+                  <MessageCircle className="w-6 h-6 text-green-400" />
+                </div>
+                <div>
+                  <h3 className="text-white font-semibold">Ativar Coach no WhatsApp</h3>
+                  <p className="text-slate-300 text-sm">Registre treinos e refeições pelo WhatsApp</p>
+                </div>
+              </div>
+              <ChevronRight className="w-5 h-5 text-slate-400" />
+            </CardContent>
+          </Card>
+        </a>
+      )}
 
       {/* Nutrition Summary Card */}
       <Link to={createPageUrl("Nutrition") + "?tab=counter"}>
