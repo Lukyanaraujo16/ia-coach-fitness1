@@ -84,7 +84,7 @@ export default function Layout({ children, currentPageName }) {
     if (!manifestLink) {
       manifestLink = document.createElement('link');
       manifestLink.rel = 'manifest';
-      manifestLink.href = '/Components/pwa/manifest-data.json';
+      manifestLink.href = '/manifest.json';
       document.head.appendChild(manifestLink);
     }
 
