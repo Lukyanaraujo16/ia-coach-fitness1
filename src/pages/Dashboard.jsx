@@ -239,8 +239,8 @@ export default function Dashboard() {
         </Link>
       )}
 
-      {/* WhatsApp Coach - Mostrar para todos que não ativaram ainda */}
-      {!user?.whatsapp_coach_enabled && (
+      {/* WhatsApp Coach - Mostrar se está habilitado no admin (whatsapp_coach_enabled !== false) e usuário ainda não conectou */}
+      {user?.whatsapp_coach_enabled !== false && !user?.whatsapp_connected && (
         <a 
           href={base44.agents.getWhatsAppConnectURL('fitness_coach')} 
           target="_blank" 
