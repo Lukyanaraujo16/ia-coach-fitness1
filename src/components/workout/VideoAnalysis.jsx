@@ -59,13 +59,11 @@ export default function VideoAnalysis() {
 
   const MAX_RECORDING_TIME = 30;
 
-  // Detectar iOS - movido para fora da função para usar nos botões
-  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || 
-    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  // Detectar iOS - para usar câmera nativa no iPhone
   const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || 
     (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 
-  // Iniciar gravação
+  // Iniciar gravação (usado apenas em Android/Desktop)
   const startRecording = async () => {
     try {
       setError(null);
