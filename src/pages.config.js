@@ -20,7 +20,6 @@ import Dashboard from './pages/Dashboard';
 import Home from './pages/Home';
 import AdminNotifications from './pages/AdminNotifications';
 import Support from './pages/Support';
-import Entrar from './pages/Entrar';
 import __Layout from './Layout.jsx';
 
 
@@ -47,7 +46,6 @@ export const PAGES = {
     "Home": Home,
     "AdminNotifications": AdminNotifications,
     "Support": Support,
-    "Entrar": Entrar,
 }
 
 export const pagesConfig = {
