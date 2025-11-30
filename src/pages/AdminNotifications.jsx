@@ -24,7 +24,8 @@ export default function AdminNotifications() {
     scheduled_date: "",
     recurrence_pattern: "daily",
     recurrence_time: "09:00",
-    channel: "push"
+    channel: "push",
+    expires_at: ""
   });
 
   const { data: notifications = [] } = useQuery({
@@ -74,14 +75,21 @@ export default function AdminNotifications() {
       // Criar notificação no app para cada usuário
       for (const targetUser of targetUsers) {
         if (targetUser.email) {
-          await base44.entities.AppNotification.create({
+          const notificationData = {
             user_email: targetUser.email,
             type: 'push',
             title: data.title,
             message: data.message,
             is_read: false,
             link_type: 'popup'
-          });
+          };
+          
+          // Adicionar expiração se definida
+          if (data.expires_at) {
+            notificationData.expires_at = new Date(data.expires_at).toISOString();
+          }
+          
+          await base44.entities.AppNotification.create(notificationData);
         }
       }
       
@@ -143,7 +151,8 @@ export default function AdminNotifications() {
         scheduled_date: "",
         recurrence_pattern: "daily",
         recurrence_time: "09:00",
-        channel: "push"
+        channel: "push",
+        expires_at: ""
       });
       const channelLabel = data.channel === 'both' ? 'Push + WhatsApp' : data.channel === 'whatsapp' ? 'WhatsApp' : 'Push';
       toast.success(`✅ ${channelLabel} enviado! ${data.appNotifications} notificações no app criadas`);
@@ -376,6 +385,19 @@ export default function AdminNotifications() {
               </Select>
               <p className="text-slate-400 text-xs mt-1">
                 {formData.channel === 'push' ? `${getTargetCount()} com push` : formData.channel === 'whatsapp' ? 'Usuários com WhatsApp ativo' : 'Ambos os canais'}
+              </p>
+            </div>
+
+            <div>
+              <Label className="text-slate-300">Validade da Notificação (opcional)</Label>
+              <Input
+                type="datetime-local"
+                value={formData.expires_at}
+                onChange={(e) => setFormData({...formData, expires_at: e.target.value})}
+                className="bg-slate-800 border-slate-700 text-white"
+              />
+              <p className="text-slate-400 text-xs mt-1">
+                Após esta data, a notificação não será mais exibida. Deixe vazio para não expirar.
               </p>
             </div>
 

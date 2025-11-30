@@ -46,7 +46,9 @@ export default function NotificationCenter({ user }) {
         '-created_date',
         50
       );
-      return notifs;
+      // Filtrar notificações expiradas
+      const now = new Date();
+      return notifs.filter(n => !n.expires_at || new Date(n.expires_at) > now);
     },
     enabled: !!user?.email,
     refetchInterval: 30000, // Atualiza a cada 30 segundos
