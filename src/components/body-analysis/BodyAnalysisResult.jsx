@@ -1,7 +1,8 @@
-import React from "react";
+import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import { Button } from "@/components/ui/button";
 import { 
   Activity, 
   Target, 
@@ -12,7 +13,12 @@ import {
   Minus,
   User,
   Flame,
-  Dumbbell
+  Dumbbell,
+  X,
+  Download,
+  ChevronLeft,
+  ChevronRight,
+  ZoomIn
 } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -76,7 +82,45 @@ const definitionLabels = {
 };
 
 export default function BodyAnalysisResult({ analysis, previousAnalysis }) {
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
+
   if (!analysis) return null;
+
+  const openLightbox = (index) => {
+    setCurrentPhotoIndex(index);
+    setLightboxOpen(true);
+  };
+
+  const closeLightbox = () => {
+    setLightboxOpen(false);
+  };
+
+  const nextPhoto = () => {
+    setCurrentPhotoIndex((prev) => (prev + 1) % analysis.photos.length);
+  };
+
+  const prevPhoto = () => {
+    setCurrentPhotoIndex((prev) => (prev - 1 + analysis.photos.length) % analysis.photos.length);
+  };
+
+  const downloadPhoto = async (url, index) => {
+    try {
+      const response = await fetch(url);
+      const blob = await response.blob();
+      const blobUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = blobUrl;
+      link.download = `analise-corporal-${analysis.date}-foto-${index + 1}.jpg`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(blobUrl);
+    } catch (error) {
+      // Fallback: abrir em nova aba
+      window.open(url, '_blank');
+    }
+  };
 
   const getScoreColor = (score) => {
     if (score >= 80) return "text-green-400";
@@ -122,18 +166,80 @@ export default function BodyAnalysisResult({ analysis, previousAnalysis }) {
       {analysis.photos && analysis.photos.length > 0 && (
         <Card className="bg-slate-900/50 border-slate-800">
           <CardHeader className="pb-2">
-            <CardTitle className="text-white text-lg">Fotos da Análise</CardTitle>
+            <CardTitle className="text-white text-lg flex items-center gap-2">
+              Fotos da Análise
+              <span className="text-slate-400 text-sm font-normal">({analysis.photos.length} fotos)</span>
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-3 gap-3">
               {analysis.photos.map((photo, idx) => (
-                <div key={idx} className="aspect-[3/4] rounded-lg overflow-hidden">
+                <div 
+                  key={idx} 
+                  className="aspect-[3/4] rounded-lg overflow-hidden relative group cursor-pointer"
+                  onClick={() => openLightbox(idx)}
+                >
                   <img src={photo} alt={`Foto ${idx + 1}`} className="w-full h-full object-cover" />
+                  <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                    <ZoomIn className="w-8 h-8 text-white" />
+                  </div>
                 </div>
               ))}
             </div>
+            <p className="text-slate-400 text-xs mt-3 text-center">
+              Toque em uma foto para ampliar e baixar
+            </p>
           </CardContent>
         </Card>
+      )}
+
+      {/* Lightbox Modal */}
+      {lightboxOpen && analysis.photos && (
+        <div className="fixed inset-0 z-50 bg-black/95 flex items-center justify-center">
+          <button
+            onClick={closeLightbox}
+            className="absolute top-4 right-4 w-10 h-10 bg-slate-800 rounded-full flex items-center justify-center hover:bg-slate-700 transition-colors z-10"
+          >
+            <X className="w-6 h-6 text-white" />
+          </button>
+
+          {analysis.photos.length > 1 && (
+            <>
+              <button
+                onClick={prevPhoto}
+                className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-slate-800 rounded-full flex items-center justify-center hover:bg-slate-700 transition-colors z-10"
+              >
+                <ChevronLeft className="w-6 h-6 text-white" />
+              </button>
+              <button
+                onClick={nextPhoto}
+                className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-slate-800 rounded-full flex items-center justify-center hover:bg-slate-700 transition-colors z-10"
+              >
+                <ChevronRight className="w-6 h-6 text-white" />
+              </button>
+            </>
+          )}
+
+          <div className="max-w-lg max-h-[80vh] w-full px-4">
+            <img
+              src={analysis.photos[currentPhotoIndex]}
+              alt={`Foto ${currentPhotoIndex + 1}`}
+              className="w-full h-auto max-h-[70vh] object-contain rounded-lg"
+            />
+            <div className="flex items-center justify-between mt-4">
+              <p className="text-slate-400 text-sm">
+                Foto {currentPhotoIndex + 1} de {analysis.photos.length}
+              </p>
+              <Button
+                onClick={() => downloadPhoto(analysis.photos[currentPhotoIndex], currentPhotoIndex)}
+                className="bg-blue-600 hover:bg-blue-700"
+              >
+                <Download className="w-4 h-4 mr-2" />
+                Baixar Foto
+              </Button>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Composição Corporal */}
