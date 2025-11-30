@@ -127,15 +127,36 @@ export default function VideoAnalysis() {
   const handleFileSelect = (e) => {
     const file = e.target.files[0];
     if (file) {
-      // Validar duração (aproximada pelo tamanho)
-      if (file.size > 50 * 1024 * 1024) { // 50MB max
-        setError("O vídeo é muito grande. Use um vídeo de até 30 segundos.");
-        return;
-      }
+      // Validar duração real do vídeo
+      const videoUrl = URL.createObjectURL(file);
+      const tempVideo = document.createElement('video');
+      tempVideo.preload = 'metadata';
       
-      setVideoFile(file);
-      setVideoPreview(URL.createObjectURL(file));
-      setError(null);
+      tempVideo.onloadedmetadata = () => {
+        URL.revokeObjectURL(tempVideo.src);
+        
+        if (tempVideo.duration > MAX_RECORDING_TIME) {
+          setError(`O vídeo tem ${Math.round(tempVideo.duration)} segundos. Use um vídeo de até ${MAX_RECORDING_TIME} segundos.`);
+          return;
+        }
+        
+        // Validar tamanho máximo de 100MB
+        if (file.size > 100 * 1024 * 1024) {
+          setError("O arquivo é muito grande. Máximo de 100MB.");
+          return;
+        }
+        
+        setVideoFile(file);
+        setVideoPreview(videoUrl);
+        setError(null);
+      };
+      
+      tempVideo.onerror = () => {
+        URL.revokeObjectURL(tempVideo.src);
+        setError("Não foi possível ler o vídeo. Tente outro arquivo.");
+      };
+      
+      tempVideo.src = videoUrl;
     }
   };
 
