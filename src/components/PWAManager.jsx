@@ -19,15 +19,47 @@ function urlBase64ToUint8Array(base64String) {
   return outputArray;
 }
 
+// Salvar subscription no banco de dados
+async function saveSubscriptionToDatabase(subscription, userEmail) {
+  try {
+    console.log('💾 Salvando subscription no banco...');
+    const existingSubscriptions = await base44.entities.PushSubscription.list();
+    const userSubscription = existingSubscriptions.find(s => s.user_email === userEmail);
+    
+    const subscriptionData = {
+      user_email: userEmail,
+      subscription: typeof subscription === 'string' ? JSON.parse(subscription) : subscription,
+      is_active: true
+    };
+
+    if (userSubscription) {
+      await base44.entities.PushSubscription.update(userSubscription.id, subscriptionData);
+      console.log('✅ Subscription atualizada no banco!');
+    } else {
+      await base44.entities.PushSubscription.create(subscriptionData);
+      console.log('✅ Subscription criada no banco!');
+    }
+    return true;
+  } catch (error) {
+    console.error('❌ Erro ao salvar subscription:', error);
+    return false;
+  }
+}
+
 export default function PWAManager() {
   const [showNotificationModal, setShowNotificationModal] = useState(false);
 
   useEffect(() => {
     console.log('🚀 PWAManager iniciado');
-    console.log('📱 User Agent:', navigator.userAgent);
-    console.log('🔔 Notification support:', 'Notification' in window);
-    console.log('📮 Push support:', 'PushManager' in window);
     
+    const isPWA = window.matchMedia('(display-mode: standalone)').matches || 
+                  window.navigator.standalone === true;
+    const isFromExternalPWA = document.referrer.includes('pwa-ia-coach.vercel.app');
+    
+    console.log('🏠 PWA?', isPWA);
+    console.log('🔗 Veio do PWA externo?', isFromExternalPWA);
+    
+    // Configurar manifest
     const manifestBlob = new Blob([JSON.stringify(manifestData)], { type: 'application/json' });
     const manifestURL = URL.createObjectURL(manifestBlob);
     
@@ -38,11 +70,43 @@ export default function PWAManager() {
       document.head.appendChild(manifestLink);
     }
     manifestLink.href = manifestURL;
-    console.log('✅ Manifest criado');
 
-    // Carregar SW físico do diretório components/pwa
-    const loadServiceWorker = async () => {
+    const initPushNotifications = async () => {
       try {
+        const currentUser = await base44.auth.me();
+        if (!currentUser) return;
+        
+        console.log('👤 Usuário:', currentUser.email);
+        
+        // Verificar se há subscription salva do PWA externo (localStorage compartilhado não funciona cross-domain)
+        // Então vamos registrar diretamente se tivermos permissão
+        
+        if ('Notification' in window && 'PushManager' in window) {
+          console.log('🔔 Permissão de notificação:', Notification.permission);
+          
+          if (Notification.permission === 'granted') {
+            // Tentar registrar SW e subscription
+            await registerLocalPushSubscription(currentUser.email);
+          } else if (Notification.permission === 'default') {
+            // Verificar se está no PWA para pedir permissão
+            const hasAskedPermission = localStorage.getItem('notification-permission-asked');
+            
+            if (isPWA && !hasAskedPermission) {
+              setTimeout(() => {
+                console.log('📢 Mostrando modal de permissão');
+                setShowNotificationModal(true);
+              }, 3000);
+            }
+          }
+        }
+      } catch (error) {
+        console.error('❌ Erro ao inicializar push:', error);
+      }
+    };
+
+    const registerLocalPushSubscription = async (userEmail) => {
+      try {
+        // Carregar SW físico do diretório components/pwa
         const swResponse = await fetch('/components/pwa/service-worker.js');
         const swCode = await swResponse.text();
         const swBlob = new Blob([swCode], { type: 'application/javascript' });
@@ -54,78 +118,69 @@ export default function PWAManager() {
             updateViaCache: 'none'
           });
           
-          console.log('✅ Service Worker físico registrado');
-          console.log('📍 Scope:', registration.scope);
+          console.log('✅ Service Worker registrado');
           
-          registration.update();
+          await navigator.serviceWorker.ready;
           
-          if ('Notification' in window && 'PushManager' in window) {
-            console.log('🔔 Permissão de notificação:', Notification.permission);
-            
-            if (Notification.permission === 'granted') {
-              await navigator.serviceWorker.ready;
-              console.log('⏳ Service Worker ready');
-              
-              const currentUser = await base44.auth.me();
-              console.log('👤 Usuário:', currentUser.email);
-              
-              let subscription = await registration.pushManager.getSubscription();
-              console.log('📮 Subscription:', subscription ? 'EXISTE' : 'NÃO EXISTE');
-              
-              if (!subscription) {
-                console.log('📝 Criando subscription...');
-                subscription = await registration.pushManager.subscribe({
-                  userVisibleOnly: true,
-                  applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
-                });
-                console.log('✅ Subscription criada!');
-              }
-
-              console.log('💾 Salvando no banco...');
-              const existingSubscriptions = await base44.entities.PushSubscription.list();
-              const userSubscription = existingSubscriptions.find(s => s.user_email === currentUser.email);
-              
-              const subscriptionData = {
-                user_email: currentUser.email,
-                subscription: subscription.toJSON(),
-                is_active: true
-              };
-
-              if (userSubscription) {
-                await base44.entities.PushSubscription.update(userSubscription.id, subscriptionData);
-                console.log('✅ Subscription atualizada!');
-              } else {
-                await base44.entities.PushSubscription.create(subscriptionData);
-                console.log('✅ Subscription criada!');
-              }
-              
-              console.log('🎉 Push notifications configurado - funciona com app fechado!');
-            }
-            
-            const hasAskedPermission = localStorage.getItem('notification-permission-asked');
-            const isPWA = window.matchMedia('(display-mode: standalone)').matches || 
-                          window.navigator.standalone === true;
-            
-            console.log('🏠 PWA?', isPWA);
-            console.log('❓ Já perguntou?', hasAskedPermission);
-            
-            if (isPWA && Notification.permission === 'default' && !hasAskedPermission) {
-              setTimeout(() => {
-                console.log('📢 Mostrando modal de permissão');
-                setShowNotificationModal(true);
-              }, 3000);
-            }
+          let subscription = await registration.pushManager.getSubscription();
+          
+          if (!subscription) {
+            console.log('📝 Criando subscription...');
+            subscription = await registration.pushManager.subscribe({
+              userVisibleOnly: true,
+              applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
+            });
+            console.log('✅ Subscription criada!');
           }
+
+          await saveSubscriptionToDatabase(subscription.toJSON(), userEmail);
+          console.log('🎉 Push notifications configurado!');
         }
       } catch (error) {
-        console.error('❌ Erro ao carregar SW:', error);
+        console.error('❌ Erro ao registrar SW local:', error);
       }
     };
 
-    loadServiceWorker();
+    // Escutar mensagens do PWA externo (se estiver em iframe)
+    const handleMessage = async (event) => {
+      // Aceitar mensagens do PWA externo
+      if (!event.origin.includes('pwa-ia-coach.vercel.app')) {
+        return;
+      }
+      
+      console.log('📨 Mensagem do PWA externo:', event.data);
+      
+      if (event.data.type === 'PUSH_SUBSCRIPTION' && event.data.subscription) {
+        try {
+          const currentUser = await base44.auth.me();
+          if (currentUser) {
+            await saveSubscriptionToDatabase(event.data.subscription, currentUser.email);
+          }
+        } catch (error) {
+          console.error('Erro ao salvar subscription do PWA externo:', error);
+        }
+      }
+      
+      if (event.data.type === 'NOTIFICATION_PERMISSION_GRANTED' && event.data.subscription) {
+        try {
+          const currentUser = await base44.auth.me();
+          if (currentUser) {
+            await saveSubscriptionToDatabase(event.data.subscription, currentUser.email);
+          }
+        } catch (error) {
+          console.error('Erro ao salvar subscription:', error);
+        }
+      }
+    };
+    
+    window.addEventListener('message', handleMessage);
+    
+    // Inicializar push
+    initPushNotifications();
 
     return () => {
       URL.revokeObjectURL(manifestURL);
+      window.removeEventListener('message', handleMessage);
     };
   }, []);
 
