@@ -5,10 +5,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { X, Weight, Save } from "lucide-react";
+import { X, Weight, Save, Calendar } from "lucide-react";
 
 export default function WorkoutLogEditModal({ log, onClose }) {
   const queryClient = useQueryClient();
+  const [workoutDate, setWorkoutDate] = useState(log.date || "");
   const [exercisesData, setExercisesData] = useState(
     log.exercises_completed?.map(ex => ({
       ...ex,
