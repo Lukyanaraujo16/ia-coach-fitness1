@@ -33,6 +33,7 @@ export default function WorkoutLogEditModal({ log, onClose }) {
 
   const handleSave = () => {
     updateLogMutation.mutate({
+      date: workoutDate,
       exercises_completed: exercisesData
     });
   };
