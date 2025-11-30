@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { Link, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { Home, Dumbbell, TrendingUp, Users, User, Shield, Apple, Sparkles, Menu, X, LogOut, Trophy, Award, Headphones } from "lucide-react";
+import { Home, Dumbbell, TrendingUp, Users, User, Shield, Apple, Sparkles, Menu, X, LogOut, Trophy, Award, Headphones, BarChart3 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import TrialChecker from "./components/TrialChecker";
 import PWAManager from "./components/PWAManager";
@@ -167,6 +167,7 @@ export default function Layout({ children, currentPageName }) {
     
     items.push(
       { name: "Meus Treinos", path: createPageUrl("MyWorkouts"), icon: Dumbbell },
+      { name: "Relatórios", path: createPageUrl("WorkoutReports"), icon: BarChart3 },
       { name: "Conquistas", path: createPageUrl("Badges"), icon: Award },
       { name: "Perfil", path: createPageUrl("Profile"), icon: User },
       { name: "Suporte", path: createPageUrl("Support"), icon: Headphones }
