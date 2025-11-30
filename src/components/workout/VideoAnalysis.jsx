@@ -49,6 +49,7 @@ export default function VideoAnalysis() {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysis, setAnalysis] = useState(null);
   const [error, setError] = useState(null);
+  const [isConverting, setIsConverting] = useState(false);
   
   const videoRef = useRef(null);
   const mediaRecorderRef = useRef(null);
@@ -186,25 +187,6 @@ export default function VideoAnalysis() {
         return;
       }
 
-      const fileName = file.name.toLowerCase();
-      const fileType = file.type.toLowerCase();
-      
-      // Verificar se é formato MOV ou HEVC (comum no iPhone)
-      const isMovFormat = fileName.endsWith('.mov') || fileType.includes('quicktime');
-      const isHevcFormat = fileType.includes('hevc') || fileType.includes('heic');
-      
-      if (isMovFormat || isHevcFormat) {
-        setError(
-          "⚠️ Formato MOV/HEVC detectado (padrão do iPhone). Este formato não é suportado.\n\n" +
-          "📱 Para resolver no iPhone:\n" +
-          "1. Vá em Ajustes → Câmera → Formatos\n" +
-          "2. Selecione 'Mais Compatível'\n" +
-          "3. Grave o vídeo novamente\n\n" +
-          "Ou use o botão 'Gravar Vídeo' que já usa formato compatível."
-        );
-        return;
-      }
-
       const videoUrl = URL.createObjectURL(file);
       
       setVideoFile(file);
@@ -213,6 +195,17 @@ export default function VideoAnalysis() {
       
       console.log("Arquivo selecionado:", file.name, file.type, Math.round(file.size / 1024 / 1024) + "MB");
     }
+  };
+
+  // Verificar se precisa converter o vídeo
+  const needsConversion = (file) => {
+    if (!file) return false;
+    const fileName = file.name.toLowerCase();
+    const fileType = file.type.toLowerCase();
+    return fileName.endsWith('.mov') || 
+           fileType.includes('quicktime') || 
+           fileType.includes('hevc') ||
+           fileType.includes('heic');
   };
 
   // Limpar vídeo
@@ -245,11 +238,36 @@ export default function VideoAnalysis() {
     setAnalysis(null);
 
     try {
-      // 1. Upload do vídeo
-      console.log("Iniciando upload do vídeo:", videoFile.name, videoFile.type);
-      const uploadResult = await base44.integrations.Core.UploadFile({ file: videoFile });
-      const file_url = uploadResult.file_url;
-      console.log("Upload concluído:", file_url);
+      let file_url;
+      
+      // Verificar se precisa converter (MOV/HEVC do iPhone)
+      if (needsConversion(videoFile)) {
+        console.log("Formato MOV/HEVC detectado, iniciando conversão...");
+        setIsConverting(true);
+        
+        // Primeiro fazer upload do arquivo original
+        const uploadOriginal = await base44.integrations.Core.UploadFile({ file: videoFile });
+        console.log("Upload original concluído:", uploadOriginal.file_url);
+        
+        // Converter no servidor
+        const convertResponse = await base44.functions.invoke('convertVideo', {
+          file_url: uploadOriginal.file_url
+        });
+        
+        if (convertResponse.data?.error) {
+          throw new Error(convertResponse.data.error);
+        }
+        
+        file_url = convertResponse.data.file_url;
+        console.log("Conversão concluída:", file_url);
+        setIsConverting(false);
+      } else {
+        // Upload direto para formatos compatíveis
+        console.log("Iniciando upload do vídeo:", videoFile.name, videoFile.type);
+        const uploadResult = await base44.integrations.Core.UploadFile({ file: videoFile });
+        file_url = uploadResult.file_url;
+        console.log("Upload concluído:", file_url);
+      }
       
       if (!file_url) {
         throw new Error("Falha no upload do vídeo");
@@ -323,6 +341,7 @@ Se não conseguir ver claramente algum aspecto no vídeo, mencione isso.`,
     } finally {
       setIsUploading(false);
       setIsAnalyzing(false);
+      setIsConverting(false);
     }
   };
 
@@ -515,13 +534,8 @@ Se não conseguir ver claramente algum aspecto no vídeo, mencione isso.`,
               <li>Garanta boa iluminação no ambiente</li>
               <li>Vista roupas que permitam ver a postura</li>
               <li>Grave de 2 a 5 repetições do exercício</li>
+              <li>Vídeos do iPhone (MOV) são convertidos automaticamente</li>
             </ul>
-            <div className="mt-3 p-3 bg-blue-900/30 border border-blue-700/30 rounded-lg">
-              <p className="text-blue-300 text-xs font-medium mb-1">📱 Usuários de iPhone:</p>
-              <p className="text-blue-200/80 text-xs">
-                Configure seu iPhone para gravar em formato compatível: <strong>Ajustes → Câmera → Formatos → Mais Compatível</strong>
-              </p>
-            </div>
           </div>
         </CardContent>
       </Card>
@@ -540,13 +554,18 @@ Se não conseguir ver claramente algum aspecto no vídeo, mencione isso.`,
       {videoFile && !analysis && (
         <Button
           onClick={analyzeVideo}
-          disabled={isUploading || isAnalyzing}
+          disabled={isUploading || isAnalyzing || isConverting}
           className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 h-14 text-lg"
         >
-          {isUploading ? (
+          {isUploading && !isConverting ? (
             <>
               <Loader2 className="w-5 h-5 mr-2 animate-spin" />
               Enviando vídeo...
+            </>
+          ) : isConverting ? (
+            <>
+              <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+              Convertendo vídeo...
             </>
           ) : isAnalyzing ? (
             <>
