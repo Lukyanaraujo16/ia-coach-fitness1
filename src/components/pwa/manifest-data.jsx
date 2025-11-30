@@ -10,13 +10,13 @@ export const manifestData = {
   "orientation": "portrait",
   "icons": [
     {
-      "src": "https://base44.app/api/apps/6904da724b4ce40db58404e7/files/public/6904da724b4ce40db58404e7/901d97ae0_Untitleddesign3.png",
+      "src": "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6904da724b4ce40db58404e7/ff4e4563c_LogoIA.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "https://base44.app/api/apps/6904da724b4ce40db58404e7/files/public/6904da724b4ce40db58404e7/901d97ae0_Untitleddesign3.png",
+      "src": "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6904da724b4ce40db58404e7/ff4e4563c_LogoIA.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"
@@ -30,7 +30,7 @@ export const manifestData = {
       "description": "Comece seu treino agora",
       "url": "/workouts",
       "icons": [{ 
-        "src": "https://base44.app/api/apps/6904da724b4ce40db58404e7/files/public/6904da724b4ce40db58404e7/901d97ae0_Untitleddesign3.png", 
+        "src": "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6904da724b4ce40db58404e7/ff4e4563c_LogoIA.png", 
         "sizes": "192x192" 
       }]
     },
@@ -40,7 +40,7 @@ export const manifestData = {
       "description": "Acompanhe sua evolução",
       "url": "/progress",
       "icons": [{ 
-        "src": "https://base44.app/api/apps/6904da724b4ce40db58404e7/files/public/6904da724b4ce40db58404e7/901d97ae0_Untitleddesign3.png", 
+        "src": "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6904da724b4ce40db58404e7/ff4e4563c_LogoIA.png", 
         "sizes": "192x192" 
       }]
     }
