@@ -6,7 +6,7 @@ import { createPageUrl } from "@/utils";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Users, DollarSign, Dumbbell, Crown, MessageSquare, MessageCircle, BarChart, Target, Activity, Apple, Settings, Bell, RefreshCw, Loader2 } from "lucide-react";
+import { Users, DollarSign, Dumbbell, Crown, MessageSquare, MessageCircle, BarChart, Target, Activity, Apple, Settings, Bell, RefreshCw, Loader2, Headphones } from "lucide-react";
 import { toast } from "sonner";
 import AdminUsers from "../components/admin/AdminUsers";
 import AdminWorkouts from "../components/admin/AdminWorkouts";
@@ -17,6 +17,7 @@ import AdminCommunity from "../components/admin/AdminCommunity";
 import AdminNutrition from "../components/admin/AdminNutrition";
 import AdminWhatsAppCoach from "../components/admin/AdminWhatsAppCoach";
 import AdminSettings from "../components/admin/AdminSettings";
+import AdminSupport from "../components/admin/AdminSupport";
 
 export default function Admin() {
   const navigate = useNavigate();
@@ -141,6 +142,7 @@ export default function Admin() {
     { value: "nutrition", label: "Nutrição", icon: Apple },
     { value: "challenges", label: "Desafios", icon: Target },
     { value: "community", label: "Comunidade", icon: MessageSquare },
+    { value: "support", label: "Suporte", icon: Headphones },
     { value: "whatsapp", label: "WhatsApp Coach", icon: MessageCircle },
     { value: "settings", label: "Configurações", icon: Settings },
   ];
@@ -239,7 +241,7 @@ export default function Admin() {
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="bg-slate-900/50 border border-slate-800 grid grid-cols-3 md:grid-cols-9 gap-1 p-1 h-auto">
+        <TabsList className="bg-slate-900/50 border border-slate-800 grid grid-cols-5 md:grid-cols-10 gap-1 p-1 h-auto">
           {tabs.map((tab) => {
             const Icon = tab.icon;
             return (
@@ -265,6 +267,7 @@ export default function Admin() {
         {activeTab === "nutrition" && <AdminNutrition plans={nutritionPlans} />}
         {activeTab === "challenges" && <AdminChallenges challenges={challenges} />}
         {activeTab === "community" && <AdminCommunity posts={posts} />}
+        {activeTab === "support" && <AdminSupport />}
         {activeTab === "whatsapp" && <AdminWhatsAppCoach />}
         {activeTab === "settings" && <AdminSettings user={user} />}
       </div>
