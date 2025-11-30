@@ -127,36 +127,20 @@ export default function VideoAnalysis() {
   const handleFileSelect = (e) => {
     const file = e.target.files[0];
     if (file) {
-      // Validar duração real do vídeo
+      // Validar tamanho máximo de 100MB primeiro
+      if (file.size > 100 * 1024 * 1024) {
+        setError("O arquivo é muito grande. Máximo de 100MB.");
+        return;
+      }
+
+      // Aceitar o arquivo diretamente - vídeos de celular podem ter formatos variados
       const videoUrl = URL.createObjectURL(file);
-      const tempVideo = document.createElement('video');
-      tempVideo.preload = 'metadata';
       
-      tempVideo.onloadedmetadata = () => {
-        URL.revokeObjectURL(tempVideo.src);
-        
-        if (tempVideo.duration > MAX_RECORDING_TIME) {
-          setError(`O vídeo tem ${Math.round(tempVideo.duration)} segundos. Use um vídeo de até ${MAX_RECORDING_TIME} segundos.`);
-          return;
-        }
-        
-        // Validar tamanho máximo de 100MB
-        if (file.size > 100 * 1024 * 1024) {
-          setError("O arquivo é muito grande. Máximo de 100MB.");
-          return;
-        }
-        
-        setVideoFile(file);
-        setVideoPreview(videoUrl);
-        setError(null);
-      };
+      setVideoFile(file);
+      setVideoPreview(videoUrl);
+      setError(null);
       
-      tempVideo.onerror = () => {
-        URL.revokeObjectURL(tempVideo.src);
-        setError("Não foi possível ler o vídeo. Tente outro arquivo.");
-      };
-      
-      tempVideo.src = videoUrl;
+      console.log("Arquivo selecionado:", file.name, file.type, Math.round(file.size / 1024 / 1024) + "MB");
     }
   };
 
@@ -191,12 +175,20 @@ export default function VideoAnalysis() {
 
     try {
       // 1. Upload do vídeo
-      const { file_url } = await base44.integrations.Core.UploadFile({ file: videoFile });
+      console.log("Iniciando upload do vídeo:", videoFile.name, videoFile.type);
+      const uploadResult = await base44.integrations.Core.UploadFile({ file: videoFile });
+      const file_url = uploadResult.file_url;
+      console.log("Upload concluído:", file_url);
+      
+      if (!file_url) {
+        throw new Error("Falha no upload do vídeo");
+      }
       
       setIsUploading(false);
       setIsAnalyzing(true);
 
       // 2. Análise pela IA
+      console.log("Iniciando análise pela IA...");
       const result = await base44.integrations.Core.InvokeLLM({
         prompt: `Você é um personal trainer profissional especializado em biomecânica e análise de movimento.
 
@@ -250,11 +242,13 @@ Se não conseguir ver claramente algum aspecto no vídeo, mencione isso.`,
         }
       });
 
+      console.log("Análise concluída:", result);
       setAnalysis(result);
       
     } catch (err) {
       console.error("Erro na análise:", err);
-      setError("Erro ao analisar o vídeo. Tente novamente.");
+      const errorMsg = err?.message || err?.toString() || "Erro desconhecido";
+      setError(`Erro ao analisar o vídeo: ${errorMsg}. Tente um vídeo mais curto ou em outro formato.`);
     } finally {
       setIsUploading(false);
       setIsAnalyzing(false);
@@ -341,7 +335,12 @@ Se não conseguir ver claramente algum aspecto no vídeo, mencione isso.`,
                 <video
                   src={videoPreview}
                   controls
+                  playsInline
                   className="w-full h-full object-cover"
+                  onError={(e) => {
+                    console.error("Erro ao carregar vídeo no player:", e);
+                    setError("Não foi possível reproduzir o vídeo no navegador, mas você ainda pode enviar para análise.");
+                  }}
                 />
               ) : null}
               
