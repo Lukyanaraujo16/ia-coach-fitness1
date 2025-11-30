@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { Link, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { Home, Dumbbell, TrendingUp, Users, User, Shield, Apple, Sparkles, Menu, X, LogOut, Trophy, Award, Headphones, BarChart3 } from "lucide-react";
+import { Home, Dumbbell, TrendingUp, Users, User, Shield, Apple, Sparkles, Menu, X, LogOut, Trophy, Award, Headphones, BarChart3, Camera } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import TrialChecker from "./components/TrialChecker";
 import PWAManager from "./components/PWAManager";
@@ -155,7 +155,10 @@ export default function Layout({ children, currentPageName }) {
       items.push({ name: "Coach IA", path: createPageUrl("AICoach"), icon: Sparkles });
     }
     
-    items.push({ name: "Progresso", path: createPageUrl("Progress"), icon: TrendingUp });
+    items.push(
+      { name: "Progresso", path: createPageUrl("Progress"), icon: TrendingUp },
+      { name: "Análise Corporal", path: createPageUrl("BodyAnalysis"), icon: Camera }
+    );
     
     if (user?.community_enabled !== false) {
       items.push({ name: "Comunidade", path: createPageUrl("Community"), icon: Users });
