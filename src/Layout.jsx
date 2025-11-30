@@ -143,40 +143,42 @@ export default function Layout({ children, currentPageName }) {
     });
   }
 
-  const sideMenuItems = [
-    { name: "Home", path: createPageUrl("Dashboard"), icon: Home },
-    { name: "Treinos", path: createPageUrl("Workouts"), icon: Dumbbell },
-    { name: "Nutrição", path: createPageUrl("Nutrition"), icon: Apple },
-    { name: "Progresso", path: createPageUrl("Progress"), icon: TrendingUp },
-    { name: "Perfil", path: createPageUrl("Profile"), icon: User },
-    { name: "Meus Treinos", path: createPageUrl("MyWorkouts"), icon: Dumbbell },
-    { name: "Conquistas", path: createPageUrl("Badges"), icon: Award },
-    { name: "Suporte", path: createPageUrl("Support"), icon: Headphones },
-  ];
-
-  if (isPremium) {
-    sideMenuItems.splice(3, 0, {
-      name: "Coach IA",
-      path: createPageUrl("AICoach"),
-      icon: Sparkles,
-    });
-  }
-
-  if (user?.community_enabled !== false) {
-    sideMenuItems.splice(4, 0, { name: "Comunidade", path: createPageUrl("Community"), icon: Users });
-  }
-
-  if (user?.leaderboard_enabled !== false) {
-    sideMenuItems.splice(5, 0, { name: "Ranking", path: createPageUrl("Leaderboard"), icon: Trophy });
-  }
-
-  if (user?.role === 'admin') {
-    sideMenuItems.push({
-      name: "Admin",
-      path: createPageUrl("Admin"),
-      icon: Shield,
-    });
-  }
+  const buildSideMenuItems = () => {
+    const items = [
+      { name: "Home", path: createPageUrl("Dashboard"), icon: Home },
+      { name: "Treinos", path: createPageUrl("Workouts"), icon: Dumbbell },
+      { name: "Nutrição", path: createPageUrl("Nutrition"), icon: Apple },
+    ];
+    
+    if (isPremium) {
+      items.push({ name: "Coach IA", path: createPageUrl("AICoach"), icon: Sparkles });
+    }
+    
+    items.push({ name: "Progresso", path: createPageUrl("Progress"), icon: TrendingUp });
+    
+    if (user?.community_enabled !== false) {
+      items.push({ name: "Comunidade", path: createPageUrl("Community"), icon: Users });
+    }
+    
+    if (user?.leaderboard_enabled !== false) {
+      items.push({ name: "Ranking", path: createPageUrl("Leaderboard"), icon: Trophy });
+    }
+    
+    items.push(
+      { name: "Meus Treinos", path: createPageUrl("MyWorkouts"), icon: Dumbbell },
+      { name: "Conquistas", path: createPageUrl("Badges"), icon: Award },
+      { name: "Perfil", path: createPageUrl("Profile"), icon: User },
+      { name: "Suporte", path: createPageUrl("Support"), icon: Headphones }
+    );
+    
+    if (user?.role === 'admin') {
+      items.push({ name: "Admin", path: createPageUrl("Admin"), icon: Shield });
+    }
+    
+    return items;
+  };
+  
+  const sideMenuItems = buildSideMenuItems();
 
   const specialPages = ["WorkoutExecution", "Onboarding", "NutritionSetup", "WorkoutSetup", "LandingPage"];
   
