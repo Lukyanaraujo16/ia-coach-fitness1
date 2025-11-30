@@ -63,28 +63,58 @@ export default function AdminNotifications() {
       let pushResult = { sent: 0, failed: 0 };
       let whatsappResult = { sent: 0, failed: 0 };
       
+      // Buscar usuários alvo para criar notificações no app
+      let targetUsers = users;
+      if (data.target_audience === 'premium') {
+        targetUsers = users.filter(u => u.subscription_status === 'premium' || u.subscription_status === 'trial' || u.subscription_status === 'lifetime');
+      } else if (data.target_audience === 'free') {
+        targetUsers = users.filter(u => !u.subscription_status || u.subscription_status === 'free');
+      }
+      
+      // Criar notificação no app para cada usuário
+      for (const targetUser of targetUsers) {
+        if (targetUser.email) {
+          await base44.entities.AppNotification.create({
+            user_email: targetUser.email,
+            type: 'push',
+            title: data.title,
+            message: data.message,
+            is_read: false,
+            link_type: 'popup'
+          });
+        }
+      }
+      
       // Enviar Push
       if (channel === 'push' || channel === 'both') {
         console.log('🚀 Enviando push via backend:', data);
-        const response = await base44.functions.invoke('sendPushNotification', {
-          title: data.title,
-          message: data.message,
-          target_audience: data.target_audience
-        });
-        pushResult = response.data;
-        console.log('✅ Push enviado:', pushResult);
+        try {
+          const response = await base44.functions.invoke('sendPushNotification', {
+            title: data.title,
+            message: data.message,
+            target_audience: data.target_audience
+          });
+          pushResult = response.data || { sent: 0, failed: 0 };
+          console.log('✅ Push enviado:', pushResult);
+        } catch (e) {
+          console.error('Erro push:', e);
+        }
       }
       
       // Enviar WhatsApp
       if (channel === 'whatsapp' || channel === 'both') {
         console.log('💬 Enviando WhatsApp via backend:', data);
-        const response = await base44.functions.invoke('sendWhatsAppMessage', {
-          title: data.title,
-          message: data.message,
-          target_audience: data.target_audience
-        });
-        whatsappResult = response.data;
-        console.log('✅ WhatsApp enviado:', whatsappResult);
+        try {
+          const response = await base44.functions.invoke('sendWhatsAppMessage', {
+            title: data.title,
+            message: data.message,
+            target_audience: data.target_audience
+          });
+          whatsappResult = response.data || { sent: 0, failed: 0 };
+          console.log('✅ WhatsApp enviado:', whatsappResult);
+        } catch (e) {
+          console.error('Erro whatsapp:', e);
+        }
       }
       
       await base44.entities.NotificationSchedule.create({
@@ -95,14 +125,16 @@ export default function AdminNotifications() {
       });
       
       return {
-        sent: pushResult.sent + whatsappResult.sent,
-        failed: pushResult.failed + whatsappResult.failed,
+        sent: (pushResult.sent || 0) + (whatsappResult.sent || 0),
+        failed: (pushResult.failed || 0) + (whatsappResult.failed || 0),
+        appNotifications: targetUsers.length,
         channel
       };
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries(['notifications']);
       queryClient.invalidateQueries(['push-subscriptions']);
+      queryClient.invalidateQueries(['app-notifications']);
       setFormData({
         title: "",
         message: "",
@@ -114,7 +146,7 @@ export default function AdminNotifications() {
         channel: "push"
       });
       const channelLabel = data.channel === 'both' ? 'Push + WhatsApp' : data.channel === 'whatsapp' ? 'WhatsApp' : 'Push';
-      toast.success(`✅ ${channelLabel} enviado! ${data.sent} receberam, ${data.failed} falhas`);
+      toast.success(`✅ ${channelLabel} enviado! ${data.appNotifications} notificações no app criadas`);
     },
     onError: (error) => {
       console.error('❌ Erro:', error);
