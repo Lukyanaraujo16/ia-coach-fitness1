@@ -59,38 +59,69 @@ export default function VideoAnalysis() {
 
   const MAX_RECORDING_TIME = 30;
 
+  // Detectar iOS
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || 
+    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
   // Iniciar gravação
   const startRecording = async () => {
     try {
       setError(null);
+      
+      // Configurações de vídeo - iOS precisa de constraints mais simples
+      const videoConstraints = isIOS 
+        ? { facingMode: "environment" }
+        : { 
+            facingMode: "environment",
+            width: { ideal: 1280 },
+            height: { ideal: 720 }
+          };
+      
       const stream = await navigator.mediaDevices.getUserMedia({ 
-        video: { 
-          facingMode: "environment",
-          width: { ideal: 1280 },
-          height: { ideal: 720 }
-        }, 
+        video: videoConstraints, 
         audio: false 
       });
       
       streamRef.current = stream;
       
-      // Aguardar o vídeo estar pronto antes de mostrar
+      // Configurar vídeo element antes de setar o stream
       if (videoRef.current) {
+        videoRef.current.setAttribute('autoplay', '');
+        videoRef.current.setAttribute('muted', '');
+        videoRef.current.setAttribute('playsinline', '');
+        videoRef.current.muted = true;
         videoRef.current.srcObject = stream;
-        await videoRef.current.play().catch(e => console.log("Autoplay:", e));
+        
+        // iOS precisa de play() explícito após srcObject
+        try {
+          await videoRef.current.play();
+        } catch (playErr) {
+          console.log("Play error (geralmente ok no iOS):", playErr);
+        }
       }
 
-      // Verificar formatos suportados
-      let mimeType = 'video/webm';
-      if (MediaRecorder.isTypeSupported('video/webm;codecs=vp9')) {
-        mimeType = 'video/webm;codecs=vp9';
-      } else if (MediaRecorder.isTypeSupported('video/webm;codecs=vp8')) {
-        mimeType = 'video/webm;codecs=vp8';
-      } else if (MediaRecorder.isTypeSupported('video/mp4')) {
-        mimeType = 'video/mp4';
+      // Verificar formatos suportados - iOS Safari suporta mp4
+      let mimeType = '';
+      const mimeTypes = [
+        'video/mp4',
+        'video/webm;codecs=vp9',
+        'video/webm;codecs=vp8',
+        'video/webm'
+      ];
+      
+      for (const type of mimeTypes) {
+        if (MediaRecorder.isTypeSupported(type)) {
+          mimeType = type;
+          break;
+        }
       }
+      
+      // Se nenhum suportado, tentar sem especificar
+      const recorderOptions = mimeType ? { mimeType } : {};
+      
+      console.log("Usando mimeType:", mimeType || "default");
 
-      const mediaRecorder = new MediaRecorder(stream, { mimeType });
+      const mediaRecorder = new MediaRecorder(stream, recorderOptions);
       mediaRecorderRef.current = mediaRecorder;
       chunksRef.current = [];
 
@@ -101,9 +132,10 @@ export default function VideoAnalysis() {
       };
 
       mediaRecorder.onstop = () => {
-        const blob = new Blob(chunksRef.current, { type: mimeType });
-        const extension = mimeType.includes('mp4') ? 'mp4' : 'webm';
-        const file = new File([blob], `exercicio_${Date.now()}.${extension}`, { type: mimeType });
+        const actualMimeType = mediaRecorder.mimeType || mimeType || 'video/mp4';
+        const blob = new Blob(chunksRef.current, { type: actualMimeType });
+        const extension = actualMimeType.includes('mp4') ? 'mp4' : 'webm';
+        const file = new File([blob], `exercicio_${Date.now()}.${extension}`, { type: actualMimeType });
         setVideoFile(file);
         setVideoPreview(URL.createObjectURL(blob));
         
@@ -131,7 +163,7 @@ export default function VideoAnalysis() {
 
     } catch (err) {
       console.error("Erro ao acessar câmera:", err);
-      setError("Não foi possível acessar a câmera. Verifique as permissões.");
+      setError("Não foi possível acessar a câmera. Verifique as permissões do navegador.");
     }
   };
 
@@ -363,8 +395,18 @@ Se não conseguir ver claramente algum aspecto no vídeo, mencione isso.`,
                   muted
                   playsInline
                   webkit-playsinline="true"
+                  x-webkit-airplay="deny"
+                  disablePictureInPicture
                   className="w-full h-full object-cover"
-                  style={{ transform: 'scaleX(1)' }}
+                  style={{ 
+                    transform: 'scaleX(1)',
+                    WebkitTransform: 'scaleX(1)',
+                    background: '#000'
+                  }}
+                  onLoadedMetadata={(e) => {
+                    // Garantir que o vídeo está tocando após metadata carregar
+                    e.target.play().catch(() => {});
+                  }}
                 />
               ) : videoPreview ? (
                 <video
