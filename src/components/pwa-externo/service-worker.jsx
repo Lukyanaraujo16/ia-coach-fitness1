@@ -102,7 +102,7 @@ self.addEventListener('notificationclick', (event) => {
   }
 
   // URL padrão ou URL customizada da notificação
-  let targetUrl = '/';
+  let targetUrl = 'https://iacoachfitness.com.br';
   if (event.notification.data && event.notification.data.url) {
     targetUrl = event.notification.data.url;
   }
