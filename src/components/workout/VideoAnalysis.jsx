@@ -1,10 +1,11 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Progress } from "@/components/ui/progress";
 import { 
   Video, 
   Upload, 
@@ -50,8 +51,12 @@ export default function VideoAnalysis() {
   const [analysis, setAnalysis] = useState(null);
   const [error, setError] = useState(null);
   const [isConverting, setIsConverting] = useState(false);
+  const [conversionProgress, setConversionProgress] = useState(0);
+  const [ffmpegLoaded, setFfmpegLoaded] = useState(false);
+  const [ffmpegLoading, setFfmpegLoading] = useState(false);
   
   const videoRef = useRef(null);
+  const ffmpegRef = useRef(null);
   const mediaRecorderRef = useRef(null);
   const streamRef = useRef(null);
   const chunksRef = useRef([]);
@@ -208,6 +213,82 @@ export default function VideoAnalysis() {
            fileType.includes('heic');
   };
 
+  // Carregar FFmpeg dinamicamente
+  const loadFFmpeg = async () => {
+    if (ffmpegRef.current) return ffmpegRef.current;
+    
+    setFfmpegLoading(true);
+    try {
+      // Importar FFmpeg dinamicamente
+      const { FFmpeg } = await import('https://esm.sh/@ffmpeg/ffmpeg@0.12.10');
+      const { fetchFile, toBlobURL } = await import('https://esm.sh/@ffmpeg/util@0.12.1');
+      
+      const ffmpeg = new FFmpeg();
+      
+      ffmpeg.on('progress', ({ progress }) => {
+        setConversionProgress(Math.round(progress * 100));
+      });
+
+      // Carregar os arquivos core do FFmpeg
+      const baseURL = 'https://unpkg.com/@ffmpeg/core@0.12.6/dist/esm';
+      await ffmpeg.load({
+        coreURL: await toBlobURL(`${baseURL}/ffmpeg-core.js`, 'text/javascript'),
+        wasmURL: await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, 'application/wasm'),
+      });
+
+      ffmpegRef.current = { ffmpeg, fetchFile };
+      setFfmpegLoaded(true);
+      return { ffmpeg, fetchFile };
+    } catch (err) {
+      console.error("Erro ao carregar FFmpeg:", err);
+      throw new Error("Não foi possível carregar o conversor de vídeo");
+    } finally {
+      setFfmpegLoading(false);
+    }
+  };
+
+  // Converter vídeo MOV para MP4
+  const convertVideo = async (file) => {
+    const { ffmpeg, fetchFile } = await loadFFmpeg();
+    
+    setIsConverting(true);
+    setConversionProgress(0);
+    
+    try {
+      const inputName = 'input.mov';
+      const outputName = 'output.mp4';
+      
+      // Escrever arquivo de entrada
+      await ffmpeg.writeFile(inputName, await fetchFile(file));
+      
+      // Converter para MP4 com H.264
+      await ffmpeg.exec([
+        '-i', inputName,
+        '-c:v', 'libx264',
+        '-preset', 'fast',
+        '-crf', '28',
+        '-c:a', 'aac',
+        '-movflags', '+faststart',
+        '-vf', 'scale=1280:-2',
+        outputName
+      ]);
+      
+      // Ler arquivo convertido
+      const data = await ffmpeg.readFile(outputName);
+      const blob = new Blob([data.buffer], { type: 'video/mp4' });
+      const convertedFile = new File([blob], 'converted.mp4', { type: 'video/mp4' });
+      
+      // Limpar arquivos
+      await ffmpeg.deleteFile(inputName);
+      await ffmpeg.deleteFile(outputName);
+      
+      return convertedFile;
+    } finally {
+      setIsConverting(false);
+      setConversionProgress(0);
+    }
+  };
+
   // Limpar vídeo
   const clearVideo = () => {
     setVideoFile(null);
@@ -239,35 +320,25 @@ export default function VideoAnalysis() {
 
     try {
       let file_url;
+      let fileToUpload = videoFile;
       
       // Verificar se precisa converter (MOV/HEVC do iPhone)
       if (needsConversion(videoFile)) {
-        console.log("Formato MOV/HEVC detectado, iniciando conversão...");
-        setIsConverting(true);
-        
-        // Primeiro fazer upload do arquivo original
-        const uploadOriginal = await base44.integrations.Core.UploadFile({ file: videoFile });
-        console.log("Upload original concluído:", uploadOriginal.file_url);
-        
-        // Converter no servidor
-        const convertResponse = await base44.functions.invoke('convertVideo', {
-          file_url: uploadOriginal.file_url
-        });
-        
-        if (convertResponse.data?.error) {
-          throw new Error(convertResponse.data.error);
+        console.log("Formato MOV/HEVC detectado, iniciando conversão no navegador...");
+        try {
+          fileToUpload = await convertVideo(videoFile);
+          console.log("Conversão concluída, arquivo:", fileToUpload.name, fileToUpload.size);
+        } catch (convErr) {
+          console.error("Erro na conversão:", convErr);
+          throw new Error("Não foi possível converter o vídeo. Tente usar o botão 'Gravar Vídeo' para gravar diretamente.");
         }
-        
-        file_url = convertResponse.data.file_url;
-        console.log("Conversão concluída:", file_url);
-        setIsConverting(false);
-      } else {
-        // Upload direto para formatos compatíveis
-        console.log("Iniciando upload do vídeo:", videoFile.name, videoFile.type);
-        const uploadResult = await base44.integrations.Core.UploadFile({ file: videoFile });
-        file_url = uploadResult.file_url;
-        console.log("Upload concluído:", file_url);
       }
+      
+      // Upload do arquivo (convertido ou original)
+      console.log("Iniciando upload do vídeo:", fileToUpload.name, fileToUpload.type);
+      const uploadResult = await base44.integrations.Core.UploadFile({ file: fileToUpload });
+      file_url = uploadResult.file_url;
+      console.log("Upload concluído:", file_url);
       
       if (!file_url) {
         throw new Error("Falha no upload do vídeo");
@@ -552,33 +623,61 @@ Se não conseguir ver claramente algum aspecto no vídeo, mencione isso.`,
 
       {/* Botão Analisar */}
       {videoFile && !analysis && (
-        <Button
-          onClick={analyzeVideo}
-          disabled={isUploading || isAnalyzing || isConverting}
-          className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 h-14 text-lg"
-        >
-          {isUploading && !isConverting ? (
-            <>
-              <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-              Enviando vídeo...
-            </>
-          ) : isConverting ? (
-            <>
-              <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-              Convertendo vídeo...
-            </>
-          ) : isAnalyzing ? (
-            <>
-              <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-              Analisando execução...
-            </>
-          ) : (
-            <>
-              <Sparkles className="w-5 h-5 mr-2" />
-              Analisar Execução
-            </>
+        <div className="space-y-3">
+          {(isConverting || ffmpegLoading) && (
+            <Card className="bg-blue-900/20 border-blue-700/50">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3 mb-2">
+                  <Loader2 className="w-5 h-5 text-blue-400 animate-spin" />
+                  <span className="text-blue-300 font-medium">
+                    {ffmpegLoading ? "Carregando conversor..." : "Convertendo vídeo..."}
+                  </span>
+                </div>
+                {isConverting && (
+                  <Progress value={conversionProgress} className="h-2" />
+                )}
+                <p className="text-blue-200/70 text-xs mt-2">
+                  {ffmpegLoading 
+                    ? "Baixando componentes necessários (apenas na primeira vez)..." 
+                    : `${conversionProgress}% concluído`}
+                </p>
+              </CardContent>
+            </Card>
           )}
-        </Button>
+          
+          <Button
+            onClick={analyzeVideo}
+            disabled={isUploading || isAnalyzing || isConverting || ffmpegLoading}
+            className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 h-14 text-lg"
+          >
+            {ffmpegLoading ? (
+              <>
+                <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                Carregando conversor...
+              </>
+            ) : isConverting ? (
+              <>
+                <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                Convertendo vídeo...
+              </>
+            ) : isUploading ? (
+              <>
+                <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                Enviando vídeo...
+              </>
+            ) : isAnalyzing ? (
+              <>
+                <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                Analisando execução...
+              </>
+            ) : (
+              <>
+                <Sparkles className="w-5 h-5 mr-2" />
+                Analisar Execução
+              </>
+            )}
+          </Button>
+        </div>
       )}
 
       {/* Resultado da Análise */}
