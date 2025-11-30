@@ -186,9 +186,27 @@ export default function VideoAnalysis() {
         return;
       }
 
+      const fileName = file.name.toLowerCase();
+      const fileType = file.type.toLowerCase();
+      
+      // Verificar se é formato MOV ou HEVC (comum no iPhone)
+      const isMovFormat = fileName.endsWith('.mov') || fileType.includes('quicktime');
+      const isHevcFormat = fileType.includes('hevc') || fileType.includes('heic');
+      
+      if (isMovFormat || isHevcFormat) {
+        setError(
+          "⚠️ Formato MOV/HEVC detectado (padrão do iPhone). Este formato não é suportado.\n\n" +
+          "📱 Para resolver no iPhone:\n" +
+          "1. Vá em Ajustes → Câmera → Formatos\n" +
+          "2. Selecione 'Mais Compatível'\n" +
+          "3. Grave o vídeo novamente\n\n" +
+          "Ou use o botão 'Gravar Vídeo' que já usa formato compatível."
+        );
+        return;
+      }
+
       const videoUrl = URL.createObjectURL(file);
       
-      // Aceitar todos os formatos - o servidor consegue processar
       setVideoFile(file);
       setVideoPreview(videoUrl);
       setError(null);
