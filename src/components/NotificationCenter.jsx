@@ -279,8 +279,8 @@ export default function NotificationCenter({ user }) {
 
       {/* Popup de Notificação */}
       {popupNotification && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[70] flex items-center justify-center p-4">
-          <Card className="bg-slate-900 border-slate-800 max-w-md w-full">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[70] flex items-center justify-center p-4" onClick={() => setPopupNotification(null)}>
+          <Card className="bg-slate-900 border-slate-800 max-w-md w-full mx-4" onClick={(e) => e.stopPropagation()}>
             <CardContent className="p-6">
               <div className="flex items-start justify-between mb-4">
                 <div className="flex items-center gap-3">
