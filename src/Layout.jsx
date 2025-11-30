@@ -2,12 +2,13 @@ import React, { useEffect, useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { Link, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { Home, Dumbbell, TrendingUp, Users, User, Shield, Apple, Sparkles, Menu, X, LogOut, Trophy, Award } from "lucide-react";
+import { Home, Dumbbell, TrendingUp, Users, User, Shield, Apple, Sparkles, Menu, X, LogOut, Trophy, Award, Headphones } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import TrialChecker from "./components/TrialChecker";
 import PWAManager from "./components/PWAManager";
 import NotificationChecker from "./components/NotificationChecker";
 import NotificationPermissionModal from "./components/pwa/NotificationPermissionModal";
+import SupportNotificationChecker from "./components/SupportNotificationChecker";
 
 export default function Layout({ children, currentPageName }) {
   const location = useLocation();
@@ -150,6 +151,7 @@ export default function Layout({ children, currentPageName }) {
     { name: "Perfil", path: createPageUrl("Profile"), icon: User },
     { name: "Meus Treinos", path: createPageUrl("MyWorkouts"), icon: Dumbbell },
     { name: "Conquistas", path: createPageUrl("Badges"), icon: Award },
+    { name: "Suporte", path: createPageUrl("Support"), icon: Headphones },
   ];
 
   if (isPremium) {
@@ -195,6 +197,7 @@ export default function Layout({ children, currentPageName }) {
     <div className={`min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 ${!hideNavigation ? 'pb-20 md:pb-0' : ''}`}>
       <PWAManager />
       {user && <NotificationChecker user={user} />}
+      {user && <SupportNotificationChecker user={user} />}
       {showNotificationModal && (
         <NotificationPermissionModal onClose={() => setShowNotificationModal(false)} />
       )}
