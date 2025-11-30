@@ -20,6 +20,7 @@ import Dashboard from './pages/Dashboard';
 import Home from './pages/Home';
 import AdminNotifications from './pages/AdminNotifications';
 import Support from './pages/Support';
+import WorkoutReports from './pages/WorkoutReports';
 import __Layout from './Layout.jsx';
 
 
@@ -46,6 +47,7 @@ export const PAGES = {
     "Home": Home,
     "AdminNotifications": AdminNotifications,
     "Support": Support,
+    "WorkoutReports": WorkoutReports,
 }
 
 export const pagesConfig = {
