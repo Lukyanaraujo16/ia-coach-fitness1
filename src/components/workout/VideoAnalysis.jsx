@@ -59,7 +59,9 @@ export default function VideoAnalysis() {
 
   const MAX_RECORDING_TIME = 30;
 
-  // Detectar iOS
+  // Detectar iOS - movido para fora da função para usar nos botões
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || 
+    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
   const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || 
     (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 
@@ -187,20 +189,8 @@ export default function VideoAnalysis() {
       }
 
       const videoUrl = URL.createObjectURL(file);
-      const fileType = file.type.toLowerCase();
-      const fileName = file.name.toLowerCase();
       
-      // Verificar se é formato HEVC/HEIF do iPhone (não suportado por navegadores)
-      const isHEVC = fileType.includes('hevc') || fileType.includes('heic') || 
-                     fileType.includes('hvc1') || fileName.endsWith('.mov') ||
-                     fileType === 'video/quicktime';
-      
-      if (isHEVC) {
-        setError("Vídeos do iPhone em formato HEVC/MOV podem não ser compatíveis. Por favor, grave o vídeo diretamente pelo app ou converta para MP4 antes de enviar. Nas configurações do iPhone, vá em Câmera > Formatos > Mais Compatível.");
-        URL.revokeObjectURL(videoUrl);
-        return;
-      }
-      
+      // Aceitar todos os formatos - o servidor consegue processar
       setVideoFile(file);
       setVideoPreview(videoUrl);
       setError(null);
@@ -446,13 +436,28 @@ Se não conseguir ver claramente algum aspecto no vídeo, mencione isso.`,
           {/* Botões de ação */}
           {!videoPreview && !isRecording && (
             <div className="grid grid-cols-2 gap-3">
-              <Button
-                onClick={startRecording}
-                className="bg-red-600 hover:bg-red-700 h-20 flex-col gap-2"
-              >
-                <Camera className="w-6 h-6" />
-                <span>Gravar Vídeo</span>
-              </Button>
+              {/* No iOS, usar input capture que abre a câmera nativa */}
+              {isIOS ? (
+                <label className="bg-red-600 hover:bg-red-700 h-20 flex flex-col gap-2 items-center justify-center rounded-md cursor-pointer">
+                  <Camera className="w-6 h-6 text-white" />
+                  <span className="text-white text-sm font-medium">Gravar Vídeo</span>
+                  <input
+                    type="file"
+                    accept="video/*"
+                    capture="environment"
+                    onChange={handleFileSelect}
+                    className="hidden"
+                  />
+                </label>
+              ) : (
+                <Button
+                  onClick={startRecording}
+                  className="bg-red-600 hover:bg-red-700 h-20 flex-col gap-2"
+                >
+                  <Camera className="w-6 h-6" />
+                  <span>Gravar Vídeo</span>
+                </Button>
+              )}
               
               <Button
                 onClick={() => fileInputRef.current?.click()}
