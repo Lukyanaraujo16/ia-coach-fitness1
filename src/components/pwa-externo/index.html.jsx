@@ -334,15 +334,30 @@
 </head>
 <body>
   <script>
-    // REDIRECIONAMENTO IMEDIATO se estiver instalado como PWA
-    (function() {
-      const isStandalone = window.matchMedia('(display-mode: standalone)').matches || 
-                           window.navigator.standalone === true;
-      if (isStandalone) {
-        window.location.replace('https://iacoachfitness.com.br');
-      }
-    })();
+    // Verificar se está em modo standalone (PWA instalado)
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches || 
+                         window.navigator.standalone === true;
   </script>
+  
+  <!-- IFRAME para carregar o app quando em modo PWA -->
+  <iframe 
+    id="app-frame" 
+    src="https://iacoachfitness.com.br" 
+    style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; border: none; z-index: 9999;"
+    allow="camera; microphone; geolocation; notifications"
+  ></iframe>
+  
+  <script>
+    if (isStandalone) {
+      // Mostrar iframe e esconder conteúdo de instalação
+      document.getElementById('app-frame').style.display = 'block';
+      document.addEventListener('DOMContentLoaded', function() {
+        const container = document.querySelector('.container');
+        if (container) container.style.display = 'none';
+      });
+    }
+  </script>
+  
   <div class="container">
     <!-- Header -->
     <div class="header">
@@ -598,9 +613,8 @@
     
     // Aplicar classes no body
     if (isStandalone) {
-      // Redirecionamento já feito no início, mas garantir
-      window.location.replace('https://iacoachfitness.com.br');
-      return;
+      // PWA instalado - iframe já está visível, não fazer nada aqui
+      document.body.classList.add('is-installed');
     } else if (isIOS) {
       document.body.classList.add('is-ios');
     } else if (isAndroid) {
