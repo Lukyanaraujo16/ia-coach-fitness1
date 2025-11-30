@@ -67,39 +67,42 @@ export default function BodyAnalysisForm({ user, previousAnalysis, onSuccess }) 
 
         ${userContext}
 
-        IMPORTANTE: Faça uma análise visual detalhada baseada nas fotos. Seja preciso e profissional.
+        IMPORTANTE: 
+        1. Faça uma análise visual detalhada baseada nas fotos. Seja preciso e profissional.
+        2. TODAS as respostas devem estar em PORTUGUÊS DO BRASIL.
+        3. Use os valores EXATOS especificados abaixo (em português).
 
         Retorne um JSON com a seguinte estrutura:
         {
           "estimated_body_fat": (número de 5 a 40 - percentual de gordura estimado),
           "estimated_muscle_mass": (número de 20 a 50 - percentual de massa muscular estimado),
-          "body_type": (um de: "ectomorph", "mesomorph", "endomorph", "ecto-meso", "meso-endo"),
+          "body_type": (um de: "Ectomorfo", "Mesomorfo", "Endomorfo", "Ecto-Mesomorfo", "Meso-Endomorfo"),
           "muscle_development": {
-            "chest": (um de: "underdeveloped", "average", "well_developed", "excellent"),
-            "back": (um de: "underdeveloped", "average", "well_developed", "excellent"),
-            "shoulders": (um de: "underdeveloped", "average", "well_developed", "excellent"),
-            "arms": (um de: "underdeveloped", "average", "well_developed", "excellent"),
-            "core": (um de: "underdeveloped", "average", "well_developed", "excellent"),
-            "legs": (um de: "underdeveloped", "average", "well_developed", "excellent")
+            "chest": (um de: "Subdesenvolvido", "Médio", "Bem Desenvolvido", "Excelente"),
+            "back": (um de: "Subdesenvolvido", "Médio", "Bem Desenvolvido", "Excelente"),
+            "shoulders": (um de: "Subdesenvolvido", "Médio", "Bem Desenvolvido", "Excelente"),
+            "arms": (um de: "Subdesenvolvido", "Médio", "Bem Desenvolvido", "Excelente"),
+            "core": (um de: "Subdesenvolvido", "Médio", "Bem Desenvolvido", "Excelente"),
+            "legs": (um de: "Subdesenvolvido", "Médio", "Bem Desenvolvido", "Excelente")
           },
           "symmetry_score": (número de 1 a 10),
           "posture_analysis": {
             "score": (número de 1 a 10),
-            "issues": ["lista de problemas posturais identificados"],
-            "recommendations": ["lista de recomendações para postura"]
+            "issues": ["lista de problemas posturais identificados em português"],
+            "recommendations": ["lista de recomendações para postura em português"]
           },
           "body_composition_details": {
-            "visceral_fat_level": (um de: "low", "normal", "high", "very_high"),
-            "subcutaneous_fat_distribution": "descrição da distribuição de gordura subcutânea",
-            "muscle_definition_level": (um de: "none", "slight", "moderate", "defined", "very_defined"),
-            "vascularity": (um de: "none", "slight", "moderate", "visible", "very_visible")
+            "visceral_fat_level": (um de: "Baixo", "Normal", "Alto", "Muito Alto"),
+            "subcutaneous_fat_distribution": "descrição da distribuição de gordura subcutânea em português",
+            "muscle_definition_level": (um de: "Nenhuma", "Leve", "Moderada", "Definida", "Muito Definida"),
+            "vascularity": (um de: "Nenhuma", "Leve", "Moderada", "Definida", "Muito Definida")
           },
-          "weak_points": ["lista de pontos fracos que precisam ser trabalhados"],
-          "strong_points": ["lista de pontos fortes do físico"],
-          "recommendations": ["lista de 5-7 recomendações específicas de treino e nutrição"],
+          "weak_points": ["lista de pontos fracos que precisam ser trabalhados em português"],
+          "strong_points": ["lista de pontos fortes do físico em português"],
+          "recommendations": ["lista de 5-7 recomendações específicas de treino e nutrição em português"],
           "overall_score": (número de 1 a 100 - avaliação geral do físico),
-          "detailed_analysis": "Análise detalhada em texto (3-4 parágrafos) sobre a composição corporal, distribuição de gordura, desenvolvimento muscular, proporções e áreas que precisam de mais atenção. Seja específico e construtivo."
-          ${previousAnalysis ? ',"comparison_notes": "Compare com a análise anterior e descreva as mudanças observadas, melhorias ou regressões. Seja detalhado."' : ''}
+          "detailed_analysis": "Análise detalhada em texto em PORTUGUÊS (3-4 parágrafos) sobre a composição corporal, distribuição de gordura, desenvolvimento muscular, proporções e áreas que precisam de mais atenção. Seja específico e construtivo."
+          ${previousAnalysis ? ',"comparison_notes": "Compare com a análise anterior e descreva as mudanças observadas, melhorias ou regressões em PORTUGUÊS. Seja detalhado."' : ''}
         }
       `;
 

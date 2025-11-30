@@ -22,14 +22,22 @@ const bodyTypeLabels = {
   mesomorph: { label: "Mesomorfo", description: "Estrutura atlética, facilidade para ganhar músculo" },
   endomorph: { label: "Endomorfo", description: "Estrutura larga, tendência a acumular gordura" },
   "ecto-meso": { label: "Ecto-Mesomorfo", description: "Magro com potencial atlético" },
-  "meso-endo": { label: "Meso-Endomorfo", description: "Atlético com tendência a ganhar peso" }
+  "meso-endo": { label: "Meso-Endomorfo", description: "Atlético com tendência a ganhar peso" },
+  "Ectomorfo": { label: "Ectomorfo", description: "Estrutura magra, metabolismo rápido" },
+  "Mesomorfo": { label: "Mesomorfo", description: "Estrutura atlética, facilidade para ganhar músculo" },
+  "Endomorfo": { label: "Endomorfo", description: "Estrutura larga, tendência a acumular gordura" }
 };
 
 const developmentLabels = {
   underdeveloped: { label: "Subdesenvolvido", color: "bg-red-600" },
   average: { label: "Médio", color: "bg-yellow-600" },
   well_developed: { label: "Bem Desenvolvido", color: "bg-green-600" },
-  excellent: { label: "Excelente", color: "bg-blue-600" }
+  excellent: { label: "Excelente", color: "bg-blue-600" },
+  // Português
+  "Subdesenvolvido": { label: "Subdesenvolvido", color: "bg-red-600" },
+  "Médio": { label: "Médio", color: "bg-yellow-600" },
+  "Bem Desenvolvido": { label: "Bem Desenvolvido", color: "bg-green-600" },
+  "Excelente": { label: "Excelente", color: "bg-blue-600" }
 };
 
 const muscleGroupLabels = {
@@ -45,7 +53,12 @@ const visceralFatLabels = {
   low: { label: "Baixo", color: "text-green-400" },
   normal: { label: "Normal", color: "text-blue-400" },
   high: { label: "Alto", color: "text-yellow-400" },
-  very_high: { label: "Muito Alto", color: "text-red-400" }
+  very_high: { label: "Muito Alto", color: "text-red-400" },
+  // Português
+  "Baixo": { label: "Baixo", color: "text-green-400" },
+  "Normal": { label: "Normal", color: "text-blue-400" },
+  "Alto": { label: "Alto", color: "text-yellow-400" },
+  "Muito Alto": { label: "Muito Alto", color: "text-red-400" }
 };
 
 const definitionLabels = {
@@ -53,7 +66,13 @@ const definitionLabels = {
   slight: "Leve",
   moderate: "Moderada",
   defined: "Definida",
-  very_defined: "Muito Definida"
+  very_defined: "Muito Definida",
+  // Português
+  "Nenhuma": "Nenhuma",
+  "Leve": "Leve",
+  "Moderada": "Moderada",
+  "Definida": "Definida",
+  "Muito Definida": "Muito Definida"
 };
 
 export default function BodyAnalysisResult({ analysis, previousAnalysis }) {
@@ -186,9 +205,9 @@ export default function BodyAnalysisResult({ analysis, previousAnalysis }) {
                 </div>
                 <Progress 
                   value={
-                    level === 'excellent' ? 100 : 
-                    level === 'well_developed' ? 75 : 
-                    level === 'average' ? 50 : 25
+                    (level === 'excellent' || level === 'Excelente') ? 100 : 
+                    (level === 'well_developed' || level === 'Bem Desenvolvido') ? 75 : 
+                    (level === 'average' || level === 'Médio') ? 50 : 25
                   } 
                   className="h-2"
                 />
@@ -220,13 +239,13 @@ export default function BodyAnalysisResult({ analysis, previousAnalysis }) {
                 <p className="text-white font-semibold">
                   {definitionLabels[analysis.body_composition_details.muscle_definition_level] || analysis.body_composition_details.muscle_definition_level}
                 </p>
-              </div>
-              <div className="bg-slate-800/50 rounded-lg p-3">
+                </div>
+                <div className="bg-slate-800/50 rounded-lg p-3">
                 <p className="text-slate-400 text-xs mb-1">Vascularização</p>
-                <p className="text-white font-semibold capitalize">
+                <p className="text-white font-semibold">
                   {definitionLabels[analysis.body_composition_details.vascularity] || analysis.body_composition_details.vascularity}
                 </p>
-              </div>
+                </div>
               <div className="bg-slate-800/50 rounded-lg p-3">
                 <p className="text-slate-400 text-xs mb-1">Distribuição de Gordura</p>
                 <p className="text-white font-semibold text-sm">
