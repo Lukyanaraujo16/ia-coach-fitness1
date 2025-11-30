@@ -43,7 +43,7 @@ export default function WorkoutLogEditModal({ log, onClose }) {
       <Card className="bg-slate-900 border-slate-800 max-w-md w-full max-h-[80vh] flex flex-col">
         <CardHeader className="border-b border-slate-800 flex-shrink-0">
           <div className="flex items-center justify-between">
-            <CardTitle className="text-white text-lg">Editar Cargas</CardTitle>
+            <CardTitle className="text-white text-lg">Editar Treino</CardTitle>
             <Button
               variant="ghost"
               size="icon"
@@ -56,7 +56,19 @@ export default function WorkoutLogEditModal({ log, onClose }) {
           <p className="text-slate-400 text-sm mt-2">{log.workout_title}</p>
         </CardHeader>
 
-        <CardContent className="p-4 space-y-3 overflow-y-auto flex-1">
+        <CardContent className="p-4 space-y-4 overflow-y-auto flex-1">
+          <div className="bg-slate-800/50 border border-slate-700 rounded-lg p-3">
+            <div className="flex items-center gap-2 mb-2">
+              <Calendar className="w-4 h-4 text-green-400" />
+              <Label className="text-slate-300 text-sm font-medium">Data do Treino</Label>
+            </div>
+            <Input
+              type="date"
+              value={workoutDate}
+              onChange={(e) => setWorkoutDate(e.target.value)}
+              className="bg-slate-900 border-slate-600 text-white h-10"
+            />
+          </div>
           {exercisesData.length === 0 ? (
             <p className="text-slate-400 text-center py-8">Nenhum exercício registrado</p>
           ) : (
