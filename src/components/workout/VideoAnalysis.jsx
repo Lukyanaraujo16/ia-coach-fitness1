@@ -64,16 +64,33 @@ export default function VideoAnalysis() {
     try {
       setError(null);
       const stream = await navigator.mediaDevices.getUserMedia({ 
-        video: { facingMode: "environment" }, 
+        video: { 
+          facingMode: "environment",
+          width: { ideal: 1280 },
+          height: { ideal: 720 }
+        }, 
         audio: false 
       });
       
       streamRef.current = stream;
+      
+      // Aguardar o vídeo estar pronto antes de mostrar
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
+        await videoRef.current.play().catch(e => console.log("Autoplay:", e));
       }
 
-      const mediaRecorder = new MediaRecorder(stream, { mimeType: 'video/webm' });
+      // Verificar formatos suportados
+      let mimeType = 'video/webm';
+      if (MediaRecorder.isTypeSupported('video/webm;codecs=vp9')) {
+        mimeType = 'video/webm;codecs=vp9';
+      } else if (MediaRecorder.isTypeSupported('video/webm;codecs=vp8')) {
+        mimeType = 'video/webm;codecs=vp8';
+      } else if (MediaRecorder.isTypeSupported('video/mp4')) {
+        mimeType = 'video/mp4';
+      }
+
+      const mediaRecorder = new MediaRecorder(stream, { mimeType });
       mediaRecorderRef.current = mediaRecorder;
       chunksRef.current = [];
 
@@ -84,16 +101,20 @@ export default function VideoAnalysis() {
       };
 
       mediaRecorder.onstop = () => {
-        const blob = new Blob(chunksRef.current, { type: 'video/webm' });
-        const file = new File([blob], `exercicio_${Date.now()}.webm`, { type: 'video/webm' });
+        const blob = new Blob(chunksRef.current, { type: mimeType });
+        const extension = mimeType.includes('mp4') ? 'mp4' : 'webm';
+        const file = new File([blob], `exercicio_${Date.now()}.${extension}`, { type: mimeType });
         setVideoFile(file);
         setVideoPreview(URL.createObjectURL(blob));
         
         // Parar stream
         streamRef.current?.getTracks().forEach(track => track.stop());
+        if (videoRef.current) {
+          videoRef.current.srcObject = null;
+        }
       };
 
-      mediaRecorder.start();
+      mediaRecorder.start(1000); // Gravar em chunks de 1 segundo
       setIsRecording(true);
       setRecordingTime(0);
 
@@ -133,8 +154,20 @@ export default function VideoAnalysis() {
         return;
       }
 
-      // Aceitar o arquivo diretamente - vídeos de celular podem ter formatos variados
       const videoUrl = URL.createObjectURL(file);
+      const fileType = file.type.toLowerCase();
+      const fileName = file.name.toLowerCase();
+      
+      // Verificar se é formato HEVC/HEIF do iPhone (não suportado por navegadores)
+      const isHEVC = fileType.includes('hevc') || fileType.includes('heic') || 
+                     fileType.includes('hvc1') || fileName.endsWith('.mov') ||
+                     fileType === 'video/quicktime';
+      
+      if (isHEVC) {
+        setError("Vídeos do iPhone em formato HEVC/MOV podem não ser compatíveis. Por favor, grave o vídeo diretamente pelo app ou converta para MP4 antes de enviar. Nas configurações do iPhone, vá em Câmera > Formatos > Mais Compatível.");
+        URL.revokeObjectURL(videoUrl);
+        return;
+      }
       
       setVideoFile(file);
       setVideoPreview(videoUrl);
@@ -329,7 +362,9 @@ Se não conseguir ver claramente algum aspecto no vídeo, mencione isso.`,
                   autoPlay
                   muted
                   playsInline
+                  webkit-playsinline="true"
                   className="w-full h-full object-cover"
+                  style={{ transform: 'scaleX(1)' }}
                 />
               ) : videoPreview ? (
                 <video
@@ -417,6 +452,7 @@ Se não conseguir ver claramente algum aspecto no vídeo, mencione isso.`,
               <li>Garanta boa iluminação no ambiente</li>
               <li>Vista roupas que permitam ver a postura</li>
               <li>Grave de 2 a 5 repetições do exercício</li>
+              <li><strong>iPhone:</strong> Use o botão "Gravar Vídeo" do app, ou configure: Ajustes → Câmera → Formatos → Mais Compatível</li>
             </ul>
           </div>
         </CardContent>
