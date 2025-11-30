@@ -1,108 +1,163 @@
 # PWA Externo - IA Coach Fitness
 
+## Visão Geral
+
+Este PWA externo serve como **ponte de instalação** para o IA Coach Fitness. 
+
+**Fluxo:**
+1. Usuário acessa `https://pwa-ia-coach.vercel.app`
+2. Segue instruções para instalar o PWA (Android ou iOS)
+3. Ao abrir o app instalado, é redirecionado para `https://iacoachfitness.com.br`
+4. Push notifications funcionam mesmo com o app "fechado"
+
+---
+
 ## Arquivos para hospedagem
 
-Este diretório contém os arquivos necessários para hospedar o PWA externamente.
-
-### Estrutura de arquivos
-
-Coloque estes arquivos na **RAIZ** do seu servidor/hospedagem:
+Coloque estes arquivos na **RAIZ** do seu servidor:
 
 ```
 /
-├── index.html          # Página principal com iframe
-├── manifest.json       # Manifest do PWA
+├── index.html          # Página de instalação do PWA
+├── manifest.json       # Manifest do PWA (define nome, ícones, start_url)
 ├── service-worker.js   # Service Worker para push notifications
 └── README.md           # Este arquivo (não precisa hospedar)
 ```
 
-### Configuração necessária
+---
 
-#### 1. No arquivo `index.html`:
+## Configuração
 
-**Linha ~170** - Substitua pela sua chave VAPID pública:
-```javascript
-const VAPID_PUBLIC_KEY = 'SUA_CHAVE_VAPID_PUBLICA_AQUI';
+### 1. manifest.json
+
+O `start_url` está configurado para redirecionar para o app principal:
+```json
+"start_url": "https://iacoachfitness.com.br"
 ```
 
-**Linha ~173** - Substitua pela URL da função de registro (se criar uma):
-```javascript
-const SUBSCRIPTION_ENDPOINT = 'https://seu-dominio/api/functions/registerPushSubscription';
-```
+### 2. service-worker.js
 
-**Linha ~155** - Verifique se a URL do iframe está correta:
-```html
-<iframe src="https://iacoachfitness.com.br" ...>
-```
+Já configurado com sua chave VAPID pública para push notifications.
 
-#### 2. Chave VAPID
+### 3. index.html
 
-Sua chave VAPID pública está configurada como secret no Base44: `VAPID_PUBLIC_KEY`
+Página de instalação com detecção automática de plataforma (Android/iOS).
 
-Para obter o valor, acesse o painel do Base44 > Configurações > Secrets
+---
 
-### Como hospedar
+## Push Notifications - Como Funciona
 
-#### Opção 1: Vercel (Recomendado - Gratuito)
-1. Crie uma conta em vercel.com
-2. Crie um novo projeto
-3. Faça upload dos 3 arquivos (index.html, manifest.json, service-worker.js)
-4. Configure o domínio personalizado se desejar
-
-#### Opção 2: Netlify (Gratuito)
-1. Crie uma conta em netlify.com
-2. Arraste e solte os arquivos
-3. Configure o domínio
-
-#### Opção 3: GitHub Pages (Gratuito)
-1. Crie um repositório no GitHub
-2. Adicione os arquivos
-3. Ative GitHub Pages nas configurações
-
-#### Opção 4: Cloudflare Pages (Gratuito)
-1. Crie uma conta em cloudflare.com
-2. Crie um novo Pages project
-3. Faça upload dos arquivos
-
-### Headers importantes (se possível configurar)
-
-Para melhor funcionamento, configure estes headers no servidor:
+### Arquitetura
 
 ```
-Service-Worker-Allowed: /
-Content-Type: application/javascript (para service-worker.js)
-Content-Type: application/json (para manifest.json)
+┌─────────────────────────────────────────────────────────────┐
+│  PWA Externo (pwa-ia-coach.vercel.app)                      │
+│  ├── Service Worker registrado                              │
+│  ├── Recebe push via VAPID                                  │
+│  └── Exibe notificação nativa                               │
+└─────────────────────────────────────────────────────────────┘
+                           │
+                           │ Ao clicar na notificação
+                           ▼
+┌─────────────────────────────────────────────────────────────┐
+│  App Principal (iacoachfitness.com.br)                      │
+│  └── Usuário é redirecionado para a página relevante        │
+└─────────────────────────────────────────────────────────────┘
 ```
 
-### Testando
+### Fluxo de Registro de Push
 
-1. Acesse o site hospedado
-2. Verifique se o app Base44 carrega no iframe
-3. Verifique se aparece o banner de instalação
-4. Instale o PWA
-5. Aceite as notificações
-6. Teste enviando uma notificação do painel admin
+1. **Usuário instala o PWA** via `pwa-ia-coach.vercel.app`
+2. **Ao abrir o PWA**, o app principal carrega
+3. **App solicita permissão** de notificação
+4. **Subscription é criada** com a chave VAPID
+5. **Subscription é salva** no banco (PushSubscription entity)
+6. **Admin envia notificação** via painel
+7. **Backend dispara push** via Web Push protocol
+8. **Service Worker recebe** e exibe notificação nativa
 
-### Integração com Base44
+### Chaves VAPID
 
-O iframe se comunica com o app Base44 via `postMessage`. 
-O app pode enviar mensagens para:
+As chaves já estão configuradas como secrets no Base44:
+- `VAPID_PUBLIC_KEY` - Usada no frontend/service-worker
+- `VAPID_PRIVATE_KEY` - Usada no backend para assinar pushes
 
-- `REQUEST_NOTIFICATION_PERMISSION` - Solicitar permissão de notificação
-- `GET_PUSH_SUBSCRIPTION` - Obter subscription atual
-- `REGISTER_PUSH_SUBSCRIPTION` - Registrar subscription com email do usuário
+---
 
-### Troubleshooting
+## Hospedagem
 
-**Push não funciona no iOS:**
-- Certifique-se de que o PWA está instalado (adicionado à tela inicial)
-- iOS 16.4+ é necessário para Web Push
-- O usuário precisa aceitar a permissão de notificação
+### Vercel (Atual) ✅
+URL: `https://pwa-ia-coach.vercel.app`
 
-**Iframe não carrega:**
-- Verifique se a URL do Base44 está correta
-- Verifique se o Base44 permite ser carregado em iframe (X-Frame-Options)
+Para atualizar:
+1. Acesse o dashboard da Vercel
+2. Faça redeploy com os novos arquivos
 
-**Service Worker não registra:**
-- O site deve estar em HTTPS
-- O service-worker.js deve estar na raiz
+### Outras opções
+
+| Serviço | Gratuito | HTTPS | Facilidade |
+|---------|----------|-------|------------|
+| Vercel | ✅ | ✅ | ⭐⭐⭐⭐⭐ |
+| Netlify | ✅ | ✅ | ⭐⭐⭐⭐⭐ |
+| Cloudflare Pages | ✅ | ✅ | ⭐⭐⭐⭐ |
+| GitHub Pages | ✅ | ✅ | ⭐⭐⭐ |
+
+---
+
+## Testando
+
+### Instalação
+
+1. Acesse `https://pwa-ia-coach.vercel.app` no celular
+2. **Android:** Toque em "Instalar App" ou siga instruções
+3. **iOS:** Toque em Compartilhar → Adicionar à Tela de Início
+4. Abra o app da tela inicial
+5. Deve redirecionar para `iacoachfitness.com.br`
+
+### Push Notifications
+
+1. No app, aceite a permissão de notificações
+2. Acesse Admin → Notificações
+3. Envie uma notificação de teste
+4. Feche o app completamente
+5. A notificação deve aparecer mesmo com app fechado
+
+---
+
+## Troubleshooting
+
+### Push não funciona no iOS
+- ✅ Precisa iOS 16.4+
+- ✅ PWA deve estar INSTALADO (não funciona no Safari)
+- ✅ Usuário deve aceitar permissão
+- ✅ Use Safari para instalar (Chrome iOS não suporta PWA)
+
+### Push não funciona no Android
+- ✅ Verifique se subscription foi salva no banco
+- ✅ Verifique console do service worker
+- ✅ Teste com Chrome DevTools → Application → Service Workers
+
+### App não redireciona após instalar
+- ✅ Verifique `start_url` no manifest.json
+- ✅ Limpe cache do navegador e reinstale
+
+### Notificação aparece mas não abre o app
+- ✅ Verifique `notificationclick` no service-worker.js
+- ✅ URL deve ser absoluta: `https://iacoachfitness.com.br`
+
+---
+
+## Arquivos Importantes no Base44
+
+| Arquivo | Função |
+|---------|--------|
+| `functions/sendPushNotification.js` | Envia push via Web Push API |
+| `pages/AdminNotifications.js` | Painel para enviar notificações |
+| `components/PWAManager.jsx` | Gerencia subscription no frontend |
+| `entities/PushSubscription.json` | Armazena subscriptions dos usuários |
+
+---
+
+## Contato
+
+Em caso de dúvidas sobre a implementação, consulte a documentação do Base44 ou entre em contato pelo suporte.
