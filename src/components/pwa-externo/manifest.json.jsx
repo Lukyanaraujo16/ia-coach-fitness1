@@ -3,7 +3,7 @@ json
   "name": "IA Coach Fitness",
   "short_name": "IA Coach",
   "description": "Seu personal trainer com inteligência artificial",
-  "start_url": "https://iacoachfitness.com.br",
+  "start_url": "/",
   "display": "standalone",
   "scope": "/",
   "background_color": "#0A0A0A",
