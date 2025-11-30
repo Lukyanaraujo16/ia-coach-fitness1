@@ -515,8 +515,13 @@ Se não conseguir ver claramente algum aspecto no vídeo, mencione isso.`,
               <li>Garanta boa iluminação no ambiente</li>
               <li>Vista roupas que permitam ver a postura</li>
               <li>Grave de 2 a 5 repetições do exercício</li>
-              <li><strong>iPhone:</strong> Use o botão "Gravar Vídeo" do app, ou configure: Ajustes → Câmera → Formatos → Mais Compatível</li>
             </ul>
+            <div className="mt-3 p-3 bg-blue-900/30 border border-blue-700/30 rounded-lg">
+              <p className="text-blue-300 text-xs font-medium mb-1">📱 Usuários de iPhone:</p>
+              <p className="text-blue-200/80 text-xs">
+                Configure seu iPhone para gravar em formato compatível: <strong>Ajustes → Câmera → Formatos → Mais Compatível</strong>
+              </p>
+            </div>
           </div>
         </CardContent>
       </Card>
