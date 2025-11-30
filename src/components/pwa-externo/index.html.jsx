@@ -333,6 +333,16 @@
   </style>
 </head>
 <body>
+  <script>
+    // REDIRECIONAMENTO IMEDIATO se estiver instalado como PWA
+    (function() {
+      const isStandalone = window.matchMedia('(display-mode: standalone)').matches || 
+                           window.navigator.standalone === true;
+      if (isStandalone) {
+        window.location.replace('https://iacoachfitness.com.br');
+      }
+    })();
+  </script>
   <div class="container">
     <!-- Header -->
     <div class="header">
@@ -588,11 +598,9 @@
     
     // Aplicar classes no body
     if (isStandalone) {
-      document.body.classList.add('is-installed');
-      // Se já está instalado, redirecionar para o app
-      setTimeout(() => {
-        window.location.href = 'https://iacoachfitness.com.br';
-      }, 1500);
+      // Redirecionamento já feito no início, mas garantir
+      window.location.replace('https://iacoachfitness.com.br');
+      return;
     } else if (isIOS) {
       document.body.classList.add('is-ios');
     } else if (isAndroid) {
