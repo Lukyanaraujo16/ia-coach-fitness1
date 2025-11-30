@@ -98,8 +98,14 @@ export default function AdminSupport() {
         has_unread_user: true
       });
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries(['admin-support-tickets']);
+    onSuccess: async () => {
+      await queryClient.invalidateQueries(['admin-support-tickets']);
+      // Atualizar o ticket selecionado
+      const updatedTickets = await base44.entities.SupportTicket.list('-last_interaction_at');
+      const updatedTicket = updatedTickets.find(t => t.id === selectedTicket?.id);
+      if (updatedTicket) {
+        setSelectedTicket(updatedTicket);
+      }
       setNewMessage("");
       toast.success("Resposta enviada!");
     },

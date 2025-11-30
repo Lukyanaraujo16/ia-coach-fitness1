@@ -9,6 +9,7 @@ import PWAManager from "./components/PWAManager";
 import NotificationChecker from "./components/NotificationChecker";
 import NotificationPermissionModal from "./components/pwa/NotificationPermissionModal";
 import SupportNotificationChecker from "./components/SupportNotificationChecker";
+import NotificationCenter from "./components/NotificationCenter";
 
 export default function Layout({ children, currentPageName }) {
   const location = useLocation();
@@ -246,6 +247,8 @@ export default function Layout({ children, currentPageName }) {
                   );
                 })}
               </nav>
+
+              <NotificationCenter user={user} />
 
               <Button
                 variant="ghost"
