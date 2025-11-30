@@ -19,6 +19,7 @@ import Badges from './pages/Badges';
 import Dashboard from './pages/Dashboard';
 import Home from './pages/Home';
 import AdminNotifications from './pages/AdminNotifications';
+import Support from './pages/Support';
 import __Layout from './Layout.jsx';
 
 
@@ -44,6 +45,7 @@ export const PAGES = {
     "Dashboard": Dashboard,
     "Home": Home,
     "AdminNotifications": AdminNotifications,
+    "Support": Support,
 }
 
 export const pagesConfig = {
