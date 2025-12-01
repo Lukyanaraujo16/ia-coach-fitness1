@@ -245,116 +245,73 @@ Se não conseguir identificar um código de barras válido, retorne null.`,
           </p>
         </CardHeader>
         <CardContent className="space-y-4">
-          {/* Scanner de câmera */}
-          {isScanning ? (
-            <div className="space-y-3">
-              <div className="relative rounded-xl overflow-hidden bg-black aspect-video">
-                <video
-                  ref={videoRef}
-                  className="w-full h-full object-cover"
-                  playsInline
-                  autoPlay
-                  muted
-                />
-                {/* Overlay de escaneamento */}
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="w-64 h-32 border-2 border-green-400 rounded-lg relative">
-                    <div className="absolute top-0 left-0 w-6 h-6 border-t-4 border-l-4 border-green-400 rounded-tl-lg" />
-                    <div className="absolute top-0 right-0 w-6 h-6 border-t-4 border-r-4 border-green-400 rounded-tr-lg" />
-                    <div className="absolute bottom-0 left-0 w-6 h-6 border-b-4 border-l-4 border-green-400 rounded-bl-lg" />
-                    <div className="absolute bottom-0 right-0 w-6 h-6 border-b-4 border-r-4 border-green-400 rounded-br-lg" />
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <div className="w-full h-0.5 bg-green-400/50 animate-pulse" />
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <p className="text-slate-400 text-sm text-center">
-                Aponte a câmera para o código de barras
-              </p>
-              <Button
-                onClick={stopScanner}
-                variant="outline"
-                className="w-full bg-slate-800 border-slate-600 text-slate-200"
-              >
-                <X className="w-4 h-4 mr-2" />
-                Cancelar Escaneamento
-              </Button>
+          {/* Botão de fotografar código de barras */}
+          <label className="cursor-pointer block">
+            <div className={`w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 h-14 rounded-md flex items-center justify-center gap-2 text-white font-medium ${isSearching ? 'opacity-50 cursor-not-allowed' : ''}`}>
+              {isSearching ? (
+                <>
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                  Analisando foto...
+                </>
+              ) : (
+                <>
+                  <Camera className="w-5 h-5" />
+                  Fotografar Código de Barras
+                </>
+              )}
             </div>
-          ) : (
-            <>
-              {/* Botão de escanear - Scanner nativo para Android/Chrome */}
-              {scannerSupported && (
-                <Button
-                  onClick={startScanner}
-                  className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 h-14"
-                >
-                  <Camera className="w-5 h-5 mr-2" />
-                  Escanear com Câmera
-                </Button>
-              )}
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              capture="environment"
+              onChange={handlePhotoCapture}
+              className="hidden"
+              disabled={isSearching}
+            />
+          </label>
 
-              {/* Fallback para iOS e navegadores sem BarcodeDetector */}
-              {!scannerSupported && (
-                <label className="cursor-pointer">
-                  <div className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 h-14 rounded-md flex items-center justify-center gap-2 text-white font-medium">
-                    <Camera className="w-5 h-5" />
-                    Fotografar Código de Barras
-                  </div>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    capture="environment"
-                    onChange={handlePhotoCapture}
-                    className="hidden"
-                    disabled={isSearching}
-                  />
-                </label>
-              )}
-
-              {scanError && (
-                <p className="text-red-400 text-sm text-center">{scanError}</p>
-              )}
-
-              <div className="flex items-center gap-3">
-                <div className="flex-1 h-px bg-slate-700" />
-                <span className="text-slate-500 text-sm">ou digite</span>
-                <div className="flex-1 h-px bg-slate-700" />
-              </div>
-
-              {/* Input de código de barras */}
-              <div className="flex gap-2">
-                <div className="flex-1">
-                  <Input
-                    type="text"
-                    inputMode="numeric"
-                    pattern="[0-9]*"
-                    value={barcode}
-                    onChange={(e) => setBarcode(e.target.value.replace(/\D/g, ''))}
-                    placeholder="Digite o código de barras"
-                    className="bg-slate-800 border-slate-700 text-white text-lg h-12"
-                    onKeyDown={(e) => e.key === 'Enter' && searchFood(barcode)}
-                  />
-                </div>
-                <Button
-                  onClick={() => searchFood(barcode)}
-                  disabled={isSearching || !barcode.trim()}
-                  className="bg-green-600 hover:bg-green-700 h-12 px-6"
-                >
-                  {isSearching ? (
-                    <Loader2 className="w-5 h-5 animate-spin" />
-                  ) : (
-                    <Search className="w-5 h-5" />
-                  )}
-                </Button>
-              </div>
-
-              {/* Dica */}
-              <p className="text-slate-500 text-xs text-center">
-                💡 O código de barras geralmente tem 8 ou 13 dígitos e fica na embalagem do produto
-              </p>
-            </>
+          {scanError && (
+            <p className="text-red-400 text-sm text-center">{scanError}</p>
           )}
+
+          <div className="flex items-center gap-3">
+            <div className="flex-1 h-px bg-slate-700" />
+            <span className="text-slate-500 text-sm">ou digite</span>
+            <div className="flex-1 h-px bg-slate-700" />
+          </div>
+
+          {/* Input de código de barras */}
+          <div className="flex gap-2">
+            <div className="flex-1">
+              <Input
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                value={barcode}
+                onChange={(e) => setBarcode(e.target.value.replace(/\D/g, ''))}
+                placeholder="Digite o código de barras"
+                className="bg-slate-800 border-slate-700 text-white text-lg h-12"
+                onKeyDown={(e) => e.key === 'Enter' && searchFood(barcode)}
+              />
+            </div>
+            <Button
+              onClick={() => searchFood(barcode)}
+              disabled={isSearching || !barcode.trim()}
+              className="bg-green-600 hover:bg-green-700 h-12 px-6"
+            >
+              {isSearching ? (
+                <Loader2 className="w-5 h-5 animate-spin" />
+              ) : (
+                <Search className="w-5 h-5" />
+              )}
+            </Button>
+          </div>
+
+          {/* Dica */}
+          <p className="text-slate-500 text-xs text-center">
+            💡 O código de barras geralmente tem 8 ou 13 dígitos e fica na embalagem do produto
+          </p>
         </CardContent>
       </Card>
 
