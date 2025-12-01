@@ -3,7 +3,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { Timer, ChevronRight, Droplets, Flame, Brain, Zap } from "lucide-react";
+import { Timer, ChevronRight, Droplets, Flame, Brain, Zap, Clock } from "lucide-react";
 import { motion } from "framer-motion";
 
 const FASTING_STAGES = [
@@ -91,6 +91,10 @@ export default function FastingDashboardWidget({ activeFast }) {
             {/* Timer */}
             <div className="text-center mb-3">
               <p className="text-3xl font-bold text-white font-mono">{formatTime(elapsed)}</p>
+              <p className="text-blue-400 text-sm mt-1 flex items-center justify-center gap-1">
+                <Clock className="w-3 h-3" />
+                Termina às {new Date(activeFast.planned_end_time).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+              </p>
             </div>
 
             {/* Progress Bar */}
