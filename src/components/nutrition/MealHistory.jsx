@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
@@ -146,9 +145,10 @@ Seja preciso com base na quantidade informada.
     deleteMealMutation.mutate(mealId);
   };
 
-  // Agrupar por data
+  // Agrupar por data (mostrar todas as refeições, independente do analysis_complete)
   const groupedByDate = mealLogs.reduce((acc, log) => {
-    if (!log.analysis_complete) return acc;
+    // Aceitar refeições com analysis_complete true ou que tenham food_items
+    if (!log.analysis_complete && (!log.food_items || log.food_items.length === 0)) return acc;
     
     const date = log.date;
     if (!acc[date]) {
