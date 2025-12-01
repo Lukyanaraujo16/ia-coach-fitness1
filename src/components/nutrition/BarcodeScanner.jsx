@@ -29,9 +29,10 @@ export default function BarcodeScanner() {
   const [mealType, setMealType] = useState("snack");
   const [quantity, setQuantity] = useState(1);
   const [scanError, setScanError] = useState(null);
+  const fileInputRef = useRef(null);
   const queryClient = useQueryClient();
 
-  // Fallback: usar câmera + IA para ler código de barras (iOS e outros)
+  // Usar câmera + IA para ler código de barras
   const handlePhotoCapture = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
