@@ -7,7 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { Timer, History, Settings, Loader2 } from "lucide-react";
+import { Timer, History, Settings, Loader2, Sparkles } from "lucide-react";
 
 import FastingTimer from "../components/fasting/FastingTimer";
 import FastingTypeSelector from "../components/fasting/FastingTypeSelector";
@@ -15,6 +15,7 @@ import FastingHistory from "../components/fasting/FastingHistory";
 import FastingSettingsComponent from "../components/fasting/FastingSettings";
 import FastingAlerts from "../components/fasting/FastingAlerts";
 import FastingEducationModal from "../components/fasting/FastingEducationModal";
+import FastingAIRecommendations from "../components/fasting/FastingAIRecommendations";
 
 const FASTING_HOURS = {
   "14/10": { fasting: 14, eating: 10 },
@@ -259,7 +260,7 @@ Seja positivo e encorajador. Escreva em português brasileiro.`,
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="bg-slate-900/50 border border-slate-800 grid grid-cols-3 gap-1 p-1">
+        <TabsList className="bg-slate-900/50 border border-slate-800 grid grid-cols-4 gap-1 p-1">
           <TabsTrigger value="timer" className="data-[state=active]:bg-green-600 flex items-center gap-2">
             <Timer className="w-4 h-4" />
             <span className="hidden sm:inline">Timer</span>
@@ -267,6 +268,10 @@ Seja positivo e encorajador. Escreva em português brasileiro.`,
           <TabsTrigger value="history" className="data-[state=active]:bg-green-600 flex items-center gap-2">
             <History className="w-4 h-4" />
             <span className="hidden sm:inline">Histórico</span>
+          </TabsTrigger>
+          <TabsTrigger value="ai" className="data-[state=active]:bg-green-600 flex items-center gap-2">
+            <Sparkles className="w-4 h-4" />
+            <span className="hidden sm:inline">IA</span>
           </TabsTrigger>
           <TabsTrigger value="settings" className="data-[state=active]:bg-green-600 flex items-center gap-2">
             <Settings className="w-4 h-4" />
@@ -314,6 +319,15 @@ Seja positivo e encorajador. Escreva em português brasileiro.`,
 
         {activeTab === "history" && (
           <FastingHistory logs={fastingLogs} />
+        )}
+
+        {activeTab === "ai" && (
+          <FastingAIRecommendations
+            user={user}
+            fastingLogs={fastingLogs}
+            mealLogs={mealLogs}
+            settings={fastingSettings}
+          />
         )}
 
         {activeTab === "settings" && (
