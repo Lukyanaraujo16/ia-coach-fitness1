@@ -14,6 +14,7 @@ import FastingTypeSelector from "../components/fasting/FastingTypeSelector";
 import FastingHistory from "../components/fasting/FastingHistory";
 import FastingSettingsComponent from "../components/fasting/FastingSettings";
 import FastingAlerts from "../components/fasting/FastingAlerts";
+import FastingEducationModal from "../components/fasting/FastingEducationModal";
 
 const FASTING_HOURS = {
   "14/10": { fasting: 14, eating: 10 },
@@ -30,6 +31,8 @@ export default function Fasting() {
   const [customHours, setCustomHours] = useState({ fasting: 16, eating: 8 });
   const [showEndDialog, setShowEndDialog] = useState(false);
   const [endNotes, setEndNotes] = useState("");
+  const [showEducationModal, setShowEducationModal] = useState(false);
+  const [pendingStartFast, setPendingStartFast] = useState(false);
   const queryClient = useQueryClient();
 
   useEffect(() => {
@@ -160,9 +163,18 @@ Seja positivo e encorajador. Escreva em português brasileiro.`,
     }
   };
 
+  // Check if user is first time fasting
+  const isFirstTimeFasting = fastingLogs.length === 0;
+
   const handleStartFast = () => {
     if (!selectedType) {
       toast.error("Selecione um tipo de jejum");
+      return;
+    }
+
+    // If first time, show education modal
+    if (isFirstTimeFasting && !pendingStartFast) {
+      setShowEducationModal(true);
       return;
     }
 
@@ -179,6 +191,30 @@ Seja positivo e encorajador. Escreva em português brasileiro.`,
       planned_end_time: plannedEnd.toISOString(),
       status: "active",
     });
+
+    setPendingStartFast(false);
+  };
+
+  const handleEducationConfirm = () => {
+    setShowEducationModal(false);
+    setPendingStartFast(true);
+    // Trigger start after modal closes
+    setTimeout(() => {
+      const hours = selectedType === "custom" ? customHours : FASTING_HOURS[selectedType];
+      const now = new Date();
+      const plannedEnd = new Date(now.getTime() + hours.fasting * 60 * 60 * 1000);
+
+      startFastingMutation.mutate({
+        user_email: user.email,
+        fasting_type: selectedType,
+        fasting_hours: hours.fasting,
+        eating_hours: hours.eating,
+        start_time: now.toISOString(),
+        planned_end_time: plannedEnd.toISOString(),
+        status: "active",
+      });
+      setPendingStartFast(false);
+    }, 100);
   };
 
   const handleEndFast = () => {
@@ -288,6 +324,13 @@ Seja positivo e encorajador. Escreva em português brasileiro.`,
           />
         )}
       </div>
+
+      {/* Education Modal for First Time Users */}
+      <FastingEducationModal
+        open={showEducationModal}
+        onClose={() => setShowEducationModal(false)}
+        onConfirm={handleEducationConfirm}
+      />
 
       {/* End Fast Dialog */}
       <Dialog open={showEndDialog} onOpenChange={setShowEndDialog}>

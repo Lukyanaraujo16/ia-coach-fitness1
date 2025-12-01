@@ -11,6 +11,7 @@ import StatsCard from "../components/home/StatsCard";
 import QuickActionCard from "../components/home/QuickActionCard";
 import NextWorkoutCard from "../components/home/NextWorkoutCard";
 import PaymentFailedBanner from "../components/PaymentFailedBanner";
+import FastingDashboardWidget from "../components/fasting/FastingDashboardWidget";
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -82,6 +83,20 @@ export default function Dashboard() {
     },
     enabled: !!user?.email,
   });
+
+  // Fetch active fasting
+  const { data: fastingLogs = [] } = useQuery({
+    queryKey: ['fasting-logs', user?.email],
+    queryFn: async () => {
+      if (!user?.email) return [];
+      const logs = await base44.entities.FastingLog.list('-start_time');
+      return logs.filter(log => log.user_email === user.email || log.created_by === user.email);
+    },
+    enabled: !!user?.email,
+    refetchInterval: 60000,
+  });
+
+  const activeFast = fastingLogs.find(log => log.status === 'active');
 
   // Verificar se o usuário já usou o coach (tem dados criados pelo agente ou marcou como ativado)
   const hasUsedCoach = user?.fitness_coach_activated || 
@@ -243,6 +258,9 @@ export default function Dashboard() {
           </Card>
         </Link>
       )}
+
+      {/* Fasting Widget - Mostrar quando há jejum ativo */}
+      {activeFast && <FastingDashboardWidget activeFast={activeFast} />}
 
       {/* WhatsApp Coach - Mostrar se está habilitado no admin e usuário ainda não ativou o agente */}
       {user?.whatsapp_coach_enabled !== false && !hasUsedCoach && (
