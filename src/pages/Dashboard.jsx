@@ -350,17 +350,17 @@ export default function Dashboard() {
           </div>
 
           {/* Botões de ação */}
-          <div className="grid grid-cols-2 gap-3 pt-2">
+          <div className="grid grid-cols-2 gap-2 pt-2">
             <Link to={createPageUrl("Nutrition") + "?tab=counter"}>
-              <Button className="w-full bg-green-600 hover:bg-green-700 h-12">
-                <Camera className="w-4 h-4 mr-2" />
-                Registrar Refeição
+              <Button className="w-full bg-green-600 hover:bg-green-700 h-11 text-xs sm:text-sm px-2 sm:px-4">
+                <Camera className="w-4 h-4 mr-1 sm:mr-2 flex-shrink-0" />
+                <span className="truncate">Registrar</span>
               </Button>
             </Link>
             <Link to={createPageUrl("Nutrition") + "?tab=barcode"}>
-              <Button variant="outline" className="w-full bg-slate-800 border-green-700 text-green-400 hover:bg-green-900/30 hover:text-green-300 h-12">
-                <ScanBarcode className="w-4 h-4 mr-2" />
-                Código de Barras
+              <Button variant="outline" className="w-full bg-slate-800 border-green-700 text-green-400 hover:bg-green-900/30 hover:text-green-300 h-11 text-xs sm:text-sm px-2 sm:px-4">
+                <ScanBarcode className="w-4 h-4 mr-1 sm:mr-2 flex-shrink-0" />
+                <span className="truncate">Código Barras</span>
               </Button>
             </Link>
           </div>
