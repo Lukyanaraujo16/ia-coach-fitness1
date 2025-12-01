@@ -3,7 +3,7 @@ import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { Calendar, Flame, Trophy, TrendingUp, ChevronRight, Zap, Target, Crown, Apple, MessageCircle } from "lucide-react";
+import { Calendar, Flame, Trophy, TrendingUp, ChevronRight, Zap, Target, Crown, Apple, MessageCircle, Camera, ScanBarcode } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -274,85 +274,104 @@ export default function Dashboard() {
       )}
 
       {/* Nutrition Summary Card */}
-      <Link to={createPageUrl("Nutrition") + "?tab=counter"}>
-        <Card className="bg-gradient-to-br from-green-900/30 to-emerald-900/20 border-green-700/50 hover:from-green-900/40 hover:to-emerald-900/30 transition-all cursor-pointer">
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-white flex items-center gap-2">
-                <Apple className="w-5 h-5 text-green-400" />
-                Nutrição de Hoje
-              </CardTitle>
-              <ChevronRight className="w-5 h-5 text-slate-400" />
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {/* Calorias */}
-            <div>
-              <div className="flex items-baseline justify-between mb-2">
-                <div>
-                  <span className="text-4xl font-bold text-green-400">{Math.round(todayCalories)}</span>
-                  <span className="text-slate-400 text-sm ml-2">/ {calorieGoal} kcal</span>
-                </div>
-                <span className="text-slate-400 text-sm">{Math.round(caloriePercentage)}%</span>
+      <Card className="bg-gradient-to-br from-green-900/30 to-emerald-900/20 border-green-700/50">
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-white flex items-center gap-2">
+              <Apple className="w-5 h-5 text-green-400" />
+              Nutrição de Hoje
+            </CardTitle>
+            <Link to={createPageUrl("Nutrition")}>
+              <Button variant="ghost" size="sm" className="text-green-400 hover:text-green-300">
+                Ver Tudo
+                <ChevronRight className="w-4 h-4 ml-1" />
+              </Button>
+            </Link>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {/* Calorias */}
+          <div>
+            <div className="flex items-baseline justify-between mb-2">
+              <div>
+                <span className="text-4xl font-bold text-green-400">{Math.round(todayCalories)}</span>
+                <span className="text-slate-400 text-sm ml-2">/ {calorieGoal} kcal</span>
               </div>
-              <div className="relative h-2 bg-slate-800 rounded-full overflow-hidden">
+              <span className="text-slate-400 text-sm">{Math.round(caloriePercentage)}%</span>
+            </div>
+            <div className="relative h-2 bg-slate-800 rounded-full overflow-hidden">
+              <div
+                className="absolute inset-y-0 left-0 bg-gradient-to-r from-green-600 to-emerald-500 rounded-full transition-all duration-500"
+                style={{ width: `${caloriePercentage}%` }}
+              />
+            </div>
+          </div>
+
+          {/* Macronutrientes com metas */}
+          <div className="grid grid-cols-3 gap-3">
+            {/* Proteína */}
+            <div className="text-center p-3 bg-slate-900/50 rounded-lg">
+              <p className="text-blue-400 font-bold text-lg">{Math.round(todayProtein)}g</p>
+              <p className="text-slate-500 text-xs mb-1">/ {proteinGoal}g</p>
+              <p className="text-slate-400 text-xs">Proteína</p>
+              <div className="relative h-1 bg-slate-800 rounded-full overflow-hidden mt-2">
                 <div
-                  className="absolute inset-y-0 left-0 bg-gradient-to-r from-green-600 to-emerald-500 rounded-full transition-all duration-500"
-                  style={{ width: `${caloriePercentage}%` }}
+                  className="absolute inset-y-0 left-0 bg-blue-500 rounded-full transition-all duration-500"
+                  style={{ width: `${proteinPercentageComplete}%` }}
                 />
               </div>
             </div>
 
-            {/* Macronutrientes com metas */}
-            <div className="grid grid-cols-3 gap-3">
-              {/* Proteína */}
-              <div className="text-center p-3 bg-slate-900/50 rounded-lg">
-                <p className="text-blue-400 font-bold text-lg">{Math.round(todayProtein)}g</p>
-                <p className="text-slate-500 text-xs mb-1">/ {proteinGoal}g</p>
-                <p className="text-slate-400 text-xs">Proteína</p>
-                <div className="relative h-1 bg-slate-800 rounded-full overflow-hidden mt-2">
-                  <div
-                    className="absolute inset-y-0 left-0 bg-blue-500 rounded-full transition-all duration-500"
-                    style={{ width: `${proteinPercentageComplete}%` }}
-                  />
-                </div>
-              </div>
-
-              {/* Carboidratos */}
-              <div className="text-center p-3 bg-slate-900/50 rounded-lg">
-                <p className="text-orange-400 font-bold text-lg">{Math.round(todayCarbs)}g</p>
-                <p className="text-slate-500 text-xs mb-1">/ {carbsGoal}g</p>
-                <p className="text-slate-400 text-xs">Carbos</p>
-                <div className="relative h-1 bg-slate-800 rounded-full overflow-hidden mt-2">
-                  <div
-                    className="absolute inset-y-0 left-0 bg-orange-500 rounded-full transition-all duration-500"
-                    style={{ width: `${carbsPercentageComplete}%` }}
-                  />
-                </div>
-              </div>
-
-              {/* Gordura */}
-              <div className="text-center p-3 bg-slate-900/50 rounded-lg">
-                <p className="text-yellow-400 font-bold text-lg">{Math.round(todayFat)}g</p>
-                <p className="text-slate-500 text-xs mb-1">/ {fatGoal}g</p>
-                <p className="text-slate-400 text-xs">Gordura</p>
-                <div className="relative h-1 bg-slate-800 rounded-full overflow-hidden mt-2">
-                  <div
-                    className="absolute inset-y-0 left-0 bg-yellow-500 rounded-full transition-all duration-500"
-                    style={{ width: `${fatPercentageComplete}%` }}
-                  />
-                </div>
+            {/* Carboidratos */}
+            <div className="text-center p-3 bg-slate-900/50 rounded-lg">
+              <p className="text-orange-400 font-bold text-lg">{Math.round(todayCarbs)}g</p>
+              <p className="text-slate-500 text-xs mb-1">/ {carbsGoal}g</p>
+              <p className="text-slate-400 text-xs">Carbos</p>
+              <div className="relative h-1 bg-slate-800 rounded-full overflow-hidden mt-2">
+                <div
+                  className="absolute inset-y-0 left-0 bg-orange-500 rounded-full transition-all duration-500"
+                  style={{ width: `${carbsPercentageComplete}%` }}
+                />
               </div>
             </div>
 
-            {todayMeals.length === 0 && (
-              <p className="text-slate-400 text-sm text-center py-2">
-                📸 Registre suas refeições para acompanhar
-              </p>
-            )}
-          </CardContent>
-        </Card>
-      </Link>
+            {/* Gordura */}
+            <div className="text-center p-3 bg-slate-900/50 rounded-lg">
+              <p className="text-yellow-400 font-bold text-lg">{Math.round(todayFat)}g</p>
+              <p className="text-slate-500 text-xs mb-1">/ {fatGoal}g</p>
+              <p className="text-slate-400 text-xs">Gordura</p>
+              <div className="relative h-1 bg-slate-800 rounded-full overflow-hidden mt-2">
+                <div
+                  className="absolute inset-y-0 left-0 bg-yellow-500 rounded-full transition-all duration-500"
+                  style={{ width: `${fatPercentageComplete}%` }}
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Botões de ação */}
+          <div className="grid grid-cols-2 gap-3 pt-2">
+            <Link to={createPageUrl("Nutrition") + "?tab=counter"}>
+              <Button className="w-full bg-green-600 hover:bg-green-700 h-12">
+                <Camera className="w-4 h-4 mr-2" />
+                Registrar Refeição
+              </Button>
+            </Link>
+            <Link to={createPageUrl("Nutrition") + "?tab=barcode"}>
+              <Button variant="outline" className="w-full bg-slate-800 border-green-700 text-green-400 hover:bg-green-900/30 hover:text-green-300 h-12">
+                <ScanBarcode className="w-4 h-4 mr-2" />
+                Código de Barras
+              </Button>
+            </Link>
+          </div>
+
+          {todayMeals.length === 0 && (
+            <p className="text-slate-400 text-sm text-center py-2">
+              📸 Registre suas refeições para acompanhar
+            </p>
+          )}
+        </CardContent>
+      </Card>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <StatsCard
