@@ -93,7 +93,7 @@ export default function FastingDashboardWidget({ activeFast }) {
               <p className="text-3xl font-bold text-white font-mono">{formatTime(elapsed)}</p>
               <p className="text-blue-400 text-sm mt-1 flex items-center justify-center gap-1">
                 <Clock className="w-3 h-3" />
-                Termina às {new Date(activeFast.planned_end_time).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                Termina às {new Date(activeFast.planned_end_time).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Sao_Paulo' })}
               </p>
             </div>
 

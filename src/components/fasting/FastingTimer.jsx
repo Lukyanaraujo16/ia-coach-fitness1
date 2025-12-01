@@ -112,7 +112,7 @@ export default function FastingTimer({ activeFast, onStart, onEnd, settings }) {
                 <p className="text-green-400 font-semibold mt-1">{Math.round(progress)}%</p>
                 <p className="text-blue-400 text-xs mt-2 flex items-center gap-1">
                   <Clock className="w-3 h-3" />
-                  Termina às {new Date(activeFast.planned_end_time).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                  Termina às {new Date(activeFast.planned_end_time).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Sao_Paulo' })}
                 </p>
               </>
             ) : (
@@ -172,7 +172,7 @@ export default function FastingTimer({ activeFast, onStart, onEnd, settings }) {
               Jejum {activeFast.fasting_type} • {activeFast.fasting_hours}h jejum / {activeFast.eating_hours}h alimentação
             </p>
             <p className="text-blue-400 text-sm font-medium">
-              🔔 Seu jejum termina às {new Date(activeFast.planned_end_time).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+              🔔 Seu jejum termina às {new Date(activeFast.planned_end_time).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Sao_Paulo' })}
             </p>
           </div>
         )}

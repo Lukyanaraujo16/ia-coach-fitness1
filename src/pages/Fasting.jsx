@@ -171,7 +171,10 @@ Seja positivo e encorajador. Escreva em português brasileiro.`,
 
   const handleStartFast = () => {
     if (!selectedType) {
-      toast.error("Selecione um tipo de jejum");
+      toast.error("Por favor, escolha um tipo de jejum antes de iniciar! 👆", {
+        description: "Selecione entre 14/10, 16/8, 18/6, 20/4, 24h ou personalizado.",
+        duration: 4000,
+      });
       return;
     }
 
