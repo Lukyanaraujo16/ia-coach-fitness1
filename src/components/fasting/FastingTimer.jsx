@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Play, Square, Clock, Flame, Droplets, Brain, Zap } from "lucide-react";
-import { motion } from "framer-motion";
+import { Play, Square, Clock, Flame, Droplets, Brain, Zap, AlertCircle } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { toast } from "sonner";
 
 const FASTING_STAGES = [
   { hours: 0, icon: Droplets, title: "Início", description: "Níveis de insulina começam a cair", color: "text-blue-400" },
@@ -12,9 +13,23 @@ const FASTING_STAGES = [
   { hours: 24, icon: Flame, title: "Cetose Profunda", description: "Máxima queima de gordura", color: "text-red-400" },
 ];
 
-export default function FastingTimer({ activeFast, onStart, onEnd, settings }) {
+export default function FastingTimer({ activeFast, onStart, onEnd, settings, selectedType }) {
   const [elapsed, setElapsed] = useState(0);
   const [currentStage, setCurrentStage] = useState(null);
+  const [showTypeWarning, setShowTypeWarning] = useState(false);
+
+  const handleStartClick = () => {
+    if (!selectedType) {
+      setShowTypeWarning(true);
+      toast.error("Escolha um tipo de jejum primeiro! 👆", {
+        description: "Selecione entre 14/10, 16/8, 18/6, 20/4, 24h ou personalizado abaixo.",
+        duration: 4000,
+      });
+      setTimeout(() => setShowTypeWarning(false), 3000);
+      return;
+    }
+    onStart();
+  };
 
   useEffect(() => {
     if (!activeFast) {
@@ -146,14 +161,31 @@ export default function FastingTimer({ activeFast, onStart, onEnd, settings }) {
         {/* Action Buttons */}
         <div className="space-y-3">
           {!activeFast ? (
-            <Button
-              onClick={onStart}
-              className="w-full h-14 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 text-lg"
-            >
-              <Play className="w-6 h-6 mr-2" />
-              Iniciar Jejum
-            </Button>
-          ) : (
+                        <div className="space-y-3">
+                          <Button
+                            onClick={handleStartClick}
+                            className="w-full h-14 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 text-lg"
+                          >
+                            <Play className="w-6 h-6 mr-2" />
+                            Iniciar Jejum
+                          </Button>
+                          <AnimatePresence>
+                            {showTypeWarning && (
+                              <motion.div
+                                initial={{ opacity: 0, y: -10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, y: -10 }}
+                                className="flex items-center gap-2 p-3 bg-orange-900/30 border border-orange-700/50 rounded-lg"
+                              >
+                                <AlertCircle className="w-5 h-5 text-orange-400 flex-shrink-0" />
+                                <p className="text-orange-300 text-sm">
+                                  Escolha um tipo de jejum abaixo antes de iniciar!
+                                </p>
+                              </motion.div>
+                            )}
+                          </AnimatePresence>
+                        </div>
+                      ) : (
             <Button
               onClick={onEnd}
               variant="outline"

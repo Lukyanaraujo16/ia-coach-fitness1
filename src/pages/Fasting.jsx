@@ -302,6 +302,7 @@ Seja positivo e encorajador. Escreva em português brasileiro.`,
                   activeFast={null}
                   onStart={handleStartFast}
                   settings={fastingSettings}
+                  selectedType={selectedType}
                 />
                 <FastingTypeSelector
                   selectedType={selectedType}
