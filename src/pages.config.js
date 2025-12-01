@@ -22,6 +22,7 @@ import AdminNotifications from './pages/AdminNotifications';
 import Support from './pages/Support';
 import WorkoutReports from './pages/WorkoutReports';
 import BodyAnalysis from './pages/BodyAnalysis';
+import Fasting from './pages/Fasting';
 import __Layout from './Layout.jsx';
 
 
@@ -50,6 +51,7 @@ export const PAGES = {
     "Support": Support,
     "WorkoutReports": WorkoutReports,
     "BodyAnalysis": BodyAnalysis,
+    "Fasting": Fasting,
 }
 
 export const pagesConfig = {
