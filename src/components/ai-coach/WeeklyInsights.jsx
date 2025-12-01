@@ -47,17 +47,30 @@ export default function WeeklyInsights({ workoutLogs, progressEntries, user }) {
   const generateInsights = async () => {
     setLoading(true);
     try {
-      // Filtrar últimos 7 dias
-      const weekAgo = new Date();
-      weekAgo.setDate(weekAgo.getDate() - 7);
+      // Calcular segunda-feira da semana atual (de segunda a domingo)
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
       
-      const recentLogs = workoutLogs.filter(log => 
-        new Date(log.date) >= weekAgo
-      );
+      const currentDay = today.getDay(); // 0 = domingo, 1 = segunda, etc.
+      const daysFromMonday = currentDay === 0 ? 6 : currentDay - 1; // Se domingo, são 6 dias desde segunda
+      
+      const monday = new Date(today);
+      monday.setDate(today.getDate() - daysFromMonday);
+      monday.setHours(0, 0, 0, 0);
+      
+      const sunday = new Date(monday);
+      sunday.setDate(monday.getDate() + 6);
+      sunday.setHours(23, 59, 59, 999);
+      
+      const recentLogs = workoutLogs.filter(log => {
+        const logDate = new Date(log.date + 'T12:00:00'); // Usar meio-dia para evitar problemas de timezone
+        return logDate >= monday && logDate <= sunday;
+      });
 
-      const recentProgress = progressEntries.filter(entry => 
-        new Date(entry.date) >= weekAgo
-      );
+      const recentProgress = progressEntries.filter(entry => {
+        const entryDate = new Date(entry.date + 'T12:00:00');
+        return entryDate >= monday && entryDate <= sunday;
+      });
 
       // Preparar contexto para a IA
       const context = {
@@ -154,7 +167,7 @@ Seja específico, use dados concretos e seja motivacional mas realista.`;
       try {
         await saveAnalysisMutation.mutateAsync({
           analysis_data: response,
-          week_start: weekAgo.toISOString().split('T')[0],
+          week_start: monday.toISOString().split('T')[0],
           workouts_count: recentLogs.length,
         });
       } catch (error) {
