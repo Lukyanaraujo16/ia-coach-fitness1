@@ -158,7 +158,7 @@ export default function Layout({ children, currentPageName }) {
     items.push(
             { name: "Progresso", path: createPageUrl("Progress"), icon: TrendingUp },
             { name: "Análise Corporal", path: createPageUrl("BodyAnalysis"), icon: Camera },
-            { name: "Jejum", path: createPageUrl("Fasting"), icon: Timer }
+            { name: "Jejum Intermitente", path: createPageUrl("Fasting"), icon: Timer }
           );
     
     if (user?.community_enabled !== false) {
