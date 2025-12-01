@@ -228,79 +228,7 @@ Se não conseguir identificar um código de barras válido, retorne null.`,
     });
   };
 
-  // Scanner de código de barras usando câmera
-  const startScanner = async () => {
-    setScanError(null);
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: 'environment' }
-      });
-      
-      streamRef.current = stream;
-      
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        videoRef.current.play();
-      }
-      
-      setIsScanning(true);
-      
-      // Iniciar detecção de código de barras
-      if ('BarcodeDetector' in window) {
-        const barcodeDetector = new window.BarcodeDetector({
-          formats: ['ean_13', 'ean_8', 'upc_a', 'upc_e', 'code_128', 'code_39']
-        });
-        
-        const detectBarcode = async () => {
-          if (!videoRef.current || !isScanning) return;
-          
-          try {
-            const barcodes = await barcodeDetector.detect(videoRef.current);
-            if (barcodes.length > 0) {
-              const detectedCode = barcodes[0].rawValue;
-              setBarcode(detectedCode);
-              stopScanner();
-              searchFood(detectedCode);
-              return;
-            }
-          } catch (err) {
-            console.log("Scanning...");
-          }
-          
-          if (streamRef.current) {
-            requestAnimationFrame(detectBarcode);
-          }
-        };
-        
-        // Aguardar o vídeo estar pronto
-        setTimeout(detectBarcode, 500);
-      }
-    } catch (error) {
-      console.error("Erro ao acessar câmera:", error);
-      setScanError("Não foi possível acessar a câmera. Verifique as permissões.");
-      setIsScanning(false);
-    }
-  };
 
-  const stopScanner = () => {
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach(track => track.stop());
-      streamRef.current = null;
-    }
-    if (videoRef.current) {
-      videoRef.current.srcObject = null;
-    }
-    setIsScanning(false);
-  };
-
-  // Limpar ao desmontar
-  useEffect(() => {
-    return () => {
-      if (streamRef.current) {
-        streamRef.current.getTracks().forEach(track => track.stop());
-      }
-    };
-  }, []);
 
   return (
     <div className="space-y-6">
