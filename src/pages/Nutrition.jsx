@@ -9,6 +9,7 @@ import MealHistory from "../components/nutrition/MealHistory";
 import NutritionPlans from "../components/nutrition/NutritionPlans";
 import MyNutritionPlan from "../components/nutrition/MyNutritionPlan.jsx";
 import ActivityNutritionSummary from "../components/nutrition/ActivityNutritionSummary";
+import BarcodeScanner from "../components/nutrition/BarcodeScanner";
 
 export default function Nutrition() {
   const [activeTab, setActiveTab] = useState("my-plan");
@@ -60,36 +61,40 @@ export default function Nutrition() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="bg-slate-900/50 border border-slate-800 grid grid-cols-3 md:grid-cols-6 gap-1 p-1 h-auto">
-          <TabsTrigger value="my-plan" className="data-[state=active]:bg-green-600 text-xs py-2">
-            Plano
-          </TabsTrigger>
-          <TabsTrigger value="counter" className="data-[state=active]:bg-green-600 text-xs py-2">
-            Contador
-          </TabsTrigger>
-          <TabsTrigger value="summary" className="data-[state=active]:bg-green-600 text-xs py-2">
-            Resumo
-          </TabsTrigger>
-          <TabsTrigger value="stats" className="data-[state=active]:bg-green-600 text-xs py-2">
-            Stats
-          </TabsTrigger>
-          <TabsTrigger value="history" className="data-[state=active]:bg-green-600 text-xs py-2">
-            Histórico
-          </TabsTrigger>
-          <TabsTrigger value="plans" className="data-[state=active]:bg-green-600 text-xs py-2">
-            Explorar
-          </TabsTrigger>
-        </TabsList>
+        <TabsList className="bg-slate-900/50 border border-slate-800 grid grid-cols-4 md:grid-cols-7 gap-1 p-1 h-auto">
+                    <TabsTrigger value="my-plan" className="data-[state=active]:bg-green-600 text-xs py-2">
+                      Plano
+                    </TabsTrigger>
+                    <TabsTrigger value="counter" className="data-[state=active]:bg-green-600 text-xs py-2">
+                      Contador
+                    </TabsTrigger>
+                    <TabsTrigger value="barcode" className="data-[state=active]:bg-green-600 text-xs py-2">
+                      Barras
+                    </TabsTrigger>
+                    <TabsTrigger value="summary" className="data-[state=active]:bg-green-600 text-xs py-2">
+                      Resumo
+                    </TabsTrigger>
+                    <TabsTrigger value="stats" className="data-[state=active]:bg-green-600 text-xs py-2">
+                      Stats
+                    </TabsTrigger>
+                    <TabsTrigger value="history" className="data-[state=active]:bg-green-600 text-xs py-2">
+                      Histórico
+                    </TabsTrigger>
+                    <TabsTrigger value="plans" className="data-[state=active]:bg-green-600 text-xs py-2">
+                      Explorar
+                    </TabsTrigger>
+                  </TabsList>
       </Tabs>
 
       <div className="mt-6">
-        {activeTab === "my-plan" && <MyNutritionPlan user={user} />}
-        {activeTab === "counter" && <CalorieCounter />}
-        {activeTab === "summary" && <ActivityNutritionSummary user={user} />}
-        {activeTab === "stats" && <NutritionStats mealLogs={mealLogs} calorieGoal={calorieGoal} />}
-        {activeTab === "history" && <MealHistory mealLogs={mealLogs} />}
-        {activeTab === "plans" && <NutritionPlans />}
-      </div>
+                {activeTab === "my-plan" && <MyNutritionPlan user={user} />}
+                {activeTab === "counter" && <CalorieCounter />}
+                {activeTab === "barcode" && <BarcodeScanner />}
+                {activeTab === "summary" && <ActivityNutritionSummary user={user} />}
+                {activeTab === "stats" && <NutritionStats mealLogs={mealLogs} calorieGoal={calorieGoal} />}
+                {activeTab === "history" && <MealHistory mealLogs={mealLogs} />}
+                {activeTab === "plans" && <NutritionPlans />}
+              </div>
     </div>
   );
 }
