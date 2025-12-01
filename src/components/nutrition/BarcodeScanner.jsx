@@ -27,19 +27,8 @@ export default function BarcodeScanner() {
   const [showRegisterForm, setShowRegisterForm] = useState(false);
   const [mealType, setMealType] = useState("snack");
   const [quantity, setQuantity] = useState(1);
-  const videoRef = useRef(null);
-  const streamRef = useRef(null);
-  const [isScanning, setIsScanning] = useState(false);
-  const [scannerSupported, setScannerSupported] = useState(false);
   const [scanError, setScanError] = useState(null);
   const queryClient = useQueryClient();
-
-  // Verificar suporte ao BarcodeDetector nativo
-  useEffect(() => {
-    if ('BarcodeDetector' in window) {
-      setScannerSupported(true);
-    }
-  }, []);
 
   // Fallback: usar câmera + IA para ler código de barras (iOS e outros)
   const handlePhotoCapture = async (e) => {
