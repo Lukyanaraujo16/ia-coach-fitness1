@@ -28,9 +28,18 @@ export default function BarcodeScanner() {
   const [mealType, setMealType] = useState("snack");
   const [quantity, setQuantity] = useState(1);
   const videoRef = useRef(null);
+  const streamRef = useRef(null);
   const [isScanning, setIsScanning] = useState(false);
-  const [scannerSupported, setScannerSupported] = useState(true);
+  const [scannerSupported, setScannerSupported] = useState(false);
+  const [scanError, setScanError] = useState(null);
   const queryClient = useQueryClient();
+
+  // Verificar suporte ao BarcodeDetector
+  useEffect(() => {
+    if ('BarcodeDetector' in window) {
+      setScannerSupported(true);
+    }
+  }, []);
 
   const [newFood, setNewFood] = useState({
     barcode: "",
