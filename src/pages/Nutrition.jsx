@@ -3,6 +3,9 @@ import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import { createPageUrl } from "@/utils";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
+import { Link } from "react-router-dom";
+import { Timer } from "lucide-react";
 import CalorieCounter from "../components/nutrition/CalorieCounter";
 import NutritionStats from "../components/nutrition/NutritionStats";
 import MealHistory from "../components/nutrition/MealHistory";
@@ -58,6 +61,12 @@ export default function Nutrition() {
     <div className="py-6 space-y-6">
       <div className="flex items-center justify-between">
         <h2 className="text-3xl font-bold text-white">Nutrição</h2>
+        <Link to={createPageUrl("Fasting")}>
+          <Button variant="outline" className="bg-slate-800 border-green-700 text-green-400 hover:bg-green-900/30">
+            <Timer className="w-4 h-4 mr-2" />
+            Jejum
+          </Button>
+        </Link>
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
