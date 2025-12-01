@@ -34,12 +34,55 @@ export default function BarcodeScanner() {
   const [scanError, setScanError] = useState(null);
   const queryClient = useQueryClient();
 
-  // Verificar suporte ao BarcodeDetector
+  // Verificar suporte ao BarcodeDetector nativo
   useEffect(() => {
     if ('BarcodeDetector' in window) {
       setScannerSupported(true);
     }
   }, []);
+
+  // Fallback: usar câmera + IA para ler código de barras (iOS e outros)
+  const handlePhotoCapture = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    setIsSearching(true);
+    setScanError(null);
+
+    try {
+      // Upload da foto
+      const uploadResult = await base44.integrations.Core.UploadFile({ file });
+      const photoUrl = uploadResult.file_url;
+
+      // Usar IA para ler o código de barras da imagem
+      const result = await base44.integrations.Core.InvokeLLM({
+        prompt: `Analise esta imagem e extraia o código de barras visível. 
+O código de barras geralmente tem 8 ou 13 dígitos numéricos (EAN-8, EAN-13, UPC-A).
+Retorne APENAS os números do código de barras, sem espaços ou outros caracteres.
+Se não conseguir identificar um código de barras válido, retorne null.`,
+        file_urls: photoUrl,
+        response_json_schema: {
+          type: "object",
+          properties: {
+            barcode: { type: "string", description: "O código de barras extraído (apenas números)" },
+            confidence: { type: "string", enum: ["high", "medium", "low"] }
+          }
+        }
+      });
+
+      if (result.barcode && /^\d{8,13}$/.test(result.barcode)) {
+        setBarcode(result.barcode);
+        searchFood(result.barcode);
+      } else {
+        setScanError("Não foi possível identificar o código de barras na foto. Tente novamente com melhor iluminação ou digite manualmente.");
+        setIsSearching(false);
+      }
+    } catch (error) {
+      console.error("Erro ao processar foto:", error);
+      setScanError("Erro ao processar a foto. Tente novamente.");
+      setIsSearching(false);
+    }
+  };
 
   const [newFood, setNewFood] = useState({
     barcode: "",
