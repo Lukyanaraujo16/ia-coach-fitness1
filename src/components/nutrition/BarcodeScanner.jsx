@@ -364,7 +364,7 @@ Se não conseguir identificar um código de barras válido, retorne null.`,
             </div>
           ) : (
             <>
-              {/* Botão de escanear */}
+              {/* Botão de escanear - Scanner nativo para Android/Chrome */}
               {scannerSupported && (
                 <Button
                   onClick={startScanner}
@@ -375,16 +375,26 @@ Se não conseguir identificar um código de barras válido, retorne null.`,
                 </Button>
               )}
 
-              {scanError && (
-                <p className="text-red-400 text-sm text-center">{scanError}</p>
+              {/* Fallback para iOS e navegadores sem BarcodeDetector */}
+              {!scannerSupported && (
+                <label className="cursor-pointer">
+                  <div className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 h-14 rounded-md flex items-center justify-center gap-2 text-white font-medium">
+                    <Camera className="w-5 h-5" />
+                    Fotografar Código de Barras
+                  </div>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    capture="environment"
+                    onChange={handlePhotoCapture}
+                    className="hidden"
+                    disabled={isSearching}
+                  />
+                </label>
               )}
 
-              {!scannerSupported && (
-                <div className="p-3 bg-orange-900/20 border border-orange-800/50 rounded-lg">
-                  <p className="text-orange-400 text-sm text-center">
-                    📱 Seu navegador não suporta escaneamento de código de barras. Use o campo abaixo para digitar manualmente.
-                  </p>
-                </div>
+              {scanError && (
+                <p className="text-red-400 text-sm text-center">{scanError}</p>
               )}
 
               <div className="flex items-center gap-3">
