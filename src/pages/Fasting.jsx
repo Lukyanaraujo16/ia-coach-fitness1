@@ -16,6 +16,7 @@ import FastingSettingsComponent from "../components/fasting/FastingSettings";
 import FastingAlerts from "../components/fasting/FastingAlerts";
 import FastingEducationModal from "../components/fasting/FastingEducationModal";
 import FastingAIRecommendations from "../components/fasting/FastingAIRecommendations";
+import FastingAIPreCheck from "../components/fasting/FastingAIPreCheck";
 
 const FASTING_HOURS = {
   "14/10": { fasting: 14, eating: 10 },
@@ -34,6 +35,7 @@ export default function Fasting() {
   const [endNotes, setEndNotes] = useState("");
   const [showEducationModal, setShowEducationModal] = useState(false);
   const [pendingStartFast, setPendingStartFast] = useState(false);
+  const [showAIPreCheck, setShowAIPreCheck] = useState(false);
   const queryClient = useQueryClient();
 
   useEffect(() => {
@@ -173,12 +175,17 @@ Seja positivo e encorajador. Escreva em português brasileiro.`,
       return;
     }
 
-    // If first time, show education modal
+    // If first time, show education modal first
     if (isFirstTimeFasting && !pendingStartFast) {
       setShowEducationModal(true);
       return;
     }
 
+    // Show AI pre-check analysis before starting
+    setShowAIPreCheck(true);
+  };
+
+  const confirmStartFast = () => {
     const hours = selectedType === "custom" ? customHours : FASTING_HOURS[selectedType];
     const now = new Date();
     const plannedEnd = new Date(now.getTime() + hours.fasting * 60 * 60 * 1000);
@@ -193,28 +200,16 @@ Seja positivo e encorajador. Escreva em português brasileiro.`,
       status: "active",
     });
 
+    setShowAIPreCheck(false);
     setPendingStartFast(false);
   };
 
   const handleEducationConfirm = () => {
     setShowEducationModal(false);
     setPendingStartFast(true);
-    // Trigger start after modal closes
+    // After education modal, show AI pre-check
     setTimeout(() => {
-      const hours = selectedType === "custom" ? customHours : FASTING_HOURS[selectedType];
-      const now = new Date();
-      const plannedEnd = new Date(now.getTime() + hours.fasting * 60 * 60 * 1000);
-
-      startFastingMutation.mutate({
-        user_email: user.email,
-        fasting_type: selectedType,
-        fasting_hours: hours.fasting,
-        eating_hours: hours.eating,
-        start_time: now.toISOString(),
-        planned_end_time: plannedEnd.toISOString(),
-        status: "active",
-      });
-      setPendingStartFast(false);
+      setShowAIPreCheck(true);
     }, 100);
   };
 
@@ -345,6 +340,22 @@ Seja positivo e encorajador. Escreva em português brasileiro.`,
         onClose={() => setShowEducationModal(false)}
         onConfirm={handleEducationConfirm}
       />
+
+      {/* AI Pre-Check before starting fast */}
+      {showAIPreCheck && (
+        <FastingAIPreCheck
+          user={user}
+          fastingLogs={fastingLogs}
+          mealLogs={mealLogs}
+          settings={fastingSettings}
+          selectedType={selectedType}
+          onConfirm={confirmStartFast}
+          onCancel={() => {
+            setShowAIPreCheck(false);
+            setPendingStartFast(false);
+          }}
+        />
+      )}
 
       {/* End Fast Dialog */}
       <Dialog open={showEndDialog} onOpenChange={setShowEndDialog}>
