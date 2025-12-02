@@ -13,7 +13,7 @@ import NutritionPlans from "../components/nutrition/NutritionPlans";
 import MyNutritionPlan from "../components/nutrition/MyNutritionPlan.jsx";
 import ActivityNutritionSummary from "../components/nutrition/ActivityNutritionSummary";
 import BarcodeScanner from "../components/nutrition/BarcodeScanner";
-import RecipesExplorer from "../components/nutrition/RecipesExplorer";
+import RecipesExplorer from "../components/nutrition/RecipesExplorer.jsx";
 
 export default function Nutrition() {
   const [activeTab, setActiveTab] = useState("my-plan");
