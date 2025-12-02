@@ -448,7 +448,7 @@ ${conversationHistory}
             initial={{ opacity: 0, scale: 0.9, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.9, y: 20 }}
-            className="fixed inset-4 md:inset-auto md:bottom-6 md:right-4 md:w-96 md:h-[600px] z-50 flex flex-col"
+            className="fixed top-20 bottom-20 left-4 right-4 md:inset-auto md:bottom-6 md:right-4 md:top-auto md:w-96 md:h-[600px] z-50 flex flex-col"
           >
             <Card className="bg-slate-900/98 backdrop-blur-xl border-purple-700/50 shadow-2xl flex flex-col h-full overflow-hidden">
               {/* Header */}
