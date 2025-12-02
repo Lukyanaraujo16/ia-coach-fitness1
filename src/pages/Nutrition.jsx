@@ -13,6 +13,7 @@ import NutritionPlans from "../components/nutrition/NutritionPlans";
 import MyNutritionPlan from "../components/nutrition/MyNutritionPlan.jsx";
 import ActivityNutritionSummary from "../components/nutrition/ActivityNutritionSummary";
 import BarcodeScanner from "../components/nutrition/BarcodeScanner";
+import RecipesExplorer from "../components/nutrition/RecipesExplorer";
 
 export default function Nutrition() {
   const [activeTab, setActiveTab] = useState("my-plan");
@@ -89,8 +90,8 @@ export default function Nutrition() {
                     <TabsTrigger value="history" className="data-[state=active]:bg-green-600 text-xs py-2">
                       Histórico
                     </TabsTrigger>
-                    <TabsTrigger value="plans" className="data-[state=active]:bg-green-600 text-xs py-2">
-                      Explorar
+                    <TabsTrigger value="recipes" className="data-[state=active]:bg-green-600 text-xs py-2">
+                      Receitas
                     </TabsTrigger>
                   </TabsList>
       </Tabs>
@@ -102,7 +103,7 @@ export default function Nutrition() {
                 {activeTab === "summary" && <ActivityNutritionSummary user={user} />}
                 {activeTab === "stats" && <NutritionStats mealLogs={mealLogs} calorieGoal={calorieGoal} />}
                 {activeTab === "history" && <MealHistory mealLogs={mealLogs} />}
-                {activeTab === "plans" && <NutritionPlans />}
+                {activeTab === "recipes" && <RecipesExplorer user={user} />}
               </div>
     </div>
   );

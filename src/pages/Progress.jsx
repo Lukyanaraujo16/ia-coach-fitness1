@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -107,7 +106,7 @@ export default function Progress() {
       {activeTab === "weight" && <WeightChart data={progressEntries} />}
       {activeTab === "exercises" && <ExerciseWeightProgress logs={workoutLogs} />}
       {activeTab === "workouts" && <WorkoutHistory logs={workoutLogs} />}
-      {activeTab === "photos" && <ProgressPhotos entries={progressEntries} />}
+      {activeTab === "photos" && <ProgressPhotoTimeline analyses={bodyAnalyses} />}
     </div>
   );
 }

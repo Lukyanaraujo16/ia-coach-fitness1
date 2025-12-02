@@ -47,18 +47,34 @@ export default function BodyAnalysisForm({ user, previousAnalysis, onSuccess }) 
         throw new Error('Envie pelo menos uma foto');
       }
 
-      // Construir contexto do usuário
+      // Buscar dados do perfil do usuário
+      let userProfile = null;
+      let latestProgress = null;
+      try {
+        const profiles = await base44.entities.UserProfile.list();
+        userProfile = profiles.find(p => p.user_email === user.email);
+        
+        const progressEntries = await base44.entities.ProgressEntry.list('-date');
+        latestProgress = progressEntries.find(p => p.created_by === user.email);
+      } catch (e) {
+        console.log("Erro ao buscar dados adicionais:", e);
+      }
+
+      // Construir contexto do usuário com dados completos
       const userContext = `
         Dados do usuário:
-        - Peso atual: ${user.current_weight || 'não informado'}kg
-        - Altura: ${user.height || 'não informado'}cm
-        - Objetivo: ${user.fitness_goal || 'não informado'}
-        - Nível: ${user.fitness_level || 'não informado'}
+        - Peso atual: ${latestProgress?.weight || userProfile?.peso_atual || 'não informado'}kg
+        - Altura: ${userProfile?.altura || 'não informado'}cm
+        - Objetivo: ${userProfile?.objetivo || 'não informado'}
+        - Nível: ${userProfile?.nivel_fitness || 'não informado'}
+        - Medidas atuais: ${latestProgress?.measurements ? JSON.stringify(latestProgress.measurements) : 'não informado'}
         ${previousAnalysis ? `
         Análise anterior (${previousAnalysis.date}):
         - Gordura corporal estimada: ${previousAnalysis.estimated_body_fat}%
         - Massa muscular estimada: ${previousAnalysis.estimated_muscle_mass}%
         - Pontuação geral: ${previousAnalysis.overall_score}/100
+        - Pontos fracos: ${previousAnalysis.weak_points?.join(', ') || 'N/A'}
+        - Pontos fortes: ${previousAnalysis.strong_points?.join(', ') || 'N/A'}
         ` : ''}
       `;
 
