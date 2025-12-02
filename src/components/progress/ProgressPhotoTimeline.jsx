@@ -191,7 +191,11 @@ export default function ProgressPhotoTimeline({ analyses = [] }) {
                   </div>
 
                   {analysis.body_type && (
-                    <Badge className="w-fit bg-slate-700 text-slate-300">{analysis.body_type}</Badge>
+                    <Badge className="w-fit bg-slate-700 text-slate-300">
+                      {analysis.body_type === 'mesomorph' ? 'Mesomorfo' : 
+                       analysis.body_type === 'ectomorph' ? 'Ectomorfo' : 
+                       analysis.body_type === 'endomorph' ? 'Endomorfo' : analysis.body_type}
+                    </Badge>
                   )}
                 </div>
               </CardContent>
