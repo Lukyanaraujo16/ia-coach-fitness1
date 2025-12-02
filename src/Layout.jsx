@@ -203,7 +203,7 @@ export default function Layout({ children, currentPageName }) {
   const logoUrl = user?.app_logo_url || "https://base44.app/api/apps/6904da724b4ce40db58404e7/files/public/6904da724b4ce40db58404e7/901d97ae0_Untitleddesign3.png";
 
   return (
-    <div className={`min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 ${!hideNavigation ? 'pb-20 md:pb-0' : ''}`}>
+    <div className={`min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 ${!hideNavigation ? 'pb-24 md:pb-0' : ''}`}>
       <PWAManager />
       {user && <NotificationChecker user={user} />}
       {user && <SupportNotificationChecker user={user} />}
@@ -330,7 +330,7 @@ export default function Layout({ children, currentPageName }) {
       )}
 
       {!hideNavigation && (
-        <nav className="fixed bottom-0 left-0 right-0 bg-slate-950/95 backdrop-blur-xl border-t border-slate-800/50 z-50 md:hidden">
+        <nav className="fixed bottom-0 left-0 right-0 bg-slate-950 backdrop-blur-xl border-t border-slate-800/50 z-50 md:hidden" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
           <div className="max-w-7xl mx-auto">
             <div className="grid grid-cols-4 gap-1 p-2">
               {mobileNavigationItems.map((item) => {
