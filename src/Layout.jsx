@@ -203,7 +203,7 @@ export default function Layout({ children, currentPageName }) {
   const logoUrl = user?.app_logo_url || "https://base44.app/api/apps/6904da724b4ce40db58404e7/files/public/6904da724b4ce40db58404e7/901d97ae0_Untitleddesign3.png";
 
   return (
-    <div className={`min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 ${!hideNavigation ? 'pb-24 md:pb-0' : ''}`}>
+    <div className={`min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 ${!hideNavigation ? 'pb-32 md:pb-0' : ''}`}>
       <PWAManager />
       {user && <NotificationChecker user={user} />}
       {user && <SupportNotificationChecker user={user} />}
