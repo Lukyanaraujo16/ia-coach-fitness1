@@ -1,12 +1,13 @@
-
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Edit2, Trash2, Lock } from "lucide-react";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Plus, Edit2, Trash2, Lock, ChefHat, Utensils, Clock, Flame } from "lucide-react";
 import NutritionPlanFormModal from "./NutritionPlanFormModal";
+import RecipeFormModal from "./RecipeFormModal";
 
 const goalIcons = {
   lose_weight: "🔥",
@@ -22,10 +23,28 @@ const goalLabels = {
   performance: "Performance",
 };
 
+const CATEGORY_LABELS = {
+  breakfast: "Café da Manhã",
+  lunch: "Almoço",
+  dinner: "Jantar",
+  snack: "Lanche",
+  post_workout: "Pós-Treino",
+  dessert: "Sobremesa",
+  drink: "Bebida",
+};
+
 export default function AdminNutrition({ plans = [] }) {
+  const [activeTab, setActiveTab] = useState("plans");
   const [showModal, setShowModal] = useState(false);
+  const [showRecipeModal, setShowRecipeModal] = useState(false);
   const [editingPlan, setEditingPlan] = useState(null);
+  const [editingRecipe, setEditingRecipe] = useState(null);
   const queryClient = useQueryClient();
+
+  const { data: recipes = [] } = useQuery({
+    queryKey: ['recipes'],
+    queryFn: () => base44.entities.Recipe.list('-created_date'),
+  });
 
   const deletePlanMutation = useMutation({
     mutationFn: (planId) => base44.entities.NutritionPlan.delete(planId),
@@ -34,9 +53,21 @@ export default function AdminNutrition({ plans = [] }) {
     },
   });
 
+  const deleteRecipeMutation = useMutation({
+    mutationFn: (recipeId) => base44.entities.Recipe.delete(recipeId),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['recipes']);
+    },
+  });
+
   const handleEdit = (plan) => {
     setEditingPlan(plan);
     setShowModal(true);
+  };
+
+  const handleEditRecipe = (recipe) => {
+    setEditingRecipe(recipe);
+    setShowRecipeModal(true);
   };
 
   const handleDelete = (planId) => {
@@ -45,24 +76,45 @@ export default function AdminNutrition({ plans = [] }) {
     }
   };
 
+  const handleDeleteRecipe = (recipeId) => {
+    if (confirm('Tem certeza que deseja excluir esta receita?')) {
+      deleteRecipeMutation.mutate(recipeId);
+    }
+  };
+
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h3 className="text-xl font-bold text-white">Planos Alimentares</h3>
-          <p className="text-slate-400 text-sm">Crie e gerencie dietas personalizadas</p>
-        </div>
-        <Button
-          onClick={() => {
-            setEditingPlan(null);
-            setShowModal(true);
-          }}
-          className="bg-green-600 hover:bg-green-700"
-        >
-          <Plus className="w-4 h-4 mr-2" />
-          Novo Plano
-        </Button>
-      </div>
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <TabsList className="bg-slate-900/50 border border-slate-800">
+          <TabsTrigger value="plans" className="data-[state=active]:bg-green-600">
+            <Utensils className="w-4 h-4 mr-2" />
+            Planos Alimentares
+          </TabsTrigger>
+          <TabsTrigger value="recipes" className="data-[state=active]:bg-green-600">
+            <ChefHat className="w-4 h-4 mr-2" />
+            Receitas ({recipes.length})
+          </TabsTrigger>
+        </TabsList>
+      </Tabs>
+
+      {activeTab === "plans" && (
+        <>
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-xl font-bold text-white">Planos Alimentares</h3>
+              <p className="text-slate-400 text-sm">Crie e gerencie dietas personalizadas</p>
+            </div>
+            <Button
+              onClick={() => {
+                setEditingPlan(null);
+                setShowModal(true);
+              }}
+              className="bg-green-600 hover:bg-green-700"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Novo Plano
+            </Button>
+          </div>
 
       {plans.length === 0 ? (
         <Card className="bg-slate-900/50 border-slate-800">
@@ -173,6 +225,111 @@ export default function AdminNutrition({ plans = [] }) {
             setEditingPlan(null);
           }}
         />
+      )}
+        </>
+      )}
+
+      {activeTab === "recipes" && (
+        <>
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-xl font-bold text-white">Receitas</h3>
+              <p className="text-slate-400 text-sm">Cadastre receitas saudáveis para os usuários</p>
+            </div>
+            <Button
+              onClick={() => {
+                setEditingRecipe(null);
+                setShowRecipeModal(true);
+              }}
+              className="bg-green-600 hover:bg-green-700"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Nova Receita
+            </Button>
+          </div>
+
+          {recipes.length === 0 ? (
+            <Card className="bg-slate-900/50 border-slate-800">
+              <CardContent className="p-12 text-center">
+                <ChefHat className="w-12 h-12 text-slate-600 mx-auto mb-4" />
+                <p className="text-slate-400 mb-4">Nenhuma receita cadastrada ainda</p>
+                <Button
+                  onClick={() => setShowRecipeModal(true)}
+                  className="bg-green-600 hover:bg-green-700"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Criar Primeira Receita
+                </Button>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {recipes.map((recipe) => (
+                <Card key={recipe.id} className="bg-slate-900/50 border-slate-800">
+                  <CardContent className="p-4">
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="flex-1">
+                        <h4 className="text-white font-semibold">{recipe.name}</h4>
+                        <div className="flex flex-wrap gap-1 mt-1">
+                          <Badge className="bg-slate-700 text-slate-300 text-xs">
+                            {CATEGORY_LABELS[recipe.category] || recipe.category}
+                          </Badge>
+                          {recipe.is_featured && (
+                            <Badge className="bg-yellow-600 text-xs">Destaque</Badge>
+                          )}
+                          {recipe.is_premium && (
+                            <Badge className="bg-purple-600 text-xs">Premium</Badge>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex gap-1">
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          onClick={() => handleEditRecipe(recipe)}
+                          className="h-8 w-8 bg-blue-900/20 text-blue-400 hover:bg-blue-900/40"
+                        >
+                          <Edit2 className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          onClick={() => handleDeleteRecipe(recipe.id)}
+                          className="h-8 w-8 bg-red-900/20 text-red-400 hover:bg-red-900/40"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </div>
+
+                    <p className="text-slate-400 text-sm line-clamp-2 mb-3">{recipe.description}</p>
+
+                    <div className="flex items-center gap-4 text-xs text-slate-400">
+                      <span className="flex items-center gap-1">
+                        <Clock className="w-3 h-3" />
+                        {(recipe.prep_time_minutes || 0) + (recipe.cook_time_minutes || 0)} min
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <Flame className="w-3 h-3 text-orange-400" />
+                        {recipe.nutrition_per_serving?.calories || 0} kcal
+                      </span>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+
+          {showRecipeModal && (
+            <RecipeFormModal
+              recipe={editingRecipe}
+              onClose={() => {
+                setShowRecipeModal(false);
+                setEditingRecipe(null);
+              }}
+            />
+          )}
+        </>
       )}
     </div>
   );
