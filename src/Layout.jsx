@@ -10,6 +10,7 @@ import NotificationChecker from "./components/NotificationChecker";
 import NotificationPermissionModal from "./components/pwa/NotificationPermissionModal";
 import SupportNotificationChecker from "./components/SupportNotificationChecker";
 import NotificationCenter from "./components/NotificationCenter";
+import GlobalAICoach from "./components/GlobalAICoach";
 
 export default function Layout({ children, currentPageName }) {
   const location = useLocation();
@@ -209,6 +210,9 @@ export default function Layout({ children, currentPageName }) {
       {showNotificationModal && (
         <NotificationPermissionModal onClose={() => setShowNotificationModal(false)} />
       )}
+
+      {/* Global AI Coach - disponível em todas as páginas */}
+      {user && !hideNavigation && <GlobalAICoach user={user} />}
 
       <style>{`
         :root {
