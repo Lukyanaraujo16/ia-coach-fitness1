@@ -6,13 +6,18 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Camera, TrendingUp, TrendingDown, Minus, ChevronRight, Calendar, ArrowRight } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 
 export default function ProgressPhotoTimeline({ analyses = [] }) {
+  const navigate = useNavigate();
   const [selectedComparison, setSelectedComparison] = useState(null);
   const [compareMode, setCompareMode] = useState(false);
   const [selectedForCompare, setSelectedForCompare] = useState([]);
+
+  const handleOpenAnalysis = (analysisId) => {
+    navigate(createPageUrl("BodyAnalysis") + `?analysisId=${analysisId}`);
+  };
 
   const getScoreColor = (score) => {
     if (score >= 80) return "text-green-400";
@@ -121,10 +126,10 @@ export default function ProgressPhotoTimeline({ analyses = [] }) {
           return (
             <Card 
               key={analysis.id} 
-              className={`bg-slate-900/50 border-slate-800 overflow-hidden transition-all ${
-                compareMode ? 'cursor-pointer hover:border-purple-600' : ''
+              className={`bg-slate-900/50 border-slate-800 overflow-hidden transition-all cursor-pointer hover:border-purple-600/50 ${
+                compareMode ? 'hover:border-purple-600' : ''
               } ${isSelected ? 'border-purple-500 bg-purple-900/20' : ''}`}
-              onClick={() => compareMode && handleCompareSelect(analysis)}
+              onClick={() => compareMode ? handleCompareSelect(analysis) : handleOpenAnalysis(analysis.id)}
             >
               <CardContent className="p-4">
                 {/* Mobile: Stack vertically */}
@@ -142,9 +147,7 @@ export default function ProgressPhotoTimeline({ analyses = [] }) {
                         {analysis.overall_score}/100
                       </div>
                       {!compareMode && (
-                        <Link to={createPageUrl("BodyAnalysis")}>
-                          <ChevronRight className="w-5 h-5 text-slate-500" />
-                        </Link>
+                        <ChevronRight className="w-5 h-5 text-slate-500" />
                       )}
                     </div>
                   </div>

@@ -21,12 +21,20 @@ export default function BodyAnalysis() {
   const [user, setUser] = useState(null);
   const [activeTab, setActiveTab] = useState("new");
   const [selectedAnalysis, setSelectedAnalysis] = useState(null);
+  const [pendingAnalysisId, setPendingAnalysisId] = useState(null);
 
   useEffect(() => {
     const loadUser = async () => {
       try {
         const currentUser = await base44.auth.me();
         setUser(currentUser);
+        
+        // Check if there's an analysisId in the URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const analysisId = urlParams.get('analysisId');
+        if (analysisId) {
+          setPendingAnalysisId(analysisId);
+        }
       } catch (error) {
         base44.auth.redirectToLogin();
       }
@@ -46,6 +54,20 @@ export default function BodyAnalysis() {
 
   const latestAnalysis = analyses[0];
   const previousAnalysis = analyses[1];
+
+  // Handle pending analysis from URL
+  useEffect(() => {
+    if (pendingAnalysisId && analyses.length > 0) {
+      const targetAnalysis = analyses.find(a => a.id === pendingAnalysisId);
+      if (targetAnalysis) {
+        setSelectedAnalysis(targetAnalysis);
+        setActiveTab("result");
+        setPendingAnalysisId(null);
+        // Clean URL
+        window.history.replaceState({}, '', window.location.pathname);
+      }
+    }
+  }, [pendingAnalysisId, analyses]);
 
   const handleNewAnalysisSuccess = (newAnalysis) => {
     refetch();
