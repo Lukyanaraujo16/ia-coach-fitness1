@@ -127,11 +127,32 @@ export default function ProgressPhotoTimeline({ analyses = [] }) {
               onClick={() => compareMode && handleCompareSelect(analysis)}
             >
               <CardContent className="p-4">
-                <div className="flex gap-4">
-                  {/* Photos */}
-                  <div className="flex gap-2 flex-shrink-0">
+                {/* Mobile: Stack vertically */}
+                <div className="flex flex-col gap-4">
+                  {/* Header with date and score */}
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Calendar className="w-4 h-4 text-slate-400" />
+                      <span className="text-white font-medium text-sm">
+                        {format(parseISO(analysis.date), "dd/MM/yyyy", { locale: ptBR })}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className={`text-lg font-bold ${getScoreColor(analysis.overall_score)}`}>
+                        {analysis.overall_score}/100
+                      </div>
+                      {!compareMode && (
+                        <Link to={createPageUrl("BodyAnalysis")}>
+                          <ChevronRight className="w-5 h-5 text-slate-500" />
+                        </Link>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Photos - horizontal scroll on mobile */}
+                  <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
                     {analysis.photos?.slice(0, 3).map((photo, photoIdx) => (
-                      <div key={photoIdx} className="w-20 h-28 rounded-lg overflow-hidden bg-slate-800">
+                      <div key={photoIdx} className="w-20 h-28 flex-shrink-0 rounded-lg overflow-hidden bg-slate-800">
                         <img 
                           src={photo} 
                           alt={`Foto ${photoIdx + 1}`} 
@@ -141,56 +162,36 @@ export default function ProgressPhotoTimeline({ analyses = [] }) {
                     ))}
                   </div>
 
-                  {/* Info */}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="flex items-center gap-2">
-                        <Calendar className="w-4 h-4 text-slate-400" />
-                        <span className="text-white font-medium">
-                          {format(parseISO(analysis.date), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
-                        </span>
+                  {/* Stats */}
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="bg-slate-800/50 rounded-lg p-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-slate-400 text-xs">Gordura</span>
+                        {fatChange && (
+                          <span className={`text-xs flex items-center gap-1 ${fatChange.color}`}>
+                            <fatChange.icon className="w-3 h-3" />
+                            {fatChange.text}
+                          </span>
+                        )}
                       </div>
-                      <div className={`text-xl font-bold ${getScoreColor(analysis.overall_score)}`}>
-                        {analysis.overall_score}/100
-                      </div>
+                      <p className="text-orange-400 font-bold">{analysis.estimated_body_fat}%</p>
                     </div>
-
-                    <div className="grid grid-cols-2 gap-3 mt-3">
-                      <div className="bg-slate-800/50 rounded-lg p-2">
-                        <div className="flex items-center justify-between">
-                          <span className="text-slate-400 text-xs">Gordura</span>
-                          {fatChange && (
-                            <span className={`text-xs flex items-center gap-1 ${fatChange.color}`}>
-                              <fatChange.icon className="w-3 h-3" />
-                              {fatChange.text}
-                            </span>
-                          )}
-                        </div>
-                        <p className="text-orange-400 font-bold">{analysis.estimated_body_fat}%</p>
+                    <div className="bg-slate-800/50 rounded-lg p-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-slate-400 text-xs">Músculo</span>
+                        {muscleChange && (
+                          <span className={`text-xs flex items-center gap-1 ${muscleChange.color}`}>
+                            <muscleChange.icon className="w-3 h-3" />
+                            {muscleChange.text}
+                          </span>
+                        )}
                       </div>
-                      <div className="bg-slate-800/50 rounded-lg p-2">
-                        <div className="flex items-center justify-between">
-                          <span className="text-slate-400 text-xs">Músculo</span>
-                          {muscleChange && (
-                            <span className={`text-xs flex items-center gap-1 ${muscleChange.color}`}>
-                              <muscleChange.icon className="w-3 h-3" />
-                              {muscleChange.text}
-                            </span>
-                          )}
-                        </div>
-                        <p className="text-blue-400 font-bold">{analysis.estimated_muscle_mass}%</p>
-                      </div>
+                      <p className="text-blue-400 font-bold">{analysis.estimated_muscle_mass}%</p>
                     </div>
-
-                    {analysis.body_type && (
-                      <Badge className="mt-2 bg-slate-700 text-slate-300">{analysis.body_type}</Badge>
-                    )}
                   </div>
 
-                  {!compareMode && (
-                    <Link to={createPageUrl("BodyAnalysis")} className="flex items-center">
-                      <ChevronRight className="w-5 h-5 text-slate-500" />
-                    </Link>
+                  {analysis.body_type && (
+                    <Badge className="w-fit bg-slate-700 text-slate-300">{analysis.body_type}</Badge>
                   )}
                 </div>
               </CardContent>
