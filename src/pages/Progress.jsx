@@ -7,7 +7,7 @@ import { Plus } from "lucide-react";
 import WeightChart from "../components/progress/WeightChart";
 import ProgressForm from "../components/progress/ProgressForm";
 import WorkoutHistory from "../components/progress/WorkoutHistory";
-import ProgressPhotos from "../components/progress/ProgressPhotos";
+import ProgressPhotoTimeline from "../components/progress/ProgressPhotoTimeline";
 import ExerciseWeightProgress from "../components/progress/ExerciseWeightProgress";
 
 export default function Progress() {
