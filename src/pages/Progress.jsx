@@ -48,6 +48,16 @@ export default function Progress() {
     enabled: !!user?.email,
   });
 
+  const { data: bodyAnalyses = [] } = useQuery({
+    queryKey: ['body-analyses', user?.email],
+    queryFn: async () => {
+      if (!user?.email) return [];
+      const allAnalyses = await base44.entities.BodyAnalysis.list('-date');
+      return allAnalyses.filter(a => a.created_by === user.email);
+    },
+    enabled: !!user?.email,
+  });
+
   const createProgressMutation = useMutation({
     mutationFn: (data) => base44.entities.ProgressEntry.create(data),
     onSuccess: () => {
