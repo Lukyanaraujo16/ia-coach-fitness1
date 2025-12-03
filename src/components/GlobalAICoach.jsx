@@ -120,13 +120,26 @@ export default function GlobalAICoach({ user }) {
     }
   }, [user, userProfile, workoutLogs]);
 
+  const isAlertSnoozed = (alertType) => {
+    const snoozedUntil = localStorage.getItem(`ai_alert_snoozed_${alertType}`);
+    if (!snoozedUntil) return false;
+    return new Date() < new Date(snoozedUntil);
+  };
+
+  const snoozeAlert = (alertType) => {
+    // Snooze for 3 days
+    const snoozeUntil = new Date();
+    snoozeUntil.setDate(snoozeUntil.getDate() + 3);
+    localStorage.setItem(`ai_alert_snoozed_${alertType}`, snoozeUntil.toISOString());
+  };
+
   const checkProactiveAlerts = async () => {
     const alerts = [];
     const today = new Date();
 
     // Check workout frequency - need to update workout after 30 days
     const completedWorkouts = workoutLogs.filter(log => log.status !== 'cancelled');
-    if (completedWorkouts.length >= 30) {
+    if (completedWorkouts.length >= 30 && !isAlertSnoozed('workout_update')) {
       const firstWorkout = completedWorkouts[completedWorkouts.length - 1];
       if (firstWorkout?.date) {
         const daysSinceStart = differenceInDays(today, parseISO(firstWorkout.date));
@@ -145,32 +158,34 @@ export default function GlobalAICoach({ user }) {
 
     // Check last weight/measurement update
     const lastProgress = progressEntries[0];
-    if (lastProgress?.date) {
-      const daysSinceProgress = differenceInDays(today, parseISO(lastProgress.date));
-      if (daysSinceProgress >= 14) {
+    if (!isAlertSnoozed('progress_update')) {
+      if (lastProgress?.date) {
+        const daysSinceProgress = differenceInDays(today, parseISO(lastProgress.date));
+        if (daysSinceProgress >= 14) {
+          alerts.push({
+            type: 'progress_update',
+            icon: Scale,
+            color: 'text-green-400',
+            title: 'Atualize suas medidas!',
+            message: `Faz ${daysSinceProgress} dias desde sua última atualização de peso/medidas. Registre seu progresso!`,
+            action: 'update_progress'
+          });
+        }
+      } else if (progressEntries.length === 0) {
         alerts.push({
-          type: 'progress_update',
+          type: 'first_progress',
           icon: Scale,
           color: 'text-green-400',
-          title: 'Atualize suas medidas!',
-          message: `Faz ${daysSinceProgress} dias desde sua última atualização de peso/medidas. Registre seu progresso!`,
+          title: 'Registre seu progresso!',
+          message: 'Você ainda não registrou seu peso e medidas. Isso ajuda a acompanhar sua evolução!',
           action: 'update_progress'
         });
       }
-    } else if (progressEntries.length === 0) {
-      alerts.push({
-        type: 'first_progress',
-        icon: Scale,
-        color: 'text-green-400',
-        title: 'Registre seu progresso!',
-        message: 'Você ainda não registrou seu peso e medidas. Isso ajuda a acompanhar sua evolução!',
-        action: 'update_progress'
-      });
     }
 
     // Check body analysis
     const lastAnalysis = bodyAnalyses[0];
-    if (lastAnalysis?.date) {
+    if (lastAnalysis?.date && !isAlertSnoozed('body_analysis')) {
       const daysSinceAnalysis = differenceInDays(today, parseISO(lastAnalysis.date));
       if (daysSinceAnalysis >= 30) {
         alerts.push({
@@ -186,7 +201,7 @@ export default function GlobalAICoach({ user }) {
 
     // Check nutrition - no meals logged today
     const todayMeals = mealLogs.filter(log => log.date === format(today, 'yyyy-MM-dd'));
-    if (todayMeals.length === 0 && today.getHours() >= 12) {
+    if (todayMeals.length === 0 && today.getHours() >= 12 && !isAlertSnoozed('nutrition')) {
       alerts.push({
         type: 'nutrition',
         icon: Apple,
