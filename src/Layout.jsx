@@ -330,7 +330,21 @@ export default function Layout({ children, currentPageName }) {
       )}
 
       {!hideNavigation && (
-        <nav className="fixed bottom-0 left-0 right-0 bg-slate-950 border-t border-slate-800/50 z-[60] md:hidden" style={{ paddingBottom: 'env(safe-area-inset-bottom)', position: 'fixed' }}>
+        <nav 
+          className="md:hidden"
+          style={{ 
+            position: 'fixed',
+            bottom: 0,
+            left: 0,
+            right: 0,
+            backgroundColor: '#020617',
+            borderTop: '1px solid rgba(30, 41, 59, 0.5)',
+            zIndex: 9999,
+            paddingBottom: 'env(safe-area-inset-bottom)',
+            transform: 'translateZ(0)',
+            WebkitTransform: 'translateZ(0)',
+          }}
+        >
           <div className="max-w-7xl mx-auto">
             <div className="grid grid-cols-4 gap-1 p-2">
               {mobileNavigationItems.map((item) => {
