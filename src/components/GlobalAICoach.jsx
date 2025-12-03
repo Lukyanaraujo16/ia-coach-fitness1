@@ -439,7 +439,10 @@ ${conversationHistory}
                       <Button
                         size="sm"
                         variant="ghost"
-                        onClick={() => setShowProactiveAlert(false)}
+                        onClick={() => {
+                          snoozeAlert(proactiveAlert.type);
+                          setShowProactiveAlert(false);
+                        }}
                         className="text-slate-400 hover:text-white text-xs h-7"
                       >
                         Depois
