@@ -115,6 +115,7 @@ export default function NotificationCenter({ user }) {
   const totalUnread = unreadNotifications.length + unreadSupportCount;
 
   // Combinar notificações e tickets de suporte
+  // Mostrar TODAS as notificações (lidas e não lidas) enquanto não expirarem
   const allItems = [
     ...supportTickets.map(t => ({
       id: `support_${t.id}`,
@@ -138,7 +139,7 @@ export default function NotificationCenter({ user }) {
       isAdmin: true,
       userName: t.user_name,
     })),
-    ...unreadNotifications.map(n => ({
+    ...notifications.map(n => ({
       ...n,
       id: n.id,
     })),
