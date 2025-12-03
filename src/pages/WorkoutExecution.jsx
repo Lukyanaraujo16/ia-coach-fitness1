@@ -544,7 +544,7 @@ export default function WorkoutExecution() {
   const restTimeFormatted = currentSet?.rest_seconds ? formatTime(currentSet.rest_seconds) : "1min";
 
   return (
-    <div className="fixed inset-0 flex flex-col bg-gradient-to-b from-slate-950 to-slate-900 z-[60]">
+    <div className="fixed inset-0 flex flex-col bg-gradient-to-b from-slate-950 to-slate-900 z-[10000]">
       {/* AI Coach Assistant */}
       {currentExercise && (
         <AICoachAssistant 
