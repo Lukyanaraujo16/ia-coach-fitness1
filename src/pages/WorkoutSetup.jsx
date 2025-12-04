@@ -185,127 +185,33 @@ export default function WorkoutSetup() {
 
       const userObservations = user.workout_observations || "";
 
-      const prompt = `Você é um personal trainer experiente criando um programa de treino COMPLETO usando metodologia avançada de periodização.
+      const prompt = `Crie treino para: ${user.nome_completo}, ${userGender === 'male' ? 'Homem' : 'Mulher'}, ${levelLabels[userLevel]}, ${locationLabels[user.training_location]}, ${daysOfWeek}x/semana.
+      ${userObservations ? `Observações: ${userObservations}` : ''}
 
-  PERFIL DO ALUNO:
-  - Nome: ${user.nome_completo}
-  - Gênero: ${userGender === 'male' ? 'Masculino' : userGender === 'female' ? 'Feminino' : 'Outro'}
-  - Objetivo: ${goalLabels[user.fitness_goal]}
-  - Nível: ${levelLabels[userLevel]}
-  - Local: ${locationLabels[user.training_location]}
-  - Meta semanal: ${daysOfWeek} treinos/semana
-  - Peso atual: ${user.current_weight}kg
-  - Meta de peso: ${user.weight_goal}kg
-  ${userObservations ? `\n⚠️ OBSERVAÇÕES IMPORTANTES DO ALUNO:\n${userObservations}\n\nVocê DEVE respeitar estas observações! Se o aluno tem lesão, NÃO inclua exercícios que afetem essa região.` : ''}
+      GERE EXATAMENTE ${daysOfWeek} DIAS:
+      ${divisionList.map((day, i) => `Dia ${i + 1}: ${day.replace(`Dia ${i + 1}: `, '')}`).join('\n')}
 
-  ═══════════════════════════════════════════════════════════════
-  🏋️ METODOLOGIA DE TREINO - REGRAS OBRIGATÓRIAS
-  ═══════════════════════════════════════════════════════════════
+      REGRAS DE SÉRIES (NÍVEL ${userLevel.toUpperCase()}):
+      ${userLevel === 'beginner' ? '- Use apenas: feeder, working, back_off. PROIBIDO: drop, cluster, muscle_round, top_set' : 
+      userLevel === 'intermediate' ? '- Use: feeder, working, back_off, drop_set (1x). Pode usar cluster OU muscle_round (1x). PROIBIDO: top_set' :
+      '- Pode usar todas: feeder, working, back_off, cluster, muscle_round, drop_set, top_set'}
 
-  📌 DEFINIÇÕES DAS TÉCNICAS:
+      ESTRUTURA POR EXERCÍCIO:
+      - 1º exercício do dia: 3 feeders + working + back_off
+      - Demais: 2 feeders + working + back_off
 
-  1. FEEDER SET (Série de Reconhecimento) - OBRIGATÓRIA EM TODO EXERCÍCIO
-  - Séries preparatórias, LONGE da falha
-  - Primeiro exercício do dia: 3 feeder sets
-  - Demais exercícios: 2 feeder sets
-  - Reps: Feeder 1 = 8-10 reps, Feeder 2 = 5-7 reps, Feeder 3 = 3-5 reps
-  - Descanso: 60-90 segundos
-  - set_type: "feeder"
-  - notes: "Série de reconhecimento - avalie se pode progredir carga hoje"
+      CADA SÉRIE PRECISA TER: times, reps, rest_seconds, set_type, notes
 
-  2. WORKING SET (Série de Trabalho)
-  - 4 a 9 repetições
-  - Deixe 1-2 reps na reserva
-  - set_type: "working"
-  - notes: "Série principal - tente progredir carga semanalmente"
+      set_type válidos: "feeder", "working", "back_off", "cluster", "muscle_round", "top_set", "drop_set"
 
-  3. BACK OFF SET
-  - 20% menos carga que working set
-  - 10-15 repetições
-  - set_type: "back_off"
-  - notes: "Back off: reduza 20% da carga do working set"
+      Feeder: 1x 8-9 reps, descanso 90s
+      Working: 1x 6-8 reps, descanso 180s  
+      Back_off: 2x 12-15 reps, descanso 180s
 
-  4. CLUSTER SET
-  - Mesma carga do working set
-  - 12-15 reps totais em blocos de 3 reps com 10s descanso
-  - set_type: "cluster"
-  - notes: "Cluster: 3 reps, 10s descanso, repita até 12-15 total"
-
-  5. MUSCLE ROUND
-  - 24 reps totais: 6 blocos de 4 reps com 10s descanso
-  - set_type: "muscle_round"
-  - notes: "Muscle Round: 4 reps, 10s descanso, 6 blocos = 24 total"
-
-  6. TOP SET
-  - ~80% do 1RM, 2-4 reps (APENAS AVANÇADO)
-  - set_type: "top_set"
-  - notes: "Top Set: carga alta, só faça se estiver bem descansado"
-
-  7. DROP SET
-  - Falha, reduz carga, falha, repete 2-3x
-  - set_type: "drop_set"
-  - notes: "Drop Set: vá até a falha, reduza carga e repita"
-
-  📌 REGRAS PARA NÍVEL ${userLevel.toUpperCase()}:
-  ${levelTechniques.description}
-  - Técnicas permitidas: ${levelTechniques.allowed.join(", ")}
-  ${levelTechniques.forbidden.length > 0 ? `- PROIBIDO: ${levelTechniques.forbidden.join(", ")}` : ''}
-
-  📌 DESCANSO:
-  - Feeder sets: 60-90 segundos
-  - Músculo pequeno (bíceps, tríceps, ombros, core): 120-180 segundos
-  - Músculo grande (peito, costas, pernas): 180-300 segundos
-
-  📌 ESTRUTURA OBRIGATÓRIA DE CADA EXERCÍCIO:
-  - PRIMEIRO exercício do dia: 3 Feeder Sets + Working Sets + outras técnicas
-  - DEMAIS exercícios: 2 Feeder Sets + Working Sets + outras técnicas
-  - Escolha no máximo 3 técnicas diferentes (além de feeder e working) para o treino INTEIRO
-  - Use as MESMAS técnicas em todos os dias para o aluno aprender
-
-  📌 PROGRESSÃO DE CARGA:
-  - TODA série de trabalho deve ter orientação de progressão no campo notes
-  - Ex: "Tente aumentar 1-2kg esta semana" ou "Mantenha carga e melhore execução"
-
-  ═══════════════════════════════════════════════════════════════
-
-  ⚠️ REGRA CRÍTICA: Crie EXATAMENTE ${daysOfWeek} dias de treino.
-
-  DISTRIBUIÇÃO (para ${userGender === 'female' ? 'MULHERES' : 'HOMENS'}):
-  ${divisionList.map((day, i) => `${day} (day_number: ${i + 1})`).join('\n')}
-
-  EXEMPLO DE ESTRUTURA DE UM EXERCÍCIO (primeiro do dia):
-  {
-  "exercise_name": "Supino Reto",
-  "exercise_category": "chest",
-  "sets": [
-  {"times": 1, "reps": "9", "rest_seconds": 90, "set_type": "feeder", "notes": "Feeder 1 - carga leve, avalie o dia"},
-  {"times": 1, "reps": "6", "rest_seconds": 90, "set_type": "feeder", "notes": "Feeder 2 - aumente carga progressivamente"},
-  {"times": 1, "reps": "4", "rest_seconds": 90, "set_type": "feeder", "notes": "Feeder 3 - próximo da carga de trabalho"},
-  {"times": 1, "reps": "6-8", "rest_seconds": 180, "set_type": "working", "notes": "Working Set - tente progredir 1-2kg"},
-  {"times": 2, "reps": "12-15", "rest_seconds": 180, "set_type": "back_off", "notes": "Back Off - reduza 20% da carga"}
-  ]
-  }
-
-  EXEMPLO DE EXERCÍCIO (demais exercícios do dia):
-  {
-  "exercise_name": "Crucifixo",
-  "exercise_category": "chest",
-  "sets": [
-  {"times": 1, "reps": "9", "rest_seconds": 90, "set_type": "feeder", "notes": "Feeder 1 - reconhecimento de carga"},
-  {"times": 1, "reps": "5", "rest_seconds": 90, "set_type": "feeder", "notes": "Feeder 2 - prepare para working set"},
-  {"times": 1, "reps": "6-8", "rest_seconds": 180, "set_type": "working", "notes": "Working Set - progrida carga se possível"},
-  {"times": 2, "reps": "12-15", "rest_seconds": 180, "set_type": "back_off", "notes": "Back Off - 20% menos carga"}
-  ]
-  }
-
-  IMPORTANTE:
-  - Cada dia deve ter 5-7 exercícios
-  - set_type é OBRIGATÓRIO em cada série
-  - notes é OBRIGATÓRIO em cada série com orientação clara
-  - ${daysOfWeek} dias, numerados de 1 a ${daysOfWeek}, SEM EXCEÇÃO!`;
+      Cada dia: 5-6 exercícios. Total: ${daysOfWeek} dias.`;
 
       const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Timeout: geração demorou mais de 2 minutos')), 120000)
+        setTimeout(() => reject(new Error('Timeout: geração demorou mais de 3 minutos')), 180000)
       );
 
       const generatePromise = base44.integrations.Core.InvokeLLM({
@@ -349,8 +255,8 @@ export default function WorkoutSetup() {
                   },
                   exercises: {
                     type: "array",
-                    minItems: 5,
-                    maxItems: 7,
+                    minItems: 4,
+                    maxItems: 6,
                     items: {
                       type: "object",
                       properties: {
@@ -433,8 +339,8 @@ export default function WorkoutSetup() {
       // Validar que cada dia tem exercícios suficientes
       for (let i = 0; i < response.days.length; i++) {
         const day = response.days[i];
-        if (!day.exercises || day.exercises.length < 6) {
-          throw new Error(`Dia ${i + 1} incompleto: tem apenas ${day.exercises?.length || 0} exercícios (mínimo 6)`);
+        if (!day.exercises || day.exercises.length < 4) {
+          throw new Error(`Dia ${i + 1} incompleto: tem apenas ${day.exercises?.length || 0} exercícios (mínimo 4)`);
         }
         if (day.day_number !== i + 1) {
           day.day_number = i + 1; // Corrigir numeração se necessário
