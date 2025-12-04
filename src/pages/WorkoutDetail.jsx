@@ -190,35 +190,64 @@ export default function WorkoutDetail() {
                   </div>
 
                   {isLocked ? (
-                    <div className="flex items-center justify-center py-8">
-                      <Lock className="w-6 h-6 text-slate-600" />
-                    </div>
-                  ) : (
-                    <div className="space-y-2">
-                      {day.exercises?.map((exercise, exIndex) => (
-                        <div key={exIndex} className="bg-slate-800/50 p-3 rounded-lg">
-                          <div className="flex items-start gap-3">
-                            <div className="w-6 h-6 bg-blue-600/20 rounded flex items-center justify-center flex-shrink-0 mt-0.5">
-                              <span className="text-blue-400 text-xs font-bold">{exIndex + 1}</span>
-                            </div>
-                            <div className="flex-1">
-                              <p className="text-white font-medium mb-1">{exercise.exercise_name}</p>
-                              <div className="flex flex-wrap gap-2 text-xs text-slate-400">
-                                {exercise.sets?.map((set, setIndex) => (
-                                  <span key={setIndex} className="bg-slate-700/50 px-2 py-1 rounded">
-                                    {set.times || 1}x {set.reps} ({set.rest_seconds}s)
-                                  </span>
-                                ))}
+                      <div className="flex items-center justify-center py-8">
+                        <Lock className="w-6 h-6 text-slate-600" />
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+                        {day.exercises?.map((exercise, exIndex) => {
+                          const setTypeLabels = {
+                            feeder: "🎯 Feeder",
+                            working: "💪 Working",
+                            back_off: "⬇️ Back Off",
+                            cluster: "🔗 Cluster",
+                            muscle_round: "🔄 M.Round",
+                            top_set: "🏆 Top",
+                            drop_set: "🔥 Drop"
+                          };
+                          const setTypeColors = {
+                            feeder: "bg-yellow-900/50 text-yellow-300 border-yellow-700/50",
+                            working: "bg-blue-900/50 text-blue-300 border-blue-700/50",
+                            back_off: "bg-green-900/50 text-green-300 border-green-700/50",
+                            cluster: "bg-purple-900/50 text-purple-300 border-purple-700/50",
+                            muscle_round: "bg-pink-900/50 text-pink-300 border-pink-700/50",
+                            top_set: "bg-red-900/50 text-red-300 border-red-700/50",
+                            drop_set: "bg-orange-900/50 text-orange-300 border-orange-700/50"
+                          };
+
+                          return (
+                            <div key={exIndex} className="bg-slate-800/50 p-3 rounded-lg">
+                              <div className="flex items-start gap-3">
+                                <div className="w-6 h-6 bg-blue-600/20 rounded flex items-center justify-center flex-shrink-0 mt-0.5">
+                                  <span className="text-blue-400 text-xs font-bold">{exIndex + 1}</span>
+                                </div>
+                                <div className="flex-1">
+                                  <p className="text-white font-medium mb-1">{exercise.exercise_name}</p>
+                                  <div className="flex flex-wrap gap-1.5 text-xs">
+                                    {exercise.sets?.map((set, setIndex) => (
+                                      <span 
+                                        key={setIndex} 
+                                        className={`px-2 py-1 rounded border ${
+                                          set.set_type 
+                                            ? setTypeColors[set.set_type] || "bg-slate-700/50 text-slate-300"
+                                            : "bg-slate-700/50 text-slate-300"
+                                        }`}
+                                      >
+                                        {set.set_type && setTypeLabels[set.set_type] ? `${setTypeLabels[set.set_type]} ` : ''}
+                                        {set.times || 1}x{set.reps}
+                                      </span>
+                                    ))}
+                                  </div>
+                                  {exercise.notes && (
+                                    <p className="text-slate-500 text-xs mt-2">💡 {exercise.notes}</p>
+                                  )}
+                                </div>
                               </div>
-                              {exercise.notes && (
-                                <p className="text-slate-500 text-xs mt-2">💡 {exercise.notes}</p>
-                              )}
                             </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
+                          );
+                        })}
+                      </div>
+                    )}
                 </CardContent>
               </Card>
             </motion.div>

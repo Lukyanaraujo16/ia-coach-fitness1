@@ -749,6 +749,25 @@ Retorne APENAS o novo exercício no formato JSON.`;
               <CardHeader>
                 <CardTitle className="text-white text-2xl">{generatedWorkout.title}</CardTitle>
                 <p className="text-slate-400">{generatedWorkout.description}</p>
+                {generatedWorkout.techniques_used?.length > 0 && (
+                  <div className="flex flex-wrap gap-2 mt-3">
+                    <span className="text-slate-500 text-sm">Técnicas:</span>
+                    {generatedWorkout.techniques_used.map((tech, i) => {
+                      const techLabels = {
+                        back_off_set: "Back Off",
+                        drop_set: "Drop Set",
+                        cluster_set: "Cluster",
+                        muscle_round: "Muscle Round",
+                        top_set: "Top Set"
+                      };
+                      return (
+                        <Badge key={i} variant="outline" className="text-purple-400 border-purple-700">
+                          {techLabels[tech] || tech}
+                        </Badge>
+                      );
+                    })}
+                  </div>
+                )}
               </CardHeader>
             </Card>
 
@@ -769,39 +788,68 @@ Retorne APENAS o novo exercício no formato JSON.`;
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-3">
-                    {day.exercises.map((ex, exIdx) => (
-                      <div key={exIdx} className="bg-slate-800/50 p-3 rounded-lg">
-                        <div className="flex items-start gap-3">
-                          <div className="w-6 h-6 bg-blue-600/20 rounded flex items-center justify-center flex-shrink-0 mt-0.5">
-                            <span className="text-blue-400 text-xs font-bold">{exIdx + 1}</span>
-                          </div>
-                          <div className="flex-1">
-                            <div className="flex items-start justify-between">
-                              <p className="text-white font-medium mb-1">{ex.exercise_name}</p>
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                onClick={() => setSwappingExercise({ dayIndex: idx, exerciseIndex: exIdx })}
-                                className="text-purple-400 hover:text-purple-300 hover:bg-purple-900/30 h-7 px-2"
-                              >
-                                <ArrowLeftRight className="w-3 h-3 mr-1" />
-                                <span className="text-xs">Trocar</span>
-                              </Button>
+                    {day.exercises.map((ex, exIdx) => {
+                      const setTypeLabels = {
+                        feeder: "🎯 Feeder",
+                        working: "💪 Working",
+                        back_off: "⬇️ Back Off",
+                        cluster: "🔗 Cluster",
+                        muscle_round: "🔄 M.Round",
+                        top_set: "🏆 Top",
+                        drop_set: "🔥 Drop"
+                      };
+                      const setTypeColors = {
+                        feeder: "bg-yellow-900/50 text-yellow-300 border-yellow-700/50",
+                        working: "bg-blue-900/50 text-blue-300 border-blue-700/50",
+                        back_off: "bg-green-900/50 text-green-300 border-green-700/50",
+                        cluster: "bg-purple-900/50 text-purple-300 border-purple-700/50",
+                        muscle_round: "bg-pink-900/50 text-pink-300 border-pink-700/50",
+                        top_set: "bg-red-900/50 text-red-300 border-red-700/50",
+                        drop_set: "bg-orange-900/50 text-orange-300 border-orange-700/50"
+                      };
+
+                      return (
+                        <div key={exIdx} className="bg-slate-800/50 p-3 rounded-lg">
+                          <div className="flex items-start gap-3">
+                            <div className="w-6 h-6 bg-blue-600/20 rounded flex items-center justify-center flex-shrink-0 mt-0.5">
+                              <span className="text-blue-400 text-xs font-bold">{exIdx + 1}</span>
                             </div>
-                            <div className="flex flex-wrap gap-2 text-xs text-slate-400">
-                              {ex.sets.map((set, setIdx) => (
-                                <span key={setIdx} className="bg-slate-700/50 px-2 py-1 rounded">
-                                  {set.times || 1}x {set.reps} ({set.rest_seconds}s)
-                                </span>
-                              ))}
+                            <div className="flex-1">
+                              <div className="flex items-start justify-between">
+                                <p className="text-white font-medium mb-1">{ex.exercise_name}</p>
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={() => setSwappingExercise({ dayIndex: idx, exerciseIndex: exIdx })}
+                                  className="text-purple-400 hover:text-purple-300 hover:bg-purple-900/30 h-7 px-2"
+                                >
+                                  <ArrowLeftRight className="w-3 h-3 mr-1" />
+                                  <span className="text-xs">Trocar</span>
+                                </Button>
+                              </div>
+                              <div className="flex flex-wrap gap-1.5 text-xs">
+                                {ex.sets.map((set, setIdx) => (
+                                  <span 
+                                    key={setIdx} 
+                                    className={`px-2 py-1 rounded border ${
+                                      set.set_type 
+                                        ? setTypeColors[set.set_type] || "bg-slate-700/50 text-slate-300"
+                                        : "bg-slate-700/50 text-slate-300"
+                                    }`}
+                                  >
+                                    {set.set_type && setTypeLabels[set.set_type] ? `${setTypeLabels[set.set_type]} ` : ''}
+                                    {set.times || 1}x{set.reps}
+                                  </span>
+                                ))}
+                              </div>
+                              {ex.notes && (
+                                <p className="text-slate-500 text-xs mt-2">💡 {ex.notes}</p>
+                              )}
                             </div>
-                            {ex.notes && (
-                              <p className="text-slate-500 text-xs mt-2">💡 {ex.notes}</p>
-                            )}
                           </div>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </CardContent>
               </Card>
