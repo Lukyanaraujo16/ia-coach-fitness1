@@ -149,34 +149,37 @@ export default function Admin() {
 
   return (
     <div className="py-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-3xl font-bold text-white">Painel Admin</h2>
-          <p className="text-slate-400 mt-1">Gerencie usuários e conteúdo</p>
+      <div className="space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h2 className="text-2xl sm:text-3xl font-bold text-white">Painel Admin</h2>
+            <p className="text-slate-400 text-sm mt-1">Gerencie usuários e conteúdo</p>
+          </div>
+          <div className="hidden sm:flex items-center gap-2 px-4 py-2 bg-blue-600/20 border border-blue-600/30 rounded-full">
+            <Crown className="w-4 h-4 text-blue-400" />
+            <span className="text-blue-400 font-medium text-sm">Administrador</span>
+          </div>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-2">
           <Button 
             onClick={handleSyncAllProfiles}
             disabled={syncingProfiles}
+            size="sm"
             className="bg-green-600 hover:bg-green-700"
           >
             {syncingProfiles ? (
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              <Loader2 className="w-4 h-4 mr-1.5 animate-spin" />
             ) : (
-              <RefreshCw className="w-4 h-4 mr-2" />
+              <RefreshCw className="w-4 h-4 mr-1.5" />
             )}
             {syncingProfiles ? 'Sincronizando...' : 'Sync Perfis'}
           </Button>
           <Link to={createPageUrl("AdminNotifications")}>
-            <Button className="bg-purple-600 hover:bg-purple-700">
-              <Bell className="w-4 h-4 mr-2" />
+            <Button size="sm" className="bg-purple-600 hover:bg-purple-700">
+              <Bell className="w-4 h-4 mr-1.5" />
               Notificações
             </Button>
           </Link>
-          <div className="flex items-center gap-2 px-4 py-2 bg-blue-600/20 border border-blue-600/30 rounded-full">
-            <Crown className="w-4 h-4 text-blue-400" />
-            <span className="text-blue-400 font-medium text-sm">Administrador</span>
-          </div>
         </div>
       </div>
 
@@ -241,21 +244,23 @@ export default function Admin() {
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="bg-slate-900/50 border border-slate-800 grid grid-cols-5 md:grid-cols-10 gap-1 p-1 h-auto">
-          {tabs.map((tab) => {
-            const Icon = tab.icon;
-            return (
-              <TabsTrigger
-                key={tab.value}
-                value={tab.value}
-                className="data-[state=active]:bg-blue-600 flex items-center gap-1 py-2"
-              >
-                <Icon className="w-4 h-4" />
-                <span className="text-xs hidden sm:inline">{tab.label}</span>
-              </TabsTrigger>
-            );
-          })}
-        </TabsList>
+        <div className="overflow-x-auto -mx-4 px-4 pb-2">
+          <TabsList className="bg-slate-900/50 border border-slate-800 inline-flex gap-1 p-1 h-auto min-w-max">
+            {tabs.map((tab) => {
+              const Icon = tab.icon;
+              return (
+                <TabsTrigger
+                  key={tab.value}
+                  value={tab.value}
+                  className="data-[state=active]:bg-blue-600 flex items-center gap-1.5 py-2 px-3 whitespace-nowrap"
+                >
+                  <Icon className="w-4 h-4" />
+                  <span className="text-xs">{tab.label}</span>
+                </TabsTrigger>
+              );
+            })}
+          </TabsList>
+        </div>
       </Tabs>
 
       {/* Content */}
