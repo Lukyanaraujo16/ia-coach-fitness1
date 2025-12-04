@@ -159,6 +159,8 @@ export default function WorkoutSetup() {
       const divisions = userGender === 'female' ? femaleDivisions : maleDivisions;
       const divisionList = divisions[daysOfWeek] || divisions[5];
 
+      const userObservations = user.workout_observations || "";
+      
       const prompt = `Você é um personal trainer experiente criando um programa de treino COMPLETO para um novo aluno.
 
 PERFIL DO ALUNO:
@@ -170,6 +172,7 @@ PERFIL DO ALUNO:
 - Meta semanal: ${daysOfWeek} treinos/semana
 - Peso atual: ${user.current_weight}kg
 - Meta de peso: ${user.weight_goal}kg
+${userObservations ? `\n⚠️ OBSERVAÇÕES IMPORTANTES DO ALUNO:\n${userObservations}\n\nVocê DEVE respeitar estas observações! Se o aluno tem lesão, NÃO inclua exercícios que afetem essa região. Se quer focar em alguma área, dê PRIORIDADE a ela.` : ''}
 
 ⚠️⚠️⚠️ REGRA ABSOLUTAMENTE CRÍTICA ⚠️⚠️⚠️
 Você DEVE criar EXATAMENTE ${daysOfWeek} dias de treino.
@@ -188,8 +191,16 @@ INSTRUÇÕES OBRIGATÓRIAS:
 4. Cada exercício DEVE ter:
    - exercise_name (nome completo)
    - exercise_category (categoria)
-   - sets: array com 3-4 objetos contendo reps e rest_seconds
+   - sets: array com 3-4 objetos contendo:
+     * times: NÚMERO de vezes que essa série deve ser feita (ex: 3 significa fazer 3 vezes)
+     * reps: texto das repetições (ex: "10-12", "8", "máximo")
+     * rest_seconds: descanso em segundos
    - notes (opcional)
+   
+IMPORTANTE SOBRE O CAMPO "times" NAS SÉRIES:
+- times indica QUANTAS VEZES a série deve ser executada
+- Exemplo: times=3, reps="10-12" significa: fazer 3 séries de 10-12 repetições
+- NÃO coloque "x" no times, apenas o NÚMERO (1, 2, 3, etc)
 5. Siga RIGOROSAMENTE a divisão muscular especificada
 6. Use exercícios para ${user.training_location}
 7. Considere nível ${user.fitness_level}
@@ -252,11 +263,17 @@ LEMBRE-SE: ${daysOfWeek} dias, numerados de 1 a ${daysOfWeek}, SEM EXCEÇÃO!`;
                         },
                         sets: {
                           type: "array",
-                          minItems: 3,
+                          minItems: 2,
                           maxItems: 4,
                           items: {
                             type: "object",
                             properties: {
+                              times: {
+                                type: "number",
+                                minimum: 1,
+                                maximum: 5,
+                                description: "Quantas vezes fazer esta série (ex: 3 = fazer 3 vezes)"
+                              },
                               reps: {
                                 type: "string",
                                 description: "Repetições (ex: 12, 10-12, máximo)"
@@ -270,7 +287,7 @@ LEMBRE-SE: ${daysOfWeek} dias, numerados de 1 a ${daysOfWeek}, SEM EXCEÇÃO!`;
                                 description: "Notas sobre a série (opcional)"
                               }
                             },
-                            required: ["reps", "rest_seconds"]
+                            required: ["times", "reps", "rest_seconds"]
                           }
                         },
                         notes: {
@@ -584,7 +601,7 @@ LEMBRE-SE: ${daysOfWeek} dias, numerados de 1 a ${daysOfWeek}, SEM EXCEÇÃO!`;
                             <div className="flex flex-wrap gap-2 text-xs text-slate-400">
                               {ex.sets.map((set, setIdx) => (
                                 <span key={setIdx} className="bg-slate-700/50 px-2 py-1 rounded">
-                                  {setIdx + 1}x{set.reps} ({set.rest_seconds}s)
+                                  {set.times || 1}x {set.reps} ({set.rest_seconds}s)
                                 </span>
                               ))}
                             </div>
