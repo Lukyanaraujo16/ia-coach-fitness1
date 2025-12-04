@@ -70,24 +70,24 @@ export default function TrainingTechniquesModal({ techniques = [], userLevel, on
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 bg-black/90 backdrop-blur-sm z-[100] flex items-center justify-center p-4 overflow-y-auto"
+      className="fixed inset-0 bg-black/95 backdrop-blur-sm z-[100] overflow-y-auto"
     >
       <motion.div
-        initial={{ scale: 0.9, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        className="w-full max-w-lg my-8"
+        initial={{ y: 20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        className="w-full max-w-lg mx-auto px-4 py-6 min-h-full"
       >
         <Card className="bg-gradient-to-br from-slate-900 to-slate-800 border-blue-700/50">
-          <CardContent className="p-6 space-y-5">
+          <CardContent className="p-4 sm:p-6 space-y-4">
             {/* Header */}
-            <div className="flex items-start justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 bg-blue-600/20 rounded-xl flex items-center justify-center">
-                  <Dumbbell className="w-6 h-6 text-blue-400" />
+            <div className="flex items-start justify-between gap-2">
+              <div className="flex items-center gap-2 sm:gap-3">
+                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-blue-600/20 rounded-xl flex items-center justify-center flex-shrink-0">
+                  <Dumbbell className="w-5 h-5 sm:w-6 sm:h-6 text-blue-400" />
                 </div>
                 <div>
-                  <h2 className="text-xl font-bold text-white">Técnicas do Treino</h2>
-                  <p className="text-blue-400 text-sm font-medium">
+                  <h2 className="text-lg sm:text-xl font-bold text-white">Técnicas do Treino</h2>
+                  <p className="text-blue-400 text-xs sm:text-sm font-medium">
                     Nível: {levelLabels[userLevel] || "Intermediário"}
                   </p>
                 </div>
@@ -96,7 +96,7 @@ export default function TrainingTechniquesModal({ techniques = [], userLevel, on
                 variant="ghost"
                 size="icon"
                 onClick={onClose}
-                className="text-slate-400 hover:text-white"
+                className="text-slate-400 hover:text-white flex-shrink-0 h-8 w-8"
               >
                 <X className="w-5 h-5" />
               </Button>
@@ -121,8 +121,8 @@ export default function TrainingTechniquesModal({ techniques = [], userLevel, on
             </div>
 
             {/* Techniques */}
-            <div className="space-y-3">
-              <h3 className="text-white font-semibold flex items-center gap-2">
+            <div className="space-y-2">
+              <h3 className="text-white font-semibold flex items-center gap-2 text-sm sm:text-base">
                 <Zap className="w-4 h-4 text-yellow-400" />
                 Técnicas Utilizadas Hoje
               </h3>
@@ -134,15 +134,15 @@ export default function TrainingTechniquesModal({ techniques = [], userLevel, on
                 return (
                   <div
                     key={techKey}
-                    className="bg-slate-800/50 border border-slate-700 rounded-lg p-3"
+                    className="bg-slate-800/50 border border-slate-700 rounded-lg p-2.5 sm:p-3"
                   >
                     <div className="flex items-center gap-2 mb-1">
-                      <span className="text-lg">{tech.icon}</span>
-                      <h4 className="text-white font-medium">{tech.name}</h4>
+                      <span className="text-base">{tech.icon}</span>
+                      <h4 className="text-white font-medium text-sm">{tech.name}</h4>
                     </div>
-                    <p className="text-slate-400 text-sm mb-2">{tech.description}</p>
+                    <p className="text-slate-400 text-xs mb-2">{tech.description}</p>
                     <div className="bg-slate-900/50 rounded p-2">
-                      <p className="text-blue-300 text-xs">
+                      <p className="text-blue-300 text-xs leading-relaxed">
                         <strong>Como fazer:</strong> {tech.howTo}
                       </p>
                     </div>
@@ -152,27 +152,27 @@ export default function TrainingTechniquesModal({ techniques = [], userLevel, on
             </div>
 
             {/* Descanso */}
-            <div className="bg-purple-900/20 border border-purple-700/50 rounded-lg p-3">
-              <div className="flex items-center gap-2 mb-2">
+            <div className="bg-purple-900/20 border border-purple-700/50 rounded-lg p-2.5 sm:p-3">
+              <div className="flex items-center gap-2 mb-1.5">
                 <Clock className="w-4 h-4 text-purple-400" />
-                <h3 className="text-purple-400 font-semibold text-sm">Intervalos de Descanso</h3>
+                <h3 className="text-purple-400 font-semibold text-xs sm:text-sm">Intervalos de Descanso</h3>
               </div>
-              <div className="grid grid-cols-2 gap-2 text-xs">
-                <div className="text-slate-300">
-                  <span className="text-purple-300">Feeder Sets:</span> 1-2 min
+              <div className="grid grid-cols-3 gap-1.5 text-xs">
+                <div className="text-slate-300 text-center">
+                  <span className="text-purple-300 block">Feeder</span> 1-2min
                 </div>
-                <div className="text-slate-300">
-                  <span className="text-purple-300">Músculo pequeno:</span> 2-3 min
+                <div className="text-slate-300 text-center">
+                  <span className="text-purple-300 block">Peq.</span> 2-3min
                 </div>
-                <div className="text-slate-300">
-                  <span className="text-purple-300">Músculo grande:</span> 3-5 min
+                <div className="text-slate-300 text-center">
+                  <span className="text-purple-300 block">Grande</span> 3-5min
                 </div>
               </div>
             </div>
 
             <Button
               onClick={onClose}
-              className="w-full bg-blue-600 hover:bg-blue-700 py-6 font-bold"
+              className="w-full bg-blue-600 hover:bg-blue-700 h-12 sm:h-14 font-bold text-sm sm:text-base"
             >
               Entendi, Vamos Treinar! 💪
             </Button>
