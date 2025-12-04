@@ -682,20 +682,20 @@ Retorne APENAS o novo exercício no formato JSON.`;
 
       {/* Nome do Exercício - Fixo */}
       <div className="flex-shrink-0 text-center px-4 py-4 border-b border-slate-800 bg-slate-900/50">
-        <div className="flex items-center justify-center gap-2 mb-1">
-          <h2 className="text-xl font-bold text-white leading-tight">
-            {currentExercise?.exercise_name}
-          </h2>
-          <button
-            onClick={() => setShowSwapModal(true)}
-            className="p-1.5 rounded-lg bg-purple-600/20 text-purple-400 hover:bg-purple-600/30 transition-colors"
-            title="Trocar exercício"
-          >
-            <ArrowLeftRight className="w-4 h-4" />
-          </button>
-        </div>
+        <h2 className="text-xl font-bold text-white leading-tight mb-2">
+          {currentExercise?.exercise_name}
+        </h2>
+        
+        <button
+          onClick={() => setShowSwapModal(true)}
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-purple-600/20 text-purple-400 hover:bg-purple-600/30 transition-colors text-sm font-medium border border-purple-600/30"
+        >
+          <ArrowLeftRight className="w-3.5 h-3.5" />
+          Trocar exercício
+        </button>
+        
         {currentExercise?.notes && (
-          <p className="text-slate-400 text-sm mb-2">💡 {currentExercise.notes}</p>
+          <p className="text-slate-400 text-sm mt-2">💡 {currentExercise.notes}</p>
         )}
         {nextExercise && (
           <div className="flex items-center justify-center gap-2 text-slate-400 text-xs mt-2">
