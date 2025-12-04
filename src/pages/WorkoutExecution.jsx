@@ -7,9 +7,10 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft, CheckCircle, AlertTriangle, Trophy, Clock, Zap, X, Weight, Video, Timer, Play, Pause, ChevronRight, ArrowLeftRight, Sparkles, Loader2 } from "lucide-react";
+import { ArrowLeft, CheckCircle, AlertTriangle, Trophy, Clock, Zap, X, Weight, Video, Timer, Play, Pause, ChevronRight, ArrowLeftRight, Sparkles, Loader2, Info } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import AICoachAssistant from "../components/workout/AICoachAssistant";
+import TrainingTechniquesModal from "../components/workout/TrainingTechniquesModal";
 
 export default function WorkoutExecution() {
   const navigate = useNavigate();
@@ -39,6 +40,7 @@ export default function WorkoutExecution() {
   const [notificationSent, setNotificationSent] = useState(false);
   const [showSwapModal, setShowSwapModal] = useState(false);
   const [swapLoading, setSwapLoading] = useState(false);
+  const [showTechniquesModal, setShowTechniquesModal] = useState(false);
 
   const setRefs = useRef({});
 
@@ -64,12 +66,16 @@ export default function WorkoutExecution() {
         setWorkout(foundWorkout);
         
         if (foundWorkout?.days) {
-          const day = foundWorkout.days.find(d => d.day_number === dayNumber);
-          setCurrentDay(day);
-          if (day?.exercises?.[0]?.sets?.[0]?.rest_seconds) {
-            setTimeRemaining(day.exercises[0].sets[0].rest_seconds);
-          }
-        }
+                const day = foundWorkout.days.find(d => d.day_number === dayNumber);
+                setCurrentDay(day);
+                if (day?.exercises?.[0]?.sets?.[0]?.rest_seconds) {
+                  setTimeRemaining(day.exercises[0].sets[0].rest_seconds);
+                }
+                // Mostrar modal de técnicas no início do treino
+                if (foundWorkout.techniques_used?.length > 0) {
+                  setShowTechniquesModal(true);
+                }
+              }
       }
     };
     loadWorkout();
@@ -631,8 +637,38 @@ Retorne APENAS o novo exercício no formato JSON.`;
   const progressPercentage = ((currentExerciseIndex + 1) / (currentDay.exercises?.length || 1)) * 100;
   const restTimeFormatted = currentSet?.rest_seconds ? formatTime(currentSet.rest_seconds) : "1min";
 
+  // Mapeamento de cores por tipo de série
+  const setTypeColors = {
+    feeder: "border-yellow-600/50 bg-yellow-900/20",
+    working: "border-blue-600/50 bg-blue-900/20",
+    back_off: "border-green-600/50 bg-green-900/20",
+    cluster: "border-purple-600/50 bg-purple-900/20",
+    muscle_round: "border-pink-600/50 bg-pink-900/20",
+    top_set: "border-red-600/50 bg-red-900/20",
+    drop_set: "border-orange-600/50 bg-orange-900/20"
+  };
+
+  const setTypeLabels = {
+    feeder: "🎯 Feeder",
+    working: "💪 Working",
+    back_off: "⬇️ Back Off",
+    cluster: "🔗 Cluster",
+    muscle_round: "🔄 Muscle Round",
+    top_set: "🏆 Top Set",
+    drop_set: "🔥 Drop Set"
+  };
+
   return (
     <div className="fixed inset-0 flex flex-col bg-gradient-to-b from-slate-950 to-slate-900 z-[10000]">
+      {/* Modal de Técnicas */}
+      {showTechniquesModal && (
+        <TrainingTechniquesModal
+          techniques={workout?.techniques_used || []}
+          userLevel={user?.fitness_level || "intermediate"}
+          onClose={() => setShowTechniquesModal(false)}
+        />
+      )}
+
       {/* AI Coach Assistant */}
       {currentExercise && (
         <AICoachAssistant 
@@ -658,6 +694,17 @@ Retorne APENAS o novo exercício no formato JSON.`;
             <p className="text-slate-400 text-xs">Dia {dayNumber}</p>
           </div>
           <div className="flex items-center gap-2">
+            {workout?.techniques_used?.length > 0 && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setShowTechniquesModal(true)}
+                className="text-purple-400 hover:text-purple-300 h-9 w-9"
+                title="Ver técnicas"
+              >
+                <Info className="w-5 h-5" />
+              </Button>
+            )}
             {currentExercise?.video_url && (
               <Button
                 variant="ghost"
@@ -719,57 +766,82 @@ Retorne APENAS o novo exercício no formato JSON.`;
         <div className="space-y-2.5">
           {currentExercise?.sets?.map((set, index) => (
             <motion.div
-              key={index}
-              ref={(el) => (setRefs.current[index] = el)}
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: index * 0.1 }}
-              className={`w-full p-3 rounded-xl border-2 ${
-                index === currentSetIndex 
-                  ? 'border-blue-500 bg-gradient-to-br from-blue-900/40 to-slate-900/80 shadow-lg shadow-blue-900/50' 
-                  : index < currentSetIndex
-                  ? 'border-green-700/50 bg-gradient-to-br from-green-900/20 to-slate-900/80 opacity-60'
-                  : 'border-slate-700 bg-gradient-to-br from-slate-800/80 to-slate-900/80'
-              }`}
-            >
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <div className="text-white font-bold text-sm">Série {index + 1}</div>
-                  {index === currentSetIndex && timesToDo > 1 && (
-                    <div className="px-2 py-0.5 bg-yellow-600/20 text-yellow-400 text-xs rounded-full font-semibold">
-                      {currentSetRepetition + 1}/{timesToDo}
+                key={index}
+                ref={(el) => (setRefs.current[index] = el)}
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: index * 0.1 }}
+                className={`w-full p-3 rounded-xl border-2 ${
+                  index === currentSetIndex 
+                    ? 'border-blue-500 bg-gradient-to-br from-blue-900/40 to-slate-900/80 shadow-lg shadow-blue-900/50' 
+                    : index < currentSetIndex
+                    ? 'border-green-700/50 bg-gradient-to-br from-green-900/20 to-slate-900/80 opacity-60'
+                    : set.set_type 
+                    ? setTypeColors[set.set_type] || 'border-slate-700 bg-gradient-to-br from-slate-800/80 to-slate-900/80'
+                    : 'border-slate-700 bg-gradient-to-br from-slate-800/80 to-slate-900/80'
+                }`}
+              >
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className="text-white font-bold text-sm">Série {index + 1}</div>
+                      {set.set_type && (
+                        <span className="text-xs px-2 py-0.5 rounded-full bg-slate-700/50 text-slate-300">
+                          {setTypeLabels[set.set_type] || set.set_type}
+                        </span>
+                      )}
+                    </div>
+                    {index === currentSetIndex && timesToDo > 1 && (
+                      <div className="px-2 py-0.5 bg-yellow-600/20 text-yellow-400 text-xs rounded-full font-semibold">
+                        {currentSetRepetition + 1}/{timesToDo}
+                      </div>
+                    )}
+                    {index < currentSetIndex && (
+                      <CheckCircle className="w-5 h-5 text-green-400" />
+                    )}
+                  </div>
+
+                  <div className="grid grid-cols-3 gap-2">
+                    <div className="text-center">
+                      <p className="text-slate-400 text-xs mb-1">Fazer</p>
+                      <p className="text-white font-bold text-base">{set.times || 1}</p>
+                    </div>
+
+                    <div className="text-center">
+                      <p className="text-slate-400 text-xs mb-1">Repetições</p>
+                      <p className="text-white font-bold text-base">{set.reps}</p>
+                    </div>
+
+                    <div className="text-center">
+                      <p className="text-slate-400 text-xs mb-1">Descanso</p>
+                      <p className="text-purple-400 font-bold text-base">{formatTime(set.rest_seconds)}</p>
+                    </div>
+                  </div>
+
+                  {set.notes && (
+                    <div className={`rounded-lg p-2 mt-2 ${
+                      set.set_type === 'feeder' ? 'bg-yellow-900/30 border border-yellow-700/50' :
+                      set.set_type === 'working' ? 'bg-blue-900/30 border border-blue-700/50' :
+                      'bg-orange-900/30 border border-orange-700/50'
+                    }`}>
+                      <p className={`text-xs font-semibold mb-0.5 ${
+                        set.set_type === 'feeder' ? 'text-yellow-400' :
+                        set.set_type === 'working' ? 'text-blue-400' :
+                        'text-orange-400'
+                      }`}>
+                        {set.set_type === 'feeder' ? '🎯 Dica:' : 
+                         set.set_type === 'working' ? '💪 Progressão:' : 
+                         '📌 Importante:'}
+                      </p>
+                      <p className={`text-xs leading-relaxed ${
+                        set.set_type === 'feeder' ? 'text-yellow-200' :
+                        set.set_type === 'working' ? 'text-blue-200' :
+                        'text-orange-200'
+                      }`}>{set.notes}</p>
                     </div>
                   )}
-                  {index < currentSetIndex && (
-                    <CheckCircle className="w-5 h-5 text-green-400" />
-                  )}
                 </div>
-                
-                <div className="grid grid-cols-3 gap-2">
-                  <div className="text-center">
-                    <p className="text-slate-400 text-xs mb-1">Fazer</p>
-                    <p className="text-white font-bold text-base">{set.times || 1}</p>
-                  </div>
-
-                  <div className="text-center">
-                    <p className="text-slate-400 text-xs mb-1">Repetições</p>
-                    <p className="text-white font-bold text-base">{set.reps}</p>
-                  </div>
-
-                  <div className="text-center">
-                    <p className="text-slate-400 text-xs mb-1">Descanso</p>
-                    <p className="text-purple-400 font-bold text-base">{formatTime(set.rest_seconds)}</p>
-                  </div>
-                </div>
-                
-                {set.notes && (
-                  <div className="bg-orange-900/30 border border-orange-700/50 rounded-lg p-2 mt-2">
-                    <p className="text-orange-400 text-xs font-semibold mb-0.5">📌 Importante:</p>
-                    <p className="text-orange-200 text-xs leading-relaxed">{set.notes}</p>
-                  </div>
-                )}
-              </div>
-            </motion.div>
+              </motion.div>
           ))}
         </div>
       </div>
