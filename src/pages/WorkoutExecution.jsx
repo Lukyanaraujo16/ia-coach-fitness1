@@ -651,14 +651,14 @@ export default function WorkoutExecution() {
                 <div className="grid grid-cols-3 gap-2">
                   <div className="text-center">
                     <p className="text-slate-400 text-xs mb-1">Fazer</p>
-                    <p className="text-white font-bold text-base">{set.times}x</p>
+                    <p className="text-white font-bold text-base">{set.times || 1}</p>
                   </div>
-                  
+
                   <div className="text-center">
                     <p className="text-slate-400 text-xs mb-1">Repetições</p>
                     <p className="text-white font-bold text-base">{set.reps}</p>
                   </div>
-                  
+
                   <div className="text-center">
                     <p className="text-slate-400 text-xs mb-1">Descanso</p>
                     <p className="text-purple-400 font-bold text-base">{formatTime(set.rest_seconds)}</p>
