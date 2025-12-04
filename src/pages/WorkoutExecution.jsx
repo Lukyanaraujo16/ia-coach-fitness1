@@ -347,6 +347,9 @@ export default function WorkoutExecution() {
   const handleSwapCurrentExercise = async () => {
     setSwapLoading(true);
     try {
+      // Lista de todos os exercícios do dia atual para evitar repetição
+      const exercisesInDay = currentDay.exercises.map(ex => ex.exercise_name);
+      
       const prompt = `Você é um personal trainer. Preciso de um exercício ALTERNATIVO para substituir "${currentExercise.exercise_name}" no treino.
 
 CONTEXTO:
@@ -356,11 +359,16 @@ CONTEXTO:
 - Nível do aluno: ${user.fitness_level}
 ${user.workout_observations ? `- Observações do aluno: ${user.workout_observations}` : ''}
 
-REGRAS:
-1. O exercício alternativo DEVE trabalhar o mesmo grupo muscular
-2. Deve ser diferente do original
-3. Deve ser adequado para ${user.training_location === 'gym' ? 'academia' : 'casa'}
-4. Mantenha a mesma estrutura de séries do exercício original
+EXERCÍCIOS JÁ EXISTENTES NO TREINO (NÃO PODE REPETIR NENHUM DELES NEM VARIAÇÕES):
+${exercisesInDay.map(name => `- ${name}`).join('\n')}
+
+REGRAS OBRIGATÓRIAS:
+1. O exercício alternativo DEVE trabalhar o mesmo grupo muscular que "${currentExercise.exercise_name}"
+2. PROIBIDO: Não pode ser igual ou similar a nenhum exercício já listado acima
+3. PROIBIDO: Variações do mesmo exercício (ex: se tem "Cadeira Extensora", não pode sugerir "Cadeira Extensora Unipodal")
+4. Deve ser um exercício COMPLETAMENTE DIFERENTE mas que trabalhe os mesmos músculos
+5. Deve ser adequado para ${user.training_location === 'gym' ? 'academia' : 'casa'}
+6. Mantenha a mesma estrutura de séries do exercício original
 
 Retorne APENAS o novo exercício no formato JSON.`;
 

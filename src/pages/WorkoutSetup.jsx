@@ -366,6 +366,9 @@ LEMBRE-SE: ${daysOfWeek} dias, numerados de 1 a ${daysOfWeek}, SEM EXCEÇÃO!`;
     const day = generatedWorkout.days[dayIndex];
     const exercise = day.exercises[exerciseIndex];
     
+    // Lista de todos os exercícios do dia atual para evitar repetição
+    const exercisesInDay = day.exercises.map(ex => ex.exercise_name);
+    
     setSwapLoading(true);
     try {
       const userObservations = user.workout_observations || "";
@@ -380,11 +383,16 @@ CONTEXTO:
 - Nível do aluno: ${user.fitness_level}
 ${userObservations ? `- Observações do aluno: ${userObservations}` : ''}
 
-REGRAS:
-1. O exercício alternativo DEVE trabalhar o mesmo grupo muscular
-2. Deve ser diferente do original
-3. Deve ser adequado para ${user.training_location === 'gym' ? 'academia' : 'casa'}
-4. Mantenha a mesma estrutura de séries
+EXERCÍCIOS JÁ EXISTENTES NO TREINO (NÃO PODE REPETIR NENHUM DELES NEM VARIAÇÕES):
+${exercisesInDay.map(name => `- ${name}`).join('\n')}
+
+REGRAS OBRIGATÓRIAS:
+1. O exercício alternativo DEVE trabalhar o mesmo grupo muscular que "${exercise.exercise_name}"
+2. PROIBIDO: Não pode ser igual ou similar a nenhum exercício já listado acima
+3. PROIBIDO: Variações do mesmo exercício (ex: se tem "Cadeira Extensora", não pode sugerir "Cadeira Extensora Unipodal")
+4. Deve ser um exercício COMPLETAMENTE DIFERENTE mas que trabalhe os mesmos músculos
+5. Deve ser adequado para ${user.training_location === 'gym' ? 'academia' : 'casa'}
+6. Mantenha a mesma estrutura de séries
 
 Retorne APENAS o novo exercício no formato JSON.`;
 
