@@ -9,6 +9,9 @@ import { Label } from "@/components/ui/label";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronRight, Target, TrendingUp, User as UserIcon, Users } from "lucide-react";
 
+import { Textarea } from "@/components/ui/textarea";
+import { AlertCircle } from "lucide-react";
+
 const STEPS = [
   {
     id: "personal_info",
@@ -46,6 +49,12 @@ const STEPS = [
       { value: "advanced", label: "Avançado", emoji: "🏆" },
     ],
   },
+  {
+    id: "observations",
+    title: "Observações para seu treino",
+    icon: AlertCircle,
+    type: "observations",
+  },
 ];
 
 export default function Onboarding() {
@@ -60,6 +69,7 @@ export default function Onboarding() {
     gender: "",
     goal: "",
     level: "",
+    workout_observations: "",
   });
   const [isLoading, setIsLoading] = useState(false);
   const [user, setUser] = useState(null);
@@ -123,6 +133,7 @@ export default function Onboarding() {
         fitness_goal: answers.goal,
         training_location: "gym",
         fitness_level: answers.level,
+        workout_observations: answers.workout_observations || "",
         onboarding_completed: true,
         nutrition_setup_completed: skipSetup,
         workout_setup_completed: skipSetup,
@@ -156,6 +167,9 @@ export default function Onboarding() {
   const canProceed = () => {
     if (currentStepData.type === "form") {
       return answers.nome_completo.trim() && answers.current_weight && answers.height && answers.weight_goal && answers.weekly_goal;
+    }
+    if (currentStepData.type === "observations") {
+      return true; // Observações são opcionais
     }
     return answers[currentStepData.id] !== "";
   };
@@ -270,6 +284,38 @@ export default function Onboarding() {
                       placeholder="3"
                     />
                   </div>
+                </div>
+              ) : currentStepData.type === "observations" ? (
+                <div className="space-y-4">
+                  <div className="bg-blue-900/20 border border-blue-700/50 rounded-lg p-3">
+                    <p className="text-blue-300 text-sm">
+                      💡 Informe qualquer observação importante para a IA criar seu treino ideal:
+                    </p>
+                  </div>
+                  
+                  <div className="space-y-3">
+                    <div className="bg-slate-800/50 rounded-lg p-3 border border-slate-700">
+                      <p className="text-slate-300 text-sm font-medium mb-1">🏥 Limitações físicas ou lesões?</p>
+                      <p className="text-slate-500 text-xs">Ex: Tenho problema no ombro, não posso fazer supino...</p>
+                    </div>
+                    
+                    <div className="bg-slate-800/50 rounded-lg p-3 border border-slate-700">
+                      <p className="text-slate-300 text-sm font-medium mb-1">🎯 Quer focar em alguma região?</p>
+                      <p className="text-slate-500 text-xs">Ex: Quero focar mais em pernas e glúteos...</p>
+                    </div>
+                    
+                    <div className="bg-slate-800/50 rounded-lg p-3 border border-slate-700">
+                      <p className="text-slate-300 text-sm font-medium mb-1">⚠️ Algum exercício que não pode fazer?</p>
+                      <p className="text-slate-500 text-xs">Ex: Não consigo fazer agachamento livre...</p>
+                    </div>
+                  </div>
+                  
+                  <Textarea
+                    value={answers.workout_observations}
+                    onChange={(e) => setAnswers({ ...answers, workout_observations: e.target.value })}
+                    className="bg-slate-800 border-slate-700 text-white min-h-[120px]"
+                    placeholder="Escreva suas observações aqui... (opcional)"
+                  />
                 </div>
               ) : (
                 <div className="space-y-2">
