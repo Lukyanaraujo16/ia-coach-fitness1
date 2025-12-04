@@ -53,7 +53,7 @@ export default function WorkoutSetup() {
 
   const generateWorkoutPlan = async () => {
     if (!user) return;
-    
+
     setGeneratingWorkout(true);
     setError(null);
     const currentAttempt = attemptCount + 1;
@@ -80,6 +80,28 @@ export default function WorkoutSetup() {
 
       const daysOfWeek = user.weekly_goal;
       const userGender = user.gender || 'male';
+      const userLevel = user.fitness_level || 'intermediate';
+
+      // Técnicas por nível
+      const techniquesByLevel = {
+        beginner: {
+          allowed: ["feeder_set", "working_set", "back_off_set"],
+          forbidden: ["drop_set", "cluster_set", "muscle_round", "top_set"],
+          description: "Use apenas Feeder Sets, Working Sets e opcionalmente Back Off Sets. PROIBIDO usar Drop Set, Cluster Set, Muscle Round ou Top Set."
+        },
+        intermediate: {
+          allowed: ["feeder_set", "working_set", "back_off_set", "drop_set", "cluster_set", "muscle_round"],
+          forbidden: ["top_set"],
+          description: "Use Feeder Sets, Working Sets, Back Off Sets. Pode usar Drop Set (máx 1 por treino) e Cluster Set OU Muscle Round (máx 1 por treino). PROIBIDO usar Top Set."
+        },
+        advanced: {
+          allowed: ["feeder_set", "working_set", "back_off_set", "drop_set", "cluster_set", "muscle_round", "top_set"],
+          forbidden: [],
+          description: "Pode usar todas as técnicas. Use máximo 2 técnicas avançadas por treino para não ultrapassar capacidade de recuperação."
+        }
+      };
+
+      const levelTechniques = techniquesByLevel[userLevel] || techniquesByLevel.intermediate;
 
       // Divisões específicas por gênero
       const maleDivisions = {
@@ -162,53 +184,125 @@ export default function WorkoutSetup() {
       const divisionList = divisions[daysOfWeek] || divisions[5];
 
       const userObservations = user.workout_observations || "";
-      
-      const prompt = `Você é um personal trainer experiente criando um programa de treino COMPLETO para um novo aluno.
 
-PERFIL DO ALUNO:
-- Nome: ${user.nome_completo}
-- Gênero: ${userGender === 'male' ? 'Masculino' : userGender === 'female' ? 'Feminino' : 'Outro'}
-- Objetivo: ${goalLabels[user.fitness_goal]}
-- Nível: ${levelLabels[user.fitness_level]}
-- Local: ${locationLabels[user.training_location]}
-- Meta semanal: ${daysOfWeek} treinos/semana
-- Peso atual: ${user.current_weight}kg
-- Meta de peso: ${user.weight_goal}kg
-${userObservations ? `\n⚠️ OBSERVAÇÕES IMPORTANTES DO ALUNO:\n${userObservations}\n\nVocê DEVE respeitar estas observações! Se o aluno tem lesão, NÃO inclua exercícios que afetem essa região. Se quer focar em alguma área, dê PRIORIDADE a ela.` : ''}
+      const prompt = `Você é um personal trainer experiente criando um programa de treino COMPLETO usando metodologia avançada de periodização.
 
-⚠️⚠️⚠️ REGRA ABSOLUTAMENTE CRÍTICA ⚠️⚠️⚠️
-Você DEVE criar EXATAMENTE ${daysOfWeek} dias de treino.
-O array "days" DEVE ter EXATAMENTE ${daysOfWeek} elementos.
-Cada dia DEVE ter day_number de 1 até ${daysOfWeek}.
-NÃO GERE MENOS DIAS. NÃO GERE MAIS DIAS.
-Se você gerar quantidade diferente de ${daysOfWeek} dias, o treino será REJEITADO.
+  PERFIL DO ALUNO:
+  - Nome: ${user.nome_completo}
+  - Gênero: ${userGender === 'male' ? 'Masculino' : userGender === 'female' ? 'Feminino' : 'Outro'}
+  - Objetivo: ${goalLabels[user.fitness_goal]}
+  - Nível: ${levelLabels[userLevel]}
+  - Local: ${locationLabels[user.training_location]}
+  - Meta semanal: ${daysOfWeek} treinos/semana
+  - Peso atual: ${user.current_weight}kg
+  - Meta de peso: ${user.weight_goal}kg
+  ${userObservations ? `\n⚠️ OBSERVAÇÕES IMPORTANTES DO ALUNO:\n${userObservations}\n\nVocê DEVE respeitar estas observações! Se o aluno tem lesão, NÃO inclua exercícios que afetem essa região.` : ''}
 
-DISTRIBUIÇÃO OBRIGATÓRIA (para ${userGender === 'female' ? 'MULHERES' : 'HOMENS'}):
-${divisionList.map((day, i) => `${day} (day_number: ${i + 1})`).join('\n')}
+  ═══════════════════════════════════════════════════════════════
+  🏋️ METODOLOGIA DE TREINO - REGRAS OBRIGATÓRIAS
+  ═══════════════════════════════════════════════════════════════
 
-INSTRUÇÕES OBRIGATÓRIAS:
-1. Crie EXATAMENTE ${daysOfWeek} objetos no array "days"
-2. Cada dia DEVE ter day_number sequencial: 1, 2, 3... até ${daysOfWeek}
-3. Cada dia DEVE ter 6-8 exercícios
-4. Cada exercício DEVE ter:
-   - exercise_name (nome completo)
-   - exercise_category (categoria)
-   - sets: array com 3-4 objetos contendo:
-     * times: NÚMERO de vezes que essa série deve ser feita (ex: 3 significa fazer 3 vezes)
-     * reps: texto das repetições (ex: "10-12", "8", "máximo")
-     * rest_seconds: descanso em segundos
-   - notes (opcional)
-   
-IMPORTANTE SOBRE O CAMPO "times" NAS SÉRIES:
-- times indica QUANTAS VEZES a série deve ser executada
-- Exemplo: times=3, reps="10-12" significa: fazer 3 séries de 10-12 repetições
-- NÃO coloque "x" no times, apenas o NÚMERO (1, 2, 3, etc)
-5. Siga RIGOROSAMENTE a divisão muscular especificada
-6. Use exercícios para ${user.training_location}
-7. Considere nível ${user.fitness_level}
-${userGender === 'female' ? '8. Para mulheres: ÊNFASE em pernas, glúteos e posteriores' : '8. Para homens: equilibre push/pull'}
+  📌 DEFINIÇÕES DAS TÉCNICAS:
 
-LEMBRE-SE: ${daysOfWeek} dias, numerados de 1 a ${daysOfWeek}, SEM EXCEÇÃO!`;
+  1. FEEDER SET (Série de Reconhecimento) - OBRIGATÓRIA EM TODO EXERCÍCIO
+  - Séries preparatórias, LONGE da falha
+  - Primeiro exercício do dia: 3 feeder sets
+  - Demais exercícios: 2 feeder sets
+  - Reps: Feeder 1 = 8-10 reps, Feeder 2 = 5-7 reps, Feeder 3 = 3-5 reps
+  - Descanso: 60-90 segundos
+  - set_type: "feeder"
+  - notes: "Série de reconhecimento - avalie se pode progredir carga hoje"
+
+  2. WORKING SET (Série de Trabalho)
+  - 4 a 9 repetições
+  - Deixe 1-2 reps na reserva
+  - set_type: "working"
+  - notes: "Série principal - tente progredir carga semanalmente"
+
+  3. BACK OFF SET
+  - 20% menos carga que working set
+  - 10-15 repetições
+  - set_type: "back_off"
+  - notes: "Back off: reduza 20% da carga do working set"
+
+  4. CLUSTER SET
+  - Mesma carga do working set
+  - 12-15 reps totais em blocos de 3 reps com 10s descanso
+  - set_type: "cluster"
+  - notes: "Cluster: 3 reps, 10s descanso, repita até 12-15 total"
+
+  5. MUSCLE ROUND
+  - 24 reps totais: 6 blocos de 4 reps com 10s descanso
+  - set_type: "muscle_round"
+  - notes: "Muscle Round: 4 reps, 10s descanso, 6 blocos = 24 total"
+
+  6. TOP SET
+  - ~80% do 1RM, 2-4 reps (APENAS AVANÇADO)
+  - set_type: "top_set"
+  - notes: "Top Set: carga alta, só faça se estiver bem descansado"
+
+  7. DROP SET
+  - Falha, reduz carga, falha, repete 2-3x
+  - set_type: "drop_set"
+  - notes: "Drop Set: vá até a falha, reduza carga e repita"
+
+  📌 REGRAS PARA NÍVEL ${userLevel.toUpperCase()}:
+  ${levelTechniques.description}
+  - Técnicas permitidas: ${levelTechniques.allowed.join(", ")}
+  ${levelTechniques.forbidden.length > 0 ? `- PROIBIDO: ${levelTechniques.forbidden.join(", ")}` : ''}
+
+  📌 DESCANSO:
+  - Feeder sets: 60-90 segundos
+  - Músculo pequeno (bíceps, tríceps, ombros, core): 120-180 segundos
+  - Músculo grande (peito, costas, pernas): 180-300 segundos
+
+  📌 ESTRUTURA OBRIGATÓRIA DE CADA EXERCÍCIO:
+  - PRIMEIRO exercício do dia: 3 Feeder Sets + Working Sets + outras técnicas
+  - DEMAIS exercícios: 2 Feeder Sets + Working Sets + outras técnicas
+  - Escolha no máximo 3 técnicas diferentes (além de feeder e working) para o treino INTEIRO
+  - Use as MESMAS técnicas em todos os dias para o aluno aprender
+
+  📌 PROGRESSÃO DE CARGA:
+  - TODA série de trabalho deve ter orientação de progressão no campo notes
+  - Ex: "Tente aumentar 1-2kg esta semana" ou "Mantenha carga e melhore execução"
+
+  ═══════════════════════════════════════════════════════════════
+
+  ⚠️ REGRA CRÍTICA: Crie EXATAMENTE ${daysOfWeek} dias de treino.
+
+  DISTRIBUIÇÃO (para ${userGender === 'female' ? 'MULHERES' : 'HOMENS'}):
+  ${divisionList.map((day, i) => `${day} (day_number: ${i + 1})`).join('\n')}
+
+  EXEMPLO DE ESTRUTURA DE UM EXERCÍCIO (primeiro do dia):
+  {
+  "exercise_name": "Supino Reto",
+  "exercise_category": "chest",
+  "sets": [
+  {"times": 1, "reps": "9", "rest_seconds": 90, "set_type": "feeder", "notes": "Feeder 1 - carga leve, avalie o dia"},
+  {"times": 1, "reps": "6", "rest_seconds": 90, "set_type": "feeder", "notes": "Feeder 2 - aumente carga progressivamente"},
+  {"times": 1, "reps": "4", "rest_seconds": 90, "set_type": "feeder", "notes": "Feeder 3 - próximo da carga de trabalho"},
+  {"times": 1, "reps": "6-8", "rest_seconds": 180, "set_type": "working", "notes": "Working Set - tente progredir 1-2kg"},
+  {"times": 2, "reps": "12-15", "rest_seconds": 180, "set_type": "back_off", "notes": "Back Off - reduza 20% da carga"}
+  ]
+  }
+
+  EXEMPLO DE EXERCÍCIO (demais exercícios do dia):
+  {
+  "exercise_name": "Crucifixo",
+  "exercise_category": "chest",
+  "sets": [
+  {"times": 1, "reps": "9", "rest_seconds": 90, "set_type": "feeder", "notes": "Feeder 1 - reconhecimento de carga"},
+  {"times": 1, "reps": "5", "rest_seconds": 90, "set_type": "feeder", "notes": "Feeder 2 - prepare para working set"},
+  {"times": 1, "reps": "6-8", "rest_seconds": 180, "set_type": "working", "notes": "Working Set - progrida carga se possível"},
+  {"times": 2, "reps": "12-15", "rest_seconds": 180, "set_type": "back_off", "notes": "Back Off - 20% menos carga"}
+  ]
+  }
+
+  IMPORTANTE:
+  - Cada dia deve ter 5-7 exercícios
+  - set_type é OBRIGATÓRIO em cada série
+  - notes é OBRIGATÓRIO em cada série com orientação clara
+  - ${daysOfWeek} dias, numerados de 1 a ${daysOfWeek}, SEM EXCEÇÃO!`;
 
       const timeoutPromise = new Promise((_, reject) => 
         setTimeout(() => reject(new Error('Timeout: geração demorou mais de 2 minutos')), 120000)
@@ -225,7 +319,12 @@ LEMBRE-SE: ${daysOfWeek} dias, numerados de 1 a ${daysOfWeek}, SEM EXCEÇÃO!`;
             },
             description: {
               type: "string",
-              description: "Descrição explicando a abordagem"
+              description: "Descrição explicando a abordagem e as técnicas utilizadas"
+            },
+            techniques_used: {
+              type: "array",
+              items: { type: "string" },
+              description: "Lista das técnicas utilizadas no treino (ex: back_off_set, drop_set, cluster_set)"
             },
             days: {
               type: "array",
@@ -250,8 +349,8 @@ LEMBRE-SE: ${daysOfWeek} dias, numerados de 1 a ${daysOfWeek}, SEM EXCEÇÃO!`;
                   },
                   exercises: {
                     type: "array",
-                    minItems: 6,
-                    maxItems: 8,
+                    minItems: 5,
+                    maxItems: 7,
                     items: {
                       type: "object",
                       properties: {
@@ -265,8 +364,8 @@ LEMBRE-SE: ${daysOfWeek} dias, numerados de 1 a ${daysOfWeek}, SEM EXCEÇÃO!`;
                         },
                         sets: {
                           type: "array",
-                          minItems: 2,
-                          maxItems: 4,
+                          minItems: 3,
+                          maxItems: 7,
                           items: {
                             type: "object",
                             properties: {
@@ -274,7 +373,7 @@ LEMBRE-SE: ${daysOfWeek} dias, numerados de 1 a ${daysOfWeek}, SEM EXCEÇÃO!`;
                                 type: "number",
                                 minimum: 1,
                                 maximum: 5,
-                                description: "Quantas vezes fazer esta série (ex: 3 = fazer 3 vezes)"
+                                description: "Quantas vezes fazer esta série"
                               },
                               reps: {
                                 type: "string",
@@ -284,17 +383,22 @@ LEMBRE-SE: ${daysOfWeek} dias, numerados de 1 a ${daysOfWeek}, SEM EXCEÇÃO!`;
                                 type: "number",
                                 description: "Descanso em segundos"
                               },
+                              set_type: {
+                                type: "string",
+                                enum: ["feeder", "working", "back_off", "cluster", "muscle_round", "top_set", "drop_set"],
+                                description: "Tipo da série"
+                              },
                               notes: {
                                 type: "string",
-                                description: "Notas sobre a série (opcional)"
+                                description: "Orientação sobre a série e progressão"
                               }
                             },
-                            required: ["times", "reps", "rest_seconds"]
+                            required: ["times", "reps", "rest_seconds", "set_type", "notes"]
                           }
                         },
                         notes: {
                           type: "string",
-                          description: "Observações sobre execução"
+                          description: "Observações sobre execução do exercício"
                         }
                       },
                       required: ["exercise_name", "exercise_category", "sets"]
@@ -307,7 +411,7 @@ LEMBRE-SE: ${daysOfWeek} dias, numerados de 1 a ${daysOfWeek}, SEM EXCEÇÃO!`;
               description: `Array com EXATAMENTE ${daysOfWeek} dias de treino`
             }
           },
-          required: ["title", "description", "days"]
+          required: ["title", "description", "techniques_used", "days"]
         }
       });
 
@@ -445,6 +549,7 @@ Retorne APENAS o novo exercício no formato JSON.`;
         training_location: user.training_location,
         duration_minutes: 50,
         days: generatedWorkout.days,
+        techniques_used: generatedWorkout.techniques_used || [],
         is_premium: false,
         is_public: false,
         created_for_user: user.email,
