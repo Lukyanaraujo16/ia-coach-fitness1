@@ -7,7 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft, CheckCircle, AlertTriangle, Trophy, Clock, Zap, X, Weight, Video, Timer, Play, Pause, ChevronRight } from "lucide-react";
+import { ArrowLeft, CheckCircle, AlertTriangle, Trophy, Clock, Zap, X, Weight, Video, Timer, Play, Pause, ChevronRight, ArrowLeftRight, Sparkles, Loader2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import AICoachAssistant from "../components/workout/AICoachAssistant";
 
@@ -37,6 +37,8 @@ export default function WorkoutExecution() {
   const [endTime, setEndTime] = useState(null);
   const [exerciseWeights, setExerciseWeights] = useState({});
   const [notificationSent, setNotificationSent] = useState(false);
+  const [showSwapModal, setShowSwapModal] = useState(false);
+  const [swapLoading, setSwapLoading] = useState(false);
 
   const setRefs = useRef({});
 
@@ -342,6 +344,84 @@ export default function WorkoutExecution() {
 
   const currentExerciseWeight = exerciseWeights[currentExerciseIndex] || "";
 
+  const handleSwapCurrentExercise = async () => {
+    setSwapLoading(true);
+    try {
+      const prompt = `Você é um personal trainer. Preciso de um exercício ALTERNATIVO para substituir "${currentExercise.exercise_name}" no treino.
+
+CONTEXTO:
+- Dia do treino: ${currentDay.title}
+- Categoria do exercício atual: ${currentExercise.exercise_category}
+- Local de treino: ${user.training_location === 'gym' ? 'academia' : 'casa'}
+- Nível do aluno: ${user.fitness_level}
+${user.workout_observations ? `- Observações do aluno: ${user.workout_observations}` : ''}
+
+REGRAS:
+1. O exercício alternativo DEVE trabalhar o mesmo grupo muscular
+2. Deve ser diferente do original
+3. Deve ser adequado para ${user.training_location === 'gym' ? 'academia' : 'casa'}
+4. Mantenha a mesma estrutura de séries do exercício original
+
+Retorne APENAS o novo exercício no formato JSON.`;
+
+      const response = await base44.integrations.Core.InvokeLLM({
+        prompt,
+        response_json_schema: {
+          type: "object",
+          properties: {
+            exercise_name: { type: "string" },
+            exercise_category: { type: "string" },
+            sets: {
+              type: "array",
+              items: {
+                type: "object",
+                properties: {
+                  times: { type: "number" },
+                  reps: { type: "string" },
+                  rest_seconds: { type: "number" }
+                },
+                required: ["times", "reps", "rest_seconds"]
+              }
+            },
+            notes: { type: "string" }
+          },
+          required: ["exercise_name", "exercise_category", "sets"]
+        }
+      });
+
+      // Atualizar o treino no banco de dados
+      const updatedDays = workout.days.map((day, idx) => {
+        if (day.day_number === dayNumber) {
+          const updatedExercises = [...day.exercises];
+          updatedExercises[currentExerciseIndex] = response;
+          return { ...day, exercises: updatedExercises };
+        }
+        return day;
+      });
+
+      await base44.entities.Workout.update(workout.id, { days: updatedDays });
+
+      // Atualizar o estado local
+      const updatedWorkout = { ...workout, days: updatedDays };
+      setWorkout(updatedWorkout);
+      
+      const updatedDay = updatedDays.find(d => d.day_number === dayNumber);
+      setCurrentDay(updatedDay);
+      
+      // Resetar para a primeira série do novo exercício
+      setCurrentSetIndex(0);
+      setCurrentSetRepetition(0);
+      setIsResting(false);
+      
+      setShowSwapModal(false);
+    } catch (error) {
+      console.error("Erro ao trocar exercício:", error);
+      alert("Erro ao gerar exercício alternativo. Tente novamente.");
+    } finally {
+      setSwapLoading(false);
+    }
+  };
+
   if (showVideoModal && currentExercise?.video_url) {
     return (
       <div className="fixed inset-0 bg-black/95 backdrop-blur-sm z-[80] flex items-center justify-center p-4">
@@ -602,9 +682,18 @@ export default function WorkoutExecution() {
 
       {/* Nome do Exercício - Fixo */}
       <div className="flex-shrink-0 text-center px-4 py-4 border-b border-slate-800 bg-slate-900/50">
-        <h2 className="text-xl font-bold text-white leading-tight mb-1">
-          {currentExercise?.exercise_name}
-        </h2>
+        <div className="flex items-center justify-center gap-2 mb-1">
+          <h2 className="text-xl font-bold text-white leading-tight">
+            {currentExercise?.exercise_name}
+          </h2>
+          <button
+            onClick={() => setShowSwapModal(true)}
+            className="p-1.5 rounded-lg bg-purple-600/20 text-purple-400 hover:bg-purple-600/30 transition-colors"
+            title="Trocar exercício"
+          >
+            <ArrowLeftRight className="w-4 h-4" />
+          </button>
+        </div>
         {currentExercise?.notes && (
           <p className="text-slate-400 text-sm mb-2">💡 {currentExercise.notes}</p>
         )}
@@ -801,6 +890,58 @@ export default function WorkoutExecution() {
           </div>
         ) : null}
       </div>
+
+      {/* Modal de Troca de Exercício */}
+      {showSwapModal && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[80] flex items-center justify-center p-4">
+          <Card className="bg-slate-900 border-slate-800 max-w-md w-full">
+            <CardContent className="p-6 text-center space-y-4">
+              <div className="w-16 h-16 bg-purple-600/20 rounded-full flex items-center justify-center mx-auto">
+                <ArrowLeftRight className="w-8 h-8 text-purple-400" />
+              </div>
+              <div>
+                <h3 className="text-xl font-bold text-white mb-2">Trocar Exercício?</h3>
+                <p className="text-slate-400 text-sm mb-2">
+                  Exercício atual:
+                </p>
+                <p className="text-white font-semibold">
+                  {currentExercise?.exercise_name}
+                </p>
+              </div>
+              <p className="text-slate-500 text-sm">
+                A IA vai gerar um exercício alternativo que trabalha o mesmo grupo muscular e atualizar seu treino.
+              </p>
+              <div className="flex gap-3">
+                <Button
+                  variant="outline"
+                  onClick={() => setShowSwapModal(false)}
+                  disabled={swapLoading}
+                  className="flex-1 border-slate-700 text-slate-300"
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  onClick={handleSwapCurrentExercise}
+                  disabled={swapLoading}
+                  className="flex-1 bg-purple-600 hover:bg-purple-700"
+                >
+                  {swapLoading ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Gerando...
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="w-4 h-4 mr-2" />
+                      Trocar
+                    </>
+                  )}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
     </div>
   );
 }

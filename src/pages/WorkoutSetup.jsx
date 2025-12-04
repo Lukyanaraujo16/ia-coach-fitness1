@@ -5,7 +5,7 @@ import { createPageUrl } from "@/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Dumbbell, Loader2, Check, Sparkles, AlertTriangle, RefreshCw } from "lucide-react";
+import { Dumbbell, Loader2, Check, Sparkles, AlertTriangle, RefreshCw, ArrowLeftRight } from "lucide-react";
 import { motion } from "framer-motion";
 
 export default function WorkoutSetup() {
@@ -16,6 +16,8 @@ export default function WorkoutSetup() {
   const [error, setError] = useState(null);
   const [attemptCount, setAttemptCount] = useState(0);
   const [shouldRetry, setShouldRetry] = useState(false);
+  const [swappingExercise, setSwappingExercise] = useState(null); // {dayIndex, exerciseIndex}
+  const [swapLoading, setSwapLoading] = useState(false);
   const MAX_ATTEMPTS = 3;
 
   useEffect(() => {
@@ -360,6 +362,70 @@ LEMBRE-SE: ${daysOfWeek} dias, numerados de 1 a ${daysOfWeek}, SEM EXCEÇÃO!`;
     setGeneratedWorkout(null);
   };
 
+  const handleSwapExercise = async (dayIndex, exerciseIndex) => {
+    const day = generatedWorkout.days[dayIndex];
+    const exercise = day.exercises[exerciseIndex];
+    
+    setSwapLoading(true);
+    try {
+      const userObservations = user.workout_observations || "";
+      
+      const prompt = `Você é um personal trainer. Preciso de um exercício ALTERNATIVO para substituir "${exercise.exercise_name}" no treino.
+
+CONTEXTO:
+- Dia do treino: ${day.title}
+- Foco do dia: ${day.focus}
+- Categoria do exercício atual: ${exercise.exercise_category}
+- Local de treino: ${user.training_location === 'gym' ? 'academia' : 'casa'}
+- Nível do aluno: ${user.fitness_level}
+${userObservations ? `- Observações do aluno: ${userObservations}` : ''}
+
+REGRAS:
+1. O exercício alternativo DEVE trabalhar o mesmo grupo muscular
+2. Deve ser diferente do original
+3. Deve ser adequado para ${user.training_location === 'gym' ? 'academia' : 'casa'}
+4. Mantenha a mesma estrutura de séries
+
+Retorne APENAS o novo exercício no formato JSON.`;
+
+      const response = await base44.integrations.Core.InvokeLLM({
+        prompt,
+        response_json_schema: {
+          type: "object",
+          properties: {
+            exercise_name: { type: "string" },
+            exercise_category: { type: "string" },
+            sets: {
+              type: "array",
+              items: {
+                type: "object",
+                properties: {
+                  times: { type: "number" },
+                  reps: { type: "string" },
+                  rest_seconds: { type: "number" }
+                },
+                required: ["times", "reps", "rest_seconds"]
+              }
+            },
+            notes: { type: "string" }
+          },
+          required: ["exercise_name", "exercise_category", "sets"]
+        }
+      });
+
+      // Atualizar o treino gerado com o novo exercício
+      const updatedWorkout = { ...generatedWorkout };
+      updatedWorkout.days[dayIndex].exercises[exerciseIndex] = response;
+      setGeneratedWorkout(updatedWorkout);
+      setSwappingExercise(null);
+    } catch (error) {
+      console.error("Erro ao trocar exercício:", error);
+      alert("Erro ao gerar exercício alternativo. Tente novamente.");
+    } finally {
+      setSwapLoading(false);
+    }
+  };
+
   const handleComplete = async () => {
     setGeneratingWorkout(true);
     try {
@@ -597,7 +663,18 @@ LEMBRE-SE: ${daysOfWeek} dias, numerados de 1 a ${daysOfWeek}, SEM EXCEÇÃO!`;
                             <span className="text-blue-400 text-xs font-bold">{exIdx + 1}</span>
                           </div>
                           <div className="flex-1">
-                            <p className="text-white font-medium mb-1">{ex.exercise_name}</p>
+                            <div className="flex items-start justify-between">
+                              <p className="text-white font-medium mb-1">{ex.exercise_name}</p>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => setSwappingExercise({ dayIndex: idx, exerciseIndex: exIdx })}
+                                className="text-purple-400 hover:text-purple-300 hover:bg-purple-900/30 h-7 px-2"
+                              >
+                                <ArrowLeftRight className="w-3 h-3 mr-1" />
+                                <span className="text-xs">Trocar</span>
+                              </Button>
+                            </div>
                             <div className="flex flex-wrap gap-2 text-xs text-slate-400">
                               {ex.sets.map((set, setIdx) => (
                                 <span key={setIdx} className="bg-slate-700/50 px-2 py-1 rounded">
@@ -635,6 +712,58 @@ LEMBRE-SE: ${daysOfWeek} dias, numerados de 1 a ${daysOfWeek}, SEM EXCEÇÃO!`;
               )}
             </Button>
           </motion.div>
+        )}
+
+        {/* Modal de Troca de Exercício */}
+        {swappingExercise && (
+          <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <Card className="bg-slate-900 border-slate-800 max-w-md w-full">
+              <CardContent className="p-6 text-center space-y-4">
+                <div className="w-16 h-16 bg-purple-600/20 rounded-full flex items-center justify-center mx-auto">
+                  <ArrowLeftRight className="w-8 h-8 text-purple-400" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold text-white mb-2">Trocar Exercício?</h3>
+                  <p className="text-slate-400 text-sm mb-2">
+                    Exercício atual:
+                  </p>
+                  <p className="text-white font-semibold">
+                    {generatedWorkout.days[swappingExercise.dayIndex].exercises[swappingExercise.exerciseIndex].exercise_name}
+                  </p>
+                </div>
+                <p className="text-slate-500 text-sm">
+                  A IA vai sugerir um exercício alternativo que trabalha o mesmo grupo muscular.
+                </p>
+                <div className="flex gap-3">
+                  <Button
+                    variant="outline"
+                    onClick={() => setSwappingExercise(null)}
+                    disabled={swapLoading}
+                    className="flex-1 border-slate-700 text-slate-300"
+                  >
+                    Cancelar
+                  </Button>
+                  <Button
+                    onClick={() => handleSwapExercise(swappingExercise.dayIndex, swappingExercise.exerciseIndex)}
+                    disabled={swapLoading}
+                    className="flex-1 bg-purple-600 hover:bg-purple-700"
+                  >
+                    {swapLoading ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Gerando...
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="w-4 h-4 mr-2" />
+                        Trocar
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         )}
       </div>
     </div>

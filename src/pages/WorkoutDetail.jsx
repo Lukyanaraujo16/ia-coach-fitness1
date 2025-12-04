@@ -5,7 +5,7 @@ import { createPageUrl } from "@/utils";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Clock, Zap, Lock, CheckCircle, Play, RefreshCw } from "lucide-react";
+import { ArrowLeft, Clock, Zap, Lock, CheckCircle, Play } from "lucide-react";
 import { motion } from "framer-motion";
 
 const categoryLabels = {
@@ -227,27 +227,6 @@ export default function WorkoutDetail() {
           <p className="text-slate-400 text-center py-8">Nenhum exercício configurado</p>
         )}
       </div>
-
-      {/* Botão de Trocar Exercício */}
-      {!isLocked && workout.created_for_user === user?.email && (
-        <Card className="bg-gradient-to-br from-purple-900/30 to-blue-900/30 border-purple-700/50">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <h4 className="text-white font-semibold mb-1">Quer trocar algum exercício?</h4>
-                <p className="text-slate-400 text-sm">Peça para a IA sugerir alternativas</p>
-              </div>
-              <Button
-                onClick={() => navigate(createPageUrl("AICoach") + "?action=swap_exercise")}
-                className="bg-purple-600 hover:bg-purple-700"
-              >
-                <RefreshCw className="w-4 h-4 mr-2" />
-                Trocar
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      )}
 
       {/* Botões de Ação */}
       {fromSelection ? (
