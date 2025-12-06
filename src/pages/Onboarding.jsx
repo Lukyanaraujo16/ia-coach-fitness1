@@ -59,6 +59,8 @@ const STEPS = [
 
 export default function Onboarding() {
   const navigate = useNavigate();
+  const urlParams = new URLSearchParams(window.location.search);
+  const isReconfigure = urlParams.get('reconfigure') === 'true';
   const [currentStep, setCurrentStep] = useState(0);
   const [answers, setAnswers] = useState({
     nome_completo: "",
@@ -80,17 +82,32 @@ export default function Onboarding() {
         const currentUser = await base44.auth.me();
         setUser(currentUser);
         
-        if (currentUser.nome_completo) {
-          setAnswers(prev => ({ ...prev, nome_completo: currentUser.nome_completo }));
-        }
-        
-        if (currentUser.onboarding_completed) {
-          if (!currentUser.nutrition_setup_completed) {
-            navigate(createPageUrl("NutritionSetup"));
-          } else if (!currentUser.workout_setup_completed) {
-            navigate(createPageUrl("WorkoutSetup"));
-          } else {
-            navigate(createPageUrl("Dashboard"));
+        // Se é reconfiguração, preencher com dados existentes
+        if (isReconfigure) {
+          setAnswers({
+            nome_completo: currentUser.nome_completo || "",
+            current_weight: currentUser.current_weight?.toString() || "",
+            height: currentUser.height?.toString() || "",
+            weight_goal: currentUser.weight_goal?.toString() || "",
+            weekly_goal: currentUser.weekly_goal?.toString() || "3",
+            gender: currentUser.gender || "",
+            goal: currentUser.fitness_goal || "",
+            level: currentUser.fitness_level || "",
+            workout_observations: currentUser.workout_observations || "",
+          });
+        } else {
+          if (currentUser.nome_completo) {
+            setAnswers(prev => ({ ...prev, nome_completo: currentUser.nome_completo }));
+          }
+          
+          if (currentUser.onboarding_completed) {
+            if (!currentUser.nutrition_setup_completed) {
+              navigate(createPageUrl("NutritionSetup"));
+            } else if (!currentUser.workout_setup_completed) {
+              navigate(createPageUrl("WorkoutSetup"));
+            } else {
+              navigate(createPageUrl("Dashboard"));
+            }
           }
         }
       } catch (error) {
@@ -98,7 +115,7 @@ export default function Onboarding() {
       }
     };
     loadUser();
-  }, [navigate]);
+  }, [navigate, isReconfigure]);
 
   const currentStepData = STEPS[currentStep];
   const Icon = currentStepData.icon;
