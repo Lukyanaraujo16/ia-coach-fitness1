@@ -662,43 +662,42 @@ Retorne APENAS o novo exercício no formato JSON.`;
     <div className="min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 flex items-center justify-center px-4 py-12">
       <div className="w-full max-w-3xl">
         {!generatedWorkout ? (
-          {generatingWorkout && !generatedWorkout ? (
-                    <motion.div
-                      initial={{ opacity: 0, scale: 0.95 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      className="w-full"
-                    >
-                      <Card className="bg-slate-900/50 border-slate-800">
-                        <CardContent className="p-8">
-                          <div className="w-20 h-20 bg-gradient-to-br from-blue-600 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-xl">
-                            <Dumbbell className="w-10 h-10 text-white animate-pulse" />
-                          </div>
-                          <h3 className="text-2xl font-bold text-white text-center mb-3">
-                            Gerando Seu Treino Personalizado
-                          </h3>
-                          <LoadingProgress />
-                        </CardContent>
-                        </Card>
-                        </motion.div>
-                        )}
-                        ) : (
-                  <motion.div
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                  >
-                    <Card className="bg-slate-900/50 border-slate-800">
-                      <CardHeader>
-                        <div className="w-20 h-20 bg-gradient-to-br from-blue-600 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-xl">
-                          <Dumbbell className="w-10 h-10 text-white" />
-                        </div>
-                        <CardTitle className="text-white text-3xl text-center mb-2">
-                          Configuração de Treino
-                        </CardTitle>
-                        <p className="text-slate-400 text-center text-lg">
-                          Vamos criar seu programa de treino personalizado com IA
-                        </p>
-                      </CardHeader>
-                      <CardContent className="space-y-6">
+          generatingWorkout ? (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="w-full"
+            >
+              <Card className="bg-slate-900/50 border-slate-800">
+                <CardContent className="p-8">
+                  <div className="w-20 h-20 bg-gradient-to-br from-blue-600 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-xl">
+                    <Dumbbell className="w-10 h-10 text-white animate-pulse" />
+                  </div>
+                  <h3 className="text-2xl font-bold text-white text-center mb-3">
+                    Gerando Seu Treino Personalizado
+                  </h3>
+                  <LoadingProgress />
+                </CardContent>
+              </Card>
+            </motion.div>
+          ) : (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+            >
+              <Card className="bg-slate-900/50 border-slate-800">
+                <CardHeader>
+                  <div className="w-20 h-20 bg-gradient-to-br from-blue-600 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-xl">
+                    <Dumbbell className="w-10 h-10 text-white" />
+                  </div>
+                  <CardTitle className="text-white text-3xl text-center mb-2">
+                    Configuração de Treino
+                  </CardTitle>
+                  <p className="text-slate-400 text-center text-lg">
+                    Vamos criar seu programa de treino personalizado com IA
+                  </p>
+                </CardHeader>
+                <CardContent className="space-y-6">
                 <Card className="bg-gradient-to-br from-blue-900/30 to-purple-900/20 border-blue-700/50">
                   <CardContent className="p-6">
                     <h3 className="text-white font-semibold mb-4 text-center">
@@ -817,6 +816,7 @@ Retorne APENAS o novo exercício no formato JSON.`;
               </CardContent>
             </Card>
           </motion.div>
+          )
         ) : (
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
