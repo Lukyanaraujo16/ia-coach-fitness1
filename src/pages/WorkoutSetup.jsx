@@ -318,16 +318,18 @@ EXEMPLO COMPLETO DEMAIS EXERCÍCIOS:
 
 
 ═══════════════════════════════════════════════════════════════════════
-⚠️ REGRA OBRIGATÓRIA - NÚMERO DE EXERCÍCIOS POR DIA
+⚠️ INSTRUÇÕES CRÍTICAS - LEIA COM ATENÇÃO
 ═══════════════════════════════════════════════════════════════════════
 
-CADA DIA DEVE TER EXATAMENTE 5 OU 6 EXERCÍCIOS (MÍNIMO 5, MÁXIMO 6).
-ISSO É OBRIGATÓRIO PARA TODOS OS ${daysOfWeek} DIAS.
+1. Você DEVE gerar EXATAMENTE ${daysOfWeek} dias de treino
+2. CADA dia DEVE ter entre 5 e 6 exercícios (MÍNIMO 5, MÁXIMO 6)
+3. CADA exercício DEVE ter entre 4 e 6 séries com set_type definido
+4. NÃO esqueça nenhum campo obrigatório
 
-Total de dias a gerar: ${daysOfWeek} dias`;
+CONFIRME: Você vai gerar ${daysOfWeek} dias, cada um com 5-6 exercícios.`;
 
       const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Timeout: geração demorou mais de 3 minutos')), 180000)
+        setTimeout(() => reject(new Error('Timeout: geração demorou mais de 5 minutos')), 300000)
       );
 
       const generatePromise = base44.integrations.Core.InvokeLLM({
@@ -469,9 +471,22 @@ Total de dias a gerar: ${daysOfWeek} dias`;
       setError(null);
     } catch (error) {
       console.error("❌ Erro ao gerar treino:", error);
-      const errorMessage = error.message || 'Erro desconhecido';
+
+      // Detectar erros de rede
+      const isNetworkError = error.message?.includes('Network') || 
+                            error.message?.includes('fetch') || 
+                            error.message?.includes('connection') ||
+                            error.name === 'TypeError';
+
+      let errorMessage = 'Network Error';
+      if (isNetworkError) {
+        errorMessage = 'Erro de conexão. Verifique sua internet e tente novamente.';
+      } else {
+        errorMessage = error.message || 'Erro desconhecido';
+      }
+
       setError(errorMessage);
-      
+
       // Auto-retry se ainda tiver tentativas
       if (currentAttempt < MAX_ATTEMPTS) {
         setShouldRetry(true);
