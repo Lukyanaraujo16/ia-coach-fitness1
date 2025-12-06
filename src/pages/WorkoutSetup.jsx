@@ -329,7 +329,7 @@ EXEMPLO COMPLETO DEMAIS EXERCÍCIOS:
 CONFIRME: Você vai gerar ${daysOfWeek} dias, cada um com 5-6 exercícios.`;
 
       const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Timeout: geração demorou mais de 5 minutos')), 300000)
+        setTimeout(() => reject(new Error('Timeout na geração. Tente novamente.')), 180000)
       );
 
       const generatePromise = base44.integrations.Core.InvokeLLM({

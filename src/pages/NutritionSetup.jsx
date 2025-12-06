@@ -243,43 +243,18 @@ export default function NutritionSetup() {
         ? 'MODERADO - Equilíbrio entre qualidade e custo. Pode incluir alguns alimentos mais elaborados, mas sem exageros.'
         : 'FLEXÍVEL - Sem restrições de orçamento. Pode sugerir alimentos premium, orgânicos, suplementos, etc.';
 
-      const prompt = `Você é um nutricionista experiente criando um plano alimentar COMPLETO para um novo aluno.
+      const prompt = `Plano nutricional: ${user.fitness_goal}, ${user.current_weight}kg, ${calorieGoal}kcal/dia, ${formData.meals_per_day} refeições.
+      ${formData.dietary_preferences.length > 0 ? 'Dietas: ' + formData.dietary_preferences.join(', ') : ''}
+      ${formData.food_allergies.length > 0 ? 'Alergias: ' + formData.food_allergies.join(', ') : ''}
+      Orçamento: ${budgetText}
 
-INFORMAÇÕES DO ALUNO:
-- Nome: ${user.nome_completo}
-- Objetivo: ${user.fitness_goal === 'lose_weight' ? 'Emagrecimento' : user.fitness_goal === 'gain_muscle' ? 'Ganho de massa' : 'Manutenção'}
-- Peso: ${user.current_weight}kg
-- Altura: ${user.height}cm
-- Meta de peso: ${user.weight_goal}kg
-- Nível: ${user.fitness_level}
-- Gênero: ${user.gender === 'male' ? 'Masculino' : user.gender === 'female' ? 'Feminino' : 'Outro'}
-
-PREFERÊNCIAS ALIMENTARES:
-${formData.dietary_preferences.length > 0 ? '- Dietas: ' + formData.dietary_preferences.join(', ') : '- Sem restrições de dieta'}
-${formData.food_allergies.length > 0 ? '- Alergias: ' + formData.food_allergies.join(', ') : '- Sem alergias'}
-${formData.disliked_foods.length > 0 ? '- Não gosta: ' + formData.disliked_foods.join(', ') : '- Sem restrições'}
-- Refeições/dia: ${formData.meals_per_day}
-
-ORÇAMENTO: ${budgetText}
-
-METAS CALCULADAS:
-- Calorias diárias: ${calorieGoal} kcal
-- Proteínas: ${proteinPercentage}%
-- Carboidratos: ${carbsPercentage}%
-- Gorduras: ${fatPercentage}%
-
-Crie um plano nutricional COMPLETO e PERSONALIZADO com:
-
-1. Calcule e CONFIRME a distribuição de macronutrientes em PORCENTAGENS (deve somar 100%)
-2. Forneça 5-8 recomendações práticas e específicas para este aluno
-3. Liste 8-10 alimentos ESPECÍFICOS recomendados (considerando restrições E ORÇAMENTO)
-4. Liste 5-8 alimentos ESPECÍFICOS a evitar (baseado no objetivo)
-5. Crie um exemplo de dia alimentar com ${formData.meals_per_day} refeições, incluindo horários
-6. Forneça 5-8 dicas práticas de nutrição e hidratação
-
-IMPORTANTE: Considere o orçamento do aluno em TODAS as sugestões de alimentos e refeições.
-Seja ESPECÍFICO, PRÁTICO e considere TODAS as preferências, restrições e ORÇAMENTO.
-Use ingredientes BRASILEIROS e acessíveis.`;
+      Gerar:
+      1. Macros: ${proteinPercentage}% proteína, ${carbsPercentage}% carbo, ${fatPercentage}% gordura
+      2. 5 recomendações práticas
+      3. 8 alimentos recomendados (brasileiros, ${formData.budget})
+      4. 5 alimentos evitar
+      5. ${formData.meals_per_day} refeições com horário
+      6. 5 dicas nutrição`;
 
       const response = await base44.integrations.Core.InvokeLLM({
         prompt: prompt,
