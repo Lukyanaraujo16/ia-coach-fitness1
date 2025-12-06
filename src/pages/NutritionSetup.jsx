@@ -8,8 +8,67 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
-import { ChefHat, Loader2, Check, X, Sparkles, RefreshCw, Wallet, DollarSign, TrendingUp } from "lucide-react";
+import { ChefHat, Loader2, Check, X, Sparkles, RefreshCw, Wallet, DollarSign, TrendingUp, Apple } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+
+const LoadingProgress = () => {
+  const [progress, setProgress] = useState(0);
+  const [messageIndex, setMessageIndex] = useState(0);
+  
+  const messages = [
+    "🔍 Analisando suas preferências alimentares...",
+    "🍎 Selecionando os melhores alimentos para você...",
+    "📊 Calculando suas necessidades calóricas...",
+    "⚖️ Balanceando seus macronutrientes...",
+    "🥗 Montando seu cardápio personalizado...",
+    "✨ Finalizando seu plano alimentar..."
+  ];
+
+  useEffect(() => {
+    const progressInterval = setInterval(() => {
+      setProgress(prev => {
+        if (prev >= 95) return prev;
+        return prev + Math.random() * 3;
+      });
+    }, 300);
+
+    const messageInterval = setInterval(() => {
+      setMessageIndex(prev => (prev + 1) % messages.length);
+    }, 4000);
+
+    return () => {
+      clearInterval(progressInterval);
+      clearInterval(messageInterval);
+    };
+  }, []);
+
+  return (
+    <div className="space-y-4">
+      <motion.p
+        key={messageIndex}
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: -10 }}
+        className="text-green-400 text-center font-medium"
+      >
+        {messages[messageIndex]}
+      </motion.p>
+      
+      <div className="relative h-3 bg-slate-800 rounded-full overflow-hidden">
+        <motion.div
+          className="absolute inset-y-0 left-0 bg-gradient-to-r from-green-600 via-emerald-600 to-green-600 rounded-full"
+          initial={{ width: 0 }}
+          animate={{ width: `${progress}%` }}
+          transition={{ duration: 0.3 }}
+        />
+      </div>
+      
+      <p className="text-slate-500 text-sm text-center">
+        {Math.round(progress)}% completo
+      </p>
+    </div>
+  );
+};
 
 const dietaryOptions = [
   { value: "vegetarian", label: "Vegetariano", emoji: "🥗" },
@@ -456,8 +515,28 @@ Gere o novo plano de refeições com a substituição solicitada:`;
         </div>
 
         <AnimatePresence mode="wait">
+          {generatingPlan && !generatedPlan ? (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="w-full"
+            >
+              <Card className="bg-slate-900/50 border-slate-800">
+                <CardContent className="p-8">
+                  <div className="w-20 h-20 bg-gradient-to-br from-green-600 to-emerald-600 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-xl">
+                    <Apple className="w-10 h-10 text-white animate-pulse" />
+                  </div>
+                  <h3 className="text-2xl font-bold text-white text-center mb-3">
+                    Gerando Seu Plano Alimentar Personalizado
+                  </h3>
+                  <LoadingProgress />
+                </CardContent>
+              </Card>
+            </motion.div>
+          ) : null}
+          
           {/* Step 1: Dietary Preferences */}
-          {step === 1 && (
+          {!generatingPlan && step === 1 && (
             <motion.div
               key="step1"
               initial={{ opacity: 0, x: 20 }}
@@ -542,7 +621,7 @@ Gere o novo plano de refeições com a substituição solicitada:`;
           )}
 
           {/* Step 2: Allergies */}
-          {step === 2 && (
+          {!generatingPlan && step === 2 && (
             <motion.div
               key="step2"
               initial={{ opacity: 0, x: 20 }}
@@ -615,7 +694,7 @@ Gere o novo plano de refeições com a substituição solicitada:`;
           )}
 
           {/* Step 3: Dislikes */}
-          {step === 3 && (
+          {!generatingPlan && step === 3 && (
             <motion.div
               key="step3"
               initial={{ opacity: 0, x: 20 }}
@@ -688,7 +767,7 @@ Gere o novo plano de refeições com a substituição solicitada:`;
           )}
 
           {/* Step 4: Budget */}
-          {step === 4 && (
+          {!generatingPlan && step === 4 && (
             <motion.div
               key="step4"
               initial={{ opacity: 0, x: 20 }}
@@ -781,7 +860,7 @@ Gere o novo plano de refeições com a substituição solicitada:`;
           )}
 
           {/* Step 5: Generated Plan */}
-          {step === 5 && generatedPlan && (
+          {!generatingPlan && step === 5 && generatedPlan && (
             <motion.div
               key="step5"
               initial={{ opacity: 0, scale: 0.95 }}
