@@ -8,6 +8,65 @@ import { Badge } from "@/components/ui/badge";
 import { Dumbbell, Loader2, Check, Sparkles, AlertTriangle, RefreshCw, ArrowLeftRight } from "lucide-react";
 import { motion } from "framer-motion";
 
+const LoadingProgress = () => {
+  const [progress, setProgress] = useState(0);
+  const [messageIndex, setMessageIndex] = useState(0);
+  
+  const messages = [
+    "🔍 Analisando seu perfil e objetivos...",
+    "💪 Escolhendo os melhores exercícios para você...",
+    "📊 Calculando volume e intensidade ideais...",
+    "🎯 Aplicando técnicas avançadas de treino...",
+    "⚡ Montando a divisão perfeita...",
+    "✨ Finalizando seu programa personalizado..."
+  ];
+
+  useEffect(() => {
+    const progressInterval = setInterval(() => {
+      setProgress(prev => {
+        if (prev >= 95) return prev;
+        return prev + Math.random() * 3;
+      });
+    }, 300);
+
+    const messageInterval = setInterval(() => {
+      setMessageIndex(prev => (prev + 1) % messages.length);
+    }, 4000);
+
+    return () => {
+      clearInterval(progressInterval);
+      clearInterval(messageInterval);
+    };
+  }, []);
+
+  return (
+    <div className="space-y-4">
+      <motion.p
+        key={messageIndex}
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: -10 }}
+        className="text-blue-400 text-center font-medium"
+      >
+        {messages[messageIndex]}
+      </motion.p>
+      
+      <div className="relative h-3 bg-slate-800 rounded-full overflow-hidden">
+        <motion.div
+          className="absolute inset-y-0 left-0 bg-gradient-to-r from-blue-600 via-purple-600 to-blue-600 rounded-full"
+          initial={{ width: 0 }}
+          animate={{ width: `${progress}%` }}
+          transition={{ duration: 0.3 }}
+        />
+      </div>
+      
+      <p className="text-slate-500 text-sm text-center">
+        {Math.round(progress)}% completo
+      </p>
+    </div>
+  );
+};
+
 export default function WorkoutSetup() {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
@@ -603,23 +662,43 @@ Retorne APENAS o novo exercício no formato JSON.`;
     <div className="min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 flex items-center justify-center px-4 py-12">
       <div className="w-full max-w-3xl">
         {!generatedWorkout ? (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-          >
-            <Card className="bg-slate-900/50 border-slate-800">
-              <CardHeader>
-                <div className="w-20 h-20 bg-gradient-to-br from-blue-600 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-xl">
-                  <Dumbbell className="w-10 h-10 text-white" />
-                </div>
-                <CardTitle className="text-white text-3xl text-center mb-2">
-                  Configuração de Treino
-                </CardTitle>
-                <p className="text-slate-400 text-center text-lg">
-                  Vamos criar seu programa de treino personalizado com IA
-                </p>
-              </CardHeader>
-              <CardContent className="space-y-6">
+          {generatingWorkout && !generatedWorkout ? (
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.95 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      className="w-full"
+                    >
+                      <Card className="bg-slate-900/50 border-slate-800">
+                        <CardContent className="p-8">
+                          <div className="w-20 h-20 bg-gradient-to-br from-blue-600 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-xl">
+                            <Dumbbell className="w-10 h-10 text-white animate-pulse" />
+                          </div>
+                          <h3 className="text-2xl font-bold text-white text-center mb-3">
+                            Gerando Seu Treino Personalizado
+                          </h3>
+                          <LoadingProgress />
+                        </CardContent>
+                        </Card>
+                        </motion.div>
+                        )}
+                        ) : (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                  >
+                    <Card className="bg-slate-900/50 border-slate-800">
+                      <CardHeader>
+                        <div className="w-20 h-20 bg-gradient-to-br from-blue-600 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-xl">
+                          <Dumbbell className="w-10 h-10 text-white" />
+                        </div>
+                        <CardTitle className="text-white text-3xl text-center mb-2">
+                          Configuração de Treino
+                        </CardTitle>
+                        <p className="text-slate-400 text-center text-lg">
+                          Vamos criar seu programa de treino personalizado com IA
+                        </p>
+                      </CardHeader>
+                      <CardContent className="space-y-6">
                 <Card className="bg-gradient-to-br from-blue-900/30 to-purple-900/20 border-blue-700/50">
                   <CardContent className="p-6">
                     <h3 className="text-white font-semibold mb-4 text-center">
