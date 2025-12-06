@@ -266,21 +266,38 @@ TODO EXERCÍCIO COMEÇA COM FEEDER SETS:
 • Feeder 1: times=1, reps="8-10", rest_seconds=60, set_type="feeder"
 • Feeder 2: times=1, reps="5-7", rest_seconds=60, set_type="feeder"
 
-${userLevel === 'beginner' ? `
 ═══════════════════════════════════════════════════════════════════════
-NÍVEL INICIANTE - APÓS OS FEEDERS, escolha UMA estrutura:
+ESTRUTURA APÓS OS FEEDERS - PARA TODOS OS NÍVEIS
 ═══════════════════════════════════════════════════════════════════════
 
+APÓS OS FEEDERS OBRIGATÓRIOS, adicione séries de trabalho:
+
+NÍVEL INICIANTE - escolha UMA das opções:
 Opção 1: + 2 Back Off Sets
 Opção 2: + 1 Working Set + 1 Back Off Set
 Opção 3: + 2 Working Sets
-Opção 4: + 2 Working Sets + 1 Feeder adicional
-Opção 5: + 2 Working Sets + 2 Back Off Sets
+Opção 4: + 2 Working Sets + 2 Back Off Sets
 
-Working Set: times=1, reps="6-8", rest_seconds=180, set_type="working"
-Back Off Set: times=2, reps="12-15", rest_seconds=180, set_type="back_off"
+NÍVEL INTERMEDIÁRIO - escolha UMA das opções:
+Opção 1: + 1 Working + 2 Back Off
+Opção 2: + 2 Working + 1 Back Off
+Opção 3: + 2 Working + 2 Back Off
+Opção 4: + 1 Working + 1 Drop Set + 1 Back Off (máx 1 drop set por treino)
 
-EXEMPLO 1º EXERCÍCIO COM OPÇÃO 5:
+NÍVEL AVANÇADO - escolha UMA das opções:
+Opção 1: + 2 Working + 2 Back Off
+Opção 2: + 1 Top Set + 1 Working + 1 Back Off
+Opção 3: + 1 Working + 1 Drop Set + 1 Back Off
+Opção 4: + 1 Working + 1 Cluster Set + 1 Back Off
+
+ESPECIFICAÇÕES DAS SÉRIES:
+• Working Set: times=1, reps="6-8", rest_seconds=180, set_type="working"
+• Back Off Set: times=2, reps="12-15", rest_seconds=180, set_type="back_off"
+• Top Set: times=1, reps="3-5", rest_seconds=240, set_type="top_set"
+• Drop Set: times=1, reps="8-12", rest_seconds=120, set_type="drop_set"
+• Cluster Set: times=1, reps="4-6", rest_seconds=180, set_type="cluster"
+
+EXEMPLO COMPLETO 1º EXERCÍCIO:
 [
   {"times":1, "reps":"8-10", "rest_seconds":60, "set_type":"feeder", "notes":"Aquecimento progressivo"},
   {"times":1, "reps":"5-7", "rest_seconds":60, "set_type":"feeder", "notes":"Preparação neuromuscular"},
@@ -290,43 +307,7 @@ EXEMPLO 1º EXERCÍCIO COM OPÇÃO 5:
   {"times":2, "reps":"12-15", "rest_seconds":180, "set_type":"back_off", "notes":"Volume hipertrofia"}
 ]
 
-EXEMPLO 2º EXERCÍCIO COM OPÇÃO 2:
-[
-  {"times":1, "reps":"8-10", "rest_seconds":60, "set_type":"feeder", "notes":"Aquecimento"},
-  {"times":1, "reps":"5-7", "rest_seconds":60, "set_type":"feeder", "notes":"Preparação"},
-  {"times":1, "reps":"6-8", "rest_seconds":180, "set_type":"working", "notes":"Série pesada"},
-  {"times":1, "reps":"12-15", "rest_seconds":180, "set_type":"back_off", "notes":"Volume final"}
-]
-` : userLevel === 'intermediate' ? `
-═══════════════════════════════════════════════════════════════════════
-NÍVEL INTERMEDIÁRIO - APÓS OS FEEDERS obrigatórios, escolha uma estrutura:
-═══════════════════════════════════════════════════════════════════════
-
-Estruturas disponíveis (use variedade):
-1. + 1 Working + 2 Back Off
-2. + 2 Working + 1 Back Off
-3. + 2 Working + 2 Back Off
-4. + 1 Working + 1 Drop Set (máx 1 drop set por treino)
-5. + 1 Working + 1 Cluster Set (máx 1 cluster por treino)
-6. + 1 Working + 1 Muscle Round (máx 1 muscle round por treino)
-
-Especificações:
-• Working Set: times=1, reps="6-8", rest_seconds=180, set_type="working"
-• Back Off Set: times=2, reps="12-15", rest_seconds=180, set_type="back_off"
-• Drop Set: times=1, reps="8-12", rest_seconds=120, set_type="drop_set"
-• Cluster Set: times=1, reps="4-6", rest_seconds=180, set_type="cluster"
-• Muscle Round: times=1, reps="6-8", rest_seconds=120, set_type="muscle_round"
-
-EXEMPLO 1º EXERCÍCIO:
-[
-  {"times":1, "reps":"8-10", "rest_seconds":60, "set_type":"feeder", "notes":"Aquecimento progressivo"},
-  {"times":1, "reps":"5-7", "rest_seconds":60, "set_type":"feeder", "notes":"Preparação neuromuscular"},
-  {"times":1, "reps":"3-5", "rest_seconds":60, "set_type":"feeder", "notes":"Ativação máxima"},
-  {"times":1, "reps":"6-8", "rest_seconds":180, "set_type":"working", "notes":"Série de trabalho pesada"},
-  {"times":2, "reps":"12-15", "rest_seconds":180, "set_type":"back_off", "notes":"Volume hipertrofia"}
-]
-
-EXEMPLO DEMAIS EXERCÍCIOS:
+EXEMPLO COMPLETO DEMAIS EXERCÍCIOS:
 [
   {"times":1, "reps":"8-10", "rest_seconds":60, "set_type":"feeder", "notes":"Aquecimento"},
   {"times":1, "reps":"5-7", "rest_seconds":60, "set_type":"feeder", "notes":"Preparação"},
@@ -334,46 +315,6 @@ EXEMPLO DEMAIS EXERCÍCIOS:
   {"times":1, "reps":"6-8", "rest_seconds":180, "set_type":"working", "notes":"Manter carga"},
   {"times":1, "reps":"12-15", "rest_seconds":180, "set_type":"back_off", "notes":"Volume final"}
 ]
-` : `
-═══════════════════════════════════════════════════════════════════════
-NÍVEL AVANÇADO - APÓS OS FEEDERS obrigatórios, escolha uma estrutura:
-═══════════════════════════════════════════════════════════════════════
-
-Estruturas disponíveis (use variedade, máx 2 técnicas avançadas por treino):
-1. + 2 Working + 2 Back Off
-2. + 1 Top Set + 1 Working + 1 Back Off
-3. + 1 Working + 1 Drop Set + 1 Back Off
-4. + 1 Working + 1 Cluster Set + 1 Back Off
-5. + 1 Working + 1 Muscle Round + 1 Back Off
-6. + 1 Top Set + 1 Drop Set
-
-Especificações:
-• Working Set: times=1, reps="6-8", rest_seconds=180, set_type="working"
-• Back Off Set: times=2, reps="12-15", rest_seconds=180, set_type="back_off"
-• Top Set: times=1, reps="3-5", rest_seconds=240, set_type="top_set"
-• Drop Set: times=1, reps="8-12", rest_seconds=120, set_type="drop_set"
-• Cluster Set: times=1, reps="4-6", rest_seconds=180, set_type="cluster"
-• Muscle Round: times=1, reps="6-8", rest_seconds=120, set_type="muscle_round"
-
-EXEMPLO 1º EXERCÍCIO:
-[
-  {"times":1, "reps":"8-10", "rest_seconds":60, "set_type":"feeder", "notes":"Aquecimento progressivo"},
-  {"times":1, "reps":"5-7", "rest_seconds":60, "set_type":"feeder", "notes":"Preparação neuromuscular"},
-  {"times":1, "reps":"3-5", "rest_seconds":60, "set_type":"feeder", "notes":"Ativação máxima"},
-  {"times":1, "reps":"3-5", "rest_seconds":240, "set_type":"top_set", "notes":"Série máxima força"},
-  {"times":1, "reps":"6-8", "rest_seconds":180, "set_type":"working", "notes":"Trabalho pesado"},
-  {"times":1, "reps":"12-15", "rest_seconds":180, "set_type":"back_off", "notes":"Volume final"}
-]
-
-EXEMPLO DEMAIS EXERCÍCIOS:
-[
-  {"times":1, "reps":"8-10", "rest_seconds":60, "set_type":"feeder", "notes":"Aquecimento"},
-  {"times":1, "reps":"5-7", "rest_seconds":60, "set_type":"feeder", "notes":"Preparação"},
-  {"times":1, "reps":"6-8", "rest_seconds":180, "set_type":"working", "notes":"Série pesada"},
-  {"times":1, "reps":"8-12", "rest_seconds":120, "set_type":"drop_set", "notes":"Drop set intenso"},
-  {"times":1, "reps":"12-15", "rest_seconds":180, "set_type":"back_off", "notes":"Volume final"}
-]
-`}
 
 
 ═══════════════════════════════════════════════════════════════════════
