@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -23,7 +22,7 @@ export default function WorkoutFormModal({ workout, exercises, onClose, isUserCr
   const [selectedExercises, setSelectedExercises] = useState([]);
   const [currentDayForBulk, setCurrentDayForBulk] = useState(0);
   const [bulkSetsConfig, setBulkSetsConfig] = useState([
-    { times: 3, reps: "10-12", rest_seconds: 60, notes: "" }
+    { times: 3, reps: "10-12", rest_seconds: 60, set_type: "working", notes: "" }
   ]);
   const [singleExerciseCategoryFilter, setSingleExerciseCategoryFilter] = useState({});
 
@@ -160,7 +159,7 @@ export default function WorkoutFormModal({ workout, exercises, onClose, isUserCr
       exercise_id: "",
       exercise_name: "",
       exercise_category: "",
-      sets: [{ times: 1, reps: "10", rest_seconds: 60, notes: "" }],
+      sets: [{ times: 1, reps: "10", rest_seconds: 60, set_type: "working", notes: "" }],
       notes: "",
     });
     setFormData({ ...formData, days: newDays });
@@ -173,7 +172,7 @@ export default function WorkoutFormModal({ workout, exercises, onClose, isUserCr
     setBulkSearchQuery("");
     setBulkCategoryFilter("all");
     setBulkAddStep(1);
-    setBulkSetsConfig([{ times: 3, reps: "10-12", rest_seconds: 60, notes: "" }]);
+    setBulkSetsConfig([{ times: 3, reps: "10-12", rest_seconds: 60, set_type: "working", notes: "" }]);
     
     // Scroll para o topo antes de abrir o modal
     window.scrollTo({ top: 0, behavior: 'instant' });
@@ -203,7 +202,7 @@ export default function WorkoutFormModal({ workout, exercises, onClose, isUserCr
   };
 
   const addBulkSet = () => {
-    setBulkSetsConfig([...bulkSetsConfig, { times: 1, reps: "10", rest_seconds: 60, notes: "" }]);
+    setBulkSetsConfig([...bulkSetsConfig, { times: 1, reps: "10", rest_seconds: 60, set_type: "working", notes: "" }]);
   };
 
   const removeBulkSet = (index) => {
@@ -267,6 +266,7 @@ export default function WorkoutFormModal({ workout, exercises, onClose, isUserCr
       times: 1,
       reps: "10",
       rest_seconds: 60,
+      set_type: "working",
       notes: "",
     });
     setFormData({ ...formData, days: newDays });
@@ -736,23 +736,44 @@ export default function WorkoutFormModal({ workout, exercises, onClose, isUserCr
                                                         </div>
 
                                                         <div className="space-y-1">
-                                                          <Label className="text-slate-400 text-xs">Descanso (seg)</Label>
-                                                          <Input
-                                                            type="number"
-                                                            value={set.rest_seconds}
-                                                            onChange={(e) => updateSet(dayIndex, exerciseIndex, setIndex, "rest_seconds", parseInt(e.target.value))}
-                                                            className="bg-slate-700 border-slate-600 text-white h-9 text-sm"
-                                                          />
+                                                         <Label className="text-slate-400 text-xs">Descanso (seg)</Label>
+                                                         <Input
+                                                           type="number"
+                                                           value={set.rest_seconds}
+                                                           onChange={(e) => updateSet(dayIndex, exerciseIndex, setIndex, "rest_seconds", parseInt(e.target.value))}
+                                                           className="bg-slate-700 border-slate-600 text-white h-9 text-sm"
+                                                         />
                                                         </div>
 
                                                         <div className="space-y-1">
-                                                          <Label className="text-slate-400 text-xs">Observações</Label>
-                                                          <Input
-                                                            value={set.notes}
-                                                            onChange={(e) => updateSet(dayIndex, exerciseIndex, setIndex, "notes", e.target.value)}
-                                                            className="bg-slate-700 border-slate-600 text-white h-9 text-sm"
-                                                            placeholder="Ex: aumentar carga"
-                                                          />
+                                                         <Label className="text-slate-400 text-xs">Tipo de Série</Label>
+                                                         <Select
+                                                           value={set.set_type || "working"}
+                                                           onValueChange={(value) => updateSet(dayIndex, exerciseIndex, setIndex, "set_type", value)}
+                                                         >
+                                                           <SelectTrigger className="bg-slate-700 border-slate-600 text-white h-9 text-sm">
+                                                             <SelectValue />
+                                                           </SelectTrigger>
+                                                           <SelectContent className="z-[150]" position="popper" sideOffset={5}>
+                                                             <SelectItem value="feeder">🎯 Feeder Set</SelectItem>
+                                                             <SelectItem value="working">💪 Working Set</SelectItem>
+                                                             <SelectItem value="back_off">⬇️ Back Off Set</SelectItem>
+                                                             <SelectItem value="cluster">🔗 Cluster Set</SelectItem>
+                                                             <SelectItem value="muscle_round">🔄 Muscle Round</SelectItem>
+                                                             <SelectItem value="top_set">🏆 Top Set</SelectItem>
+                                                             <SelectItem value="drop_set">🔥 Drop Set</SelectItem>
+                                                           </SelectContent>
+                                                         </Select>
+                                                        </div>
+
+                                                        <div className="space-y-1">
+                                                         <Label className="text-slate-400 text-xs">Observações</Label>
+                                                         <Input
+                                                           value={set.notes}
+                                                           onChange={(e) => updateSet(dayIndex, exerciseIndex, setIndex, "notes", e.target.value)}
+                                                           className="bg-slate-700 border-slate-600 text-white h-9 text-sm"
+                                                           placeholder="Ex: aumentar carga"
+                                                         />
                                                         </div>
                                                       </div>
                                                     </Card>
@@ -1018,6 +1039,27 @@ export default function WorkoutFormModal({ workout, exercises, onClose, isUserCr
                                   onChange={(e) => updateBulkSet(index, "rest_seconds", parseInt(e.target.value))}
                                   className="bg-slate-700 border-slate-600 text-white h-10"
                                 />
+                              </div>
+
+                              <div className="space-y-1">
+                                <Label className="text-slate-400 text-xs">Tipo de Série</Label>
+                                <Select
+                                  value={set.set_type || "working"}
+                                  onValueChange={(value) => updateBulkSet(index, "set_type", value)}
+                                >
+                                  <SelectTrigger className="bg-slate-700 border-slate-600 text-white h-10 text-sm">
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent className="z-[150]" position="popper" sideOffset={5}>
+                                    <SelectItem value="feeder">🎯 Feeder Set</SelectItem>
+                                    <SelectItem value="working">💪 Working Set</SelectItem>
+                                    <SelectItem value="back_off">⬇️ Back Off Set</SelectItem>
+                                    <SelectItem value="cluster">🔗 Cluster Set</SelectItem>
+                                    <SelectItem value="muscle_round">🔄 Muscle Round</SelectItem>
+                                    <SelectItem value="top_set">🏆 Top Set</SelectItem>
+                                    <SelectItem value="drop_set">🔥 Drop Set</SelectItem>
+                                  </SelectContent>
+                                </Select>
                               </div>
 
                               <div className="space-y-1">
