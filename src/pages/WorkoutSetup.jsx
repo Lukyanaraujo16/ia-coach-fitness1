@@ -375,7 +375,15 @@ EXEMPLO DEMAIS EXERCÍCIOS:
 ]
 `}
 
-Cada dia: 5-6 exercícios. Total: ${daysOfWeek} dias.`;
+
+═══════════════════════════════════════════════════════════════════════
+⚠️ REGRA OBRIGATÓRIA - NÚMERO DE EXERCÍCIOS POR DIA
+═══════════════════════════════════════════════════════════════════════
+
+CADA DIA DEVE TER EXATAMENTE 5 OU 6 EXERCÍCIOS (MÍNIMO 5, MÁXIMO 6).
+ISSO É OBRIGATÓRIO PARA TODOS OS ${daysOfWeek} DIAS.
+
+Total de dias a gerar: ${daysOfWeek} dias`;
 
       const timeoutPromise = new Promise((_, reject) => 
         setTimeout(() => reject(new Error('Timeout: geração demorou mais de 3 minutos')), 180000)
@@ -422,7 +430,7 @@ Cada dia: 5-6 exercícios. Total: ${daysOfWeek} dias.`;
                   },
                   exercises: {
                     type: "array",
-                    minItems: 4,
+                    minItems: 5,
                     maxItems: 6,
                     items: {
                       type: "object",
@@ -506,8 +514,8 @@ Cada dia: 5-6 exercícios. Total: ${daysOfWeek} dias.`;
       // Validar que cada dia tem exercícios suficientes
       for (let i = 0; i < response.days.length; i++) {
         const day = response.days[i];
-        if (!day.exercises || day.exercises.length < 4) {
-          throw new Error(`Dia ${i + 1} incompleto: tem apenas ${day.exercises?.length || 0} exercícios (mínimo 4)`);
+        if (!day.exercises || day.exercises.length < 5) {
+          throw new Error(`Dia ${i + 1} incompleto: tem apenas ${day.exercises?.length || 0} exercícios (mínimo 5)`);
         }
         if (day.day_number !== i + 1) {
           day.day_number = i + 1; // Corrigir numeração se necessário
