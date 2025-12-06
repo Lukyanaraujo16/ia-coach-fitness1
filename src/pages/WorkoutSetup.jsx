@@ -185,15 +185,6 @@ export default function WorkoutSetup() {
 
       const userObservations = user.workout_observations || "";
 
-      // Estruturas de treino por nível
-      const beginnerStructures = [
-        "feeder_sets + 2 back_off",
-        "feeder_sets + 1 working + 1 back_off",
-        "feeder_sets + 2 working",
-        "feeder_sets + 2 working + 1 feeder",
-        "feeder_sets + 2 working + 2 back_off"
-      ];
-
       const prompt = `Crie treino para: ${user.nome_completo}, ${userGender === 'male' ? 'Homem' : 'Mulher'}, ${levelLabels[userLevel]}, ${locationLabels[user.training_location]}, ${daysOfWeek}x/semana.
 ${userObservations ? `Observações: ${userObservations}` : ''}
 
@@ -201,53 +192,69 @@ GERE EXATAMENTE ${daysOfWeek} DIAS:
 ${divisionList.map((day, i) => `Dia ${i + 1}: ${day.replace(`Dia ${i + 1}: `, '')}`).join('\n')}
 
 ═══════════════════════════════════════════════════════════════════════
-FEEDER SETS - OBRIGATÓRIAS EM TODOS OS EXERCÍCIOS (NÍVEL ${userLevel.toUpperCase()})
+⚠️ REGRA OBRIGATÓRIA - FEEDER SETS EM TODOS OS EXERCÍCIOS
 ═══════════════════════════════════════════════════════════════════════
 
-⚠️ REGRA CRÍTICA - SEMPRE:
-• 1º exercício de CADA DIA: DEVE ter 3 feeder sets
-• Demais exercícios: DEVEM ter 2 feeder sets
+TODO EXERCÍCIO COMEÇA COM FEEDER SETS:
 
-Especificação dos Feeders (SEMPRE NESTA ORDEM):
-• Feeder 1: 1x 8-10 reps, 60s descanso, set_type="feeder"
-• Feeder 2: 1x 5-7 reps, 60s descanso, set_type="feeder"  
-• Feeder 3 (SOMENTE no 1º exercício): 1x 3-5 reps, 60s descanso, set_type="feeder"
+1º EXERCÍCIO DO DIA (OBRIGATÓRIO EXATAMENTE ASSIM):
+• Feeder 1: times=1, reps="8-10", rest_seconds=60, set_type="feeder"
+• Feeder 2: times=1, reps="5-7", rest_seconds=60, set_type="feeder"
+• Feeder 3: times=1, reps="3-5", rest_seconds=60, set_type="feeder"
+
+2º, 3º, 4º, 5º, 6º EXERCÍCIOS DO DIA (OBRIGATÓRIO EXATAMENTE ASSIM):
+• Feeder 1: times=1, reps="8-10", rest_seconds=60, set_type="feeder"
+• Feeder 2: times=1, reps="5-7", rest_seconds=60, set_type="feeder"
 
 ${userLevel === 'beginner' ? `
 ═══════════════════════════════════════════════════════════════════════
-ESTRUTURAS INICIANTE - Escolha UMA das opções para cada exercício:
+NÍVEL INICIANTE - APÓS OS FEEDERS, escolha UMA estrutura:
 ═══════════════════════════════════════════════════════════════════════
 
-Opção 1: Feeder Sets + 2 Back Off
-Opção 2: Feeder Sets + 1 Working + 1 Back Off
-Opção 3: Feeder Sets + 2 Working
-Opção 4: Feeder Sets + 2 Working + 1 Feeder adicional
-Opção 5: Feeder Sets + 2 Working + 2 Back Off
+Opção 1: + 2 Back Off Sets
+Opção 2: + 1 Working Set + 1 Back Off Set
+Opção 3: + 2 Working Sets
+Opção 4: + 2 Working Sets + 1 Feeder adicional
+Opção 5: + 2 Working Sets + 2 Back Off Sets
 
-ESPECIFICAÇÕES:
-• Working Set: 1x 6-8 reps, 180s descanso, set_type="working"
-• Back Off Set: 2x 12-15 reps, 180s descanso, set_type="back_off"
+Working Set: times=1, reps="6-8", rest_seconds=180, set_type="working"
+Back Off Set: times=2, reps="12-15", rest_seconds=180, set_type="back_off"
+
+EXEMPLO 1º EXERCÍCIO COM OPÇÃO 5:
+[
+  {"times":1, "reps":"8-10", "rest_seconds":60, "set_type":"feeder", "notes":"Aquecimento progressivo"},
+  {"times":1, "reps":"5-7", "rest_seconds":60, "set_type":"feeder", "notes":"Preparação neuromuscular"},
+  {"times":1, "reps":"3-5", "rest_seconds":60, "set_type":"feeder", "notes":"Ativação máxima"},
+  {"times":1, "reps":"6-8", "rest_seconds":180, "set_type":"working", "notes":"Série de trabalho pesada"},
+  {"times":1, "reps":"6-8", "rest_seconds":180, "set_type":"working", "notes":"Manter carga máxima"},
+  {"times":2, "reps":"12-15", "rest_seconds":180, "set_type":"back_off", "notes":"Volume hipertrofia"}
+]
+
+EXEMPLO 2º EXERCÍCIO COM OPÇÃO 2:
+[
+  {"times":1, "reps":"8-10", "rest_seconds":60, "set_type":"feeder", "notes":"Aquecimento"},
+  {"times":1, "reps":"5-7", "rest_seconds":60, "set_type":"feeder", "notes":"Preparação"},
+  {"times":1, "reps":"6-8", "rest_seconds":180, "set_type":"working", "notes":"Série pesada"},
+  {"times":1, "reps":"12-15", "rest_seconds":180, "set_type":"back_off", "notes":"Volume final"}
+]
 ` : userLevel === 'intermediate' ? `
 ═══════════════════════════════════════════════════════════════════════
-NÍVEL INTERMEDIÁRIO - Após os Feeders obrigatórios:
+NÍVEL INTERMEDIÁRIO - APÓS OS FEEDERS obrigatórios:
 ═══════════════════════════════════════════════════════════════════════
 
-• Working Sets: 1-2x 6-8 reps, 180s descanso
-• Back Off Sets: 1-2x 12-15 reps, 180s descanso
-• Drop Set: máx 1 por treino, se usar
-• Cluster OU Muscle Round: máx 1 por treino, se usar
+• 1-2 Working Sets: times=1, reps="6-8", rest_seconds=180, set_type="working"
+• 1-2 Back Off Sets: times=2, reps="12-15", rest_seconds=180, set_type="back_off"
+• Drop Set (máx 1 por treino se usar)
+• Cluster OU Muscle Round (máx 1 por treino se usar)
 • PROIBIDO usar Top Set
 ` : `
 ═══════════════════════════════════════════════════════════════════════
-NÍVEL AVANÇADO - Após os Feeders obrigatórios:
+NÍVEL AVANÇADO - APÓS OS FEEDERS obrigatórios:
 ═══════════════════════════════════════════════════════════════════════
 
-• Pode usar todas as técnicas avançadas
+• Pode usar todas as técnicas
 • Máximo 2 técnicas avançadas por treino
-• Não ultrapassar capacidade de recuperação
 `}
-
-CADA SÉRIE PRECISA TER: times, reps, rest_seconds, set_type, notes
 
 Cada dia: 5-6 exercícios. Total: ${daysOfWeek} dias.`;
 
