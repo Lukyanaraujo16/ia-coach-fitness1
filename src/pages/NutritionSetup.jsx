@@ -27,10 +27,11 @@ const LoadingProgress = () => {
   useEffect(() => {
     const progressInterval = setInterval(() => {
       setProgress(prev => {
-        if (prev >= 95) return prev;
-        return prev + Math.random() * 3;
+        if (prev >= 100) return 100;
+        const increment = prev < 50 ? Math.random() * 5 : prev < 90 ? Math.random() * 2 : Math.random() * 0.5;
+        return Math.min(prev + increment, 98);
       });
-    }, 300);
+    }, 400);
 
     const messageInterval = setInterval(() => {
       setMessageIndex(prev => (prev + 1) % messages.length);
