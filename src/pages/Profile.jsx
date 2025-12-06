@@ -119,7 +119,7 @@ export default function Profile() {
       completed_workout_days: [],
     }),
     onSuccess: () => {
-      navigate(createPageUrl("Onboarding"));
+      navigate(createPageUrl("Onboarding") + "?reconfigure=true");
     },
   });
 
