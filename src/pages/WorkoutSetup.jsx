@@ -185,30 +185,71 @@ export default function WorkoutSetup() {
 
       const userObservations = user.workout_observations || "";
 
+      // Estruturas de treino por nível
+      const beginnerStructures = [
+        "feeder_sets + 2 back_off",
+        "feeder_sets + 1 working + 1 back_off",
+        "feeder_sets + 2 working",
+        "feeder_sets + 2 working + 1 feeder",
+        "feeder_sets + 2 working + 2 back_off"
+      ];
+
       const prompt = `Crie treino para: ${user.nome_completo}, ${userGender === 'male' ? 'Homem' : 'Mulher'}, ${levelLabels[userLevel]}, ${locationLabels[user.training_location]}, ${daysOfWeek}x/semana.
-      ${userObservations ? `Observações: ${userObservations}` : ''}
+${userObservations ? `Observações: ${userObservations}` : ''}
 
-      GERE EXATAMENTE ${daysOfWeek} DIAS:
-      ${divisionList.map((day, i) => `Dia ${i + 1}: ${day.replace(`Dia ${i + 1}: `, '')}`).join('\n')}
+GERE EXATAMENTE ${daysOfWeek} DIAS:
+${divisionList.map((day, i) => `Dia ${i + 1}: ${day.replace(`Dia ${i + 1}: `, '')}`).join('\n')}
 
-      REGRAS DE SÉRIES (NÍVEL ${userLevel.toUpperCase()}):
-      ${userLevel === 'beginner' ? '- Use apenas: feeder, working, back_off. PROIBIDO: drop, cluster, muscle_round, top_set' : 
-      userLevel === 'intermediate' ? '- Use: feeder, working, back_off, drop_set (1x). Pode usar cluster OU muscle_round (1x). PROIBIDO: top_set' :
-      '- Pode usar todas: feeder, working, back_off, cluster, muscle_round, drop_set, top_set'}
+═══════════════════════════════════════════════════════════════════════
+FEEDER SETS - OBRIGATÓRIAS EM TODOS OS EXERCÍCIOS (NÍVEL ${userLevel.toUpperCase()})
+═══════════════════════════════════════════════════════════════════════
 
-      ESTRUTURA POR EXERCÍCIO:
-      - 1º exercício do dia: 3 feeders + working + back_off
-      - Demais: 2 feeders + working + back_off
+⚠️ REGRA CRÍTICA - SEMPRE:
+• 1º exercício de CADA DIA: DEVE ter 3 feeder sets
+• Demais exercícios: DEVEM ter 2 feeder sets
 
-      CADA SÉRIE PRECISA TER: times, reps, rest_seconds, set_type, notes
+Especificação dos Feeders (SEMPRE NESTA ORDEM):
+• Feeder 1: 1x 8-10 reps, 60s descanso, set_type="feeder"
+• Feeder 2: 1x 5-7 reps, 60s descanso, set_type="feeder"  
+• Feeder 3 (SOMENTE no 1º exercício): 1x 3-5 reps, 60s descanso, set_type="feeder"
 
-      set_type válidos: "feeder", "working", "back_off", "cluster", "muscle_round", "top_set", "drop_set"
+${userLevel === 'beginner' ? `
+═══════════════════════════════════════════════════════════════════════
+ESTRUTURAS INICIANTE - Escolha UMA das opções para cada exercício:
+═══════════════════════════════════════════════════════════════════════
 
-      Feeder: 1x 8-9 reps, descanso 90s
-      Working: 1x 6-8 reps, descanso 180s  
-      Back_off: 2x 12-15 reps, descanso 180s
+Opção 1: Feeder Sets + 2 Back Off
+Opção 2: Feeder Sets + 1 Working + 1 Back Off
+Opção 3: Feeder Sets + 2 Working
+Opção 4: Feeder Sets + 2 Working + 1 Feeder adicional
+Opção 5: Feeder Sets + 2 Working + 2 Back Off
 
-      Cada dia: 5-6 exercícios. Total: ${daysOfWeek} dias.`;
+ESPECIFICAÇÕES:
+• Working Set: 1x 6-8 reps, 180s descanso, set_type="working"
+• Back Off Set: 2x 12-15 reps, 180s descanso, set_type="back_off"
+` : userLevel === 'intermediate' ? `
+═══════════════════════════════════════════════════════════════════════
+NÍVEL INTERMEDIÁRIO - Após os Feeders obrigatórios:
+═══════════════════════════════════════════════════════════════════════
+
+• Working Sets: 1-2x 6-8 reps, 180s descanso
+• Back Off Sets: 1-2x 12-15 reps, 180s descanso
+• Drop Set: máx 1 por treino, se usar
+• Cluster OU Muscle Round: máx 1 por treino, se usar
+• PROIBIDO usar Top Set
+` : `
+═══════════════════════════════════════════════════════════════════════
+NÍVEL AVANÇADO - Após os Feeders obrigatórios:
+═══════════════════════════════════════════════════════════════════════
+
+• Pode usar todas as técnicas avançadas
+• Máximo 2 técnicas avançadas por treino
+• Não ultrapassar capacidade de recuperação
+`}
+
+CADA SÉRIE PRECISA TER: times, reps, rest_seconds, set_type, notes
+
+Cada dia: 5-6 exercícios. Total: ${daysOfWeek} dias.`;
 
       const timeoutPromise = new Promise((_, reject) => 
         setTimeout(() => reject(new Error('Timeout: geração demorou mais de 3 minutos')), 180000)
