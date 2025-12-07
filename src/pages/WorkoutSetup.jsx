@@ -217,49 +217,42 @@ Opção 5: feeder + muscle_round (2 técnicas)
 - Feeders (1º ex: 3, demais: 2)
 - 1 muscle_round (24 reps totais, 180s)`;
       } else { // advanced
-        techniqueOptions = `OPÇÕES DE TÉCNICAS (escolha 1 opção para cada dia):
+        techniqueOptions = `OPÇÕES DE TÉCNICAS - MÁXIMO 3 TÉCNICAS (feeder + 2 outras):
 
-Opção 1: feeder + 1 top_set + 1 back_off
+Opção 1: feeder + top_set + back_off (3 técnicas)
 - Feeders (1º ex: 3, demais: 2)
 - 1 top_set (3-5 reps, 240s)
 - 1 back_off (12-15 reps, 120s)
 
-Opção 2: feeder + 1 working + 1 drop_set + 1 back_off
+Opção 2: feeder + working + drop_set (3 técnicas)
 - Feeders (1º ex: 3, demais: 2)
 - 1 working (6-8 reps, 180s)
-- 1 drop_set (8-12 reps, 120s)
-- 1 back_off (12-15 reps, 120s)
+- 1 drop_set (até falha, 120s)
 
-Opção 3: feeder + 1 cluster + 1 back_off
+Opção 3: feeder + cluster + back_off (3 técnicas)
 - Feeders (1º ex: 3, demais: 2)
 - 1 cluster (4-6 reps, 180s)
 - 1 back_off (12-15 reps, 120s)
 
-Opção 4: feeder + 1 top_set + 1 cluster
+Opção 4: feeder + top_set + cluster (3 técnicas)
 - Feeders (1º ex: 3, demais: 2)
 - 1 top_set (3-5 reps, 240s)
 - 1 cluster (4-6 reps, 180s)
 
-Opção 5: feeder + 1 muscle_round + 1 back_off
+Opção 5: feeder + muscle_round + back_off (3 técnicas)
 - Feeders (1º ex: 3, demais: 2)
-- 1 muscle_round (6-8 reps, 180s)
+- 1 muscle_round (24 reps totais, 180s)
 - 1 back_off (12-15 reps, 120s)
 
-Opção 6: feeder + 1 working + 1 muscle_round
+Opção 6: feeder + working + muscle_round (3 técnicas)
 - Feeders (1º ex: 3, demais: 2)
 - 1 working (6-8 reps, 180s)
-- 1 muscle_round (6-8 reps, 180s)
+- 1 muscle_round (24 reps totais, 180s)
 
-Opção 7: feeder + 1 working + 1 drop_set + 1 cluster
-- Feeders (1º ex: 3, demais: 2)
-- 1 working (6-8 reps, 180s)
-- 1 drop_set (8-12 reps, 120s)
-- 1 cluster (4-6 reps, 180s)
-
-Opção 8: feeder + 1 top_set + 1 drop_set
+Opção 7: feeder + top_set + drop_set (3 técnicas)
 - Feeders (1º ex: 3, demais: 2)
 - 1 top_set (3-5 reps, 240s)
-- 1 drop_set (8-12 reps, 120s)`;
+- 1 drop_set (até falha, 120s)`;
       }
 
       const prompt = `Aplique técnicas de treino aos exercícios.
