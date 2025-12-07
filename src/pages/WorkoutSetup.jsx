@@ -291,23 +291,48 @@ Opção 8: feeder + 1 top_set + 1 drop_set
 - 1 drop_set (8-12 reps, 120s)`;
       }
 
-      const prompt = `Aplique técnicas de treino aos exercícios selecionados.
+      const prompt = `Aplique técnicas de treino aos exercícios.
 
 NÍVEL: ${userLevel}
 
 ${techniqueOptions}
 
-IMPORTANTE:
-- 1º exercício do dia: 3 séries feeder
-- Demais exercícios: 2 séries feeder
-- TODOS exercícios do MESMO DIA usam a MESMA opção de técnica
-- Retorne título, descrição e lista de técnicas usadas
+⚠️ REGRAS OBRIGATÓRIAS:
+1. Escolha UMA opção de técnica para cada DIA
+2. TODOS os exercícios do MESMO DIA usam EXATAMENTE a mesma estrutura de séries
+3. ÚNICA diferença: 1º exercício do dia = 3 feeders, demais = 2 feeders
+4. Feeders são séries SEPARADAS (cada uma com times:1)
 
-Feeder padrão:
-3 feeders: [{"times":1,"reps":"8-10","rest_seconds":60,"set_type":"feeder"},{"times":1,"reps":"5-7","rest_seconds":60,"set_type":"feeder"},{"times":1,"reps":"3-5","rest_seconds":60,"set_type":"feeder"}]
-2 feeders: [{"times":1,"reps":"8-10","rest_seconds":60,"set_type":"feeder"},{"times":1,"reps":"5-7","rest_seconds":60,"set_type":"feeder"}]
+📋 EXEMPLO COMPLETO - Dia usando "feeder + 1 working + 1 drop_set + 1 back_off":
 
-Exercícios:
+EXERCÍCIO 1 (primeiro do dia - 3 feeders):
+{
+  "exercise_name": "Supino Reto",
+  "sets": [
+    {"times":1,"reps":"8-10","rest_seconds":60,"set_type":"feeder"},
+    {"times":1,"reps":"5-7","rest_seconds":60,"set_type":"feeder"},
+    {"times":1,"reps":"3-5","rest_seconds":60,"set_type":"feeder"},
+    {"times":1,"reps":"6-8","rest_seconds":180,"set_type":"working"},
+    {"times":1,"reps":"8-12","rest_seconds":120,"set_type":"drop_set"},
+    {"times":1,"reps":"12-15","rest_seconds":120,"set_type":"back_off"}
+  ]
+}
+
+EXERCÍCIO 2 (demais exercícios - 2 feeders):
+{
+  "exercise_name": "Supino Inclinado",
+  "sets": [
+    {"times":1,"reps":"8-10","rest_seconds":60,"set_type":"feeder"},
+    {"times":1,"reps":"5-7","rest_seconds":60,"set_type":"feeder"},
+    {"times":1,"reps":"6-8","rest_seconds":180,"set_type":"working"},
+    {"times":1,"reps":"8-12","rest_seconds":120,"set_type":"drop_set"},
+    {"times":1,"reps":"12-15","rest_seconds":120,"set_type":"back_off"}
+  ]
+}
+
+TODOS os outros exercícios do mesmo dia seguem o padrão do Exercício 2 (2 feeders + mesmas técnicas).
+
+Exercícios para aplicar:
 ${JSON.stringify(selectedExercises.days)}`;
 
       const response = await base44.integrations.Core.InvokeLLM({
