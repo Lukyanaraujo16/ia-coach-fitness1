@@ -717,7 +717,7 @@ Retorne APENAS o novo exercício no formato JSON.`;
                 )}
 
                 <Button
-                  onClick={generateWorkoutPlan}
+                  onClick={selectExercises}
                   disabled={generatingWorkout || (shouldRetry && attemptCount < MAX_ATTEMPTS)}
                   className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white py-8 text-xl font-bold shadow-lg"
                 >
@@ -727,7 +727,7 @@ Retorne APENAS o novo exercício no formato JSON.`;
                       <span className="text-base">
                         {shouldRetry 
                           ? `Tentativa ${attemptCount}/${MAX_ATTEMPTS} - Aguarde...`
-                          : 'Gerando seu treino personalizado...'}
+                          : 'Selecionando exercícios...'}
                       </span>
                     </div>
                   ) : (
@@ -739,13 +739,81 @@ Retorne APENAS o novo exercício no formato JSON.`;
                 </Button>
 
                 <p className="text-slate-500 text-xs text-center">
-                  ⏱️ A geração leva cerca de 30-90 segundos. Aguarde!
+                  ⏱️ Processo em 2 etapas para máxima precisão
                 </p>
               </CardContent>
             </Card>
           </motion.div>
-          )
-        ) : (
+        )}
+
+        {/* ETAPA 3: Exercícios selecionados - mostrar para aprovação */}
+        {step === 3 && selectedExercises && !generatingWorkout && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="space-y-4"
+          >
+            <Card className="bg-gradient-to-br from-blue-900/30 to-purple-900/20 border-blue-700/50">
+              <CardContent className="p-8 text-center">
+                <div className="w-20 h-20 bg-blue-600/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Check className="w-10 h-10 text-blue-400" />
+                </div>
+                <h2 className="text-3xl font-bold text-white mb-2">
+                  ✅ Exercícios Selecionados!
+                </h2>
+                <p className="text-slate-300 text-lg">
+                  Revise os exercícios antes de aplicar as técnicas
+                </p>
+              </CardContent>
+            </Card>
+
+            {selectedExercises.days.map((day, idx) => (
+              <Card key={idx} className="bg-slate-900/50 border-slate-800">
+                <CardHeader>
+                  <CardTitle className="text-white text-lg">
+                    📅 Dia {day.day_number} - {day.title}
+                  </CardTitle>
+                  <p className="text-slate-400 text-sm">{day.focus}</p>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    {day.exercises.map((ex, exIdx) => (
+                      <div key={exIdx} className="flex items-center gap-3 p-3 bg-slate-800/50 rounded-lg">
+                        <div className="w-6 h-6 bg-blue-600/20 rounded flex items-center justify-center flex-shrink-0">
+                          <span className="text-blue-400 text-xs font-bold">{exIdx + 1}</span>
+                        </div>
+                        <p className="text-white font-medium">{ex.exercise_name}</p>
+                        <Badge variant="outline" className="ml-auto text-slate-400 text-xs">
+                          {ex.exercise_category}
+                        </Badge>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+
+            <div className="flex gap-3">
+              <Button
+                variant="outline"
+                onClick={handleReset}
+                className="flex-1 border-slate-700 text-slate-300 py-6"
+              >
+                Refazer Seleção
+              </Button>
+              <Button
+                onClick={applyTechniques}
+                className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 py-6 text-lg font-bold"
+              >
+                <Sparkles className="w-5 h-5 mr-2" />
+                Aplicar Técnicas
+              </Button>
+            </div>
+          </motion.div>
+        )}
+
+        {/* ETAPA 5: Treino completo */}
+        {step === 5 && generatedWorkout && (
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
