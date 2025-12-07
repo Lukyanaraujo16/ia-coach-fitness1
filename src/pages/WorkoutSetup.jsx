@@ -130,28 +130,6 @@ export default function WorkoutSetup() {
     try {
       const daysOfWeek = user.weekly_goal;
       const userGender = user.gender || 'male';
-      const userLevel = user.fitness_level || 'intermediate';
-
-      // Técnicas por nível
-      const techniquesByLevel = {
-        beginner: {
-          allowed: ["feeder_set", "working_set", "back_off_set"],
-          forbidden: ["drop_set", "cluster_set", "muscle_round", "top_set"],
-          description: "Use apenas Feeder Sets, Working Sets e opcionalmente Back Off Sets. PROIBIDO usar Drop Set, Cluster Set, Muscle Round ou Top Set."
-        },
-        intermediate: {
-          allowed: ["feeder_set", "working_set", "back_off_set", "drop_set", "cluster_set", "muscle_round"],
-          forbidden: ["top_set"],
-          description: "Use Feeder Sets, Working Sets, Back Off Sets. Pode usar Drop Set (máx 1 por treino) e Cluster Set OU Muscle Round (máx 1 por treino). PROIBIDO usar Top Set."
-        },
-        advanced: {
-          allowed: ["feeder_set", "working_set", "back_off_set", "drop_set", "cluster_set", "muscle_round", "top_set"],
-          forbidden: [],
-          description: "Pode usar todas as técnicas. Use máximo 2 técnicas avançadas por treino para não ultrapassar capacidade de recuperação."
-        }
-      };
-
-      const levelTechniques = techniquesByLevel[userLevel] || techniquesByLevel.intermediate;
 
       // Divisões específicas por gênero
       const maleDivisions = {
