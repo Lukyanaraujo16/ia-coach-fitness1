@@ -173,28 +173,139 @@ Retorne apenas nomes dos exercícios, SEM séries.`;
     try {
       const userLevel = user.fitness_level || 'intermediate';
 
-      const prompt = `Aplique técnicas de treino.
+      // Opções de técnicas por nível
+      let techniqueOptions = '';
+      
+      if (userLevel === 'beginner') {
+        techniqueOptions = `OPÇÕES DE TÉCNICAS (escolha 1 opção para cada dia):
 
-Nível: ${userLevel}
+Opção 1: feeder + 2 back_off
+- Feeders (1º ex: 3, demais: 2)
+- 1 back_off (12-15 reps, 120s)
+- 1 back_off (12-15 reps, 120s)
 
-REGRA: Escolha UMA técnica por dia. TODOS exercícios do dia usam a MESMA técnica.
-Diferença: 1º exercício = 3 feeders, demais = 2 feeders.
+Opção 2: feeder + 1 working + 1 back_off
+- Feeders (1º ex: 3, demais: 2)
+- 1 working (6-8 reps, 180s)
+- 1 back_off (12-15 reps, 120s)
 
-Feeders:
-- 3: [{"times":1,"reps":"8-10","rest_seconds":60,"set_type":"feeder"},{"times":1,"reps":"5-7","rest_seconds":60,"set_type":"feeder"},{"times":1,"reps":"3-5","rest_seconds":60,"set_type":"feeder"}]
-- 2: [{"times":1,"reps":"8-10","rest_seconds":60,"set_type":"feeder"},{"times":1,"reps":"5-7","rest_seconds":60,"set_type":"feeder"}]
+Opção 3: feeder + 2 working
+- Feeders (1º ex: 3, demais: 2)
+- 1 working (6-8 reps, 180s)
+- 1 working (6-8 reps, 180s)
 
-Técnicas (escolha 1 por dia):
-${userLevel === 'beginner' ? '- back_off: 1 working (6-8, 180s) + 1 back_off (12-15, 180s)' : ''}
-${userLevel === 'intermediate' ? `- back_off: 1 working (6-8, 180s) + 1 back_off (12-15, 180s)
-- drop_set: 1 working (6-8, 180s) + 1 drop_set (8-12, 120s)
-- cluster: 2 cluster (4-6, 180s)
-- muscle_round: 1 muscle_round (6-8, 180s)` : ''}
-${userLevel === 'advanced' ? `- back_off: 1 working (6-8, 180s) + 1 back_off (12-15, 180s)
-- drop_set: 1 working (6-8, 180s) + 1 drop_set (8-12, 120s)
-- cluster: 2 cluster (4-6, 180s)
-- muscle_round: 1 muscle_round (6-8, 180s)
-- top_set: 1 top_set (3-5, 240s) + 1 back_off (12-15, 180s)` : ''}
+Opção 4: feeder + 2 working + 1 feeder adicional
+- Feeders (1º ex: 3, demais: 2)
+- 1 working (6-8 reps, 180s)
+- 1 working (6-8 reps, 180s)
+- 1 feeder (8-10 reps, 60s)
+
+Opção 5: feeder + 2 working + 2 back_off
+- Feeders (1º ex: 3, demais: 2)
+- 1 working (6-8 reps, 180s)
+- 1 working (6-8 reps, 180s)
+- 1 back_off (12-15 reps, 120s)
+- 1 back_off (12-15 reps, 120s)`;
+      } else if (userLevel === 'intermediate') {
+        techniqueOptions = `OPÇÕES DE TÉCNICAS (escolha 1 opção para cada dia):
+
+Opção 1: feeder + 1 working + 1 back_off
+- Feeders (1º ex: 3, demais: 2)
+- 1 working (6-8 reps, 180s)
+- 1 back_off (12-15 reps, 120s)
+
+Opção 2: feeder + 2 working + 1 drop_set
+- Feeders (1º ex: 3, demais: 2)
+- 1 working (6-8 reps, 180s)
+- 1 working (6-8 reps, 180s)
+- 1 drop_set (8-12 reps, 120s)
+
+Opção 3: feeder + 2 cluster
+- Feeders (1º ex: 3, demais: 2)
+- 1 cluster (4-6 reps, 180s)
+- 1 cluster (4-6 reps, 180s)
+
+Opção 4: feeder + 1 working + 1 cluster
+- Feeders (1º ex: 3, demais: 2)
+- 1 working (6-8 reps, 180s)
+- 1 cluster (4-6 reps, 180s)
+
+Opção 5: feeder + 1 working + 1 back_off + 1 drop_set
+- Feeders (1º ex: 3, demais: 2)
+- 1 working (6-8 reps, 180s)
+- 1 back_off (12-15 reps, 120s)
+- 1 drop_set (8-12 reps, 120s)
+
+Opção 6: feeder + 1 muscle_round
+- Feeders (1º ex: 3, demais: 2)
+- 1 muscle_round (6-8 reps, 180s)
+
+Opção 7: feeder + 2 working + 1 back_off
+- Feeders (1º ex: 3, demais: 2)
+- 1 working (6-8 reps, 180s)
+- 1 working (6-8 reps, 180s)
+- 1 back_off (12-15 reps, 120s)`;
+      } else { // advanced
+        techniqueOptions = `OPÇÕES DE TÉCNICAS (escolha 1 opção para cada dia):
+
+Opção 1: feeder + 1 top_set + 1 back_off
+- Feeders (1º ex: 3, demais: 2)
+- 1 top_set (3-5 reps, 240s)
+- 1 back_off (12-15 reps, 120s)
+
+Opção 2: feeder + 1 working + 1 drop_set + 1 back_off
+- Feeders (1º ex: 3, demais: 2)
+- 1 working (6-8 reps, 180s)
+- 1 drop_set (8-12 reps, 120s)
+- 1 back_off (12-15 reps, 120s)
+
+Opção 3: feeder + 1 cluster + 1 back_off
+- Feeders (1º ex: 3, demais: 2)
+- 1 cluster (4-6 reps, 180s)
+- 1 back_off (12-15 reps, 120s)
+
+Opção 4: feeder + 1 top_set + 1 cluster
+- Feeders (1º ex: 3, demais: 2)
+- 1 top_set (3-5 reps, 240s)
+- 1 cluster (4-6 reps, 180s)
+
+Opção 5: feeder + 1 muscle_round + 1 back_off
+- Feeders (1º ex: 3, demais: 2)
+- 1 muscle_round (6-8 reps, 180s)
+- 1 back_off (12-15 reps, 120s)
+
+Opção 6: feeder + 1 working + 1 muscle_round
+- Feeders (1º ex: 3, demais: 2)
+- 1 working (6-8 reps, 180s)
+- 1 muscle_round (6-8 reps, 180s)
+
+Opção 7: feeder + 1 working + 1 drop_set + 1 cluster
+- Feeders (1º ex: 3, demais: 2)
+- 1 working (6-8 reps, 180s)
+- 1 drop_set (8-12 reps, 120s)
+- 1 cluster (4-6 reps, 180s)
+
+Opção 8: feeder + 1 top_set + 1 drop_set
+- Feeders (1º ex: 3, demais: 2)
+- 1 top_set (3-5 reps, 240s)
+- 1 drop_set (8-12 reps, 120s)`;
+      }
+
+      const prompt = `Aplique técnicas de treino aos exercícios selecionados.
+
+NÍVEL: ${userLevel}
+
+${techniqueOptions}
+
+IMPORTANTE:
+- 1º exercício do dia: 3 séries feeder
+- Demais exercícios: 2 séries feeder
+- TODOS exercícios do MESMO DIA usam a MESMA opção de técnica
+- Retorne título, descrição e lista de técnicas usadas
+
+Feeder padrão:
+3 feeders: [{"times":1,"reps":"8-10","rest_seconds":60,"set_type":"feeder"},{"times":1,"reps":"5-7","rest_seconds":60,"set_type":"feeder"},{"times":1,"reps":"3-5","rest_seconds":60,"set_type":"feeder"}]
+2 feeders: [{"times":1,"reps":"8-10","rest_seconds":60,"set_type":"feeder"},{"times":1,"reps":"5-7","rest_seconds":60,"set_type":"feeder"}]
 
 Exercícios:
 ${JSON.stringify(selectedExercises.days)}`;
