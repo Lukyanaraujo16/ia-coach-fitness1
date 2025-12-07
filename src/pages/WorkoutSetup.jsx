@@ -315,11 +315,152 @@ APENAS liste os nomes dos exercícios, SEM séries, repetições ou técnicas.`;
     }
   };
 
+  // ETAPA 2: Aplicar técnicas aos exercícios selecionados
+  const applyTechniques = async () => {
+    if (!selectedExercises) return;
+
+    setGeneratingWorkout(true);
+    setStep(4);
+    setError(null);
+    const currentAttempt = attemptCount + 1;
+    setAttemptCount(currentAttempt);
+
+    try {
+      const userLevel = user.fitness_level || 'intermediate';
+
+      // Técnicas permitidas por nível
+      const techniquesByLevel = {
+        beginner: ["back_off_set"],
+        intermediate: ["back_off_set", "drop_set", "cluster_set", "muscle_round"],
+        advanced: ["back_off_set", "drop_set", "cluster_set", "muscle_round", "top_set"]
+      };
+
+      const allowedTechniques = techniquesByLevel[userLevel].join(", ");
+
+      const prompt = `Aplique técnicas de treino aos exercícios.
+
+Nível: ${userLevel}
+Técnicas permitidas: ${allowedTechniques}
+
+REGRA CRÍTICA:
+Para CADA DIA, escolha UMA técnica da lista permitida.
+TODOS os exercícios do mesmo dia devem usar a MESMA técnica.
+Apenas a quantidade de feeders varia: 1º exercício = 3 feeders, demais = 2 feeders.
+
+Feeders padrão:
+- 3 feeders: [{"times":1,"reps":"8-10","rest_seconds":60,"set_type":"feeder"},{"times":1,"reps":"5-7","rest_seconds":60,"set_type":"feeder"},{"times":1,"reps":"3-5","rest_seconds":60,"set_type":"feeder"}]
+- 2 feeders: [{"times":1,"reps":"8-10","rest_seconds":60,"set_type":"feeder"},{"times":1,"reps":"5-7","rest_seconds":60,"set_type":"feeder"}]
+
+Estruturas por técnica:
+- back_off_set: 1 working (6-8 reps, 180s) + 1 back_off (12-15 reps, 180s)
+- drop_set: 1 working (6-8 reps, 180s) + 1 drop_set (8-12 reps, 120s)
+- cluster_set: 2 cluster (4-6 reps, 180s cada)
+- muscle_round: 1 muscle_round (6-8 reps, 180s)
+- top_set: 1 top_set (3-5 reps, 240s) + 1 back_off (12-15 reps, 180s)
+
+Exercícios selecionados:
+${JSON.stringify(selectedExercises.days, null, 2)}
+
+Retorne o treino completo com título, descrição, técnicas usadas e dias com sets aplicados.`;
+
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Timeout. Tente novamente.')), 60000)
+      );
+
+      const generatePromise = base44.integrations.Core.InvokeLLM({
+        prompt: prompt,
+        response_json_schema: {
+          type: "object",
+          properties: {
+            title: { type: "string" },
+            description: { type: "string" },
+            techniques_used: {
+              type: "array",
+              items: { type: "string" }
+            },
+            days: {
+              type: "array",
+              items: {
+                type: "object",
+                properties: {
+                  day_number: { type: "number" },
+                  title: { type: "string" },
+                  focus: { type: "string" },
+                  exercises: {
+                    type: "array",
+                    items: {
+                      type: "object",
+                      properties: {
+                        exercise_name: { type: "string" },
+                        exercise_category: { type: "string" },
+                        sets: {
+                          type: "array",
+                          items: {
+                            type: "object",
+                            properties: {
+                              times: { type: "number" },
+                              reps: { type: "string" },
+                              rest_seconds: { type: "number" },
+                              set_type: { type: "string" },
+                              notes: { type: "string" }
+                            },
+                            required: ["times", "reps", "rest_seconds", "set_type"]
+                          }
+                        },
+                        notes: { type: "string" }
+                      },
+                      required: ["exercise_name", "exercise_category", "sets"]
+                    }
+                  }
+                },
+                required: ["day_number", "title", "focus", "exercises"]
+              }
+            }
+          },
+          required: ["title", "description", "techniques_used", "days"]
+        }
+      });
+
+      const response = await Promise.race([generatePromise, timeoutPromise]);
+
+      if (!response?.days) {
+        throw new Error('Resposta inválida da IA');
+      }
+
+      console.log("✅ Técnicas aplicadas:", response);
+      setGeneratedWorkout(response);
+      setStep(5);
+      setAttemptCount(0);
+      setError(null);
+    } catch (error) {
+      console.error("❌ Erro ao aplicar técnicas:", error);
+      
+      const isNetworkError = error.message?.includes('Network') || 
+                            error.message?.includes('fetch') || 
+                            error.message?.includes('connection') ||
+                            error.name === 'TypeError';
+
+      let errorMessage = isNetworkError 
+        ? 'Erro de conexão. Verifique sua internet.' 
+        : error.message || 'Erro desconhecido';
+
+      setError(errorMessage);
+
+      if (currentAttempt < MAX_ATTEMPTS) {
+        setShouldRetry(true);
+      }
+    } finally {
+      setGeneratingWorkout(false);
+    }
+  };
+
   const handleReset = () => {
     setError(null);
     setAttemptCount(0);
     setShouldRetry(false);
+    setSelectedExercises(null);
     setGeneratedWorkout(null);
+    setStep(1);
   };
 
   const handleSwapExercise = async (dayIndex, exerciseIndex) => {
