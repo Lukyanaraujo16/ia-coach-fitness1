@@ -107,13 +107,18 @@ export default function WorkoutSetup() {
     if (shouldRetry && attemptCount < MAX_ATTEMPTS) {
       const timer = setTimeout(() => {
         setShouldRetry(false);
-        generateWorkoutPlan();
+        if (step === 2) {
+          selectExercises();
+        } else if (step === 4) {
+          applyTechniques();
+        }
       }, 2000);
       return () => clearTimeout(timer);
     }
-  }, [shouldRetry, attemptCount]);
+  }, [shouldRetry, attemptCount, step]);
 
-  const generateWorkoutPlan = async () => {
+  // ETAPA 1: Selecionar exercícios adequados ao usuário
+  const selectExercises = async () => {
     if (!user) return;
 
     setGeneratingWorkout(true);
