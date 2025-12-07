@@ -192,44 +192,30 @@ Opção 3: feeder + working (2 técnicas)
 - Feeders (1º ex: 3, demais: 2)
 - 2 working (6-8 reps, 180s cada)`;
       } else if (userLevel === 'intermediate') {
-        techniqueOptions = `OPÇÕES DE TÉCNICAS (escolha 1 opção para cada dia):
+        techniqueOptions = `OPÇÕES DE TÉCNICAS - MÁXIMO 3 TÉCNICAS (feeder + 2 outras):
 
-Opção 1: feeder + 1 working + 1 back_off
+Opção 1: feeder + working + back_off (3 técnicas)
 - Feeders (1º ex: 3, demais: 2)
 - 1 working (6-8 reps, 180s)
 - 1 back_off (12-15 reps, 120s)
 
-Opção 2: feeder + 2 working + 1 drop_set
+Opção 2: feeder + working + drop_set (3 técnicas)
 - Feeders (1º ex: 3, demais: 2)
 - 1 working (6-8 reps, 180s)
-- 1 working (6-8 reps, 180s)
-- 1 drop_set (8-12 reps, 120s)
+- 1 drop_set (até falha, 120s)
 
-Opção 3: feeder + 2 cluster
+Opção 3: feeder + cluster (2 técnicas)
 - Feeders (1º ex: 3, demais: 2)
-- 1 cluster (4-6 reps, 180s)
-- 1 cluster (4-6 reps, 180s)
+- 2 cluster (4-6 reps, 180s cada)
 
-Opção 4: feeder + 1 working + 1 cluster
+Opção 4: feeder + working + cluster (3 técnicas)
 - Feeders (1º ex: 3, demais: 2)
 - 1 working (6-8 reps, 180s)
 - 1 cluster (4-6 reps, 180s)
 
-Opção 5: feeder + 1 working + 1 back_off + 1 drop_set
+Opção 5: feeder + muscle_round (2 técnicas)
 - Feeders (1º ex: 3, demais: 2)
-- 1 working (6-8 reps, 180s)
-- 1 back_off (12-15 reps, 120s)
-- 1 drop_set (8-12 reps, 120s)
-
-Opção 6: feeder + 1 muscle_round
-- Feeders (1º ex: 3, demais: 2)
-- 1 muscle_round (6-8 reps, 180s)
-
-Opção 7: feeder + 2 working + 1 back_off
-- Feeders (1º ex: 3, demais: 2)
-- 1 working (6-8 reps, 180s)
-- 1 working (6-8 reps, 180s)
-- 1 back_off (12-15 reps, 120s)`;
+- 1 muscle_round (24 reps totais, 180s)`;
       } else { // advanced
         techniqueOptions = `OPÇÕES DE TÉCNICAS (escolha 1 opção para cada dia):
 
