@@ -661,7 +661,7 @@ Retorne APENAS o novo exercício no formato JSON.`;
   };
 
   return (
-    <div className="fixed inset-0 flex flex-col bg-gradient-to-b from-slate-950 to-slate-900 z-[10000]">
+    <>
       {/* Modal de Técnicas */}
       {showTechniquesModal && (
         <TrainingTechniquesModal
@@ -670,6 +670,8 @@ Retorne APENAS o novo exercício no formato JSON.`;
           onClose={() => setShowTechniquesModal(false)}
         />
       )}
+
+      <div className="fixed inset-0 flex flex-col bg-gradient-to-b from-slate-950 to-slate-900 z-[10000]">
 
       {/* AI Coach Assistant */}
       {currentExercise && (
