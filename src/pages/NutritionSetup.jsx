@@ -248,12 +248,23 @@ export default function NutritionSetup() {
       ${formData.food_allergies.length > 0 ? 'Alergias: ' + formData.food_allergies.join(', ') : ''}
       Orçamento: ${budgetText}
 
+      ⚠️ REGRAS OBRIGATÓRIAS:
+      1. TODAS as sugestões de refeições DEVEM incluir QUANTIDADES ESPECÍFICAS (gramas, ml, unidades, xícaras, colheres)
+      2. PROIBIDO usar batata doce - use batata inglesa no lugar
+      3. Alimentos brasileiros e acessíveis
+
+      📋 EXEMPLO DE REFEIÇÃO CORRETA:
+      "150g de frango grelhado, 200g de arroz integral, 100g de feijão, salada de alface e tomate"
+
+      ❌ ERRADO (sem quantidade):
+      "Frango grelhado com arroz e feijão"
+
       Gerar:
       1. Macros: ${proteinPercentage}% proteína, ${carbsPercentage}% carbo, ${fatPercentage}% gordura
       2. 5 recomendações práticas
       3. 8 alimentos recomendados (brasileiros, ${formData.budget})
       4. 5 alimentos evitar
-      5. ${formData.meals_per_day} refeições com horário
+      5. ${formData.meals_per_day} refeições com horário (COM QUANTIDADES)
       6. 5 dicas nutrição`;
 
       const response = await base44.integrations.Core.InvokeLLM({
