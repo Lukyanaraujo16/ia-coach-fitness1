@@ -252,54 +252,63 @@ DIVISÃO:
 ${divisionList.map((day, i) => `Dia ${i+1}: ${day.replace(/Dia \d+: /, '')}`).join('\n')}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-REGRAS OBRIGATÓRIAS
+⚠️ REGRA CRÍTICA - PADRÃO ÚNICO POR DIA
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-1. Gerar ${daysOfWeek} dias, 5-6 exercícios/dia
-2. Todo exercício: feeders + trabalho
+PARA CADA DIA:
+1. Escolha UMA opção de técnica
+2. Use a MESMA técnica em TODOS os exercícios daquele dia
+3. Apenas feeders mudam (3 no 1º, 2 nos demais)
 
-FEEDERS (1º exercício - 3 feeders):
+FEEDERS 1º EXERCÍCIO:
 [
   {"times":1,"reps":"8-10","rest_seconds":60,"set_type":"feeder","notes":"Aquecimento"},
   {"times":1,"reps":"5-7","rest_seconds":60,"set_type":"feeder","notes":"Preparação"},
   {"times":1,"reps":"3-5","rest_seconds":60,"set_type":"feeder","notes":"Ativação"}
 ]
 
-FEEDERS (demais - 2 feeders):
+FEEDERS DEMAIS:
 [
   {"times":1,"reps":"8-10","rest_seconds":60,"set_type":"feeder","notes":"Aquecimento"},
   {"times":1,"reps":"5-7","rest_seconds":60,"set_type":"feeder","notes":"Preparação"}
 ]
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-APÓS FEEDERS - ${userLevel.toUpperCase()}
+OPÇÕES ${userLevel.toUpperCase()} (ESCOLHA 1 POR DIA)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-${userLevel === 'beginner' ? `INICIANTE (escolha 1):
-1) +{"times":2,"reps":"12-15","rest_seconds":180,"set_type":"back_off","notes":"Volume"}
-2) +{"times":1,"reps":"6-8","rest_seconds":180,"set_type":"working","notes":"Pesado"} +{"times":1,"reps":"12-15","rest_seconds":180,"set_type":"back_off","notes":"Volume"}
-3) +{"times":1,"reps":"6-8","rest_seconds":180,"set_type":"working","notes":"Pesado 1"} +{"times":1,"reps":"6-8","rest_seconds":180,"set_type":"working","notes":"Pesado 2"}
-4) +{"times":1,"reps":"6-8","rest_seconds":180,"set_type":"working","notes":"Pesado 1"} +{"times":1,"reps":"6-8","rest_seconds":180,"set_type":"working","notes":"Pesado 2"} +{"times":1,"reps":"8-10","rest_seconds":60,"set_type":"feeder","notes":"Extra"}
-5) +{"times":1,"reps":"6-8","rest_seconds":180,"set_type":"working","notes":"Pesado 1"} +{"times":1,"reps":"6-8","rest_seconds":180,"set_type":"working","notes":"Pesado 2"} +{"times":2,"reps":"12-15","rest_seconds":180,"set_type":"back_off","notes":"Volume"}` : ''}
+${userLevel === 'beginner' ? `INICIANTE:
+A) TODOS exercícios: feeders + {"times":2,"reps":"12-15","rest_seconds":180,"set_type":"back_off","notes":"Volume"}
+B) TODOS exercícios: feeders + {"times":1,"reps":"6-8","rest_seconds":180,"set_type":"working","notes":"Pesado"} + {"times":1,"reps":"12-15","rest_seconds":180,"set_type":"back_off","notes":"Volume"}
+C) TODOS exercícios: feeders + {"times":1,"reps":"6-8","rest_seconds":180,"set_type":"working","notes":"Pesado 1"} + {"times":1,"reps":"6-8","rest_seconds":180,"set_type":"working","notes":"Pesado 2"}
+D) TODOS exercícios: feeders + {"times":1,"reps":"6-8","rest_seconds":180,"set_type":"working","notes":"Pesado 1"} + {"times":1,"reps":"6-8","rest_seconds":180,"set_type":"working","notes":"Pesado 2"} + {"times":1,"reps":"8-10","rest_seconds":60,"set_type":"feeder","notes":"Extra"}
+E) TODOS exercícios: feeders + {"times":1,"reps":"6-8","rest_seconds":180,"set_type":"working","notes":"Pesado 1"} + {"times":1,"reps":"6-8","rest_seconds":180,"set_type":"working","notes":"Pesado 2"} + {"times":2,"reps":"12-15","rest_seconds":180,"set_type":"back_off","notes":"Volume"}` : ''}
 
-${userLevel === 'intermediate' ? `INTERMEDIÁRIO (escolha 1):
-1) +{"times":1,"reps":"6-8","rest_seconds":180,"set_type":"working","notes":"Pesado"} +{"times":1,"reps":"12-15","rest_seconds":180,"set_type":"back_off","notes":"Volume"}
-2) +{"times":1,"reps":"6-8","rest_seconds":180,"set_type":"working","notes":"Pesado 1"} +{"times":1,"reps":"6-8","rest_seconds":180,"set_type":"working","notes":"Pesado 2"} +{"times":1,"reps":"8-12","rest_seconds":120,"set_type":"drop_set","notes":"Drop set"}
-3) +{"times":1,"reps":"4-6","rest_seconds":180,"set_type":"cluster","notes":"Cluster 1"} +{"times":1,"reps":"4-6","rest_seconds":180,"set_type":"cluster","notes":"Cluster 2"}
-4) +{"times":1,"reps":"6-8","rest_seconds":180,"set_type":"working","notes":"Pesado"} +{"times":1,"reps":"4-6","rest_seconds":180,"set_type":"cluster","notes":"Cluster"}
-5) +{"times":1,"reps":"6-8","rest_seconds":180,"set_type":"working","notes":"Pesado"} +{"times":1,"reps":"12-15","rest_seconds":180,"set_type":"back_off","notes":"Volume"} +{"times":1,"reps":"8-12","rest_seconds":120,"set_type":"drop_set","notes":"Drop"}
-6) +{"times":1,"reps":"6-8","rest_seconds":180,"set_type":"muscle_round","notes":"Muscle round"}
-7) +{"times":1,"reps":"6-8","rest_seconds":180,"set_type":"working","notes":"Pesado 1"} +{"times":1,"reps":"6-8","rest_seconds":180,"set_type":"working","notes":"Pesado 2"} +{"times":1,"reps":"12-15","rest_seconds":180,"set_type":"back_off","notes":"Volume"}` : ''}
+${userLevel === 'intermediate' ? `INTERMEDIÁRIO:
+A) TODOS exercícios: feeders + {"times":1,"reps":"6-8","rest_seconds":180,"set_type":"working","notes":"Pesado"} + {"times":1,"reps":"12-15","rest_seconds":180,"set_type":"back_off","notes":"Volume"}
+B) TODOS exercícios: feeders + {"times":1,"reps":"6-8","rest_seconds":180,"set_type":"working","notes":"Pesado 1"} + {"times":1,"reps":"6-8","rest_seconds":180,"set_type":"working","notes":"Pesado 2"} + {"times":1,"reps":"8-12","rest_seconds":120,"set_type":"drop_set","notes":"Drop"}
+C) TODOS exercícios: feeders + {"times":1,"reps":"4-6","rest_seconds":180,"set_type":"cluster","notes":"Cluster 1"} + {"times":1,"reps":"4-6","rest_seconds":180,"set_type":"cluster","notes":"Cluster 2"}
+D) TODOS exercícios: feeders + {"times":1,"reps":"6-8","rest_seconds":180,"set_type":"working","notes":"Pesado"} + {"times":1,"reps":"4-6","rest_seconds":180,"set_type":"cluster","notes":"Cluster"}
+E) TODOS exercícios: feeders + {"times":1,"reps":"6-8","rest_seconds":180,"set_type":"working","notes":"Pesado"} + {"times":1,"reps":"12-15","rest_seconds":180,"set_type":"back_off","notes":"Volume"} + {"times":1,"reps":"8-12","rest_seconds":120,"set_type":"drop_set","notes":"Drop"}
+F) TODOS exercícios: feeders + {"times":1,"reps":"6-8","rest_seconds":180,"set_type":"muscle_round","notes":"Muscle round"}
+G) TODOS exercícios: feeders + {"times":1,"reps":"6-8","rest_seconds":180,"set_type":"working","notes":"Pesado 1"} + {"times":1,"reps":"6-8","rest_seconds":180,"set_type":"working","notes":"Pesado 2"} + {"times":1,"reps":"12-15","rest_seconds":180,"set_type":"back_off","notes":"Volume"}` : ''}
 
-${userLevel === 'advanced' ? `AVANÇADO (escolha 1):
-1) +{"times":1,"reps":"3-5","rest_seconds":240,"set_type":"top_set","notes":"Top set"} +{"times":1,"reps":"12-15","rest_seconds":180,"set_type":"back_off","notes":"Volume"}
-2) +{"times":1,"reps":"6-8","rest_seconds":180,"set_type":"working","notes":"Pesado"} +{"times":1,"reps":"8-12","rest_seconds":120,"set_type":"drop_set","notes":"Drop"} +{"times":1,"reps":"12-15","rest_seconds":180,"set_type":"back_off","notes":"Volume"}
-3) +{"times":1,"reps":"4-6","rest_seconds":180,"set_type":"cluster","notes":"Cluster"} +{"times":1,"reps":"12-15","rest_seconds":180,"set_type":"back_off","notes":"Volume"}
-4) +{"times":1,"reps":"3-5","rest_seconds":240,"set_type":"top_set","notes":"Top"} +{"times":1,"reps":"4-6","rest_seconds":180,"set_type":"cluster","notes":"Cluster"}
-5) +{"times":1,"reps":"6-8","rest_seconds":180,"set_type":"muscle_round","notes":"Muscle round"} +{"times":1,"reps":"12-15","rest_seconds":180,"set_type":"back_off","notes":"Volume"}
-6) +{"times":1,"reps":"6-8","rest_seconds":180,"set_type":"working","notes":"Pesado"} +{"times":1,"reps":"6-8","rest_seconds":180,"set_type":"muscle_round","notes":"Muscle round"}
-7) +{"times":1,"reps":"6-8","rest_seconds":180,"set_type":"working","notes":"Pesado"} +{"times":1,"reps":"8-12","rest_seconds":120,"set_type":"drop_set","notes":"Drop"} +{"times":1,"reps":"4-6","rest_seconds":180,"set_type":"cluster","notes":"Cluster"}
-8) +{"times":1,"reps":"3-5","rest_seconds":240,"set_type":"top_set","notes":"Top"} +{"times":1,"reps":"8-12","rest_seconds":120,"set_type":"drop_set","notes":"Drop"}` : ''}`;
+${userLevel === 'advanced' ? `AVANÇADO:
+A) TODOS exercícios: feeders + {"times":1,"reps":"3-5","rest_seconds":240,"set_type":"top_set","notes":"Top"} + {"times":1,"reps":"12-15","rest_seconds":180,"set_type":"back_off","notes":"Volume"}
+B) TODOS exercícios: feeders + {"times":1,"reps":"6-8","rest_seconds":180,"set_type":"working","notes":"Pesado"} + {"times":1,"reps":"8-12","rest_seconds":120,"set_type":"drop_set","notes":"Drop"} + {"times":1,"reps":"12-15","rest_seconds":180,"set_type":"back_off","notes":"Volume"}
+C) TODOS exercícios: feeders + {"times":1,"reps":"4-6","rest_seconds":180,"set_type":"cluster","notes":"Cluster"} + {"times":1,"reps":"12-15","rest_seconds":180,"set_type":"back_off","notes":"Volume"}
+D) TODOS exercícios: feeders + {"times":1,"reps":"3-5","rest_seconds":240,"set_type":"top_set","notes":"Top"} + {"times":1,"reps":"4-6","rest_seconds":180,"set_type":"cluster","notes":"Cluster"}
+E) TODOS exercícios: feeders + {"times":1,"reps":"6-8","rest_seconds":180,"set_type":"muscle_round","notes":"Muscle round"} + {"times":1,"reps":"12-15","rest_seconds":180,"set_type":"back_off","notes":"Volume"}
+F) TODOS exercícios: feeders + {"times":1,"reps":"6-8","rest_seconds":180,"set_type":"working","notes":"Pesado"} + {"times":1,"reps":"6-8","rest_seconds":180,"set_type":"muscle_round","notes":"Muscle round"}
+G) TODOS exercícios: feeders + {"times":1,"reps":"6-8","rest_seconds":180,"set_type":"working","notes":"Pesado"} + {"times":1,"reps":"8-12","rest_seconds":120,"set_type":"drop_set","notes":"Drop"} + {"times":1,"reps":"4-6","rest_seconds":180,"set_type":"cluster","notes":"Cluster"}
+H) TODOS exercícios: feeders + {"times":1,"reps":"3-5","rest_seconds":240,"set_type":"top_set","notes":"Top"} + {"times":1,"reps":"8-12","rest_seconds":120,"set_type":"drop_set","notes":"Drop"}` : ''}
+
+EXEMPLO DIA COMPLETO (opção B iniciante):
+Exercício 1: 3 feeders + 1 working + 1 back_off
+Exercício 2: 2 feeders + 1 working + 1 back_off
+Exercício 3: 2 feeders + 1 working + 1 back_off
+Exercício 4: 2 feeders + 1 working + 1 back_off
+Exercício 5: 2 feeders + 1 working + 1 back_off`;
 
       const timeoutPromise = new Promise((_, reject) => 
         setTimeout(() => reject(new Error('Timeout na geração. Tente novamente.')), 120000)
