@@ -299,11 +299,12 @@ ${techniqueOptions}
 
 ⚠️ REGRAS CRÍTICAS:
 1. Título e descrição do treino devem ser em PORTUGUÊS
-2. Escolha UMA opção de técnica para o TREINO INTEIRO
-3. MESMA estrutura de técnicas em TODOS os exercícios de TODOS os dias
+2. Escolha UMA opção de técnica para o TREINO INTEIRO (máximo 3 técnicas diferentes incluindo feeder e working)
+3. MESMA estrutura de técnicas em TODOS os exercícios de TODOS os dias - o usuário precisa aprender fazendo repetidamente
 4. DIFERENÇA NOS FEEDERS:
    - Exercício 1 de cada dia: 3 feeders (8-10, 5-7, 4-6)
    - Exercícios 2, 3, 4, 5, 6... de cada dia: 2 feeders (8-10, 5-7)
+5. PROGRESSÃO DE CARGA: Todo exercício deve ter progressão de carga em cada série working/top/cluster
 
 📋 EXEMPLO CORRETO - Treino com "feeder + 1 working + 1 drop_set + 1 back_off":
 
