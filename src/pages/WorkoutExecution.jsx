@@ -1026,6 +1026,7 @@ Retorne APENAS o novo exercício no formato JSON.`;
           </Card>
         </div>
       )}
-    </div>
+      </div>
+    </>
   );
 }
