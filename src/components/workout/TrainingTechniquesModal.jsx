@@ -148,10 +148,15 @@ export default function TrainingTechniquesModal({ techniques = [], userLevel, on
                       <h4 className="text-white font-medium text-sm">{tech.name}</h4>
                     </div>
                     <p className="text-slate-400 text-xs mb-2">{tech.description}</p>
-                    <div className="bg-slate-900/50 rounded p-2">
+                    <div className="bg-slate-900/50 rounded p-2 space-y-1.5">
                       <p className="text-blue-300 text-xs leading-relaxed">
                         <strong>Como fazer:</strong> {tech.howTo}
                       </p>
+                      {tech.progression && (
+                        <p className="text-green-300 text-xs leading-relaxed">
+                          <strong>Progressão:</strong> {tech.progression}
+                        </p>
+                      )}
                     </div>
                   </div>
                 );
