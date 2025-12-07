@@ -245,88 +245,61 @@ export default function WorkoutSetup() {
 
       const userObservations = user.workout_observations || "";
 
-      const prompt = `Crie treino para: ${user.nome_completo}, ${userGender === 'male' ? 'Homem' : 'Mulher'}, ${levelLabels[userLevel]}, ${locationLabels[user.training_location]}, ${daysOfWeek}x/semana.
-${userObservations ? `Observações: ${userObservations}` : ''}
+      const prompt = `Gerar treino: ${daysOfWeek}x/semana, ${userLevel}, ${user.training_location === 'gym' ? 'academia' : 'casa'}.
+${userObservations ? `Obs: ${userObservations}` : ''}
 
-GERE EXATAMENTE ${daysOfWeek} DIAS:
-${divisionList.map((day, i) => `Dia ${i + 1}: ${day.replace(`Dia ${i + 1}: `, '')}`).join('\n')}
+DIVISÃO:
+${divisionList.map((day, i) => `Dia ${i+1}: ${day.replace(/Dia \d+: /, '')}`).join('\n')}
 
-═══════════════════════════════════════════════════════════════════════
-⚠️ REGRA OBRIGATÓRIA - FEEDER SETS EM TODOS OS EXERCÍCIOS
-═══════════════════════════════════════════════════════════════════════
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+REGRAS OBRIGATÓRIAS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-TODO EXERCÍCIO COMEÇA COM FEEDER SETS:
+1. Gerar ${daysOfWeek} dias, 5-6 exercícios/dia
+2. Todo exercício: feeders + trabalho
 
-1º EXERCÍCIO DO DIA (OBRIGATÓRIO EXATAMENTE ASSIM):
-• Feeder 1: times=1, reps="8-10", rest_seconds=60, set_type="feeder"
-• Feeder 2: times=1, reps="5-7", rest_seconds=60, set_type="feeder"
-• Feeder 3: times=1, reps="3-5", rest_seconds=60, set_type="feeder"
-
-2º, 3º, 4º, 5º, 6º EXERCÍCIOS DO DIA (OBRIGATÓRIO EXATAMENTE ASSIM):
-• Feeder 1: times=1, reps="8-10", rest_seconds=60, set_type="feeder"
-• Feeder 2: times=1, reps="5-7", rest_seconds=60, set_type="feeder"
-
-═══════════════════════════════════════════════════════════════════════
-ESTRUTURA APÓS OS FEEDERS - PARA TODOS OS NÍVEIS
-═══════════════════════════════════════════════════════════════════════
-
-APÓS OS FEEDERS OBRIGATÓRIOS, adicione séries de trabalho:
-
-NÍVEL INICIANTE - escolha UMA das opções:
-Opção 1: + 2 Back Off Sets
-Opção 2: + 1 Working Set + 1 Back Off Set
-Opção 3: + 2 Working Sets
-Opção 4: + 2 Working Sets + 2 Back Off Sets
-
-NÍVEL INTERMEDIÁRIO - escolha UMA das opções:
-Opção 1: + 1 Working + 2 Back Off
-Opção 2: + 2 Working + 1 Back Off
-Opção 3: + 2 Working + 2 Back Off
-Opção 4: + 1 Working + 1 Drop Set + 1 Back Off (máx 1 drop set por treino)
-
-NÍVEL AVANÇADO - escolha UMA das opções:
-Opção 1: + 2 Working + 2 Back Off
-Opção 2: + 1 Top Set + 1 Working + 1 Back Off
-Opção 3: + 1 Working + 1 Drop Set + 1 Back Off
-Opção 4: + 1 Working + 1 Cluster Set + 1 Back Off
-
-ESPECIFICAÇÕES DAS SÉRIES:
-• Working Set: times=1, reps="6-8", rest_seconds=180, set_type="working"
-• Back Off Set: times=2, reps="12-15", rest_seconds=180, set_type="back_off"
-• Top Set: times=1, reps="3-5", rest_seconds=240, set_type="top_set"
-• Drop Set: times=1, reps="8-12", rest_seconds=120, set_type="drop_set"
-• Cluster Set: times=1, reps="4-6", rest_seconds=180, set_type="cluster"
-
-EXEMPLO COMPLETO 1º EXERCÍCIO:
+FEEDERS (1º exercício - 3 feeders):
 [
-  {"times":1, "reps":"8-10", "rest_seconds":60, "set_type":"feeder", "notes":"Aquecimento progressivo"},
-  {"times":1, "reps":"5-7", "rest_seconds":60, "set_type":"feeder", "notes":"Preparação neuromuscular"},
-  {"times":1, "reps":"3-5", "rest_seconds":60, "set_type":"feeder", "notes":"Ativação máxima"},
-  {"times":1, "reps":"6-8", "rest_seconds":180, "set_type":"working", "notes":"Série de trabalho pesada"},
-  {"times":1, "reps":"6-8", "rest_seconds":180, "set_type":"working", "notes":"Manter carga máxima"},
-  {"times":2, "reps":"12-15", "rest_seconds":180, "set_type":"back_off", "notes":"Volume hipertrofia"}
+  {"times":1,"reps":"8-10","rest_seconds":60,"set_type":"feeder","notes":"Aquecimento"},
+  {"times":1,"reps":"5-7","rest_seconds":60,"set_type":"feeder","notes":"Preparação"},
+  {"times":1,"reps":"3-5","rest_seconds":60,"set_type":"feeder","notes":"Ativação"}
 ]
 
-EXEMPLO COMPLETO DEMAIS EXERCÍCIOS:
+FEEDERS (demais - 2 feeders):
 [
-  {"times":1, "reps":"8-10", "rest_seconds":60, "set_type":"feeder", "notes":"Aquecimento"},
-  {"times":1, "reps":"5-7", "rest_seconds":60, "set_type":"feeder", "notes":"Preparação"},
-  {"times":1, "reps":"6-8", "rest_seconds":180, "set_type":"working", "notes":"Série pesada"},
-  {"times":1, "reps":"6-8", "rest_seconds":180, "set_type":"working", "notes":"Manter carga"},
-  {"times":1, "reps":"12-15", "rest_seconds":180, "set_type":"back_off", "notes":"Volume final"}
+  {"times":1,"reps":"8-10","rest_seconds":60,"set_type":"feeder","notes":"Aquecimento"},
+  {"times":1,"reps":"5-7","rest_seconds":60,"set_type":"feeder","notes":"Preparação"}
 ]
 
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+APÓS FEEDERS - ${userLevel.toUpperCase()}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-═══════════════════════════════════════════════════════════════════════
-⚠️ INSTRUÇÕES CRÍTICAS - LEIA COM ATENÇÃO
-═══════════════════════════════════════════════════════════════════════
+${userLevel === 'beginner' ? `INICIANTE (escolha 1):
+1) +{"times":2,"reps":"12-15","rest_seconds":180,"set_type":"back_off","notes":"Volume"}
+2) +{"times":1,"reps":"6-8","rest_seconds":180,"set_type":"working","notes":"Pesado"} +{"times":1,"reps":"12-15","rest_seconds":180,"set_type":"back_off","notes":"Volume"}
+3) +{"times":1,"reps":"6-8","rest_seconds":180,"set_type":"working","notes":"Pesado 1"} +{"times":1,"reps":"6-8","rest_seconds":180,"set_type":"working","notes":"Pesado 2"}
+4) +{"times":1,"reps":"6-8","rest_seconds":180,"set_type":"working","notes":"Pesado 1"} +{"times":1,"reps":"6-8","rest_seconds":180,"set_type":"working","notes":"Pesado 2"} +{"times":1,"reps":"8-10","rest_seconds":60,"set_type":"feeder","notes":"Extra"}
+5) +{"times":1,"reps":"6-8","rest_seconds":180,"set_type":"working","notes":"Pesado 1"} +{"times":1,"reps":"6-8","rest_seconds":180,"set_type":"working","notes":"Pesado 2"} +{"times":2,"reps":"12-15","rest_seconds":180,"set_type":"back_off","notes":"Volume"}` : ''}
 
-1. Você DEVE gerar EXATAMENTE ${daysOfWeek} dias de treino
-2. CADA dia DEVE ter entre 5 e 6 exercícios (MÍNIMO 5, MÁXIMO 6)
-3. CADA exercício DEVE ter entre 4 e 6 séries com set_type definido
-4. NÃO esqueça nenhum campo obrigatório
+${userLevel === 'intermediate' ? `INTERMEDIÁRIO (escolha 1):
+1) +{"times":1,"reps":"6-8","rest_seconds":180,"set_type":"working","notes":"Pesado"} +{"times":1,"reps":"12-15","rest_seconds":180,"set_type":"back_off","notes":"Volume"}
+2) +{"times":1,"reps":"6-8","rest_seconds":180,"set_type":"working","notes":"Pesado 1"} +{"times":1,"reps":"6-8","rest_seconds":180,"set_type":"working","notes":"Pesado 2"} +{"times":1,"reps":"8-12","rest_seconds":120,"set_type":"drop_set","notes":"Drop set"}
+3) +{"times":1,"reps":"4-6","rest_seconds":180,"set_type":"cluster","notes":"Cluster 1"} +{"times":1,"reps":"4-6","rest_seconds":180,"set_type":"cluster","notes":"Cluster 2"}
+4) +{"times":1,"reps":"6-8","rest_seconds":180,"set_type":"working","notes":"Pesado"} +{"times":1,"reps":"4-6","rest_seconds":180,"set_type":"cluster","notes":"Cluster"}
+5) +{"times":1,"reps":"6-8","rest_seconds":180,"set_type":"working","notes":"Pesado"} +{"times":1,"reps":"12-15","rest_seconds":180,"set_type":"back_off","notes":"Volume"} +{"times":1,"reps":"8-12","rest_seconds":120,"set_type":"drop_set","notes":"Drop"}
+6) +{"times":1,"reps":"6-8","rest_seconds":180,"set_type":"muscle_round","notes":"Muscle round"}
+7) +{"times":1,"reps":"6-8","rest_seconds":180,"set_type":"working","notes":"Pesado 1"} +{"times":1,"reps":"6-8","rest_seconds":180,"set_type":"working","notes":"Pesado 2"} +{"times":1,"reps":"12-15","rest_seconds":180,"set_type":"back_off","notes":"Volume"}` : ''}
 
-CONFIRME: Você vai gerar ${daysOfWeek} dias, cada um com 5-6 exercícios.`;
+${userLevel === 'advanced' ? `AVANÇADO (escolha 1):
+1) +{"times":1,"reps":"3-5","rest_seconds":240,"set_type":"top_set","notes":"Top set"} +{"times":1,"reps":"12-15","rest_seconds":180,"set_type":"back_off","notes":"Volume"}
+2) +{"times":1,"reps":"6-8","rest_seconds":180,"set_type":"working","notes":"Pesado"} +{"times":1,"reps":"8-12","rest_seconds":120,"set_type":"drop_set","notes":"Drop"} +{"times":1,"reps":"12-15","rest_seconds":180,"set_type":"back_off","notes":"Volume"}
+3) +{"times":1,"reps":"4-6","rest_seconds":180,"set_type":"cluster","notes":"Cluster"} +{"times":1,"reps":"12-15","rest_seconds":180,"set_type":"back_off","notes":"Volume"}
+4) +{"times":1,"reps":"3-5","rest_seconds":240,"set_type":"top_set","notes":"Top"} +{"times":1,"reps":"4-6","rest_seconds":180,"set_type":"cluster","notes":"Cluster"}
+5) +{"times":1,"reps":"6-8","rest_seconds":180,"set_type":"muscle_round","notes":"Muscle round"} +{"times":1,"reps":"12-15","rest_seconds":180,"set_type":"back_off","notes":"Volume"}
+6) +{"times":1,"reps":"6-8","rest_seconds":180,"set_type":"working","notes":"Pesado"} +{"times":1,"reps":"6-8","rest_seconds":180,"set_type":"muscle_round","notes":"Muscle round"}
+7) +{"times":1,"reps":"6-8","rest_seconds":180,"set_type":"working","notes":"Pesado"} +{"times":1,"reps":"8-12","rest_seconds":120,"set_type":"drop_set","notes":"Drop"} +{"times":1,"reps":"4-6","rest_seconds":180,"set_type":"cluster","notes":"Cluster"}
+8) +{"times":1,"reps":"3-5","rest_seconds":240,"set_type":"top_set","notes":"Top"} +{"times":1,"reps":"8-12","rest_seconds":120,"set_type":"drop_set","notes":"Drop"}` : ''}`;
 
       const timeoutPromise = new Promise((_, reject) => 
         setTimeout(() => reject(new Error('Timeout na geração. Tente novamente.')), 180000)
