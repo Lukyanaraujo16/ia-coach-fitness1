@@ -120,10 +120,10 @@ export default function TrainingTechniquesModal({ techniques = [], userLevel, on
             <div className="bg-gradient-to-r from-green-900/30 to-emerald-900/20 border border-green-700/50 rounded-lg p-4">
               <div className="flex items-center gap-2 mb-2">
                 <TrendingUp className="w-5 h-5 text-green-400" />
-                <h3 className="text-green-400 font-semibold">Progressão de Carga</h3>
+                <h3 className="text-green-400 font-semibold">⬆️ Progressão de Carga</h3>
               </div>
-              <p className="text-slate-300 text-sm">
-                Tente aumentar carga ou repetições toda semana. Se não conseguir, mantenha a carga e melhore a execução. Use as Feeder Sets para avaliar se é um bom dia para progredir.
+              <p className="text-slate-300 text-sm leading-relaxed">
+                <strong>Todo exercício deve progredir carga em cada série!</strong> Tente aumentar carga ou repetições toda semana nas working sets. Se não conseguir progredir, mantenha a carga e foque em melhorar a execução. Use as Feeder Sets para avaliar se é um bom dia para aumentar a carga.
               </p>
             </div>
 
