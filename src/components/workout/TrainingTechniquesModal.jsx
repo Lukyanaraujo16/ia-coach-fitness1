@@ -8,44 +8,51 @@ const techniquesInfo = {
   feeder_set: {
     name: "Feeder Set",
     icon: "🎯",
-    description: "Séries de reconhecimento de carga. Servem para preparar o músculo e avaliar se você consegue progredir carga hoje.",
-    howTo: "Faça poucas repetições, bem longe da falha. Observe como está se sentindo para decidir a carga das séries principais."
+    description: "Séries de reconhecimento de carga. Preparam o músculo para a carga real de trabalho.",
+    howTo: "Poucas repetições, bem longe da falha. Ex: 1ª feeder 20kg (9 reps), 2ª feeder 30kg (6 reps), 3ª feeder 40kg (4 reps). Avalie como está se sentindo para decidir a carga das séries principais.",
+    progression: "Não progride carga nas feeders. Elas servem apenas como aquecimento e reconhecimento."
   },
   working_set: {
     name: "Working Set",
     icon: "💪",
     description: "Séries principais de trabalho. Aqui você progride carga semanalmente.",
-    howTo: "4 a 9 repetições. Deixe 1-2 reps na reserva se tiver mais de uma série."
+    howTo: "4 a 9 repetições por série. Se for mais de 1 working set, deixe 1-2 reps na reserva para não perder eficiência nas seguintes.",
+    progression: "⬆️ PROGRESSÃO: Tente aumentar carga ou repetições toda semana. Se não conseguir, mantenha a carga e melhore a execução."
   },
   back_off_set: {
     name: "Back Off Set",
     icon: "⬇️",
-    description: "Série com 20% menos carga que o working set, focando em mais repetições.",
-    howTo: "10 a 15 repetições. Realize após as séries de trabalho."
+    description: "Séries com 20% menos carga que o working set, focando em mais repetições e volume.",
+    howTo: "10 a 15 repetições. Realize após as working sets. Ex: se usou 50kg no working, use 40kg no back off.",
+    progression: "Progride proporcionalmente ao working set (sempre -20% da carga)."
   },
   cluster_set: {
     name: "Cluster Set",
     icon: "🔗",
-    description: "Séries divididas em blocos com micro-descansos.",
-    howTo: "Mesma carga do working set. Faça 3 reps, descanse 10s, repita até 12-15 reps totais."
+    description: "Séries divididas em blocos de 3 reps com 10s de descanso entre eles.",
+    howTo: "Mesma carga do working set. Faça 3 reps → descanse 10s → 3 reps → descanse 10s → repita até completar 12-15 reps totais.",
+    progression: "Progride carga semanalmente como no working set."
   },
   muscle_round: {
     name: "Muscle Round",
     icon: "🔄",
-    description: "Técnica de alto volume com blocos e descansos curtos.",
-    howTo: "24 reps totais: 4 reps, 10s descanso, repita 6 vezes."
+    description: "Técnica avançada de alto volume: 24 repetições totais divididas em 6 blocos.",
+    howTo: "Faça 4 reps → descanse 10s → 4 reps → descanse 10s → repita 6 vezes (total 24 reps).",
+    progression: "Aumente a carga quando conseguir completar todas as 24 reps com boa técnica."
   },
   top_set: {
     name: "Top Set",
     icon: "🏆",
-    description: "Série pesada com ~80% do 1RM. Use apenas em dias muito bons.",
-    howTo: "2 a 4 repetições com carga alta. Só faça se estiver bem alimentado e descansado."
+    description: "Série pesada com ~80% do 1RM. Use apenas em dias muito propícios.",
+    howTo: "2 a 4 repetições com carga alta. Só faça se estiver bem alimentado, descansado e as feeders/workings estiverem excelentes.",
+    progression: "Progride com cautela. Ideal para períodos de off-season com suporte calórico maior."
   },
   drop_set: {
     name: "Drop Set",
     icon: "🔥",
-    description: "Série até a falha, reduz carga e repete.",
-    howTo: "Vá até a falha, reduza 20-30% da carga, repita até a falha. Faça isso 2-3 vezes."
+    description: "Técnica avançada: executar até a falha, reduzir peso e continuar sem descanso.",
+    howTo: "Comece com carga do working set → vá até a falha → reduza 10-30% imediatamente → continue até nova falha → repita 2-3 vezes.",
+    progression: "Progrida aumentando a carga inicial ou reduzindo menos peso nas quedas."
   }
 };
 
