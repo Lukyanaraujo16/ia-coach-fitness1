@@ -297,32 +297,37 @@ NÍVEL: ${userLevel}
 
 ${techniqueOptions}
 
-⚠️ REGRAS OBRIGATÓRIAS:
-1. Escolha UMA opção de técnica para o TREINO INTEIRO
-2. TODOS os exercícios de TODOS os dias usam EXATAMENTE a mesma estrutura de séries
-3. ÚNICA diferença: 1º exercício de CADA dia = 3 feeders, demais exercícios = 2 feeders
-4. Feeders são séries SEPARADAS (cada uma com times:1)
+⚠️ REGRAS CRÍTICAS:
+1. Título e descrição do treino devem ser em PORTUGUÊS
+2. Escolha UMA opção de técnica para o TREINO INTEIRO
+3. MESMA estrutura de técnicas em TODOS os exercícios de TODOS os dias
+4. DIFERENÇA NOS FEEDERS:
+   - Exercício 1 de cada dia: 3 feeders (8-10, 5-7, 4-6)
+   - Exercícios 2, 3, 4, 5, 6... de cada dia: 2 feeders (8-10, 5-7)
 
-📋 EXEMPLO - Treino usando "feeder + 1 working + 1 drop_set + 1 back_off":
+📋 EXEMPLO CORRETO - Treino com "feeder + 1 working + 1 drop_set + 1 back_off":
 
-DIA 1:
-Exercício 1 (primeiro - 3 feeders):
-{"exercise_name":"Supino","sets":[{"times":1,"reps":"8-10","rest_seconds":60,"set_type":"feeder"},{"times":1,"reps":"5-7","rest_seconds":60,"set_type":"feeder"},{"times":1,"reps":"3-5","rest_seconds":60,"set_type":"feeder"},{"times":1,"reps":"6-8","rest_seconds":180,"set_type":"working"},{"times":1,"reps":"8-12","rest_seconds":120,"set_type":"drop_set"},{"times":1,"reps":"12-15","rest_seconds":120,"set_type":"back_off"}]}
+DIA 1 - Peito:
+Ex 1 (PRIMEIRO DO DIA = 3 FEEDERS):
+{"exercise_name":"Supino Reto","sets":[{"times":1,"reps":"8-10","rest_seconds":60,"set_type":"feeder"},{"times":1,"reps":"5-7","rest_seconds":60,"set_type":"feeder"},{"times":1,"reps":"4-6","rest_seconds":60,"set_type":"feeder"},{"times":1,"reps":"6-8","rest_seconds":180,"set_type":"working"},{"times":1,"reps":"8-12","rest_seconds":120,"set_type":"drop_set"},{"times":1,"reps":"12-15","rest_seconds":120,"set_type":"back_off"}]}
 
-Exercício 2+ (demais - 2 feeders):
+Ex 2 (DEMAIS = 2 FEEDERS):
+{"exercise_name":"Supino Inclinado","sets":[{"times":1,"reps":"8-10","rest_seconds":60,"set_type":"feeder"},{"times":1,"reps":"5-7","rest_seconds":60,"set_type":"feeder"},{"times":1,"reps":"6-8","rest_seconds":180,"set_type":"working"},{"times":1,"reps":"8-12","rest_seconds":120,"set_type":"drop_set"},{"times":1,"reps":"12-15","rest_seconds":120,"set_type":"back_off"}]}
+
+Ex 3 (DEMAIS = 2 FEEDERS):
 {"exercise_name":"Crucifixo","sets":[{"times":1,"reps":"8-10","rest_seconds":60,"set_type":"feeder"},{"times":1,"reps":"5-7","rest_seconds":60,"set_type":"feeder"},{"times":1,"reps":"6-8","rest_seconds":180,"set_type":"working"},{"times":1,"reps":"8-12","rest_seconds":120,"set_type":"drop_set"},{"times":1,"reps":"12-15","rest_seconds":120,"set_type":"back_off"}]}
 
-DIA 2:
-Exercício 1 (primeiro - 3 feeders):
-{"exercise_name":"Agachamento","sets":[{"times":1,"reps":"8-10","rest_seconds":60,"set_type":"feeder"},{"times":1,"reps":"5-7","rest_seconds":60,"set_type":"feeder"},{"times":1,"reps":"3-5","rest_seconds":60,"set_type":"feeder"},{"times":1,"reps":"6-8","rest_seconds":180,"set_type":"working"},{"times":1,"reps":"8-12","rest_seconds":120,"set_type":"drop_set"},{"times":1,"reps":"12-15","rest_seconds":120,"set_type":"back_off"}]}
+DIA 2 - Pernas:
+Ex 1 (PRIMEIRO DO DIA = 3 FEEDERS):
+{"exercise_name":"Agachamento","sets":[{"times":1,"reps":"8-10","rest_seconds":60,"set_type":"feeder"},{"times":1,"reps":"5-7","rest_seconds":60,"set_type":"feeder"},{"times":1,"reps":"4-6","rest_seconds":60,"set_type":"feeder"},{"times":1,"reps":"6-8","rest_seconds":180,"set_type":"working"},{"times":1,"reps":"8-12","rest_seconds":120,"set_type":"drop_set"},{"times":1,"reps":"12-15","rest_seconds":120,"set_type":"back_off"}]}
 
-Exercício 2+ (demais - 2 feeders):
+Ex 2 (DEMAIS = 2 FEEDERS):
 {"exercise_name":"Leg Press","sets":[{"times":1,"reps":"8-10","rest_seconds":60,"set_type":"feeder"},{"times":1,"reps":"5-7","rest_seconds":60,"set_type":"feeder"},{"times":1,"reps":"6-8","rest_seconds":180,"set_type":"working"},{"times":1,"reps":"8-12","rest_seconds":120,"set_type":"drop_set"},{"times":1,"reps":"12-15","rest_seconds":120,"set_type":"back_off"}]}
 
-MESMA estrutura em TODOS os exercícios de TODOS os dias.
+Exercícios para aplicar:
+${JSON.stringify(selectedExercises.days)}
 
-Exercícios:
-${JSON.stringify(selectedExercises.days)}`;
+Retorne em PORTUGUÊS.`;
 
       const response = await base44.integrations.Core.InvokeLLM({
         prompt,
