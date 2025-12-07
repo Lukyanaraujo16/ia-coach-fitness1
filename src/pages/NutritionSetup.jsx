@@ -380,29 +380,31 @@ export default function NutritionSetup() {
 
       const prompt = `Você é um nutricionista experiente ajustando um plano alimentar.
 
-PLANO ATUAL DO ALUNO:
-${JSON.stringify(generatedPlan.meal_timing, null, 2)}
+      PLANO ATUAL DO ALUNO:
+      ${JSON.stringify(generatedPlan.meal_timing, null, 2)}
 
-ORÇAMENTO: ${budgetText}
+      ORÇAMENTO: ${budgetText}
 
-SOLICITAÇÃO DE SUBSTITUIÇÃO:
-"${substitutionRequest}"
+      SOLICITAÇÃO DE SUBSTITUIÇÃO:
+      "${substitutionRequest}"
 
-METAS NUTRICIONAIS (NÃO DEVEM MUDAR):
-- Calorias totais: ${calorieGoal} kcal
-- Proteínas: ${proteinPercentage}%
-- Carboidratos: ${carbsPercentage}%
-- Gorduras: ${fatPercentage}%
+      METAS NUTRICIONAIS (NÃO DEVEM MUDAR):
+      - Calorias totais: ${calorieGoal} kcal
+      - Proteínas: ${proteinPercentage}%
+      - Carboidratos: ${carbsPercentage}%
+      - Gorduras: ${fatPercentage}%
 
-INSTRUÇÕES:
-1. MANTENHA TODAS as outras refeições EXATAMENTE IGUAIS
-2. SUBSTITUA APENAS o(s) alimento(s) mencionado(s) pelo usuário
-3. A nova sugestão deve ter calorias e macros SIMILARES ao alimento substituído
-4. RESPEITE o orçamento do aluno na substituição
-5. Use ingredientes BRASILEIROS e acessíveis
-6. Retorne o plano completo com ${formData.meals_per_day} refeições
+      ⚠️ REGRAS OBRIGATÓRIAS:
+      1. MANTENHA TODAS as outras refeições EXATAMENTE IGUAIS
+      2. SUBSTITUA APENAS o(s) alimento(s) mencionado(s) pelo usuário
+      3. A nova sugestão deve ter calorias e macros SIMILARES ao alimento substituído
+      4. RESPEITE o orçamento do aluno na substituição
+      5. Use ingredientes BRASILEIROS e acessíveis
+      6. TODAS as sugestões DEVEM ter QUANTIDADES (gramas, ml, unidades)
+      7. PROIBIDO batata doce - use batata inglesa
+      8. Retorne o plano completo com ${formData.meals_per_day} refeições
 
-Gere o novo plano de refeições com a substituição solicitada:`;
+      Gere o novo plano de refeições com a substituição solicitada:`;
 
       const response = await base44.integrations.Core.InvokeLLM({
         prompt: prompt,
