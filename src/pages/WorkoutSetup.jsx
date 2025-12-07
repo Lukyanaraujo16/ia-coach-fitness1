@@ -276,20 +276,20 @@ ${techniqueOptions}
 
 DIA 1 - Peito:
 Ex 1 (PRIMEIRO DO DIA = 3 FEEDERS):
-{"exercise_name":"Supino Reto","sets":[{"times":1,"reps":"8-10","rest_seconds":60,"set_type":"feeder"},{"times":1,"reps":"5-7","rest_seconds":60,"set_type":"feeder"},{"times":1,"reps":"4-6","rest_seconds":60,"set_type":"feeder"},{"times":1,"reps":"6-8","rest_seconds":180,"set_type":"working"},{"times":1,"reps":"8-12","rest_seconds":120,"set_type":"drop_set"},{"times":1,"reps":"12-15","rest_seconds":120,"set_type":"back_off"}]}
+{"exercise_name":"Supino Reto","sets":[{"times":1,"reps":"8-10","rest_seconds":60,"set_type":"feeder","notes":"Aquecimento"},{"times":1,"reps":"5-7","rest_seconds":60,"set_type":"feeder","notes":"Aquecimento"},{"times":1,"reps":"4-6","rest_seconds":60,"set_type":"feeder","notes":"Reconhecimento de carga"},{"times":1,"reps":"6-8","rest_seconds":180,"set_type":"working","notes":"⬆️ PROGRESSÃO: Tente aumentar carga ou repetições a cada semana"},{"times":1,"reps":"12-15","rest_seconds":120,"set_type":"back_off","notes":"Use -20% da carga do working"}]}
 
 Ex 2 (DEMAIS = 2 FEEDERS):
-{"exercise_name":"Supino Inclinado","sets":[{"times":1,"reps":"8-10","rest_seconds":60,"set_type":"feeder"},{"times":1,"reps":"5-7","rest_seconds":60,"set_type":"feeder"},{"times":1,"reps":"6-8","rest_seconds":180,"set_type":"working"},{"times":1,"reps":"8-12","rest_seconds":120,"set_type":"drop_set"},{"times":1,"reps":"12-15","rest_seconds":120,"set_type":"back_off"}]}
+{"exercise_name":"Supino Inclinado","sets":[{"times":1,"reps":"8-10","rest_seconds":60,"set_type":"feeder","notes":"Aquecimento"},{"times":1,"reps":"5-7","rest_seconds":60,"set_type":"feeder","notes":"Reconhecimento de carga"},{"times":1,"reps":"6-8","rest_seconds":180,"set_type":"working","notes":"⬆️ PROGRESSÃO: Tente aumentar carga ou repetições a cada semana"},{"times":1,"reps":"12-15","rest_seconds":120,"set_type":"back_off","notes":"Use -20% da carga do working"}]}
 
 Ex 3 (DEMAIS = 2 FEEDERS):
-{"exercise_name":"Crucifixo","sets":[{"times":1,"reps":"8-10","rest_seconds":60,"set_type":"feeder"},{"times":1,"reps":"5-7","rest_seconds":60,"set_type":"feeder"},{"times":1,"reps":"6-8","rest_seconds":180,"set_type":"working"},{"times":1,"reps":"8-12","rest_seconds":120,"set_type":"drop_set"},{"times":1,"reps":"12-15","rest_seconds":120,"set_type":"back_off"}]}
+{"exercise_name":"Crucifixo","sets":[{"times":1,"reps":"8-10","rest_seconds":60,"set_type":"feeder","notes":"Aquecimento"},{"times":1,"reps":"5-7","rest_seconds":60,"set_type":"feeder","notes":"Reconhecimento de carga"},{"times":1,"reps":"6-8","rest_seconds":180,"set_type":"working","notes":"⬆️ PROGRESSÃO: Tente aumentar carga ou repetições a cada semana"},{"times":1,"reps":"12-15","rest_seconds":120,"set_type":"back_off","notes":"Use -20% da carga do working"}]}
 
 DIA 2 - Pernas:
 Ex 1 (PRIMEIRO DO DIA = 3 FEEDERS):
-{"exercise_name":"Agachamento","sets":[{"times":1,"reps":"8-10","rest_seconds":60,"set_type":"feeder"},{"times":1,"reps":"5-7","rest_seconds":60,"set_type":"feeder"},{"times":1,"reps":"4-6","rest_seconds":60,"set_type":"feeder"},{"times":1,"reps":"6-8","rest_seconds":180,"set_type":"working"},{"times":1,"reps":"8-12","rest_seconds":120,"set_type":"drop_set"},{"times":1,"reps":"12-15","rest_seconds":120,"set_type":"back_off"}]}
+{"exercise_name":"Agachamento","sets":[{"times":1,"reps":"8-10","rest_seconds":60,"set_type":"feeder","notes":"Aquecimento"},{"times":1,"reps":"5-7","rest_seconds":60,"set_type":"feeder","notes":"Aquecimento"},{"times":1,"reps":"4-6","rest_seconds":60,"set_type":"feeder","notes":"Reconhecimento de carga"},{"times":1,"reps":"6-8","rest_seconds":180,"set_type":"working","notes":"⬆️ PROGRESSÃO: Tente aumentar carga ou repetições a cada semana"},{"times":1,"reps":"12-15","rest_seconds":120,"set_type":"back_off","notes":"Use -20% da carga do working"}]}
 
 Ex 2 (DEMAIS = 2 FEEDERS):
-{"exercise_name":"Leg Press","sets":[{"times":1,"reps":"8-10","rest_seconds":60,"set_type":"feeder"},{"times":1,"reps":"5-7","rest_seconds":60,"set_type":"feeder"},{"times":1,"reps":"6-8","rest_seconds":180,"set_type":"working"},{"times":1,"reps":"8-12","rest_seconds":120,"set_type":"drop_set"},{"times":1,"reps":"12-15","rest_seconds":120,"set_type":"back_off"}]}
+{"exercise_name":"Leg Press","sets":[{"times":1,"reps":"8-10","rest_seconds":60,"set_type":"feeder","notes":"Aquecimento"},{"times":1,"reps":"5-7","rest_seconds":60,"set_type":"feeder","notes":"Reconhecimento de carga"},{"times":1,"reps":"6-8","rest_seconds":180,"set_type":"working","notes":"⬆️ PROGRESSÃO: Tente aumentar carga ou repetições a cada semana"},{"times":1,"reps":"12-15","rest_seconds":120,"set_type":"back_off","notes":"Use -20% da carga do working"}]}
 
 Exercícios para aplicar:
 ${JSON.stringify(selectedExercises.days)}
