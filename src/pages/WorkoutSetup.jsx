@@ -599,13 +599,16 @@ Retorne APENAS o novo exercício no formato JSON.`;
                     <Dumbbell className="w-10 h-10 text-white animate-pulse" />
                   </div>
                   <h3 className="text-2xl font-bold text-white text-center mb-3">
-                    Gerando Seu Treino Personalizado
+                    {step === 2 ? 'Selecionando Exercícios...' : 'Aplicando Técnicas de Treino...'}
                   </h3>
                   <LoadingProgress />
                 </CardContent>
               </Card>
             </motion.div>
-          ) : (
+        ) : null}
+
+        {/* ETAPA 1: Tela inicial */}
+        {step === 1 && !generatingWorkout && (
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
