@@ -230,7 +230,7 @@ Para cada dia, escolha 5-6 exercícios adequados ao foco do dia.
 APENAS liste os nomes dos exercícios, SEM séries, repetições ou técnicas.`;
 
       const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Timeout na geração. Tente novamente.')), 120000)
+        setTimeout(() => reject(new Error('Timeout. Tente novamente.')), 60000)
       );
 
       const generatePromise = base44.integrations.Core.InvokeLLM({
@@ -238,19 +238,6 @@ APENAS liste os nomes dos exercícios, SEM séries, repetições ou técnicas.`;
         response_json_schema: {
           type: "object",
           properties: {
-            title: {
-              type: "string",
-              description: "Título motivador do programa"
-            },
-            description: {
-              type: "string",
-              description: "Descrição explicando a abordagem e as técnicas utilizadas"
-            },
-            techniques_used: {
-              type: "array",
-              items: { type: "string" },
-              description: "Lista das técnicas utilizadas no treino (ex: back_off_set, drop_set, cluster_set)"
-            },
             days: {
               type: "array",
               minItems: daysOfWeek,
@@ -258,20 +245,9 @@ APENAS liste os nomes dos exercícios, SEM séries, repetições ou técnicas.`;
               items: {
                 type: "object",
                 properties: {
-                  day_number: {
-                    type: "number",
-                    minimum: 1,
-                    maximum: daysOfWeek,
-                    description: "Número do dia (1, 2, 3, etc.)"
-                  },
-                  title: {
-                    type: "string",
-                    description: "Título do dia (ex: Peito e Tríceps)"
-                  },
-                  focus: {
-                    type: "string",
-                    description: "Foco do treino do dia"
-                  },
+                  day_number: { type: "number" },
+                  title: { type: "string" },
+                  focus: { type: "string" },
                   exercises: {
                     type: "array",
                     minItems: 5,
@@ -279,95 +255,37 @@ APENAS liste os nomes dos exercícios, SEM séries, repetições ou técnicas.`;
                     items: {
                       type: "object",
                       properties: {
-                        exercise_name: {
-                          type: "string",
-                          description: "Nome completo do exercício"
-                        },
-                        exercise_category: {
-                          type: "string",
-                          description: "Categoria do exercício"
-                        },
-                        sets: {
-                          type: "array",
-                          minItems: 3,
-                          maxItems: 7,
-                          items: {
-                            type: "object",
-                            properties: {
-                              times: {
-                                type: "number",
-                                minimum: 1,
-                                maximum: 5,
-                                description: "Quantas vezes fazer esta série"
-                              },
-                              reps: {
-                                type: "string",
-                                description: "Repetições (ex: 12, 10-12, máximo)"
-                              },
-                              rest_seconds: {
-                                type: "number",
-                                description: "Descanso em segundos"
-                              },
-                              set_type: {
-                                type: "string",
-                                enum: ["feeder", "working", "back_off", "cluster", "muscle_round", "top_set", "drop_set"],
-                                description: "Tipo da série"
-                              },
-                              notes: {
-                                type: "string",
-                                description: "Orientação sobre a série e progressão"
-                              }
-                            },
-                            required: ["times", "reps", "rest_seconds", "set_type", "notes"]
-                          }
-                        },
-                        notes: {
-                          type: "string",
-                          description: "Observações sobre execução do exercício"
-                        }
+                        exercise_name: { type: "string" },
+                        exercise_category: { type: "string" }
                       },
-                      required: ["exercise_name", "exercise_category", "sets"]
-                    },
-                    description: "Lista de exercícios do dia"
+                      required: ["exercise_name", "exercise_category"]
+                    }
                   }
                 },
                 required: ["day_number", "title", "focus", "exercises"]
-              },
-              description: `Array com EXATAMENTE ${daysOfWeek} dias de treino`
+              }
             }
           },
-          required: ["title", "description", "techniques_used", "days"]
+          required: ["days"]
         }
       });
 
       const response = await Promise.race([generatePromise, timeoutPromise]);
 
-      // Validações críticas com mensagens detalhadas
-      if (!response) {
-        throw new Error('Resposta vazia da IA');
+      if (!response?.days || response.days.length !== daysOfWeek) {
+        throw new Error(`IA gerou ${response?.days?.length || 0} dias, esperado ${daysOfWeek}`);
       }
 
-      if (!response.days || !Array.isArray(response.days)) {
-        throw new Error('Resposta inválida: days não é um array');
-      }
-
-      if (response.days.length !== daysOfWeek) {
-        throw new Error(`Erro crítico: IA gerou ${response.days.length} dias, mas você pediu ${daysOfWeek} dias. Tentativa ${currentAttempt}/${MAX_ATTEMPTS}.`);
-      }
-
-      // Validar que cada dia tem exercícios suficientes
       for (let i = 0; i < response.days.length; i++) {
         const day = response.days[i];
-        if (!day.exercises || day.exercises.length < 4) {
-          throw new Error(`Dia ${i + 1} incompleto: tem apenas ${day.exercises?.length || 0} exercícios (mínimo 4)`);
-        }
-        if (day.day_number !== i + 1) {
-          day.day_number = i + 1;
+        if (!day.exercises || day.exercises.length < 5) {
+          throw new Error(`Dia ${i + 1} tem apenas ${day.exercises?.length || 0} exercícios (mínimo 5)`);
         }
       }
 
-      console.log("✅ Treino gerado com sucesso:", response);
-      setGeneratedWorkout(response);
+      console.log("✅ Exercícios selecionados:", response);
+      setSelectedExercises(response);
+      setStep(3);
       setAttemptCount(0);
       setError(null);
     } catch (error) {
