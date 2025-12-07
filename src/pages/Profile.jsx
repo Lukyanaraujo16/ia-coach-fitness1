@@ -112,9 +112,12 @@ export default function Profile() {
 
   const resetOnboardingMutation = useMutation({
     mutationFn: (type) => {
-      const updates = {
-        onboarding_completed: false,
-      };
+      const updates = {};
+      
+      // Só reseta onboarding se for 'both'
+      if (type === 'both') {
+        updates.onboarding_completed = false;
+      }
       
       if (type === 'nutrition' || type === 'both') {
         updates.nutrition_setup_completed = false;

@@ -302,7 +302,7 @@ ${userLevel === 'advanced' ? `AVANÇADO (escolha 1):
 8) +{"times":1,"reps":"3-5","rest_seconds":240,"set_type":"top_set","notes":"Top"} +{"times":1,"reps":"8-12","rest_seconds":120,"set_type":"drop_set","notes":"Drop"}` : ''}`;
 
       const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Timeout na geração. Tente novamente.')), 180000)
+        setTimeout(() => reject(new Error('Timeout na geração. Tente novamente.')), 120000)
       );
 
       const generatePromise = base44.integrations.Core.InvokeLLM({
@@ -430,11 +430,11 @@ ${userLevel === 'advanced' ? `AVANÇADO (escolha 1):
       // Validar que cada dia tem exercícios suficientes
       for (let i = 0; i < response.days.length; i++) {
         const day = response.days[i];
-        if (!day.exercises || day.exercises.length < 5) {
-          throw new Error(`Dia ${i + 1} incompleto: tem apenas ${day.exercises?.length || 0} exercícios (mínimo 5)`);
+        if (!day.exercises || day.exercises.length < 4) {
+          throw new Error(`Dia ${i + 1} incompleto: tem apenas ${day.exercises?.length || 0} exercícios (mínimo 4)`);
         }
         if (day.day_number !== i + 1) {
-          day.day_number = i + 1; // Corrigir numeração se necessário
+          day.day_number = i + 1;
         }
       }
 
