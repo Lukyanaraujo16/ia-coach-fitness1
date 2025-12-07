@@ -261,16 +261,18 @@ NÍVEL: ${userLevel}
 
 ${techniqueOptions}
 
-⚠️ REGRAS CRÍTICAS:
+⚠️ REGRAS CRÍTICAS - LEIA COM ATENÇÃO:
 1. Título e descrição do treino devem ser em PORTUGUÊS
-2. Escolha UMA opção de técnica para o TREINO INTEIRO (máximo 3 técnicas diferentes incluindo feeder e working)
-3. MESMA estrutura de técnicas em TODOS os exercícios de TODOS os dias - o usuário precisa aprender fazendo repetidamente
-4. DIFERENÇA NOS FEEDERS:
+2. Escolha UMA opção de técnica para o TREINO INTEIRO
+3. MÁXIMO 3 TÉCNICAS DIFERENTES (feeder sempre conta + 2 outras técnicas)
+4. MESMA estrutura de técnicas em TODOS os exercícios de TODOS os dias - o usuário precisa aprender fazendo repetidamente
+5. DIFERENÇA NOS FEEDERS:
    - Exercício 1 de cada dia: 3 feeders (8-10, 5-7, 4-6)
    - Exercícios 2, 3, 4, 5, 6... de cada dia: 2 feeders (8-10, 5-7)
-5. PROGRESSÃO DE CARGA: Todo exercício deve ter progressão de carga em cada série working/top/cluster
+6. PROGRESSÃO DE CARGA: Adicione "notes" nas séries working/top/cluster explicando progressão de carga
+7. NAS SÉRIES WORKING/TOP/CLUSTER adicione notes: "⬆️ PROGRESSÃO: Tente aumentar carga ou repetições a cada semana"
 
-📋 EXEMPLO CORRETO - Treino com "feeder + 1 working + 1 drop_set + 1 back_off":
+📋 EXEMPLO CORRETO - Treino com "feeder + working + back_off" (3 TÉCNICAS):
 
 DIA 1 - Peito:
 Ex 1 (PRIMEIRO DO DIA = 3 FEEDERS):
