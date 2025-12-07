@@ -165,19 +165,22 @@ export default function TrainingTechniquesModal({ techniques = [], userLevel, on
 
             {/* Descanso */}
             <div className="bg-purple-900/20 border border-purple-700/50 rounded-lg p-2.5 sm:p-3">
-              <div className="flex items-center gap-2 mb-1.5">
+              <div className="flex items-center gap-2 mb-2">
                 <Clock className="w-4 h-4 text-purple-400" />
-                <h3 className="text-purple-400 font-semibold text-xs sm:text-sm">Intervalos de Descanso</h3>
+                <h3 className="text-purple-400 font-semibold text-xs sm:text-sm">⏱️ Intervalos de Descanso</h3>
               </div>
-              <div className="grid grid-cols-3 gap-1.5 text-xs">
-                <div className="text-slate-300 text-center">
-                  <span className="text-purple-300 block">Feeder</span> 1-2min
+              <div className="space-y-2 text-xs">
+                <div className="flex items-center justify-between text-slate-300">
+                  <span className="text-purple-300 font-medium">Feeder Sets:</span>
+                  <span>1-2 minutos</span>
                 </div>
-                <div className="text-slate-300 text-center">
-                  <span className="text-purple-300 block">Peq.</span> 2-3min
+                <div className="flex items-center justify-between text-slate-300">
+                  <span className="text-purple-300 font-medium">Working/Top/Cluster/Back Off/Drop (músculo pequeno):</span>
+                  <span>2-3 minutos</span>
                 </div>
-                <div className="text-slate-300 text-center">
-                  <span className="text-purple-300 block">Grande</span> 3-5min
+                <div className="flex items-center justify-between text-slate-300">
+                  <span className="text-purple-300 font-medium">Working/Top/Cluster/Back Off/Drop (músculo grande):</span>
+                  <span>3-5 minutos</span>
                 </div>
               </div>
             </div>
