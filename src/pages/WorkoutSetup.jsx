@@ -71,12 +71,14 @@ const LoadingProgress = () => {
 export default function WorkoutSetup() {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
-  const [generatingWorkout, setGeneratingWorkout] = useState(false);
+  const [step, setStep] = useState(1); // 1: inicial, 2: selecionando exercícios, 3: exercícios selecionados, 4: aplicando técnicas, 5: treino completo
+  const [selectedExercises, setSelectedExercises] = useState(null);
   const [generatedWorkout, setGeneratedWorkout] = useState(null);
+  const [generatingWorkout, setGeneratingWorkout] = useState(false);
   const [error, setError] = useState(null);
   const [attemptCount, setAttemptCount] = useState(0);
   const [shouldRetry, setShouldRetry] = useState(false);
-  const [swappingExercise, setSwappingExercise] = useState(null); // {dayIndex, exerciseIndex}
+  const [swappingExercise, setSwappingExercise] = useState(null);
   const [swapLoading, setSwapLoading] = useState(false);
   const MAX_ATTEMPTS = 3;
 
