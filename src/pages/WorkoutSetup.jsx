@@ -177,35 +177,20 @@ Retorne apenas nomes dos exercícios, SEM séries.`;
       let techniqueOptions = '';
       
       if (userLevel === 'beginner') {
-        techniqueOptions = `OPÇÕES DE TÉCNICAS (escolha 1 opção para cada dia):
+        techniqueOptions = `OPÇÕES DE TÉCNICAS - MÁXIMO 3 TÉCNICAS (feeder + 2 outras):
 
-Opção 1: feeder + 2 back_off
+Opção 1: feeder + back_off (2 técnicas)
 - Feeders (1º ex: 3, demais: 2)
-- 1 back_off (12-15 reps, 120s)
-- 1 back_off (12-15 reps, 120s)
+- 2 back_off (12-15 reps, 120s cada)
 
-Opção 2: feeder + 1 working + 1 back_off
+Opção 2: feeder + working + back_off (3 técnicas)
 - Feeders (1º ex: 3, demais: 2)
-- 1 working (6-8 reps, 180s)
-- 1 back_off (12-15 reps, 120s)
-
-Opção 3: feeder + 2 working
-- Feeders (1º ex: 3, demais: 2)
-- 1 working (6-8 reps, 180s)
-- 1 working (6-8 reps, 180s)
-
-Opção 4: feeder + 2 working + 1 feeder adicional
-- Feeders (1º ex: 3, demais: 2)
-- 1 working (6-8 reps, 180s)
-- 1 working (6-8 reps, 180s)
-- 1 feeder (8-10 reps, 60s)
-
-Opção 5: feeder + 2 working + 2 back_off
-- Feeders (1º ex: 3, demais: 2)
-- 1 working (6-8 reps, 180s)
 - 1 working (6-8 reps, 180s)
 - 1 back_off (12-15 reps, 120s)
-- 1 back_off (12-15 reps, 120s)`;
+
+Opção 3: feeder + working (2 técnicas)
+- Feeders (1º ex: 3, demais: 2)
+- 2 working (6-8 reps, 180s cada)`;
       } else if (userLevel === 'intermediate') {
         techniqueOptions = `OPÇÕES DE TÉCNICAS (escolha 1 opção para cada dia):
 
