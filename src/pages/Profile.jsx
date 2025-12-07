@@ -19,6 +19,7 @@ export default function Profile() {
   const [newName, setNewName] = useState("");
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showResetOnboardingConfirm, setShowResetOnboardingConfirm] = useState(false);
+  const [resetType, setResetType] = useState(null); // 'nutrition', 'workout', 'both'
   const [notificationStatus, setNotificationStatus] = useState('loading');
 
   const { data: selectedWorkout } = useQuery({
@@ -110,16 +111,32 @@ export default function Profile() {
   });
 
   const resetOnboardingMutation = useMutation({
-    mutationFn: () => base44.auth.updateMe({
-      onboarding_completed: false,
-      nutrition_setup_completed: false,
-      workout_setup_completed: false,
-      selected_workout_id: null,
-      current_workout_day: 1,
-      completed_workout_days: [],
-    }),
-    onSuccess: () => {
-      navigate(createPageUrl("Onboarding") + "?reconfigure=true");
+    mutationFn: (type) => {
+      const updates = {
+        onboarding_completed: false,
+      };
+      
+      if (type === 'nutrition' || type === 'both') {
+        updates.nutrition_setup_completed = false;
+      }
+      
+      if (type === 'workout' || type === 'both') {
+        updates.workout_setup_completed = false;
+        updates.selected_workout_id = null;
+        updates.current_workout_day = 1;
+        updates.completed_workout_days = [];
+      }
+      
+      return base44.auth.updateMe(updates);
+    },
+    onSuccess: (_, type) => {
+      if (type === 'nutrition') {
+        navigate(createPageUrl("NutritionSetup"));
+      } else if (type === 'workout') {
+        navigate(createPageUrl("WorkoutSetup"));
+      } else {
+        navigate(createPageUrl("Onboarding") + "?reconfigure=true");
+      }
     },
   });
 
@@ -155,7 +172,9 @@ export default function Profile() {
   };
 
   const confirmResetOnboarding = () => {
-    resetOnboardingMutation.mutate();
+    if (resetType) {
+      resetOnboardingMutation.mutate(resetType);
+    }
   };
 
   // Detectar se é Android
@@ -430,7 +449,68 @@ export default function Profile() {
       </div>
 
       {/* Reset Onboarding Confirmation Modal */}
-      {showResetOnboardingConfirm && (
+      {showResetOnboardingConfirm && !resetType && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <Card className="bg-slate-900 border-slate-800 max-w-md w-full">
+            <CardContent className="p-6 space-y-4">
+              <div className="w-16 h-16 bg-blue-600/20 rounded-full flex items-center justify-center mx-auto">
+                <Settings className="w-8 h-8 text-blue-400" />
+              </div>
+              <div className="text-center">
+                <h3 className="text-xl font-bold text-white mb-2">
+                  O que deseja refazer?
+                </h3>
+                <p className="text-slate-400 text-sm">
+                  Escolha o que você quer reconfigurar
+                </p>
+              </div>
+              
+              <div className="space-y-2">
+                <Button
+                  onClick={() => setResetType('nutrition')}
+                  className="w-full bg-green-600 hover:bg-green-700 justify-start h-auto py-4"
+                >
+                  <div className="flex flex-col items-start">
+                    <span className="font-semibold">🥗 Apenas Dieta</span>
+                    <span className="text-xs opacity-80">Refazer configuração nutricional</span>
+                  </div>
+                </Button>
+                
+                <Button
+                  onClick={() => setResetType('workout')}
+                  className="w-full bg-blue-600 hover:bg-blue-700 justify-start h-auto py-4"
+                >
+                  <div className="flex flex-col items-start">
+                    <span className="font-semibold">💪 Apenas Treino</span>
+                    <span className="text-xs opacity-80">Refazer configuração de treino</span>
+                  </div>
+                </Button>
+                
+                <Button
+                  onClick={() => setResetType('both')}
+                  className="w-full bg-purple-600 hover:bg-purple-700 justify-start h-auto py-4"
+                >
+                  <div className="flex flex-col items-start">
+                    <span className="font-semibold">🔄 Tudo</span>
+                    <span className="text-xs opacity-80">Refazer configuração completa</span>
+                  </div>
+                </Button>
+              </div>
+              
+              <Button
+                variant="outline"
+                onClick={() => setShowResetOnboardingConfirm(false)}
+                className="w-full bg-slate-800 border-slate-600 text-slate-200 hover:bg-slate-700 hover:text-white"
+              >
+                Cancelar
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+      
+      {/* Reset Confirmation Modal */}
+      {showResetOnboardingConfirm && resetType && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <Card className="bg-slate-900 border-slate-800 max-w-md w-full">
             <CardContent className="p-6 text-center space-y-4">
@@ -439,20 +519,26 @@ export default function Profile() {
               </div>
               <div>
                 <h3 className="text-xl font-bold text-white mb-2">
-                  Refazer Configuração Inicial?
+                  Confirmar Reset?
                 </h3>
                 <p className="text-slate-400 text-sm">
-                  Isso irá resetar suas configurações de onboarding, plano nutricional e treino selecionado.
-                  Você passará novamente pelo processo de configuração completo.
+                  {resetType === 'nutrition' && 'Isso irá resetar sua configuração nutricional.'}
+                  {resetType === 'workout' && 'Isso irá resetar sua configuração de treino e desmarcar seu treino atual.'}
+                  {resetType === 'both' && 'Isso irá resetar suas configurações de onboarding, plano nutricional e treino.'}
                 </p>
-                <p className="text-orange-400 text-sm mt-3">
-                  ⚠️ Seu treino atual será desmarcado
-                </p>
+                {resetType !== 'nutrition' && (
+                  <p className="text-orange-400 text-sm mt-3">
+                    ⚠️ Seu treino atual será desmarcado
+                  </p>
+                )}
               </div>
               <div className="flex gap-3">
                 <Button
                   variant="outline"
-                  onClick={() => setShowResetOnboardingConfirm(false)}
+                  onClick={() => {
+                    setResetType(null);
+                    setShowResetOnboardingConfirm(false);
+                  }}
                   className="flex-1 bg-slate-800 border-slate-600 text-slate-200 hover:bg-slate-700 hover:text-white"
                 >
                   Cancelar
