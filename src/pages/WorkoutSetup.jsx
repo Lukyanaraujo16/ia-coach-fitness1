@@ -122,29 +122,12 @@ export default function WorkoutSetup() {
     if (!user) return;
 
     setGeneratingWorkout(true);
+    setStep(2);
     setError(null);
     const currentAttempt = attemptCount + 1;
     setAttemptCount(currentAttempt);
 
     try {
-      const goalLabels = {
-        lose_weight: 'emagrecimento com foco em queima de gordura',
-        gain_muscle: 'ganho de massa muscular e hipertrofia',
-        maintain: 'manutenção e condicionamento físico'
-      };
-
-      const levelLabels = {
-        beginner: 'iniciante (poucos meses de treino)',
-        intermediate: 'intermediário (6-12 meses de treino)',
-        advanced: 'avançado (mais de 1 ano de treino consistente)'
-      };
-
-      const locationLabels = {
-        gym: 'academia com equipamentos completos',
-        home: 'casa com equipamentos limitados',
-        both: 'variando entre academia e casa'
-      };
-
       const daysOfWeek = user.weekly_goal;
       const userGender = user.gender || 'male';
       const userLevel = user.fitness_level || 'intermediate';
