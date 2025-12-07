@@ -213,78 +213,21 @@ export default function WorkoutSetup() {
 
       const userObservations = user.workout_observations || "";
 
-      const prompt = `Criar treino ${daysOfWeek}x/semana, ${userLevel}, ${user.training_location === 'gym' ? 'academia' : 'casa'}
-${userObservations ? `Observações: ${userObservations}` : ''}
+      // Prompt simples para selecionar exercícios
+      const prompt = `Você é um personal trainer. Selecione exercícios para um treino de ${daysOfWeek} dias.
 
-Divisão: ${divisionList.map((day, i) => `Dia ${i+1}: ${day.replace(/Dia \d+: /, '')}`).join('; ')}
+Perfil:
+- Objetivo: ${user.fitness_goal}
+- Nível: ${user.fitness_level}
+- Local: ${user.training_location === 'gym' ? 'academia' : 'casa'}
+${userObservations ? `- Observações: ${userObservations}` : ''}
 
-═══════════════════════════════════════════════
-⚠️ REGRA MAIS IMPORTANTE - LEIA COM ATENÇÃO ⚠️
-═══════════════════════════════════════════════
+Divisão:
+${divisionList.map((day, i) => `Dia ${i+1}: ${day.replace(/Dia \d+: /, '')}`).join('\n')}
 
-Para CADA DIA do treino:
-1. Escolha UMA opção da lista abaixo (A, B, C, etc)
-2. Use EXATAMENTE a mesma estrutura de séries em TODOS os exercícios daquele dia
-3. A ÚNICA diferença: 1º exercício tem 3 feeders, demais têm 2 feeders
-4. As séries de trabalho (working, back_off, etc) são IDÊNTICAS em todos exercícios do dia
-
-EXEMPLO CORRETO (opção B iniciante):
-Supino (1º): 3 feeders + 1 working + 1 back_off
-Crucifixo (2º): 2 feeders + 1 working + 1 back_off  
-Tríceps testa (3º): 2 feeders + 1 working + 1 back_off
-Tríceps corda (4º): 2 feeders + 1 working + 1 back_off
-Ombro lateral (5º): 2 feeders + 1 working + 1 back_off
-
-EXEMPLO ERRADO (NÃO FAZER):
-Supino: 3 feeders + 2 working
-Crucifixo: 2 feeders + 1 working + 1 back_off  ❌ DIFERENTE
-Tríceps: 2 feeders + 1 drop_set  ❌ DIFERENTE
-
-═══════════════════════════════════════════════
-OPÇÕES PARA ${userLevel.toUpperCase()}
-═══════════════════════════════════════════════
-
-${userLevel === 'beginner' ? `A) 1º: [3 feeders] + [{"times":2,"reps":"12-15","rest_seconds":180,"set_type":"back_off","notes":"Volume"}]
-   Demais: [2 feeders] + [{"times":2,"reps":"12-15","rest_seconds":180,"set_type":"back_off","notes":"Volume"}]
-
-B) 1º: [3 feeders] + [{"times":1,"reps":"6-8","rest_seconds":180,"set_type":"working","notes":"Pesado"},{"times":1,"reps":"12-15","rest_seconds":180,"set_type":"back_off","notes":"Volume"}]
-   Demais: [2 feeders] + [{"times":1,"reps":"6-8","rest_seconds":180,"set_type":"working","notes":"Pesado"},{"times":1,"reps":"12-15","rest_seconds":180,"set_type":"back_off","notes":"Volume"}]
-
-C) 1º: [3 feeders] + [{"times":1,"reps":"6-8","rest_seconds":180,"set_type":"working","notes":"Pesado 1"},{"times":1,"reps":"6-8","rest_seconds":180,"set_type":"working","notes":"Pesado 2"}]
-   Demais: [2 feeders] + [{"times":1,"reps":"6-8","rest_seconds":180,"set_type":"working","notes":"Pesado 1"},{"times":1,"reps":"6-8","rest_seconds":180,"set_type":"working","notes":"Pesado 2"}]
-
-D) 1º: [3 feeders] + [{"times":1,"reps":"6-8","rest_seconds":180,"set_type":"working","notes":"P1"},{"times":1,"reps":"6-8","rest_seconds":180,"set_type":"working","notes":"P2"},{"times":1,"reps":"8-10","rest_seconds":60,"set_type":"feeder","notes":"Extra"}]
-   Demais: [2 feeders] + [{"times":1,"reps":"6-8","rest_seconds":180,"set_type":"working","notes":"P1"},{"times":1,"reps":"6-8","rest_seconds":180,"set_type":"working","notes":"P2"},{"times":1,"reps":"8-10","rest_seconds":60,"set_type":"feeder","notes":"Extra"}]` : ''}
-
-${userLevel === 'intermediate' ? `A) 1º: [3 feeders] + [{"times":1,"reps":"6-8","rest_seconds":180,"set_type":"working","notes":"Pesado"},{"times":1,"reps":"12-15","rest_seconds":180,"set_type":"back_off","notes":"Volume"}]
-   Demais: [2 feeders] + [{"times":1,"reps":"6-8","rest_seconds":180,"set_type":"working","notes":"Pesado"},{"times":1,"reps":"12-15","rest_seconds":180,"set_type":"back_off","notes":"Volume"}]
-
-B) 1º: [3 feeders] + [{"times":1,"reps":"6-8","rest_seconds":180,"set_type":"working","notes":"P1"},{"times":1,"reps":"6-8","rest_seconds":180,"set_type":"working","notes":"P2"},{"times":1,"reps":"8-12","rest_seconds":120,"set_type":"drop_set","notes":"Drop"}]
-   Demais: [2 feeders] + [{"times":1,"reps":"6-8","rest_seconds":180,"set_type":"working","notes":"P1"},{"times":1,"reps":"6-8","rest_seconds":180,"set_type":"working","notes":"P2"},{"times":1,"reps":"8-12","rest_seconds":120,"set_type":"drop_set","notes":"Drop"}]
-
-C) 1º: [3 feeders] + [{"times":1,"reps":"4-6","rest_seconds":180,"set_type":"cluster","notes":"C1"},{"times":1,"reps":"4-6","rest_seconds":180,"set_type":"cluster","notes":"C2"}]
-   Demais: [2 feeders] + [{"times":1,"reps":"4-6","rest_seconds":180,"set_type":"cluster","notes":"C1"},{"times":1,"reps":"4-6","rest_seconds":180,"set_type":"cluster","notes":"C2"}]
-
-D) 1º: [3 feeders] + [{"times":1,"reps":"6-8","rest_seconds":180,"set_type":"muscle_round","notes":"Muscle round"}]
-   Demais: [2 feeders] + [{"times":1,"reps":"6-8","rest_seconds":180,"set_type":"muscle_round","notes":"Muscle round"}]` : ''}
-
-${userLevel === 'advanced' ? `A) 1º: [3 feeders] + [{"times":1,"reps":"3-5","rest_seconds":240,"set_type":"top_set","notes":"Top"},{"times":1,"reps":"12-15","rest_seconds":180,"set_type":"back_off","notes":"Volume"}]
-   Demais: [2 feeders] + [{"times":1,"reps":"3-5","rest_seconds":240,"set_type":"top_set","notes":"Top"},{"times":1,"reps":"12-15","rest_seconds":180,"set_type":"back_off","notes":"Volume"}]
-
-B) 1º: [3 feeders] + [{"times":1,"reps":"6-8","rest_seconds":180,"set_type":"working","notes":"Pesado"},{"times":1,"reps":"8-12","rest_seconds":120,"set_type":"drop_set","notes":"Drop"},{"times":1,"reps":"12-15","rest_seconds":180,"set_type":"back_off","notes":"Volume"}]
-   Demais: [2 feeders] + [{"times":1,"reps":"6-8","rest_seconds":180,"set_type":"working","notes":"Pesado"},{"times":1,"reps":"8-12","rest_seconds":120,"set_type":"drop_set","notes":"Drop"},{"times":1,"reps":"12-15","rest_seconds":180,"set_type":"back_off","notes":"Volume"}]
-
-C) 1º: [3 feeders] + [{"times":1,"reps":"4-6","rest_seconds":180,"set_type":"cluster","notes":"Cluster"},{"times":1,"reps":"12-15","rest_seconds":180,"set_type":"back_off","notes":"Volume"}]
-   Demais: [2 feeders] + [{"times":1,"reps":"4-6","rest_seconds":180,"set_type":"cluster","notes":"Cluster"},{"times":1,"reps":"12-15","rest_seconds":180,"set_type":"back_off","notes":"Volume"}]
-
-D) 1º: [3 feeders] + [{"times":1,"reps":"6-8","rest_seconds":180,"set_type":"muscle_round","notes":"Muscle"},{"times":1,"reps":"12-15","rest_seconds":180,"set_type":"back_off","notes":"Volume"}]
-   Demais: [2 feeders] + [{"times":1,"reps":"6-8","rest_seconds":180,"set_type":"muscle_round","notes":"Muscle"},{"times":1,"reps":"12-15","rest_seconds":180,"set_type":"back_off","notes":"Volume"}]` : ''}
-
-Feeders padrão:
-3 feeders = [{"times":1,"reps":"8-10","rest_seconds":60,"set_type":"feeder","notes":"Aquecimento"},{"times":1,"reps":"5-7","rest_seconds":60,"set_type":"feeder","notes":"Preparação"},{"times":1,"reps":"3-5","rest_seconds":60,"set_type":"feeder","notes":"Ativação"}]
-2 feeders = [{"times":1,"reps":"8-10","rest_seconds":60,"set_type":"feeder","notes":"Aquecimento"},{"times":1,"reps":"5-7","rest_seconds":60,"set_type":"feeder","notes":"Preparação"}]
-
-GERAR: ${daysOfWeek} dias completos, 5-6 exercícios/dia`;
+TAREFA:
+Para cada dia, escolha 5-6 exercícios adequados ao foco do dia.
+APENAS liste os nomes dos exercícios, SEM séries, repetições ou técnicas.`;
 
       const timeoutPromise = new Promise((_, reject) => 
         setTimeout(() => reject(new Error('Timeout na geração. Tente novamente.')), 120000)
