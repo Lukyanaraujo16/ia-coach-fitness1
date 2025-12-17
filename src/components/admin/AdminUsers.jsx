@@ -19,6 +19,8 @@ export default function AdminUsers({ users = [] }) {
   const [searchQuery, setSearchQuery] = useState("");
   const [editingUser, setEditingUser] = useState(null);
   const [editForm, setEditForm] = useState({});
+  const [showTrialModal, setShowTrialModal] = useState(false);
+  const [trialUser, setTrialUser] = useState(null);
   const queryClient = useQueryClient();
 
   const updateUserMutation = useMutation({
@@ -83,32 +85,29 @@ export default function AdminUsers({ users = [] }) {
   };
 
   const handleSetTrial = (user) => {
-    const endDate = prompt(`Até que data será o trial de ${user.nome_completo || user.email}?\n\nFormato: YYYY-MM-DD (exemplo: 2025-12-31)`);
+    setTrialUser(user);
+    setShowTrialModal(true);
+  };
+
+  const handleApplyTrial = (days) => {
+    if (!trialUser) return;
     
-    if (!endDate) return;
-    
-    // Validar formato da data
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(endDate)) {
-      alert('Formato de data inválido! Use: YYYY-MM-DD');
-      return;
-    }
-    
-    const trialEndDate = new Date(endDate + 'T23:59:59');
     const now = new Date();
-    
-    if (trialEndDate <= now) {
-      alert('A data do trial deve ser no futuro!');
-      return;
-    }
+    const trialEndDate = new Date();
+    trialEndDate.setDate(trialEndDate.getDate() + days);
+    trialEndDate.setHours(23, 59, 59, 999);
     
     updateUserMutation.mutate({
-      userId: user.id,
+      userId: trialUser.id,
       data: { 
         subscription_status: 'trial',
         premium_trial_start_date: now.toISOString(),
         premium_trial_end_date: trialEndDate.toISOString(),
       },
     });
+    
+    setShowTrialModal(false);
+    setTrialUser(null);
   };
 
   const handleToggleCommunity = (value) => {
@@ -373,6 +372,75 @@ export default function AdminUsers({ users = [] }) {
           </div>
         </CardContent>
       </Card>
+
+      {/* Trial Modal */}
+      {showTrialModal && trialUser && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <Card className="bg-slate-900 border-slate-800 max-w-md w-full">
+            <CardHeader className="border-b border-slate-800">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-white flex items-center gap-2">
+                  <Clock className="w-5 h-5 text-orange-400" />
+                  Definir Período Trial
+                </CardTitle>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => {
+                    setShowTrialModal(false);
+                    setTrialUser(null);
+                  }}
+                  className="text-slate-400"
+                >
+                  <X className="w-5 h-5" />
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent className="p-6 space-y-4">
+              <p className="text-slate-300 text-sm">
+                Escolha o período de trial para <strong className="text-white">{trialUser.nome_completo || trialUser.email}</strong>:
+              </p>
+              
+              <div className="space-y-2">
+                <Button
+                  onClick={() => handleApplyTrial(3)}
+                  className="w-full bg-gradient-to-r from-orange-600 to-orange-700 hover:from-orange-700 hover:to-orange-800 h-14"
+                >
+                  <Clock className="w-5 h-5 mr-2" />
+                  3 Dias de Trial
+                </Button>
+                
+                <Button
+                  onClick={() => handleApplyTrial(5)}
+                  className="w-full bg-gradient-to-r from-orange-600 to-orange-700 hover:from-orange-700 hover:to-orange-800 h-14"
+                >
+                  <Clock className="w-5 h-5 mr-2" />
+                  5 Dias de Trial
+                </Button>
+                
+                <Button
+                  onClick={() => handleApplyTrial(7)}
+                  className="w-full bg-gradient-to-r from-orange-600 to-orange-700 hover:from-orange-700 hover:to-orange-800 h-14"
+                >
+                  <Clock className="w-5 h-5 mr-2" />
+                  7 Dias de Trial
+                </Button>
+              </div>
+
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setShowTrialModal(false);
+                  setTrialUser(null);
+                }}
+                className="w-full border-slate-700 text-slate-300"
+              >
+                Cancelar
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       {/* Edit User Modal */}
       {editingUser && (
