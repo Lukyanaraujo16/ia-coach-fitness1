@@ -330,6 +330,14 @@ export default function AdminUsers({ users = [] }) {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent>
+                            <DropdownMenuItem onClick={() => handleSetFree(user)}>
+                              <User className="w-4 h-4 mr-2" />
+                              Definir Gratuito
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleSetTrial(user)}>
+                              <Clock className="w-4 h-4 mr-2" />
+                              Definir Trial
+                            </DropdownMenuItem>
                             {user.subscription_status !== 'lifetime' ? (
                               <>
                                 <DropdownMenuItem onClick={() => handleTogglePremium(user)}>
