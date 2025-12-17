@@ -69,6 +69,48 @@ export default function AdminUsers({ users = [] }) {
     }
   };
 
+  const handleSetFree = (user) => {
+    if (confirm(`Definir ${user.nome_completo || user.email} como gratuito?`)) {
+      updateUserMutation.mutate({
+        userId: user.id,
+        data: { 
+          subscription_status: 'free',
+          subscription_plan: null,
+          premium_trial_end_date: null,
+        },
+      });
+    }
+  };
+
+  const handleSetTrial = (user) => {
+    const endDate = prompt(`Até que data será o trial de ${user.nome_completo || user.email}?\n\nFormato: YYYY-MM-DD (exemplo: 2025-12-31)`);
+    
+    if (!endDate) return;
+    
+    // Validar formato da data
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(endDate)) {
+      alert('Formato de data inválido! Use: YYYY-MM-DD');
+      return;
+    }
+    
+    const trialEndDate = new Date(endDate + 'T23:59:59');
+    const now = new Date();
+    
+    if (trialEndDate <= now) {
+      alert('A data do trial deve ser no futuro!');
+      return;
+    }
+    
+    updateUserMutation.mutate({
+      userId: user.id,
+      data: { 
+        subscription_status: 'trial',
+        premium_trial_start_date: now.toISOString(),
+        premium_trial_end_date: trialEndDate.toISOString(),
+      },
+    });
+  };
+
   const handleToggleCommunity = (value) => {
     users.forEach(user => {
       updateUserMutation.mutate({
