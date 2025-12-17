@@ -72,8 +72,13 @@ export default function WorkoutExecution() {
                   setTimeRemaining(day.exercises[0].sets[0].rest_seconds);
                 }
                 // Mostrar modal de técnicas imediatamente ao iniciar o treino
+                console.log('Treino carregado:', foundWorkout.title);
+                console.log('Técnicas disponíveis:', foundWorkout.techniques_used);
                 if (foundWorkout.techniques_used?.length > 0) {
+                  console.log('Abrindo modal de técnicas...');
                   setShowTechniquesModal(true);
+                } else {
+                  console.log('Nenhuma técnica encontrada no treino');
                 }
               }
       }
