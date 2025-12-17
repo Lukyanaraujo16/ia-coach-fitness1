@@ -71,12 +71,10 @@ export default function WorkoutExecution() {
                 if (day?.exercises?.[0]?.sets?.[0]?.rest_seconds) {
                   setTimeRemaining(day.exercises[0].sets[0].rest_seconds);
                 }
-                // Mostrar modal de técnicas no início do treino
-                setTimeout(() => {
-                  if (foundWorkout.techniques_used?.length > 0) {
-                    setShowTechniquesModal(true);
-                  }
-                }, 500);
+                // Mostrar modal de técnicas imediatamente ao iniciar o treino
+                if (foundWorkout.techniques_used?.length > 0) {
+                  setShowTechniquesModal(true);
+                }
               }
       }
     };
