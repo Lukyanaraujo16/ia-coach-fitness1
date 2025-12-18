@@ -71,14 +71,29 @@ export default function WorkoutExecution() {
                 if (day?.exercises?.[0]?.sets?.[0]?.rest_seconds) {
                   setTimeRemaining(day.exercises[0].sets[0].rest_seconds);
                 }
-                // Mostrar modal de técnicas imediatamente ao iniciar o treino
+                
+                // Extrair técnicas únicas das séries do treino
+                const techniquesInWorkout = new Set();
+                foundWorkout.days?.forEach(d => {
+                  d.exercises?.forEach(ex => {
+                    ex.sets?.forEach(set => {
+                      if (set.set_type && set.set_type !== 'feeder' && set.set_type !== 'working') {
+                        techniquesInWorkout.add(set.set_type);
+                      }
+                    });
+                  });
+                });
+                
+                const techniquesArray = Array.from(techniquesInWorkout);
                 console.log('Treino carregado:', foundWorkout.title);
-                console.log('Técnicas disponíveis:', foundWorkout.techniques_used);
-                if (foundWorkout.techniques_used?.length > 0) {
+                console.log('Técnicas encontradas nas séries:', techniquesArray);
+                
+                // Mostrar modal se houver técnicas além de feeder e working
+                if (techniquesArray.length > 0) {
                   console.log('Abrindo modal de técnicas...');
                   setShowTechniquesModal(true);
                 } else {
-                  console.log('Nenhuma técnica encontrada no treino');
+                  console.log('Apenas técnicas básicas encontradas');
                 }
               }
       }
@@ -666,13 +681,27 @@ Retorne APENAS o novo exercício no formato JSON.`;
   return (
     <>
       {/* Modal de Técnicas */}
-      {showTechniquesModal && (
-        <TrainingTechniquesModal
-          techniques={workout?.techniques_used || []}
-          userLevel={user?.fitness_level || "intermediate"}
-          onClose={() => setShowTechniquesModal(false)}
-        />
-      )}
+      {showTechniquesModal && (() => {
+        // Extrair técnicas únicas das séries
+        const techniquesInWorkout = new Set();
+        workout?.days?.forEach(d => {
+          d.exercises?.forEach(ex => {
+            ex.sets?.forEach(set => {
+              if (set.set_type && set.set_type !== 'feeder' && set.set_type !== 'working') {
+                techniquesInWorkout.add(set.set_type);
+              }
+            });
+          });
+        });
+        
+        return (
+          <TrainingTechniquesModal
+            techniques={Array.from(techniquesInWorkout)}
+            userLevel={user?.fitness_level || "intermediate"}
+            onClose={() => setShowTechniquesModal(false)}
+          />
+        );
+      })()}
 
       <div className="fixed inset-0 flex flex-col bg-gradient-to-b from-slate-950 to-slate-900 z-[10000]">
 
