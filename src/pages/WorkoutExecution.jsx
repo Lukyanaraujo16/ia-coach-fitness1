@@ -662,10 +662,12 @@ Retorne APENAS o novo exercício no formato JSON.`;
     drop_set: "🔥 Drop Set"
   };
 
+  console.log('Render - showTechniquesModal:', showTechniquesModal, 'user:', !!user);
+
   return (
     <>
       {/* Modal de Técnicas */}
-      {showTechniquesModal && user && (
+      {showTechniquesModal && user ? (
         <TrainingTechniquesModal
           userLevel={user.fitness_level || "intermediate"}
           onClose={() => {
@@ -674,9 +676,9 @@ Retorne APENAS o novo exercício no formato JSON.`;
           }}
           user={user}
         />
-      )}
+      ) : null}
 
-      <div className="fixed inset-0 flex flex-col bg-gradient-to-b from-slate-950 to-slate-900 z-[10000]">
+      <div className="fixed inset-0 flex flex-col bg-gradient-to-b from-slate-950 to-slate-900 z-[100]">
 
       {/* AI Coach Assistant */}
       {currentExercise && (
