@@ -59,6 +59,8 @@ const techniquesInfo = {
 };
 
 export default function TrainingTechniquesModal({ userLevel, onClose, user }) {
+  console.log('TrainingTechniquesModal renderizado!', { userLevel, user: !!user });
+  
   const [dontShowAgain, setDontShowAgain] = useState(false);
   const [saving, setSaving] = useState(false);
 
@@ -96,7 +98,7 @@ export default function TrainingTechniquesModal({ userLevel, onClose, user }) {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 bg-black/95 backdrop-blur-sm z-[100] overflow-y-auto"
+      className="fixed inset-0 bg-black/95 backdrop-blur-sm z-[10001] overflow-y-auto"
     >
       <motion.div
         initial={{ y: 20, opacity: 0 }}
