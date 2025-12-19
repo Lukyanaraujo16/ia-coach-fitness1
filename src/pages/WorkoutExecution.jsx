@@ -72,9 +72,12 @@ export default function WorkoutExecution() {
                   setTimeRemaining(day.exercises[0].sets[0].rest_seconds);
                 }
                 
-                // Verificar se o usuário marcou para não mostrar mais
-                if (!currentUser.hide_techniques_modal) {
-                  setTimeout(() => setShowTechniquesModal(true), 300);
+                // Mostrar modal, exceto se usuário marcou para não mostrar
+                if (currentUser.hide_techniques_modal !== true) {
+                  setTimeout(() => {
+                    console.log('Abrindo modal de técnicas');
+                    setShowTechniquesModal(true);
+                  }, 500);
                 }
               }
       }
@@ -662,10 +665,13 @@ Retorne APENAS o novo exercício no formato JSON.`;
   return (
     <>
       {/* Modal de Técnicas */}
-      {showTechniquesModal && (
+      {showTechniquesModal && user && (
         <TrainingTechniquesModal
-          userLevel={user?.fitness_level || "intermediate"}
-          onClose={() => setShowTechniquesModal(false)}
+          userLevel={user.fitness_level || "intermediate"}
+          onClose={() => {
+            console.log('Fechando modal de técnicas');
+            setShowTechniquesModal(false);
+          }}
           user={user}
         />
       )}
@@ -700,7 +706,10 @@ Retorne APENAS o novo exercício no formato JSON.`;
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => setShowTechniquesModal(true)}
+              onClick={() => {
+                console.log('Botão Info clicado');
+                setShowTechniquesModal(true);
+              }}
               className="text-purple-400 hover:text-purple-300 h-9 w-9"
               title="Ver guia de técnicas"
             >
