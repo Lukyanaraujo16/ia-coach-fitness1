@@ -72,13 +72,20 @@ export default function WorkoutExecution() {
                   setTimeRemaining(day.exercises[0].sets[0].rest_seconds);
                 }
                 
-                // Extrair técnicas únicas das séries do treino
+                // Extrair técnicas únicas das séries do treino e normalizar nomes
                 const techniquesInWorkout = new Set();
                 foundWorkout.days?.forEach(d => {
                   d.exercises?.forEach(ex => {
                     ex.sets?.forEach(set => {
                       if (set.set_type && set.set_type !== 'feeder' && set.set_type !== 'working') {
-                        techniquesInWorkout.add(set.set_type);
+                        // Normalizar nomes das técnicas para corresponder ao modal
+                        let normalizedTech = set.set_type;
+                        if (set.set_type === 'back_off') normalizedTech = 'back_off_set';
+                        if (set.set_type === 'cluster') normalizedTech = 'cluster_set';
+                        if (set.set_type === 'drop_set' || set.set_type === 'drop') normalizedTech = 'drop_set';
+                        if (set.set_type === 'muscle_round') normalizedTech = 'muscle_round';
+                        if (set.set_type === 'top_set' || set.set_type === 'top') normalizedTech = 'top_set';
+                        techniquesInWorkout.add(normalizedTech);
                       }
                     });
                   });
@@ -682,13 +689,20 @@ Retorne APENAS o novo exercício no formato JSON.`;
     <>
       {/* Modal de Técnicas */}
       {showTechniquesModal && (() => {
-        // Extrair técnicas únicas das séries
+        // Extrair técnicas únicas das séries e normalizar nomes
         const techniquesInWorkout = new Set();
         workout?.days?.forEach(d => {
           d.exercises?.forEach(ex => {
             ex.sets?.forEach(set => {
               if (set.set_type && set.set_type !== 'feeder' && set.set_type !== 'working') {
-                techniquesInWorkout.add(set.set_type);
+                // Normalizar nomes das técnicas para corresponder ao modal
+                let normalizedTech = set.set_type;
+                if (set.set_type === 'back_off') normalizedTech = 'back_off_set';
+                if (set.set_type === 'cluster') normalizedTech = 'cluster_set';
+                if (set.set_type === 'drop_set' || set.set_type === 'drop') normalizedTech = 'drop_set';
+                if (set.set_type === 'muscle_round') normalizedTech = 'muscle_round';
+                if (set.set_type === 'top_set' || set.set_type === 'top') normalizedTech = 'top_set';
+                techniquesInWorkout.add(normalizedTech);
               }
             });
           });
