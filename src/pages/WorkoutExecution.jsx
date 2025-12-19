@@ -79,12 +79,15 @@ export default function WorkoutExecution() {
                     ex.sets?.forEach(set => {
                       if (set.set_type && set.set_type !== 'feeder' && set.set_type !== 'working') {
                         // Normalizar nomes das técnicas para corresponder ao modal
-                        let normalizedTech = set.set_type;
-                        if (set.set_type === 'back_off') normalizedTech = 'back_off_set';
-                        if (set.set_type === 'cluster') normalizedTech = 'cluster_set';
-                        if (set.set_type === 'drop_set' || set.set_type === 'drop') normalizedTech = 'drop_set';
-                        if (set.set_type === 'muscle_round') normalizedTech = 'muscle_round';
-                        if (set.set_type === 'top_set' || set.set_type === 'top') normalizedTech = 'top_set';
+                        const techType = set.set_type.toLowerCase().replace(/[-\s]/g, '_');
+                        let normalizedTech = techType;
+                        
+                        if (techType.includes('back_off') || techType === 'backoff') normalizedTech = 'back_off_set';
+                        else if (techType === 'cluster' || techType === 'cluster_set') normalizedTech = 'cluster_set';
+                        else if (techType === 'drop' || techType === 'drop_set') normalizedTech = 'drop_set';
+                        else if (techType === 'muscle_round') normalizedTech = 'muscle_round';
+                        else if (techType === 'top' || techType === 'top_set') normalizedTech = 'top_set';
+                        
                         techniquesInWorkout.add(normalizedTech);
                       }
                     });
@@ -94,11 +97,12 @@ export default function WorkoutExecution() {
                 const techniquesArray = Array.from(techniquesInWorkout);
                 console.log('Treino carregado:', foundWorkout.title);
                 console.log('Técnicas encontradas nas séries:', techniquesArray);
+                console.log('Modal será exibido:', techniquesArray.length > 0);
                 
                 // Mostrar modal se houver técnicas além de feeder e working
                 if (techniquesArray.length > 0) {
                   console.log('Abrindo modal de técnicas...');
-                  setShowTechniquesModal(true);
+                  setTimeout(() => setShowTechniquesModal(true), 100);
                 } else {
                   console.log('Apenas técnicas básicas encontradas');
                 }
@@ -696,17 +700,22 @@ Retorne APENAS o novo exercício no formato JSON.`;
             ex.sets?.forEach(set => {
               if (set.set_type && set.set_type !== 'feeder' && set.set_type !== 'working') {
                 // Normalizar nomes das técnicas para corresponder ao modal
-                let normalizedTech = set.set_type;
-                if (set.set_type === 'back_off') normalizedTech = 'back_off_set';
-                if (set.set_type === 'cluster') normalizedTech = 'cluster_set';
-                if (set.set_type === 'drop_set' || set.set_type === 'drop') normalizedTech = 'drop_set';
-                if (set.set_type === 'muscle_round') normalizedTech = 'muscle_round';
-                if (set.set_type === 'top_set' || set.set_type === 'top') normalizedTech = 'top_set';
+                const techType = set.set_type.toLowerCase().replace(/[-\s]/g, '_');
+                let normalizedTech = techType;
+                
+                if (techType.includes('back_off') || techType === 'backoff') normalizedTech = 'back_off_set';
+                else if (techType === 'cluster' || techType === 'cluster_set') normalizedTech = 'cluster_set';
+                else if (techType === 'drop' || techType === 'drop_set') normalizedTech = 'drop_set';
+                else if (techType === 'muscle_round') normalizedTech = 'muscle_round';
+                else if (techType === 'top' || techType === 'top_set') normalizedTech = 'top_set';
+                
                 techniquesInWorkout.add(normalizedTech);
               }
             });
           });
         });
+        
+        console.log('Renderizando modal com técnicas:', Array.from(techniquesInWorkout));
         
         return (
           <TrainingTechniquesModal
