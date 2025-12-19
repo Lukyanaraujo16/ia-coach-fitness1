@@ -72,39 +72,9 @@ export default function WorkoutExecution() {
                   setTimeRemaining(day.exercises[0].sets[0].rest_seconds);
                 }
                 
-                // Extrair técnicas únicas das séries do treino e normalizar nomes
-                const techniquesInWorkout = new Set();
-                foundWorkout.days?.forEach(d => {
-                  d.exercises?.forEach(ex => {
-                    ex.sets?.forEach(set => {
-                      if (set.set_type && set.set_type !== 'feeder' && set.set_type !== 'working') {
-                        // Normalizar nomes das técnicas para corresponder ao modal
-                        const techType = set.set_type.toLowerCase().replace(/[-\s]/g, '_');
-                        let normalizedTech = techType;
-                        
-                        if (techType.includes('back_off') || techType === 'backoff') normalizedTech = 'back_off_set';
-                        else if (techType === 'cluster' || techType === 'cluster_set') normalizedTech = 'cluster_set';
-                        else if (techType === 'drop' || techType === 'drop_set') normalizedTech = 'drop_set';
-                        else if (techType === 'muscle_round') normalizedTech = 'muscle_round';
-                        else if (techType === 'top' || techType === 'top_set') normalizedTech = 'top_set';
-                        
-                        techniquesInWorkout.add(normalizedTech);
-                      }
-                    });
-                  });
-                });
-                
-                const techniquesArray = Array.from(techniquesInWorkout);
-                console.log('Treino carregado:', foundWorkout.title);
-                console.log('Técnicas encontradas nas séries:', techniquesArray);
-                console.log('Modal será exibido:', techniquesArray.length > 0);
-                
-                // Mostrar modal se houver técnicas além de feeder e working
-                if (techniquesArray.length > 0) {
-                  console.log('Abrindo modal de técnicas...');
-                  setTimeout(() => setShowTechniquesModal(true), 100);
-                } else {
-                  console.log('Apenas técnicas básicas encontradas');
+                // Verificar se o usuário marcou para não mostrar mais
+                if (!currentUser.hide_techniques_modal) {
+                  setTimeout(() => setShowTechniquesModal(true), 300);
                 }
               }
       }
@@ -692,39 +662,13 @@ Retorne APENAS o novo exercício no formato JSON.`;
   return (
     <>
       {/* Modal de Técnicas */}
-      {showTechniquesModal && (() => {
-        // Extrair técnicas únicas das séries e normalizar nomes
-        const techniquesInWorkout = new Set();
-        workout?.days?.forEach(d => {
-          d.exercises?.forEach(ex => {
-            ex.sets?.forEach(set => {
-              if (set.set_type && set.set_type !== 'feeder' && set.set_type !== 'working') {
-                // Normalizar nomes das técnicas para corresponder ao modal
-                const techType = set.set_type.toLowerCase().replace(/[-\s]/g, '_');
-                let normalizedTech = techType;
-                
-                if (techType.includes('back_off') || techType === 'backoff') normalizedTech = 'back_off_set';
-                else if (techType === 'cluster' || techType === 'cluster_set') normalizedTech = 'cluster_set';
-                else if (techType === 'drop' || techType === 'drop_set') normalizedTech = 'drop_set';
-                else if (techType === 'muscle_round') normalizedTech = 'muscle_round';
-                else if (techType === 'top' || techType === 'top_set') normalizedTech = 'top_set';
-                
-                techniquesInWorkout.add(normalizedTech);
-              }
-            });
-          });
-        });
-        
-        console.log('Renderizando modal com técnicas:', Array.from(techniquesInWorkout));
-        
-        return (
-          <TrainingTechniquesModal
-            techniques={Array.from(techniquesInWorkout)}
-            userLevel={user?.fitness_level || "intermediate"}
-            onClose={() => setShowTechniquesModal(false)}
-          />
-        );
-      })()}
+      {showTechniquesModal && (
+        <TrainingTechniquesModal
+          userLevel={user?.fitness_level || "intermediate"}
+          onClose={() => setShowTechniquesModal(false)}
+          user={user}
+        />
+      )}
 
       <div className="fixed inset-0 flex flex-col bg-gradient-to-b from-slate-950 to-slate-900 z-[10000]">
 
@@ -753,17 +697,15 @@ Retorne APENAS o novo exercício no formato JSON.`;
             <p className="text-slate-400 text-xs">Dia {dayNumber}</p>
           </div>
           <div className="flex items-center gap-2">
-            {workout?.techniques_used?.length > 0 && (
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setShowTechniquesModal(true)}
-                className="text-purple-400 hover:text-purple-300 h-9 w-9"
-                title="Ver técnicas"
-              >
-                <Info className="w-5 h-5" />
-              </Button>
-            )}
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setShowTechniquesModal(true)}
+              className="text-purple-400 hover:text-purple-300 h-9 w-9"
+              title="Ver guia de técnicas"
+            >
+              <Info className="w-5 h-5" />
+            </Button>
             {currentExercise?.video_url && (
               <Button
                 variant="ghost"

@@ -1,8 +1,10 @@
-import React from "react";
+import React, { useState } from "react";
+import { base44 } from "@/api/base44Client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { X, Dumbbell, TrendingUp, Zap, Target, Clock, Info } from "lucide-react";
+import { X, Dumbbell, TrendingUp, Zap, Clock, Info } from "lucide-react";
 import { motion } from "framer-motion";
+import { Checkbox } from "@/components/ui/checkbox";
 
 const techniquesInfo = {
   feeder_set: {
@@ -56,7 +58,10 @@ const techniquesInfo = {
   }
 };
 
-export default function TrainingTechniquesModal({ techniques = [], userLevel, onClose }) {
+export default function TrainingTechniquesModal({ userLevel, onClose, user }) {
+  const [dontShowAgain, setDontShowAgain] = useState(false);
+  const [saving, setSaving] = useState(false);
+
   const levelLabels = {
     beginner: "Iniciante",
     intermediate: "Intermediário",
@@ -69,8 +74,22 @@ export default function TrainingTechniquesModal({ techniques = [], userLevel, on
     advanced: "Técnicas avançadas para maximizar ganhos e quebrar platôs."
   };
 
-  // Sempre incluir feeder_set e working_set
-  const allTechniques = ["feeder_set", "working_set", ...techniques.filter(t => t !== "feeder_set" && t !== "working_set")];
+  // Mostrar TODAS as técnicas
+  const allTechniques = ["feeder_set", "working_set", "back_off_set", "cluster_set", "muscle_round", "top_set", "drop_set"];
+
+  const handleClose = async () => {
+    if (dontShowAgain) {
+      setSaving(true);
+      try {
+        await base44.auth.updateMe({ hide_techniques_modal: true });
+      } catch (error) {
+        console.error("Erro ao salvar preferência:", error);
+      } finally {
+        setSaving(false);
+      }
+    }
+    onClose();
+  };
 
   return (
     <motion.div
@@ -114,6 +133,16 @@ export default function TrainingTechniquesModal({ techniques = [], userLevel, on
               <p className="text-blue-200 text-sm">
                 {levelDescriptions[userLevel] || levelDescriptions.intermediate}
               </p>
+            </div>
+
+            {/* Info sobre onde encontrar novamente */}
+            <div className="bg-purple-900/30 border border-purple-700/50 rounded-lg p-3">
+              <div className="flex items-start gap-2">
+                <Info className="w-4 h-4 text-purple-400 mt-0.5 flex-shrink-0" />
+                <p className="text-purple-200 text-xs">
+                  <strong>Dica:</strong> Durante o treino, você pode clicar no botão <Info className="w-3 h-3 inline mx-1" /> no topo da tela para revisar essas técnicas a qualquer momento.
+                </p>
+              </div>
             </div>
 
             {/* Progressão de Carga */}
@@ -185,11 +214,27 @@ export default function TrainingTechniquesModal({ techniques = [], userLevel, on
               </div>
             </div>
 
+            {/* Checkbox - Não mostrar novamente */}
+            <div className="flex items-center space-x-2 bg-slate-800/50 p-3 rounded-lg border border-slate-700">
+              <Checkbox
+                id="dontShowAgain"
+                checked={dontShowAgain}
+                onCheckedChange={setDontShowAgain}
+              />
+              <label
+                htmlFor="dontShowAgain"
+                className="text-sm text-slate-300 cursor-pointer leading-tight"
+              >
+                Não mostrar mais este guia ao iniciar treinos
+              </label>
+            </div>
+
             <Button
-              onClick={onClose}
+              onClick={handleClose}
+              disabled={saving}
               className="w-full bg-blue-600 hover:bg-blue-700 h-12 sm:h-14 font-bold text-sm sm:text-base"
             >
-              Entendi, Vamos Treinar! 💪
+              {saving ? "Salvando..." : "Entendi, Vamos Treinar! 💪"}
             </Button>
           </CardContent>
         </Card>
