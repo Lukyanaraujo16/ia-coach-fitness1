@@ -25,32 +25,47 @@ export default function NotificationPermissionModal({ onClose }) {
     console.log('🔔 Ativando notificações...');
     
     try {
-      // Usar OneSignal para pedir permissão (funciona em iOS)
-      if (window.OneSignal) {
-        const result = await window.OneSignal.Notifications.requestPermission();
-        console.log('✅ OneSignal permission:', result);
+      const permission = await Notification.requestPermission();
+      console.log('✅ Permissão:', permission);
+      
+      if (permission === 'granted') {
+        const registration = await navigator.serviceWorker.ready;
         
-        // Identificar usuário
-        try {
-          const user = await base44.auth.me();
-          if (user?.email) {
-            await window.OneSignal.login(user.email);
-            await window.OneSignal.User.addEmail(user.email);
-            console.log('✅ Usuário identificado:', user.email);
-          }
-        } catch (e) {
-          console.log('⚠️ Erro ao identificar usuário');
+        let subscription = await registration.pushManager.getSubscription();
+        
+        if (!subscription) {
+          subscription = await registration.pushManager.subscribe({
+            userVisibleOnly: true,
+            applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
+          });
         }
 
-        // Mostrar notificação de boas-vindas
-        if (result) {
-          setTimeout(() => {
-            new Notification('🎉 Notificações Ativadas!', {
-              body: 'Você receberá lembretes de treino e motivação.',
-              icon: 'https://base44.app/api/apps/6904da724b4ce40db58404e7/files/public/6904da724b4ce40db58404e7/901d97ae0_Untitleddesign3.png',
-            });
-          }, 500);
+        const currentUser = await base44.auth.me();
+        
+        const existingSubscriptions = await base44.entities.PushSubscription.list();
+        const userSubscription = existingSubscriptions.find(s => s.user_email === currentUser.email);
+        
+        const subscriptionData = {
+          user_email: currentUser.email,
+          subscription: subscription.toJSON(),
+          is_active: true
+        };
+
+        if (userSubscription) {
+          await base44.entities.PushSubscription.update(userSubscription.id, subscriptionData);
+        } else {
+          await base44.entities.PushSubscription.create(subscriptionData);
         }
+        
+        console.log('✅ Subscription salva!');
+
+        // Notificação de boas-vindas
+        await registration.showNotification('🎉 Notificações Ativadas!', {
+          body: 'Você receberá lembretes de treino e motivação.',
+          icon: 'https://base44.app/api/apps/6904da724b4ce40db58404e7/files/public/6904da724b4ce40db58404e7/901d97ae0_Untitleddesign3.png',
+          badge: 'https://base44.app/api/apps/6904da724b4ce40db58404e7/files/public/6904da724b4ce40db58404e7/901d97ae0_Untitleddesign3.png',
+          vibrate: [200, 100, 200]
+        });
       }
     } catch (error) {
       console.error('❌ Erro:', error);
