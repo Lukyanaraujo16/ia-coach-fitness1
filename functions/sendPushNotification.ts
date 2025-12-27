@@ -32,47 +32,80 @@ Deno.serve(async (req) => {
         const subscriptions = await base44.asServiceRole.entities.PushSubscription.list();
         const activeSubscriptions = subscriptions.filter(s => s.is_active);
 
-        console.log(`📤 Enviando para ${activeSubscriptions.length} subscriptions`);
+        console.log(`📤 Total de subscriptions: ${activeSubscriptions.length}`);
+        console.log(`🎯 Target audience: ${target_audience || 'all'}`);
+
+        // Buscar usuários uma vez só
+        const allUsers = await base44.asServiceRole.entities.User.list();
 
         let sent = 0;
         let failed = 0;
+        let skipped = 0;
 
         const payload = JSON.stringify({ title, message });
 
         for (const sub of activeSubscriptions) {
             try {
-                if (target_audience === 'premium' || target_audience === 'free') {
-                    const users = await base44.asServiceRole.entities.User.list();
-                    const targetUser = users.find(u => u.email === sub.user_email);
+                console.log(`\n📧 Processando: ${sub.user_email}`);
+                
+                // Filtrar por target_audience
+                if (target_audience && target_audience !== 'all') {
+                    const targetUser = allUsers.find(u => u.email === sub.user_email);
+                    console.log(`👤 User status: ${targetUser?.subscription_status || 'free'}`);
                     
-                    if (target_audience === 'premium' && targetUser?.subscription_status !== 'premium') continue;
-                    if (target_audience === 'free' && targetUser?.subscription_status === 'premium') continue;
+                    if (target_audience === 'premium') {
+                        const isPremium = targetUser?.subscription_status === 'premium' || 
+                                        targetUser?.subscription_status === 'trial' || 
+                                        targetUser?.subscription_status === 'lifetime';
+                        if (!isPremium) {
+                            console.log('⏭️ Pulando: não é premium');
+                            skipped++;
+                            continue;
+                        }
+                    } else if (target_audience === 'free') {
+                        const isPremium = targetUser?.subscription_status === 'premium' || 
+                                        targetUser?.subscription_status === 'trial' || 
+                                        targetUser?.subscription_status === 'lifetime';
+                        if (isPremium) {
+                            console.log('⏭️ Pulando: é premium');
+                            skipped++;
+                            continue;
+                        }
+                    }
                 }
 
                 if (!sub.subscription?.endpoint) {
-                    console.log('⚠️ Subscription inválida:', sub.user_email);
+                    console.log('⚠️ Subscription sem endpoint');
+                    skipped++;
                     continue;
                 }
 
+                console.log('📮 Enviando push...');
                 await webpush.sendNotification(sub.subscription, payload);
                 sent++;
-                console.log('✅ Enviado para:', sub.user_email);
+                console.log('✅ Enviado com sucesso!');
             } catch (error) {
                 failed++;
-                console.error('❌ Erro enviando para', sub.user_email, ':', error.message);
+                console.error('❌ Erro:', error.message);
+                console.error('Stack:', error.stack);
                 
                 if (error.statusCode === 410 || error.statusCode === 404) {
+                    console.log('🗑️ Desativando subscription inválida');
                     await base44.asServiceRole.entities.PushSubscription.update(sub.id, { is_active: false });
                 }
             }
         }
-
-        console.log(`📊 Resultado: ${sent} enviados, ${failed} falhas`);
+        
+        console.log(`\n📊 RESULTADO FINAL:`);
+        console.log(`✅ Enviados: ${sent}`);
+        console.log(`❌ Falhas: ${failed}`);
+        console.log(`⏭️ Pulados: ${skipped}`);
 
         return Response.json({ 
             success: true, 
             sent, 
             failed,
+            skipped,
             total: activeSubscriptions.length 
         });
 
