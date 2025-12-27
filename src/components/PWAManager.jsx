@@ -78,41 +78,44 @@ export default function PWAManager() {
                 console.log('🔍 Endpoint direto:', subscription.endpoint);
                 console.log('🔍 Keys direto:', subscription.keys);
 
-                const subscriptionJSON = subscription.toJSON();
-                const subscriptionString = JSON.stringify(subscriptionJSON);
+                // Extrair dados DIRETO do objeto subscription
                 const endpoint = subscription.endpoint;
+                const subscriptionString = JSON.stringify(subscription);
 
-                console.log('📦 Subscription objeto:', subscription);
-                console.log('📄 JSON:', subscriptionJSON);
-                console.log('🔗 Endpoint:', endpoint);
-                console.log('📝 String:', subscriptionString);
+                console.log('🔗 Endpoint extraído:', endpoint);
+                console.log('📝 Subscription como string:', subscriptionString);
+
+                // Validar que temos os dados
+                if (!endpoint || !subscriptionString) {
+                  console.error('❌ Dados inválidos!', { endpoint, subscriptionString });
+                  return;
+                }
 
                 const existingSubscriptions = await base44.entities.PushSubscription.list();
-                console.log('📋 Subscriptions existentes:', existingSubscriptions.length);
-
                 const userSubscription = existingSubscriptions.find(s => s.user_email === currentUser.email);
-                console.log('👤 Subscription do usuário:', userSubscription ? 'existe' : 'não existe');
 
-                const payload = {
+                // Criar payload EXATAMENTE como o schema exige
+                const dataToSave = {
                   user_email: currentUser.email,
                   subscription_json: subscriptionString,
                   endpoint: endpoint,
                   is_active: true
                 };
 
-                console.log('💾 Payload completo:', payload);
-                console.log('💾 Endpoint no payload:', payload.endpoint);
-                console.log('💾 JSON no payload:', payload.subscription_json?.substring(0, 100));
+                console.log('💾 Salvando:', dataToSave);
 
                 if (userSubscription) {
-                  console.log('🔄 Atualizando subscription ID:', userSubscription.id);
-                  const result = await base44.entities.PushSubscription.update(userSubscription.id, payload);
-                  console.log('✅ Atualizado:', result);
+                  await base44.entities.PushSubscription.update(userSubscription.id, dataToSave);
+                  console.log('✅ Atualizado!');
                 } else {
-                  console.log('➕ Criando nova subscription');
-                  const result = await base44.entities.PushSubscription.create(payload);
-                  console.log('✅ Criado:', result);
+                  await base44.entities.PushSubscription.create(dataToSave);
+                  console.log('✅ Criado!');
                 }
+
+                // Validar
+                const check = await base44.entities.PushSubscription.list();
+                const saved = check.find(s => s.user_email === currentUser.email);
+                console.log('🔍 Verificação:', saved?.endpoint ? '✅ OK' : '❌ FALHOU');
 
                 // Validar
                 const validate = await base44.entities.PushSubscription.list();
