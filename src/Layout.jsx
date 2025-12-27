@@ -82,14 +82,7 @@ export default function Layout({ children, currentPageName }) {
     // Adicionar lang pt-BR no html
     document.documentElement.lang = 'pt-BR';
 
-    // Adicionar link para manifest
-    let manifestLink = document.querySelector('link[rel="manifest"]');
-    if (!manifestLink) {
-      manifestLink = document.createElement('link');
-      manifestLink.rel = 'manifest';
-      manifestLink.href = '/manifest.json';
-      document.head.appendChild(manifestLink);
-    }
+    // Manifest já está no index.html, não precisa adicionar dinamicamente
 
     // Adicionar link para ícone
     let iconLink = document.querySelector('link[rel="apple-touch-icon"]');
