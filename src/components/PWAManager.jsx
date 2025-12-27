@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react';
-import { manifestData } from './pwa/manifest-data';
 import InstallPWAModal from './pwa/InstallPWAModal';
 import NotificationPermissionModal from './pwa/NotificationPermissionModal';
 import { base44 } from '@/api/base44Client';
@@ -24,37 +23,17 @@ export default function PWAManager() {
 
   useEffect(() => {
     console.log('🚀 PWAManager iniciado');
-    console.log('📱 User Agent:', navigator.userAgent);
-    console.log('🔔 Notification support:', 'Notification' in window);
-    console.log('📮 Push support:', 'PushManager' in window);
     
-    const manifestBlob = new Blob([JSON.stringify(manifestData)], { type: 'application/json' });
-    const manifestURL = URL.createObjectURL(manifestBlob);
-    
-    let manifestLink = document.querySelector('link[rel="manifest"]');
-    if (!manifestLink) {
-      manifestLink = document.createElement('link');
-      manifestLink.rel = 'manifest';
-      document.head.appendChild(manifestLink);
-    }
-    manifestLink.href = manifestURL;
-    console.log('✅ Manifest criado');
-
-    // Carregar SW físico do diretório components/pwa
+    // Registrar Service Worker do /public
     const loadServiceWorker = async () => {
       try {
-        const swResponse = await fetch('/components/pwa/service-worker.js');
-        const swCode = await swResponse.text();
-        const swBlob = new Blob([swCode], { type: 'application/javascript' });
-        const swURL = URL.createObjectURL(swBlob);
-
         if ('serviceWorker' in navigator) {
-          const registration = await navigator.serviceWorker.register(swURL, { 
+          const registration = await navigator.serviceWorker.register('/service-worker.js', { 
             scope: '/',
             updateViaCache: 'none'
           });
           
-          console.log('✅ Service Worker físico registrado');
+          console.log('✅ Service Worker registrado do /public');
           console.log('📍 Scope:', registration.scope);
           
           registration.update();
@@ -123,10 +102,6 @@ export default function PWAManager() {
     };
 
     loadServiceWorker();
-
-    return () => {
-      URL.revokeObjectURL(manifestURL);
-    };
   }, []);
 
   return (
