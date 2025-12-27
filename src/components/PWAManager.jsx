@@ -113,9 +113,9 @@ export default function PWAManager() {
                 }
 
                 // Validar
-                const check = await base44.entities.PushSubscription.list();
-                const saved = check.find(s => s.user_email === currentUser.email);
-                console.log('🔍 Verificação:', saved?.endpoint ? '✅ OK' : '❌ FALHOU');
+                const validateList = await base44.entities.PushSubscription.list();
+                const savedSub = validateList.find(s => s.user_email === currentUser.email);
+                console.log('🔍 Verificação:', savedSub?.endpoint ? '✅ OK' : '❌ FALHOU');
 
                 // Validar
                 const validate = await base44.entities.PushSubscription.list();
