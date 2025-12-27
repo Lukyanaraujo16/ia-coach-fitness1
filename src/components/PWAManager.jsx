@@ -78,45 +78,40 @@ export default function PWAManager() {
                 console.log('🔍 Endpoint direto:', subscription.endpoint);
                 console.log('🔍 Keys direto:', subscription.keys);
 
-                // Pegar endpoint diretamente
-                const endpoint = subscription.endpoint;
-                console.log('🔗 Endpoint original:', endpoint);
-
-                if (!endpoint) {
-                  console.error('❌ Subscription sem endpoint!');
-                  return;
-                }
-
-                // Criar JSON
                 const subscriptionJSON = subscription.toJSON();
-                console.log('📄 toJSON():', subscriptionJSON);
-
-                // Garantir que endpoint esteja no JSON
-                if (!subscriptionJSON.endpoint) {
-                  subscriptionJSON.endpoint = endpoint;
-                }
-
                 const subscriptionString = JSON.stringify(subscriptionJSON);
-                console.log('📝 String final:', subscriptionString);
+                const endpoint = subscription.endpoint;
+
+                console.log('📦 Subscription objeto:', subscription);
+                console.log('📄 JSON:', subscriptionJSON);
+                console.log('🔗 Endpoint:', endpoint);
+                console.log('📝 String:', subscriptionString);
 
                 const existingSubscriptions = await base44.entities.PushSubscription.list();
-                const userSubscription = existingSubscriptions.find(s => s.user_email === currentUser.email);
+                console.log('📋 Subscriptions existentes:', existingSubscriptions.length);
 
-                const dataToSave = {
+                const userSubscription = existingSubscriptions.find(s => s.user_email === currentUser.email);
+                console.log('👤 Subscription do usuário:', userSubscription ? 'existe' : 'não existe');
+
+                const payload = {
                   user_email: currentUser.email,
                   subscription_json: subscriptionString,
                   endpoint: endpoint,
                   is_active: true
                 };
 
-                console.log('💾 Salvando:', JSON.stringify(dataToSave));
+                console.log('💾 Payload completo:', payload);
+                console.log('💾 Endpoint no payload:', payload.endpoint);
+                console.log('💾 JSON no payload:', payload.subscription_json?.substring(0, 100));
 
                 if (userSubscription) {
-                  const updated = await base44.entities.PushSubscription.update(userSubscription.id, dataToSave);
-                  console.log('✅ Atualizado:', updated);
+                  console.log('🔄 Atualizando subscription ID:', userSubscription.id);
+                  const result = await base44.entities.PushSubscription.update(userSubscription.id, payload);
+                  console.log('✅ Atualizado:', result);
                 } else {
-                  const created = await base44.entities.PushSubscription.create(dataToSave);
-                  console.log('✅ Criado:', created);
+                  console.log('➕ Criando nova subscription');
+                  const result = await base44.entities.PushSubscription.create(payload);
+                  console.log('✅ Criado:', result);
                 }
 
                 // Validar
