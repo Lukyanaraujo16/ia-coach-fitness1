@@ -60,6 +60,8 @@ export default function AdminNotifications() {
 
   const sendImmediateNotificationMutation = useMutation({
     mutationFn: async (data) => {
+      console.log('📤 Iniciando envio de notificação:', data);
+      
       const channel = data.channel || 'push';
       let pushResult = { sent: 0, failed: 0 };
       let whatsappResult = { sent: 0, failed: 0 };
@@ -71,6 +73,8 @@ export default function AdminNotifications() {
       } else if (data.target_audience === 'free') {
         targetUsers = users.filter(u => !u.subscription_status || u.subscription_status === 'free');
       }
+      
+      console.log('👥 Usuários alvo:', targetUsers.length);
       
       // Criar notificação no app para cada usuário
       for (const targetUser of targetUsers) {
@@ -93,19 +97,23 @@ export default function AdminNotifications() {
         }
       }
       
+      console.log('✅ Notificações no app criadas');
+      
       // Enviar Push
       if (channel === 'push' || channel === 'both') {
-        console.log('🚀 Enviando push via backend:', data);
+        console.log('🔔 Enviando push notifications via backend...');
         try {
           const response = await base44.functions.invoke('sendPushNotification', {
             title: data.title,
             message: data.message,
             target_audience: data.target_audience
           });
+          console.log('📥 Resposta do backend:', response);
           pushResult = response.data || { sent: 0, failed: 0 };
-          console.log('✅ Push enviado:', pushResult);
+          console.log('✅ Push result:', pushResult);
         } catch (e) {
-          console.error('Erro push:', e);
+          console.error('❌ Erro ao enviar push:', e);
+          pushResult = { sent: 0, failed: 0, error: e.message };
         }
       }
       
@@ -136,10 +144,12 @@ export default function AdminNotifications() {
         sent: (pushResult.sent || 0) + (whatsappResult.sent || 0),
         failed: (pushResult.failed || 0) + (whatsappResult.failed || 0),
         appNotifications: targetUsers.length,
-        channel
+        channel,
+        pushResult
       };
     },
     onSuccess: (data) => {
+      console.log('✅ Sucesso no envio:', data);
       queryClient.invalidateQueries(['notifications']);
       queryClient.invalidateQueries(['push-subscriptions']);
       queryClient.invalidateQueries(['app-notifications']);
@@ -155,7 +165,14 @@ export default function AdminNotifications() {
         expires_at: ""
       });
       const channelLabel = data.channel === 'both' ? 'Push + WhatsApp' : data.channel === 'whatsapp' ? 'WhatsApp' : 'Push';
-      toast.success(`✅ ${channelLabel} enviado! ${data.appNotifications} notificações no app criadas`);
+      
+      if (data.channel === 'push' || data.channel === 'both') {
+        const pushSent = data.pushResult?.sent || 0;
+        const pushFailed = data.pushResult?.failed || 0;
+        toast.success(`✅ ${channelLabel} - Push: ${pushSent} enviados, ${pushFailed} falhas. App: ${data.appNotifications} notificações criadas`);
+      } else {
+        toast.success(`✅ ${channelLabel} enviado! ${data.appNotifications} notificações no app criadas`);
+      }
     },
     onError: (error) => {
       console.error('❌ Erro:', error);
@@ -230,32 +247,49 @@ export default function AdminNotifications() {
     }
 
     try {
+      console.log('🔔 Iniciando teste de notificação');
+      
       if (!('Notification' in window)) {
         toast.error('❌ Notificações não suportadas');
         return;
       }
 
-      let permission = Notification.permission;
-      if (permission === 'default') {
-        permission = await Notification.requestPermission();
-      }
-
-      if (permission !== 'granted') {
-        toast.error('❌ Permissão negada');
+      if (!('serviceWorker' in navigator)) {
+        toast.error('❌ Service Worker não suportado');
         return;
       }
 
+      let permission = Notification.permission;
+      console.log('📱 Permissão atual:', permission);
+      
+      if (permission === 'default') {
+        permission = await Notification.requestPermission();
+        console.log('📱 Nova permissão:', permission);
+      }
+
+      if (permission !== 'granted') {
+        toast.error('❌ Permissão negada. Habilite nas configurações do navegador.');
+        return;
+      }
+
+      // Verificar se há service worker registrado
       const registration = await navigator.serviceWorker.ready;
+      console.log('✅ Service Worker ready:', registration.scope);
+
+      // Enviar via service worker
       await registration.showNotification(formData.title, {
         body: formData.message,
         icon: 'https://base44.app/api/apps/6904da724b4ce40db58404e7/files/public/6904da724b4ce40db58404e7/901d97ae0_Untitleddesign3.png',
         badge: 'https://base44.app/api/apps/6904da724b4ce40db58404e7/files/public/6904da724b4ce40db58404e7/901d97ae0_Untitleddesign3.png',
-        vibrate: [200, 100, 200]
+        vibrate: [200, 100, 200],
+        tag: 'test-notification',
+        requireInteraction: false
       });
 
-      toast.success('✅ Teste enviado!');
+      console.log('✅ Notificação de teste enviada');
+      toast.success('✅ Teste enviado! Verifique se a notificação apareceu.');
     } catch (error) {
-      console.error('❌ Erro:', error);
+      console.error('❌ Erro ao testar:', error);
       toast.error('❌ Erro: ' + error.message);
     }
   };
