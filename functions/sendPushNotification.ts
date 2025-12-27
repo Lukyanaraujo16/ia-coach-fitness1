@@ -74,14 +74,25 @@ Deno.serve(async (req) => {
                     }
                 }
 
-                if (!sub.subscription?.endpoint) {
+                if (!sub.endpoint) {
                     console.log('⚠️ Subscription sem endpoint');
                     skipped++;
                     continue;
                 }
 
+                // Parse subscription JSON
+                let subscriptionObj;
+                try {
+                    subscriptionObj = JSON.parse(sub.subscription_json);
+                    console.log('📦 Subscription parseada:', subscriptionObj.endpoint);
+                } catch (e) {
+                    console.error('❌ Erro ao parsear subscription:', e);
+                    skipped++;
+                    continue;
+                }
+
                 console.log('📮 Enviando push...');
-                await webpush.sendNotification(sub.subscription, payload);
+                await webpush.sendNotification(subscriptionObj, payload);
                 sent++;
                 console.log('✅ Enviado com sucesso!');
             } catch (error) {

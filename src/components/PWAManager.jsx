@@ -79,33 +79,23 @@ export default function PWAManager() {
                 console.log('🔍 Keys direto:', subscription.keys);
 
                 const subscriptionJSON = subscription.toJSON();
-                console.log('📄 Após toJSON() - tipo:', typeof subscriptionJSON);
-                console.log('📄 Após toJSON() - valor:', subscriptionJSON);
-                console.log('📄 JSON.stringify:', JSON.stringify(subscriptionJSON, null, 2));
-                console.log('🔗 Endpoint do JSON:', subscriptionJSON.endpoint);
-                console.log('🔑 Keys do JSON:', subscriptionJSON.keys);
+                console.log('📄 Subscription JSON:', subscriptionJSON);
+                console.log('🔗 Endpoint:', subscriptionJSON.endpoint);
 
-                if (!subscriptionJSON.endpoint) {
-                  console.error('❌ ERRO: Endpoint está undefined/null após toJSON()!');
-                  console.log('🔧 Tentando construir manualmente...');
-                  subscriptionJSON.endpoint = subscription.endpoint;
-                  subscriptionJSON.keys = {
-                    p256dh: subscription.getKey ? btoa(String.fromCharCode(...new Uint8Array(subscription.getKey('p256dh')))) : null,
-                    auth: subscription.getKey ? btoa(String.fromCharCode(...new Uint8Array(subscription.getKey('auth')))) : null
-                  };
-                  console.log('🔧 Objeto reconstruído:', subscriptionJSON);
-                }
+                const subscriptionString = JSON.stringify(subscriptionJSON);
+                console.log('📝 Subscription como string:', subscriptionString);
 
                 const existingSubscriptions = await base44.entities.PushSubscription.list();
                 const userSubscription = existingSubscriptions.find(s => s.user_email === currentUser.email);
 
                 const subscriptionData = {
                   user_email: currentUser.email,
-                  subscription: subscriptionJSON,
+                  subscription_json: subscriptionString,
+                  endpoint: subscriptionJSON.endpoint,
                   is_active: true
                 };
 
-                console.log('💾 Dados que serão salvos:', JSON.stringify(subscriptionData, null, 2));
+                console.log('💾 Salvando:', subscriptionData);
 
                 if (userSubscription) {
                   await base44.entities.PushSubscription.update(userSubscription.id, subscriptionData);
@@ -115,17 +105,16 @@ export default function PWAManager() {
                   console.log('✅ Subscription criada no banco!');
                 }
 
-                // Validar que foi salvo corretamente
+                // Validar
                 const validate = await base44.entities.PushSubscription.list();
                 const saved = validate.find(s => s.user_email === currentUser.email);
-                console.log('🔍 Validação final:', saved);
-                console.log('🔍 Endpoint salvo:', saved?.subscription?.endpoint);
-                console.log('🔍 Keys salvo:', saved?.subscription?.keys);
+                console.log('🔍 Validação:', saved);
+                console.log('🔍 Endpoint salvo:', saved?.endpoint);
 
-                if (saved?.subscription?.endpoint) {
-                  console.log('🎉 Push notifications 100% configurado! ✅');
+                if (saved?.endpoint) {
+                  console.log('🎉 Push configurado! ✅');
                 } else {
-                  console.error('❌ FALHA: Subscription salva mas endpoint está null no banco!');
+                  console.error('❌ FALHA: Endpoint null!');
                 }
               } catch (error) {
                 console.error('❌ Erro ao configurar push:', error);
