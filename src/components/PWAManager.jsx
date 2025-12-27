@@ -71,22 +71,34 @@ export default function PWAManager() {
                 }
 
                 console.log('💾 Salvando/atualizando no banco...');
+
+                const subscriptionJSON = subscription.toJSON();
+                console.log('📄 Subscription JSON:', subscriptionJSON);
+                console.log('🔗 Endpoint:', subscriptionJSON.endpoint);
+
                 const existingSubscriptions = await base44.entities.PushSubscription.list();
                 const userSubscription = existingSubscriptions.find(s => s.user_email === currentUser.email);
 
                 const subscriptionData = {
                   user_email: currentUser.email,
-                  subscription: subscription.toJSON(),
+                  subscription: subscriptionJSON,
                   is_active: true
                 };
 
                 if (userSubscription) {
                   await base44.entities.PushSubscription.update(userSubscription.id, subscriptionData);
                   console.log('✅ Subscription atualizada no banco!');
+                  console.log('💾 Dados salvos:', subscriptionData);
                 } else {
                   await base44.entities.PushSubscription.create(subscriptionData);
                   console.log('✅ Subscription criada no banco!');
+                  console.log('💾 Dados salvos:', subscriptionData);
                 }
+
+                // Validar que foi salvo corretamente
+                const validate = await base44.entities.PushSubscription.list();
+                const saved = validate.find(s => s.user_email === currentUser.email);
+                console.log('🔍 Validando subscription salva:', saved?.subscription?.endpoint ? 'TEM ENDPOINT ✅' : 'SEM ENDPOINT ❌');
 
                 console.log('🎉 Push notifications 100% configurado!');
               } catch (error) {
