@@ -79,30 +79,36 @@ export default function PWAManager() {
                 console.log('🔍 Keys direto:', subscription.keys);
 
                 const subscriptionJSON = subscription.toJSON();
-                console.log('📄 Subscription JSON:', subscriptionJSON);
-                console.log('🔗 Endpoint:', subscriptionJSON.endpoint);
-
                 const subscriptionString = JSON.stringify(subscriptionJSON);
-                console.log('📝 Subscription como string:', subscriptionString);
+                const endpoint = subscriptionJSON.endpoint || subscription.endpoint;
+
+                console.log('📄 JSON:', subscriptionJSON);
+                console.log('📝 String:', subscriptionString);
+                console.log('🔗 Endpoint:', endpoint);
+
+                if (!endpoint || !subscriptionString) {
+                  console.error('❌ Dados inválidos!');
+                  return;
+                }
 
                 const existingSubscriptions = await base44.entities.PushSubscription.list();
                 const userSubscription = existingSubscriptions.find(s => s.user_email === currentUser.email);
 
-                const subscriptionData = {
+                const dataToSave = {
                   user_email: currentUser.email,
                   subscription_json: subscriptionString,
-                  endpoint: subscriptionJSON.endpoint,
+                  endpoint: endpoint,
                   is_active: true
                 };
 
-                console.log('💾 Salvando:', subscriptionData);
+                console.log('💾 Dados:', dataToSave);
 
                 if (userSubscription) {
-                  await base44.entities.PushSubscription.update(userSubscription.id, subscriptionData);
-                  console.log('✅ Subscription atualizada no banco!');
+                  await base44.entities.PushSubscription.update(userSubscription.id, dataToSave);
+                  console.log('✅ Atualizado!');
                 } else {
-                  await base44.entities.PushSubscription.create(subscriptionData);
-                  console.log('✅ Subscription criada no banco!');
+                  const created = await base44.entities.PushSubscription.create(dataToSave);
+                  console.log('✅ Criado:', created);
                 }
 
                 // Validar
