@@ -2,7 +2,7 @@
   "name": "IA Coach Fitness",
   "short_name": "IA Coach",
   "description": "Seu personal trainer com inteligência artificial",
-  "start_url": "/",
+  "start_url": "https://iacoachfitness.com.br/dashboard",
   "display": "standalone",
   "background_color": "#1E40AF",
   "theme_color": "#1E40AF",
