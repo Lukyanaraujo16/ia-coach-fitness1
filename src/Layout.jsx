@@ -82,23 +82,23 @@ export default function Layout({ children, currentPageName }) {
     // Adicionar lang pt-BR no html
     document.documentElement.lang = 'pt-BR';
 
-    // Adicionar link para manifest
+    // Adicionar link para manifest estático
     let manifestLink = document.querySelector('link[rel="manifest"]');
     if (!manifestLink) {
       manifestLink = document.createElement('link');
       manifestLink.rel = 'manifest';
-      manifestLink.href = '/manifest.json';
       document.head.appendChild(manifestLink);
     }
+    manifestLink.href = '/manifest.json';
 
     // Adicionar link para ícone
     let iconLink = document.querySelector('link[rel="apple-touch-icon"]');
     if (!iconLink) {
       iconLink = document.createElement('link');
       iconLink.rel = 'apple-touch-icon';
-      iconLink.href = '/icon-192.png';
       document.head.appendChild(iconLink);
     }
+    iconLink.href = 'https://base44.app/api/apps/6904da724b4ce40db58404e7/files/public/6904da724b4ce40db58404e7/901d97ae0_Untitleddesign3.png';
   }, []);
 
   const handleTrialExpired = () => {
