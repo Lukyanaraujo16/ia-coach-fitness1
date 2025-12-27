@@ -68,16 +68,33 @@ export default function PWAManager() {
                     applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
                   });
                   console.log('✅ Subscription criada:', subscription.endpoint);
+                } else {
+                  console.log('✅ Subscription já existe:', subscription.endpoint);
                 }
 
-                console.log('💾 Salvando/atualizando no banco...');
-                console.log('🔍 Subscription objeto:', subscription);
+                console.log('💾 Preparando para salvar no banco...');
+                console.log('🔍 Tipo de subscription:', typeof subscription);
+                console.log('🔍 Subscription objeto completo:', subscription);
                 console.log('🔍 Endpoint direto:', subscription.endpoint);
+                console.log('🔍 Keys direto:', subscription.keys);
 
                 const subscriptionJSON = subscription.toJSON();
-                console.log('📄 Subscription JSON completo:', JSON.stringify(subscriptionJSON, null, 2));
+                console.log('📄 Após toJSON() - tipo:', typeof subscriptionJSON);
+                console.log('📄 Após toJSON() - valor:', subscriptionJSON);
+                console.log('📄 JSON.stringify:', JSON.stringify(subscriptionJSON, null, 2));
                 console.log('🔗 Endpoint do JSON:', subscriptionJSON.endpoint);
                 console.log('🔑 Keys do JSON:', subscriptionJSON.keys);
+
+                if (!subscriptionJSON.endpoint) {
+                  console.error('❌ ERRO: Endpoint está undefined/null após toJSON()!');
+                  console.log('🔧 Tentando construir manualmente...');
+                  subscriptionJSON.endpoint = subscription.endpoint;
+                  subscriptionJSON.keys = {
+                    p256dh: subscription.getKey ? btoa(String.fromCharCode(...new Uint8Array(subscription.getKey('p256dh')))) : null,
+                    auth: subscription.getKey ? btoa(String.fromCharCode(...new Uint8Array(subscription.getKey('auth')))) : null
+                  };
+                  console.log('🔧 Objeto reconstruído:', subscriptionJSON);
+                }
 
                 const existingSubscriptions = await base44.entities.PushSubscription.list();
                 const userSubscription = existingSubscriptions.find(s => s.user_email === currentUser.email);
@@ -88,24 +105,31 @@ export default function PWAManager() {
                   is_active: true
                 };
 
+                console.log('💾 Dados que serão salvos:', JSON.stringify(subscriptionData, null, 2));
+
                 if (userSubscription) {
                   await base44.entities.PushSubscription.update(userSubscription.id, subscriptionData);
                   console.log('✅ Subscription atualizada no banco!');
-                  console.log('💾 Dados salvos:', subscriptionData);
                 } else {
                   await base44.entities.PushSubscription.create(subscriptionData);
                   console.log('✅ Subscription criada no banco!');
-                  console.log('💾 Dados salvos:', subscriptionData);
                 }
 
                 // Validar que foi salvo corretamente
                 const validate = await base44.entities.PushSubscription.list();
                 const saved = validate.find(s => s.user_email === currentUser.email);
-                console.log('🔍 Validando subscription salva:', saved?.subscription?.endpoint ? 'TEM ENDPOINT ✅' : 'SEM ENDPOINT ❌');
+                console.log('🔍 Validação final:', saved);
+                console.log('🔍 Endpoint salvo:', saved?.subscription?.endpoint);
+                console.log('🔍 Keys salvo:', saved?.subscription?.keys);
 
-                console.log('🎉 Push notifications 100% configurado!');
+                if (saved?.subscription?.endpoint) {
+                  console.log('🎉 Push notifications 100% configurado! ✅');
+                } else {
+                  console.error('❌ FALHA: Subscription salva mas endpoint está null no banco!');
+                }
               } catch (error) {
                 console.error('❌ Erro ao configurar push:', error);
+                console.error('Stack:', error.stack);
               }
             }
 
