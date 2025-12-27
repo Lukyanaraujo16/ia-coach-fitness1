@@ -71,10 +71,13 @@ export default function PWAManager() {
                 }
 
                 console.log('💾 Salvando/atualizando no banco...');
+                console.log('🔍 Subscription objeto:', subscription);
+                console.log('🔍 Endpoint direto:', subscription.endpoint);
 
                 const subscriptionJSON = subscription.toJSON();
-                console.log('📄 Subscription JSON:', subscriptionJSON);
-                console.log('🔗 Endpoint:', subscriptionJSON.endpoint);
+                console.log('📄 Subscription JSON completo:', JSON.stringify(subscriptionJSON, null, 2));
+                console.log('🔗 Endpoint do JSON:', subscriptionJSON.endpoint);
+                console.log('🔑 Keys do JSON:', subscriptionJSON.keys);
 
                 const existingSubscriptions = await base44.entities.PushSubscription.list();
                 const userSubscription = existingSubscriptions.find(s => s.user_email === currentUser.email);
