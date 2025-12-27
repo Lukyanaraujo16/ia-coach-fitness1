@@ -78,18 +78,26 @@ export default function PWAManager() {
                 console.log('🔍 Endpoint direto:', subscription.endpoint);
                 console.log('🔍 Keys direto:', subscription.keys);
 
-                const subscriptionJSON = subscription.toJSON();
-                const subscriptionString = JSON.stringify(subscriptionJSON);
-                const endpoint = subscriptionJSON.endpoint || subscription.endpoint;
+                // Pegar endpoint diretamente
+                const endpoint = subscription.endpoint;
+                console.log('🔗 Endpoint original:', endpoint);
 
-                console.log('📄 JSON:', subscriptionJSON);
-                console.log('📝 String:', subscriptionString);
-                console.log('🔗 Endpoint:', endpoint);
-
-                if (!endpoint || !subscriptionString) {
-                  console.error('❌ Dados inválidos!');
+                if (!endpoint) {
+                  console.error('❌ Subscription sem endpoint!');
                   return;
                 }
+
+                // Criar JSON
+                const subscriptionJSON = subscription.toJSON();
+                console.log('📄 toJSON():', subscriptionJSON);
+
+                // Garantir que endpoint esteja no JSON
+                if (!subscriptionJSON.endpoint) {
+                  subscriptionJSON.endpoint = endpoint;
+                }
+
+                const subscriptionString = JSON.stringify(subscriptionJSON);
+                console.log('📝 String final:', subscriptionString);
 
                 const existingSubscriptions = await base44.entities.PushSubscription.list();
                 const userSubscription = existingSubscriptions.find(s => s.user_email === currentUser.email);
@@ -101,11 +109,11 @@ export default function PWAManager() {
                   is_active: true
                 };
 
-                console.log('💾 Dados:', dataToSave);
+                console.log('💾 Salvando:', JSON.stringify(dataToSave));
 
                 if (userSubscription) {
-                  await base44.entities.PushSubscription.update(userSubscription.id, dataToSave);
-                  console.log('✅ Atualizado!');
+                  const updated = await base44.entities.PushSubscription.update(userSubscription.id, dataToSave);
+                  console.log('✅ Atualizado:', updated);
                 } else {
                   const created = await base44.entities.PushSubscription.create(dataToSave);
                   console.log('✅ Criado:', created);
