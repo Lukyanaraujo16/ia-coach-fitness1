@@ -3,20 +3,7 @@ import InstallPWAModal from './pwa/InstallPWAModal';
 import NotificationPermissionModal from './pwa/NotificationPermissionModal';
 import { base44 } from '@/api/base44Client';
 
-const VAPID_PUBLIC_KEY = 'BNJg8Uw8qpWl9GvHLheJP0VKEXe7yWU0XHlS9-xdmQPf8WHmvKELB1j7JYEIbWr4xKDKIqOPYL1KZ9-8_cFV6Yw';
-
-function urlBase64ToUint8Array(base64String) {
-  const padding = '='.repeat((4 - base64String.length % 4) % 4);
-  const base64 = (base64String + padding)
-    .replace(/\-/g, '+')
-    .replace(/_/g, '/');
-  const rawData = window.atob(base64);
-  const outputArray = new Uint8Array(rawData.length);
-  for (let i = 0; i < rawData.length; ++i) {
-    outputArray[i] = rawData.charCodeAt(i);
-  }
-  return outputArray;
-}
+const ONESIGNAL_APP_ID = '1f48fb3f-a93e-42e3-89d1-ef062efe7cb0';
 
 export default function PWAManager() {
   const [showNotificationModal, setShowNotificationModal] = useState(false);
@@ -24,84 +11,76 @@ export default function PWAManager() {
   useEffect(() => {
     console.log('🚀 PWAManager iniciado');
     
-    // Registrar Service Worker do /public
-    const loadServiceWorker = async () => {
+    const initOneSignal = async () => {
       try {
+        // Detectar se é iOS
+        const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent);
+        console.log('📱 iOS detectado:', isIOS);
+
+        // Registrar Service Worker para cache (não para notificações)
         if ('serviceWorker' in navigator) {
           const registration = await navigator.serviceWorker.register('/service-worker.js', { 
             scope: '/',
             updateViaCache: 'none'
           });
-          
-          console.log('✅ Service Worker registrado do /public');
-          console.log('📍 Scope:', registration.scope);
-          
-          registration.update();
-          
-          if ('Notification' in window && 'PushManager' in window) {
-            console.log('🔔 Permissão de notificação:', Notification.permission);
-            
-            if (Notification.permission === 'granted') {
-              await navigator.serviceWorker.ready;
-              console.log('⏳ Service Worker ready');
-              
-              const currentUser = await base44.auth.me();
-              console.log('👤 Usuário:', currentUser.email);
-              
-              let subscription = await registration.pushManager.getSubscription();
-              console.log('📮 Subscription:', subscription ? 'EXISTE' : 'NÃO EXISTE');
-              
-              if (!subscription) {
-                console.log('📝 Criando subscription...');
-                subscription = await registration.pushManager.subscribe({
-                  userVisibleOnly: true,
-                  applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
-                });
-                console.log('✅ Subscription criada!');
-              }
-
-              console.log('💾 Salvando no banco...');
-              const existingSubscriptions = await base44.entities.PushSubscription.list();
-              const userSubscription = existingSubscriptions.find(s => s.user_email === currentUser.email);
-              
-              const subscriptionData = {
-                user_email: currentUser.email,
-                subscription: subscription.toJSON(),
-                is_active: true
-              };
-
-              if (userSubscription) {
-                await base44.entities.PushSubscription.update(userSubscription.id, subscriptionData);
-                console.log('✅ Subscription atualizada!');
-              } else {
-                await base44.entities.PushSubscription.create(subscriptionData);
-                console.log('✅ Subscription criada!');
-              }
-              
-              console.log('🎉 Push notifications configurado - funciona com app fechado!');
-            }
-            
-            const hasAskedPermission = localStorage.getItem('notification-permission-asked');
-            const isPWA = window.matchMedia('(display-mode: standalone)').matches || 
-                          window.navigator.standalone === true;
-            
-            console.log('🏠 PWA?', isPWA);
-            console.log('❓ Já perguntou?', hasAskedPermission);
-            
-            if (isPWA && Notification.permission === 'default' && !hasAskedPermission) {
-              setTimeout(() => {
-                console.log('📢 Mostrando modal de permissão');
-                setShowNotificationModal(true);
-              }, 3000);
-            }
-          }
+          console.log('✅ Service Worker registrado');
         }
+
+        // Inicializar OneSignal (funciona em iOS e Android)
+        if (!window.OneSignalDeferred) {
+          window.OneSignalDeferred = window.OneSignalDeferred || [];
+          const script = document.createElement('script');
+          script.src = 'https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js';
+          script.defer = true;
+          document.head.appendChild(script);
+        }
+
+        window.OneSignalDeferred.push(async function(OneSignal) {
+          await OneSignal.init({
+            appId: ONESIGNAL_APP_ID,
+            safari_web_id: 'web.onesignal.auto.1f48fb3f-a93e-42e3-89d1-ef062efe7cb0',
+            notifyButton: {
+              enable: false,
+            },
+            allowLocalhostAsSecureOrigin: true,
+          });
+
+          console.log('✅ OneSignal inicializado');
+
+          // Configurar usuário se estiver logado
+          try {
+            const user = await base44.auth.me();
+            if (user?.email) {
+              await OneSignal.login(user.email);
+              await OneSignal.User.addEmail(user.email);
+              console.log('✅ Usuário identificado no OneSignal:', user.email);
+            }
+          } catch (e) {
+            console.log('⚠️ Usuário não logado ainda');
+          }
+
+          // Verificar permissão atual
+          const permission = await OneSignal.Notifications.permission;
+          console.log('🔔 Permissão OneSignal:', permission);
+
+          // Mostrar modal se estiver em PWA e não tiver permissão
+          const hasAskedPermission = localStorage.getItem('notification-permission-asked');
+          const isPWA = window.matchMedia('(display-mode: standalone)').matches || 
+                        window.navigator.standalone === true;
+          
+          if (isPWA && !permission && !hasAskedPermission) {
+            setTimeout(() => {
+              console.log('📢 Mostrando modal de permissão');
+              setShowNotificationModal(true);
+            }, 3000);
+          }
+        });
       } catch (error) {
-        console.error('❌ Erro ao carregar SW:', error);
+        console.error('❌ Erro ao inicializar notificações:', error);
       }
     };
 
-    loadServiceWorker();
+    initOneSignal();
   }, []);
 
   return (
