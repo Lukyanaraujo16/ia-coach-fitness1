@@ -283,8 +283,8 @@ export default function Layout({ children, currentPageName }) {
                 <X className="w-5 h-5" />
               </Button>
             </div>
-            
-            <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
+
+            <nav className="flex-1 p-4 space-y-2 overflow-y-auto pb-24">
               {sideMenuItems.map((item) => {
                 const isActive = location.pathname === item.path;
                 const Icon = item.icon;
