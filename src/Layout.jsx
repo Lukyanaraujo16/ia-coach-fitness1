@@ -82,7 +82,14 @@ export default function Layout({ children, currentPageName }) {
     // Adicionar lang pt-BR no html
     document.documentElement.lang = 'pt-BR';
 
-    // Manifest já está no index.html, não precisa adicionar dinamicamente
+    // Adicionar link para manifest
+    let manifestLink = document.querySelector('link[rel="manifest"]');
+    if (!manifestLink) {
+      manifestLink = document.createElement('link');
+      manifestLink.rel = 'manifest';
+      manifestLink.href = '/manifest.json';
+      document.head.appendChild(manifestLink);
+    }
 
     // Adicionar link para ícone
     let iconLink = document.querySelector('link[rel="apple-touch-icon"]');
@@ -181,16 +188,13 @@ export default function Layout({ children, currentPageName }) {
   const sideMenuItems = buildSideMenuItems();
 
   const specialPages = ["WorkoutExecution", "Onboarding", "NutritionSetup", "WorkoutSetup", "LandingPage"];
-
+  
   // Verifica se está na página Home pela URL, não pelo currentPageName
   const isHomePage = location.pathname === "/" || location.pathname === "/page/Home";
   const isSpecialPage = specialPages.includes(currentPageName);
-
+  
   // Esconde navegação em páginas especiais ou na Home (landing page pública)
   const hideNavigation = isSpecialPage || isHomePage;
-
-  // Verificar se está em WorkoutExecution pela URL também
-  const isWorkoutExecution = location.pathname.includes('WorkoutExecution') || currentPageName === 'WorkoutExecution';
 
   const handleLogout = async () => {
     await base44.auth.logout("https://iacoachfitness.com.br");
@@ -199,7 +203,7 @@ export default function Layout({ children, currentPageName }) {
   const logoUrl = user?.app_logo_url || "https://base44.app/api/apps/6904da724b4ce40db58404e7/files/public/6904da724b4ce40db58404e7/901d97ae0_Untitleddesign3.png";
 
   return (
-    <div className={`min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 ${!hideNavigation && !isWorkoutExecution ? 'pb-32 md:pb-0' : ''}`}>
+    <div className={`min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 ${!hideNavigation ? 'pb-32 md:pb-0' : ''}`}>
       <PWAManager />
       {user && <NotificationChecker user={user} />}
       {user && <SupportNotificationChecker user={user} />}
@@ -273,8 +277,8 @@ export default function Layout({ children, currentPageName }) {
       </main>
 
       {showMenu && !hideNavigation && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[9999] md:hidden" onClick={() => setShowMenu(false)}>
-          <div className="fixed inset-y-0 right-0 w-64 bg-slate-900 shadow-2xl flex flex-col z-[10000]" onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60] md:hidden" onClick={() => setShowMenu(false)}>
+          <div className="fixed inset-y-0 right-0 w-64 bg-slate-900 shadow-2xl flex flex-col" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between p-4 border-b border-slate-800">
               <h2 className="text-white font-semibold">Menu</h2>
               <Button
@@ -286,8 +290,8 @@ export default function Layout({ children, currentPageName }) {
                 <X className="w-5 h-5" />
               </Button>
             </div>
-
-            <nav className="flex-1 p-4 space-y-2 overflow-y-auto pb-24">
+            
+            <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
               {sideMenuItems.map((item) => {
                 const isActive = location.pathname === item.path;
                 const Icon = item.icon;
@@ -325,7 +329,7 @@ export default function Layout({ children, currentPageName }) {
         </div>
       )}
 
-      {!hideNavigation && !isWorkoutExecution && (
+      {!hideNavigation && (
         <nav 
           className="md:hidden"
           style={{ 
@@ -335,7 +339,7 @@ export default function Layout({ children, currentPageName }) {
             right: 0,
             backgroundColor: '#020617',
             borderTop: '1px solid rgba(30, 41, 59, 0.5)',
-            zIndex: 50,
+            zIndex: 9999,
             paddingBottom: 'env(safe-area-inset-bottom)',
             transform: 'translateZ(0)',
             WebkitTransform: 'translateZ(0)',

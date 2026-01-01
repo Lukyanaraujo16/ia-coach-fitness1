@@ -27,129 +27,88 @@ export default function PWAManager() {
     console.log('📱 User Agent:', navigator.userAgent);
     console.log('🔔 Notification support:', 'Notification' in window);
     console.log('📮 Push support:', 'PushManager' in window);
+    
+    const manifestBlob = new Blob([JSON.stringify(manifestData)], { type: 'application/json' });
+    const manifestURL = URL.createObjectURL(manifestBlob);
+    
+    let manifestLink = document.querySelector('link[rel="manifest"]');
+    if (!manifestLink) {
+      manifestLink = document.createElement('link');
+      manifestLink.rel = 'manifest';
+      document.head.appendChild(manifestLink);
+    }
+    manifestLink.href = manifestURL;
+    console.log('✅ Manifest criado');
 
-    // Registrar Service Worker do /public
+    // Carregar SW físico do diretório components/pwa
     const loadServiceWorker = async () => {
       try {
-        if ('serviceWorker' in navigator) {
-          console.log('🔄 Registrando Service Worker...');
+        const swResponse = await fetch('/components/pwa/service-worker.js');
+        const swCode = await swResponse.text();
+        const swBlob = new Blob([swCode], { type: 'application/javascript' });
+        const swURL = URL.createObjectURL(swBlob);
 
-          const registration = await navigator.serviceWorker.register('/service-worker.js', { 
+        if ('serviceWorker' in navigator) {
+          const registration = await navigator.serviceWorker.register(swURL, { 
             scope: '/',
             updateViaCache: 'none'
           });
-
-          console.log('✅ Service Worker registrado');
+          
+          console.log('✅ Service Worker físico registrado');
           console.log('📍 Scope:', registration.scope);
-          console.log('📱 State:', registration.active?.state);
-
-          // Forçar atualização
+          
           registration.update();
-
-          // Aguardar o SW estar ativo
-          await navigator.serviceWorker.ready;
-          console.log('✅ Service Worker ready e ativo');
-
+          
           if ('Notification' in window && 'PushManager' in window) {
             console.log('🔔 Permissão de notificação:', Notification.permission);
-
+            
             if (Notification.permission === 'granted') {
-              try {
-                const currentUser = await base44.auth.me();
-                console.log('👤 Usuário:', currentUser.email);
-
-                let subscription = await registration.pushManager.getSubscription();
-                console.log('📮 Subscription existente:', subscription ? 'SIM' : 'NÃO');
-
-                if (!subscription) {
-                  console.log('📝 Criando nova subscription...');
-                  subscription = await registration.pushManager.subscribe({
-                    userVisibleOnly: true,
-                    applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
-                  });
-                  console.log('✅ Subscription criada:', subscription.endpoint);
-                } else {
-                  console.log('✅ Subscription já existe:', subscription.endpoint);
-                }
-
-                console.log('\n=== 📦 EXTRAINDO DADOS ===');
-                const endpoint = subscription.endpoint;
-                const subscriptionString = JSON.stringify(subscription);
-                
-                console.log('🔗 Endpoint:', endpoint);
-                console.log('📝 JSON:', subscriptionString.substring(0, 200));
-                
-                if (!endpoint) {
-                  console.error('❌ ENDPOINT VAZIO!');
-                  return;
-                }
-                
-                if (!subscriptionString) {
-                  console.error('❌ JSON VAZIO!');
-                  return;
-                }
-                
-                console.log('\n=== 💾 PREPARANDO PAYLOAD ===');
-                const payload = {
-                  user_email: currentUser.email,
-                  subscription_json: subscriptionString,
-                  endpoint: endpoint,
-                  is_active: true
-                };
-                
-                console.log('📧 user_email:', payload.user_email);
-                console.log('🔗 endpoint:', payload.endpoint);
-                console.log('📄 subscription_json (primeiros 100 chars):', payload.subscription_json.substring(0, 100));
-                console.log('✅ is_active:', payload.is_active);
-                
-                console.log('\n=== 🔍 BUSCANDO SUBSCRIPTION EXISTENTE ===');
-                const allSubs = await base44.entities.PushSubscription.list();
-                console.log('📊 Total de subscriptions:', allSubs.length);
-                const existing = allSubs.find(s => s.user_email === currentUser.email);
-                console.log('👤 Subscription do usuário:', existing ? `ID ${existing.id}` : 'NÃO EXISTE');
-                
-                console.log('\n=== 💾 SALVANDO NO BANCO ===');
-                try {
-                  if (existing) {
-                    console.log('🔄 Atualizando ID:', existing.id);
-                    const result = await base44.entities.PushSubscription.update(existing.id, payload);
-                    console.log('✅ Atualizado:', result);
-                  } else {
-                    console.log('➕ Criando novo');
-                    const result = await base44.entities.PushSubscription.create(payload);
-                    console.log('✅ Criado:', result);
-                  }
-                } catch (saveError) {
-                  console.error('❌ ERRO AO SALVAR:', saveError);
-                  console.error('📝 Mensagem:', saveError.message);
-                  console.error('📦 Stack:', saveError.stack);
-                  return;
-                }
-                
-                console.log('\n=== ✅ VALIDANDO ===');
-                const checkList = await base44.entities.PushSubscription.list();
-                const finalCheck = checkList.find(s => s.user_email === currentUser.email);
-                console.log('🔍 Subscription salva:', finalCheck);
-                console.log('🔗 Endpoint salvo:', finalCheck?.endpoint);
-                
-                if (finalCheck?.endpoint) {
-                  console.log('\n🎉 SUCESSO! Push notifications configurado!');
-                } else {
-                  console.error('\n❌ FALHA: Endpoint está null no banco!');
-                }
-              } catch (error) {
-                console.error('❌ Erro ao configurar push:', error);
-                console.error('Stack:', error.stack);
+              await navigator.serviceWorker.ready;
+              console.log('⏳ Service Worker ready');
+              
+              const currentUser = await base44.auth.me();
+              console.log('👤 Usuário:', currentUser.email);
+              
+              let subscription = await registration.pushManager.getSubscription();
+              console.log('📮 Subscription:', subscription ? 'EXISTE' : 'NÃO EXISTE');
+              
+              if (!subscription) {
+                console.log('📝 Criando subscription...');
+                subscription = await registration.pushManager.subscribe({
+                  userVisibleOnly: true,
+                  applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
+                });
+                console.log('✅ Subscription criada!');
               }
-            }
 
+              console.log('💾 Salvando no banco...');
+              const existingSubscriptions = await base44.entities.PushSubscription.list();
+              const userSubscription = existingSubscriptions.find(s => s.user_email === currentUser.email);
+              
+              const subscriptionData = {
+                user_email: currentUser.email,
+                subscription: subscription.toJSON(),
+                is_active: true
+              };
+
+              if (userSubscription) {
+                await base44.entities.PushSubscription.update(userSubscription.id, subscriptionData);
+                console.log('✅ Subscription atualizada!');
+              } else {
+                await base44.entities.PushSubscription.create(subscriptionData);
+                console.log('✅ Subscription criada!');
+              }
+              
+              console.log('🎉 Push notifications configurado - funciona com app fechado!');
+            }
+            
             const hasAskedPermission = localStorage.getItem('notification-permission-asked');
             const isPWA = window.matchMedia('(display-mode: standalone)').matches || 
                           window.navigator.standalone === true;
-
+            
             console.log('🏠 PWA?', isPWA);
-            console.log('❓ Já perguntou permissão?', hasAskedPermission);
-
+            console.log('❓ Já perguntou?', hasAskedPermission);
+            
             if (isPWA && Notification.permission === 'default' && !hasAskedPermission) {
               setTimeout(() => {
                 console.log('📢 Mostrando modal de permissão');
@@ -157,15 +116,17 @@ export default function PWAManager() {
               }, 3000);
             }
           }
-        } else {
-          console.log('❌ Service Worker não suportado');
         }
       } catch (error) {
-        console.error('❌ Erro fatal ao carregar SW:', error);
+        console.error('❌ Erro ao carregar SW:', error);
       }
     };
 
     loadServiceWorker();
+
+    return () => {
+      URL.revokeObjectURL(manifestURL);
+    };
   }, []);
 
   return (
