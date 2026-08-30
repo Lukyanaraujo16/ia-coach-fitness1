@@ -1,0 +1,155 @@
+{
+  "name": "Workout",
+  "type": "object",
+  "properties": {
+    "title": {
+      "type": "string",
+      "description": "T\u00edtulo do treino"
+    },
+    "description": {
+      "type": "string",
+      "description": "Descri\u00e7\u00e3o do treino"
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "strength",
+        "cardio",
+        "flexibility",
+        "hiit",
+        "yoga",
+        "full_body"
+      ],
+      "description": "Tipo de treino"
+    },
+    "duration_minutes": {
+      "type": "number",
+      "description": "Dura\u00e7\u00e3o estimada em minutos"
+    },
+    "difficulty": {
+      "type": "string",
+      "enum": [
+        "beginner",
+        "intermediate",
+        "advanced"
+      ],
+      "description": "N\u00edvel de dificuldade"
+    },
+    "training_location": {
+      "type": "string",
+      "enum": [
+        "gym",
+        "home",
+        "both"
+      ],
+      "description": "Onde o treino pode ser realizado"
+    },
+    "techniques_used": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "T\u00e9cnicas de treino utilizadas (back_off_set, drop_set, cluster_set, muscle_round, top_set)"
+    },
+    "days": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "day_number": {
+            "type": "number"
+          },
+          "title": {
+            "type": "string"
+          },
+          "exercises": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "exercise_id": {
+                  "type": "string"
+                },
+                "exercise_name": {
+                  "type": "string"
+                },
+                "exercise_category": {
+                  "type": "string"
+                },
+                "video_url": {
+                  "type": "string",
+                  "description": "URL do v\u00eddeo demonstrativo do exerc\u00edcio"
+                },
+                "sets": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "times": {
+                        "type": "number",
+                        "description": "Quantas vezes fazer essa s\u00e9rie"
+                      },
+                      "reps": {
+                        "type": "string",
+                        "description": "Repeti\u00e7\u00f5es (pode ser n\u00famero ou range)"
+                      },
+                      "rest_seconds": {
+                        "type": "number",
+                        "description": "Tempo de descanso em segundos"
+                      },
+                      "set_type": {
+                        "type": "string",
+                        "enum": [
+                          "feeder",
+                          "working",
+                          "back_off",
+                          "cluster",
+                          "muscle_round",
+                          "top_set",
+                          "drop_set"
+                        ],
+                        "description": "Tipo da s\u00e9rie"
+                      },
+                      "notes": {
+                        "type": "string",
+                        "description": "Observa\u00e7\u00f5es sobre a s\u00e9rie"
+                      }
+                    }
+                  }
+                },
+                "notes": {
+                  "type": "string",
+                  "description": "Observa\u00e7\u00f5es sobre o exerc\u00edcio"
+                }
+              }
+            }
+          }
+        }
+      },
+      "description": "Dias do treino com exerc\u00edcios"
+    },
+    "is_premium": {
+      "type": "boolean",
+      "default": false,
+      "description": "Se o treino \u00e9 exclusivo para premium"
+    },
+    "image_url": {
+      "type": "string",
+      "description": "Imagem de capa do treino"
+    },
+    "created_for_user": {
+      "type": "string",
+      "description": "Email do usu\u00e1rio para quem o treino foi criado (treino privado gerado pela IA)"
+    },
+    "is_public": {
+      "type": "boolean",
+      "default": true,
+      "description": "Se o treino \u00e9 p\u00fablico ou privado"
+    }
+  },
+  "required": [
+    "title",
+    "category",
+    "difficulty"
+  ]
+}

@@ -1,0 +1,84 @@
+{
+  "name": "NotificationSchedule",
+  "type": "object",
+  "properties": {
+    "title": {
+      "type": "string",
+      "description": "T\u00edtulo da notifica\u00e7\u00e3o"
+    },
+    "message": {
+      "type": "string",
+      "description": "Mensagem da notifica\u00e7\u00e3o"
+    },
+    "target_audience": {
+      "type": "string",
+      "enum": [
+        "all",
+        "premium",
+        "free"
+      ],
+      "default": "all",
+      "description": "P\u00fablico alvo"
+    },
+    "schedule_type": {
+      "type": "string",
+      "enum": [
+        "immediate",
+        "scheduled",
+        "recurring"
+      ],
+      "default": "immediate",
+      "description": "Tipo de agendamento"
+    },
+    "scheduled_date": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Data e hora agendada (para scheduled)"
+    },
+    "recurrence_pattern": {
+      "type": "string",
+      "enum": [
+        "daily",
+        "every_2_days",
+        "every_3_days",
+        "weekly"
+      ],
+      "description": "Padr\u00e3o de recorr\u00eancia"
+    },
+    "recurrence_time": {
+      "type": "string",
+      "description": "Hor\u00e1rio da recorr\u00eancia (HH:MM)"
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": true,
+      "description": "Se a notifica\u00e7\u00e3o recorrente est\u00e1 ativa"
+    },
+    "last_sent_date": {
+      "type": "string",
+      "format": "date-time",
+      "description": "\u00daltima data de envio"
+    },
+    "sent_count": {
+      "type": "number",
+      "default": 0,
+      "description": "Quantas vezes foi enviada"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "sent",
+        "failed",
+        "cancelled"
+      ],
+      "default": "pending",
+      "description": "Status da notifica\u00e7\u00e3o"
+    }
+  },
+  "required": [
+    "title",
+    "message",
+    "schedule_type"
+  ]
+}

@@ -1,0 +1,60 @@
+{
+  "name": "AppNotification",
+  "type": "object",
+  "properties": {
+    "user_email": {
+      "type": "string",
+      "description": "Email do usu\u00e1rio destinat\u00e1rio"
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "support",
+        "push",
+        "workout",
+        "ai",
+        "system",
+        "challenge"
+      ],
+      "description": "Tipo da notifica\u00e7\u00e3o"
+    },
+    "title": {
+      "type": "string",
+      "description": "T\u00edtulo da notifica\u00e7\u00e3o"
+    },
+    "message": {
+      "type": "string",
+      "description": "Mensagem completa da notifica\u00e7\u00e3o"
+    },
+    "is_read": {
+      "type": "boolean",
+      "default": false,
+      "description": "Se foi lida"
+    },
+    "link_type": {
+      "type": "string",
+      "enum": [
+        "support_ticket",
+        "workout",
+        "page",
+        "popup"
+      ],
+      "description": "Tipo de a\u00e7\u00e3o ao clicar"
+    },
+    "link_id": {
+      "type": "string",
+      "description": "ID do recurso relacionado (ticket, treino, etc)"
+    },
+    "expires_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Data e hora de expira\u00e7\u00e3o da notifica\u00e7\u00e3o"
+    }
+  },
+  "required": [
+    "user_email",
+    "type",
+    "title",
+    "message"
+  ]
+}

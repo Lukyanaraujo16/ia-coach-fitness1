@@ -1,0 +1,22 @@
+{
+  "name": "WeeklyAnalysis",
+  "type": "object",
+  "properties": {
+    "analysis_data": {
+      "type": "object",
+      "description": "Dados completos da an\u00e1lise semanal gerada pela IA"
+    },
+    "week_start": {
+      "type": "string",
+      "format": "date",
+      "description": "Data de in\u00edcio da semana analisada"
+    },
+    "workouts_count": {
+      "type": "number",
+      "description": "Quantidade de treinos na semana"
+    }
+  },
+  "required": [
+    "analysis_data"
+  ]
+}

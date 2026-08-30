@@ -1,0 +1,80 @@
+{
+  "name": "WorkoutLog",
+  "type": "object",
+  "properties": {
+    "user_email": {
+      "type": "string",
+      "description": "Email do usu\u00e1rio que realizou o treino (edit\u00e1vel)"
+    },
+    "created_by": {
+      "type": "string",
+      "description": "Email do criador do registro (edit\u00e1vel)"
+    },
+    "workout_id": {
+      "type": "string",
+      "description": "ID do treino realizado"
+    },
+    "workout_title": {
+      "type": "string",
+      "description": "T\u00edtulo do treino"
+    },
+    "date": {
+      "type": "string",
+      "format": "date",
+      "description": "Data da realiza\u00e7\u00e3o"
+    },
+    "duration_minutes": {
+      "type": "number",
+      "description": "Dura\u00e7\u00e3o real em minutos"
+    },
+    "exercises_completed": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "exercise_name": {
+            "type": "string"
+          },
+          "sets_completed": {
+            "type": "number"
+          },
+          "max_weight": {
+            "type": "number",
+            "description": "Carga m\u00e1xima utilizada no exerc\u00edcio em kg"
+          },
+          "reps": {
+            "type": "array",
+            "items": {
+              "type": "number"
+            }
+          },
+          "weight": {
+            "type": "array",
+            "items": {
+              "type": "number"
+            }
+          }
+        }
+      },
+      "description": "Exerc\u00edcios completados com detalhes"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Observa\u00e7\u00f5es sobre o treino"
+    },
+    "difficulty_rating": {
+      "type": "number",
+      "minimum": 1,
+      "maximum": 5,
+      "description": "Avalia\u00e7\u00e3o de dificuldade (1-5)"
+    },
+    "calories_burned": {
+      "type": "number",
+      "description": "Calorias queimadas estimadas"
+    }
+  },
+  "required": [
+    "workout_title",
+    "date"
+  ]
+}

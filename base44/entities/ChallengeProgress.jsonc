@@ -1,0 +1,22 @@
+{
+  "name": "ChallengeProgress",
+  "type": "object",
+  "properties": {
+    "challenge_id": {
+      "type": "string",
+      "description": "ID do desafio"
+    },
+    "current_progress": {
+      "type": "number",
+      "description": "Progresso atual do usu\u00e1rio"
+    },
+    "completed": {
+      "type": "boolean",
+      "default": false,
+      "description": "Se completou o desafio"
+    }
+  },
+  "required": [
+    "challenge_id"
+  ]
+}

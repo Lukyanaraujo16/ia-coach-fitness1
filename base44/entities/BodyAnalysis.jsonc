@@ -1,0 +1,208 @@
+{
+  "name": "BodyAnalysis",
+  "type": "object",
+  "properties": {
+    "user_email": {
+      "type": "string",
+      "description": "Email do usu\u00e1rio"
+    },
+    "date": {
+      "type": "string",
+      "format": "date",
+      "description": "Data da an\u00e1lise"
+    },
+    "photos": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "URLs das fotos enviadas (frente, costas, lateral)"
+    },
+    "estimated_body_fat": {
+      "type": "number",
+      "description": "Percentual de gordura corporal estimado"
+    },
+    "estimated_muscle_mass": {
+      "type": "number",
+      "description": "Percentual de massa muscular estimado"
+    },
+    "body_type": {
+      "type": "string",
+      "enum": [
+        "ectomorph",
+        "mesomorph",
+        "endomorph",
+        "ecto-meso",
+        "meso-endo"
+      ],
+      "description": "Tipo corporal identificado"
+    },
+    "muscle_development": {
+      "type": "object",
+      "properties": {
+        "chest": {
+          "type": "string",
+          "enum": [
+            "underdeveloped",
+            "average",
+            "well_developed",
+            "excellent"
+          ]
+        },
+        "back": {
+          "type": "string",
+          "enum": [
+            "underdeveloped",
+            "average",
+            "well_developed",
+            "excellent"
+          ]
+        },
+        "shoulders": {
+          "type": "string",
+          "enum": [
+            "underdeveloped",
+            "average",
+            "well_developed",
+            "excellent"
+          ]
+        },
+        "arms": {
+          "type": "string",
+          "enum": [
+            "underdeveloped",
+            "average",
+            "well_developed",
+            "excellent"
+          ]
+        },
+        "core": {
+          "type": "string",
+          "enum": [
+            "underdeveloped",
+            "average",
+            "well_developed",
+            "excellent"
+          ]
+        },
+        "legs": {
+          "type": "string",
+          "enum": [
+            "underdeveloped",
+            "average",
+            "well_developed",
+            "excellent"
+          ]
+        }
+      },
+      "description": "Avalia\u00e7\u00e3o de desenvolvimento muscular por grupo"
+    },
+    "symmetry_score": {
+      "type": "number",
+      "minimum": 1,
+      "maximum": 10,
+      "description": "Pontua\u00e7\u00e3o de simetria corporal (1-10)"
+    },
+    "posture_analysis": {
+      "type": "object",
+      "properties": {
+        "score": {
+          "type": "number",
+          "minimum": 1,
+          "maximum": 10
+        },
+        "issues": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "recommendations": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "description": "An\u00e1lise de postura"
+    },
+    "body_composition_details": {
+      "type": "object",
+      "properties": {
+        "visceral_fat_level": {
+          "type": "string",
+          "enum": [
+            "low",
+            "normal",
+            "high",
+            "very_high"
+          ]
+        },
+        "subcutaneous_fat_distribution": {
+          "type": "string"
+        },
+        "muscle_definition_level": {
+          "type": "string",
+          "enum": [
+            "none",
+            "slight",
+            "moderate",
+            "defined",
+            "very_defined"
+          ]
+        },
+        "vascularity": {
+          "type": "string",
+          "enum": [
+            "none",
+            "slight",
+            "moderate",
+            "visible",
+            "very_visible"
+          ]
+        }
+      },
+      "description": "Detalhes da composi\u00e7\u00e3o corporal"
+    },
+    "weak_points": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Pontos fracos identificados"
+    },
+    "strong_points": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Pontos fortes identificados"
+    },
+    "recommendations": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Recomenda\u00e7\u00f5es de treino e dieta"
+    },
+    "overall_score": {
+      "type": "number",
+      "minimum": 1,
+      "maximum": 100,
+      "description": "Pontua\u00e7\u00e3o geral do f\u00edsico (1-100)"
+    },
+    "detailed_analysis": {
+      "type": "string",
+      "description": "An\u00e1lise detalhada em texto"
+    },
+    "comparison_notes": {
+      "type": "string",
+      "description": "Notas de compara\u00e7\u00e3o com an\u00e1lise anterior"
+    }
+  },
+  "required": [
+    "user_email",
+    "date",
+    "photos"
+  ]
+}

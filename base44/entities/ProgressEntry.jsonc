@@ -1,0 +1,58 @@
+{
+  "name": "ProgressEntry",
+  "type": "object",
+  "properties": {
+    "date": {
+      "type": "string",
+      "format": "date",
+      "description": "Data do registro"
+    },
+    "weight": {
+      "type": "number",
+      "description": "Peso em kg"
+    },
+    "body_fat_percentage": {
+      "type": "number",
+      "description": "Percentual de gordura corporal"
+    },
+    "measurements": {
+      "type": "object",
+      "properties": {
+        "chest": {
+          "type": "number"
+        },
+        "waist": {
+          "type": "number"
+        },
+        "hips": {
+          "type": "number"
+        },
+        "arms": {
+          "type": "number"
+        },
+        "thighs": {
+          "type": "number"
+        }
+      },
+      "description": "Medidas corporais em cm"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Observa\u00e7\u00f5es sobre o progresso"
+    },
+    "mood": {
+      "type": "string",
+      "enum": [
+        "great",
+        "good",
+        "okay",
+        "tired",
+        "exhausted"
+      ],
+      "description": "Como est\u00e1 se sentindo"
+    }
+  },
+  "required": [
+    "date"
+  ]
+}

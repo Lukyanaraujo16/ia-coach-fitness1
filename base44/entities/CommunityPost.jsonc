@@ -1,0 +1,51 @@
+{
+  "name": "CommunityPost",
+  "type": "object",
+  "properties": {
+    "content": {
+      "type": "string",
+      "description": "Conte\u00fado do post"
+    },
+    "image_url": {
+      "type": "string",
+      "description": "URL da imagem do post"
+    },
+    "achievement_type": {
+      "type": "string",
+      "enum": [
+        "workout_completed",
+        "weight_goal",
+        "personal_record",
+        "streak",
+        "transformation",
+        "other"
+      ],
+      "description": "Tipo de conquista compartilhada"
+    },
+    "likes_count": {
+      "type": "number",
+      "default": 0,
+      "description": "N\u00famero de curtidas"
+    },
+    "liked_by": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "IDs dos usu\u00e1rios que curtiram"
+    },
+    "comments_count": {
+      "type": "number",
+      "default": 0,
+      "description": "N\u00famero de coment\u00e1rios"
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": true,
+      "description": "Se o post est\u00e1 ativo"
+    }
+  },
+  "required": [
+    "content"
+  ]
+}

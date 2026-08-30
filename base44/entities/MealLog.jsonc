@@ -1,0 +1,83 @@
+{
+  "name": "MealLog",
+  "type": "object",
+  "properties": {
+    "date": {
+      "type": "string",
+      "format": "date",
+      "description": "Data da refei\u00e7\u00e3o"
+    },
+    "meal_type": {
+      "type": "string",
+      "enum": [
+        "breakfast",
+        "lunch",
+        "snack",
+        "dinner",
+        "post_workout"
+      ],
+      "description": "Tipo de refei\u00e7\u00e3o"
+    },
+    "photo_url": {
+      "type": "string",
+      "description": "URL da foto da refei\u00e7\u00e3o"
+    },
+    "food_items": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "quantity": {
+            "type": "string"
+          },
+          "calories": {
+            "type": "number"
+          }
+        }
+      },
+      "description": "Lista de alimentos identificados"
+    },
+    "total_calories": {
+      "type": "number",
+      "description": "Total de calorias"
+    },
+    "macros": {
+      "type": "object",
+      "properties": {
+        "protein": {
+          "type": "number",
+          "description": "Prote\u00ednas em gramas"
+        },
+        "carbs": {
+          "type": "number",
+          "description": "Carboidratos em gramas"
+        },
+        "fat": {
+          "type": "number",
+          "description": "Gorduras em gramas"
+        },
+        "fiber": {
+          "type": "number",
+          "description": "Fibras em gramas"
+        }
+      },
+      "description": "Macronutrientes"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Observa\u00e7\u00f5es sobre a refei\u00e7\u00e3o"
+    },
+    "analysis_complete": {
+      "type": "boolean",
+      "default": false,
+      "description": "Se a an\u00e1lise foi conclu\u00edda"
+    }
+  },
+  "required": [
+    "date",
+    "meal_type"
+  ]
+}

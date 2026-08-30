@@ -1,0 +1,23 @@
+{
+  "name": "PushSubscription",
+  "type": "object",
+  "properties": {
+    "user_email": {
+      "type": "string",
+      "description": "Email do usu\u00e1rio"
+    },
+    "subscription": {
+      "type": "object",
+      "description": "Objeto de subscription do browser"
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": true,
+      "description": "Se a subscription est\u00e1 ativa"
+    }
+  },
+  "required": [
+    "user_email",
+    "subscription"
+  ]
+}

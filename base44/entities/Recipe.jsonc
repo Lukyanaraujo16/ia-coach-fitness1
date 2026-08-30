@@ -1,0 +1,121 @@
+{
+  "name": "Recipe",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Nome da receita"
+    },
+    "description": {
+      "type": "string",
+      "description": "Descri\u00e7\u00e3o breve da receita"
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "breakfast",
+        "lunch",
+        "dinner",
+        "snack",
+        "dessert",
+        "drink",
+        "post_workout"
+      ],
+      "description": "Categoria da receita"
+    },
+    "diet_type": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Tipos de dieta (low_carb, high_protein, vegetarian, vegan, gluten_free, lactose_free)"
+    },
+    "prep_time_minutes": {
+      "type": "number",
+      "description": "Tempo de preparo em minutos"
+    },
+    "cook_time_minutes": {
+      "type": "number",
+      "description": "Tempo de cozimento em minutos"
+    },
+    "servings": {
+      "type": "number",
+      "description": "N\u00famero de por\u00e7\u00f5es"
+    },
+    "difficulty": {
+      "type": "string",
+      "enum": [
+        "easy",
+        "medium",
+        "hard"
+      ],
+      "description": "N\u00edvel de dificuldade"
+    },
+    "ingredients": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "quantity": {
+            "type": "string"
+          },
+          "unit": {
+            "type": "string"
+          }
+        }
+      },
+      "description": "Lista de ingredientes"
+    },
+    "instructions": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Passos do preparo"
+    },
+    "nutrition_per_serving": {
+      "type": "object",
+      "properties": {
+        "calories": {
+          "type": "number"
+        },
+        "protein": {
+          "type": "number"
+        },
+        "carbs": {
+          "type": "number"
+        },
+        "fat": {
+          "type": "number"
+        },
+        "fiber": {
+          "type": "number"
+        }
+      },
+      "description": "Informa\u00e7\u00f5es nutricionais por por\u00e7\u00e3o"
+    },
+    "image_url": {
+      "type": "string",
+      "description": "URL da imagem da receita"
+    },
+    "is_featured": {
+      "type": "boolean",
+      "default": false,
+      "description": "Se a receita est\u00e1 em destaque"
+    },
+    "is_premium": {
+      "type": "boolean",
+      "default": false,
+      "description": "Se a receita \u00e9 exclusiva premium"
+    }
+  },
+  "required": [
+    "name",
+    "category",
+    "ingredients",
+    "instructions"
+  ]
+}

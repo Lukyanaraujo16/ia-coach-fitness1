@@ -1,0 +1,286 @@
+{
+  "name": "User",
+  "type": "object",
+  "properties": {
+    "nome_completo": {
+      "type": "string",
+      "description": "Nome completo do usu\u00e1rio"
+    },
+    "whatsapp": {
+      "type": "string",
+      "description": "N\u00famero do WhatsApp do usu\u00e1rio"
+    },
+    "whatsapp_coach_activated": {
+      "type": "boolean",
+      "default": false,
+      "description": "Se o usu\u00e1rio j\u00e1 ativou o coach no WhatsApp"
+    },
+    "current_weight": {
+      "type": "number",
+      "description": "Peso atual em kg"
+    },
+    "height": {
+      "type": "number",
+      "description": "Altura em cm"
+    },
+    "weight_goal": {
+      "type": "number",
+      "description": "Meta de peso em kg"
+    },
+    "gender": {
+      "type": "string",
+      "enum": [
+        "male",
+        "female",
+        "other"
+      ],
+      "description": "G\u00eanero do usu\u00e1rio"
+    },
+    "fitness_goal": {
+      "type": "string",
+      "enum": [
+        "lose_weight",
+        "gain_muscle",
+        "maintain",
+        "performance"
+      ],
+      "description": "Objetivo fitness"
+    },
+    "fitness_level": {
+      "type": "string",
+      "enum": [
+        "beginner",
+        "intermediate",
+        "advanced"
+      ],
+      "description": "N\u00edvel de condicionamento f\u00edsico"
+    },
+    "training_location": {
+      "type": "string",
+      "enum": [
+        "gym",
+        "home",
+        "both"
+      ],
+      "description": "Onde prefere treinar"
+    },
+    "weekly_goal": {
+      "type": "number",
+      "default": 3,
+      "description": "Meta de treinos por semana"
+    },
+    "selected_workout_id": {
+      "type": "string",
+      "description": "ID do treino selecionado atualmente"
+    },
+    "current_workout_day": {
+      "type": "number",
+      "default": 1,
+      "description": "Dia atual do treino"
+    },
+    "completed_workout_days": {
+      "type": "array",
+      "items": {
+        "type": "number"
+      },
+      "description": "Dias de treino j\u00e1 completados"
+    },
+    "onboarding_completed": {
+      "type": "boolean",
+      "default": false,
+      "description": "Se completou o onboarding"
+    },
+    "nutrition_setup_completed": {
+      "type": "boolean",
+      "default": false,
+      "description": "Se completou a configura\u00e7\u00e3o nutricional"
+    },
+    "workout_setup_completed": {
+      "type": "boolean",
+      "default": false,
+      "description": "Se completou a configura\u00e7\u00e3o de treino"
+    },
+    "subscription_status": {
+      "type": "string",
+      "enum": [
+        "free",
+        "trial",
+        "premium",
+        "lifetime"
+      ],
+      "default": "free",
+      "description": "Status da assinatura"
+    },
+    "premium_trial_start_date": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Data de in\u00edcio do trial premium"
+    },
+    "premium_trial_end_date": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Data de fim do trial premium"
+    },
+    "has_had_trial": {
+      "type": "boolean",
+      "default": false,
+      "description": "Se j\u00e1 teve trial premium"
+    },
+    "stripe_customer_id": {
+      "type": "string",
+      "description": "ID do cliente no Stripe"
+    },
+    "stripe_subscription_id": {
+      "type": "string",
+      "description": "ID da assinatura no Stripe"
+    },
+    "subscription_plan": {
+      "type": "string",
+      "enum": [
+        "monthly",
+        "semiannual",
+        "annual",
+        "lifetime"
+      ],
+      "description": "Plano de assinatura atual"
+    },
+    "subscription_end_date": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Data de fim da assinatura premium"
+    },
+    "payment_failed": {
+      "type": "boolean",
+      "default": false,
+      "description": "Se a \u00faltima cobran\u00e7a falhou"
+    },
+    "payment_failed_date": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Data da falha no pagamento"
+    },
+    "total_xp": {
+      "type": "number",
+      "default": 0,
+      "description": "XP total acumulado"
+    },
+    "weekly_xp": {
+      "type": "number",
+      "default": 0,
+      "description": "XP da semana atual"
+    },
+    "monthly_xp": {
+      "type": "number",
+      "default": 0,
+      "description": "XP do m\u00eas atual"
+    },
+    "level": {
+      "type": "number",
+      "default": 1,
+      "description": "N\u00edvel do usu\u00e1rio"
+    },
+    "badges_earned": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "IDs dos badges conquistados"
+    },
+    "longest_streak": {
+      "type": "number",
+      "default": 0,
+      "description": "Maior sequ\u00eancia de treinos"
+    },
+    "current_streak": {
+      "type": "number",
+      "default": 0,
+      "description": "Sequ\u00eancia atual de treinos"
+    },
+    "last_workout_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Data do \u00faltimo treino"
+    },
+    "dietary_preferences": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Prefer\u00eancias diet\u00e9ticas (vegetariano, vegano, etc)"
+    },
+    "food_allergies": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Alergias alimentares"
+    },
+    "disliked_foods": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Alimentos que n\u00e3o gosta"
+    },
+    "meals_per_day": {
+      "type": "number",
+      "default": 3,
+      "description": "N\u00famero de refei\u00e7\u00f5es por dia"
+    },
+    "budget": {
+      "type": "string",
+      "enum": [
+        "low",
+        "moderate",
+        "flexible"
+      ],
+      "default": "moderate",
+      "description": "Or\u00e7amento para alimenta\u00e7\u00e3o"
+    },
+    "daily_calorie_goal": {
+      "type": "number",
+      "description": "Meta di\u00e1ria de calorias"
+    },
+    "macro_protein_percentage": {
+      "type": "number",
+      "description": "Percentual de prote\u00ednas na dieta"
+    },
+    "macro_carbs_percentage": {
+      "type": "number",
+      "description": "Percentual de carboidratos na dieta"
+    },
+    "macro_fat_percentage": {
+      "type": "number",
+      "description": "Percentual de gorduras na dieta"
+    },
+    "selected_nutrition_plan_data": {
+      "type": "object",
+      "description": "Dados do plano nutricional gerado pela IA"
+    },
+    "community_enabled": {
+      "type": "boolean",
+      "default": true,
+      "description": "Se o recurso de comunidade est\u00e1 habilitado"
+    },
+    "leaderboard_enabled": {
+      "type": "boolean",
+      "default": true,
+      "description": "Se o recurso de ranking est\u00e1 habilitado"
+    },
+    "whatsapp_coach_enabled": {
+      "type": "boolean",
+      "default": true,
+      "description": "Se o coach no WhatsApp est\u00e1 habilitado"
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": true,
+      "description": "Se a conta est\u00e1 ativa"
+    },
+    "app_logo_url": {
+      "type": "string",
+      "description": "URL da logo personalizada do app"
+    }
+  },
+  "required": []
+}

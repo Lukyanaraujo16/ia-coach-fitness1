@@ -1,0 +1,56 @@
+{
+  "name": "WearableData",
+  "type": "object",
+  "properties": {
+    "date": {
+      "type": "string",
+      "format": "date",
+      "description": "Data dos dados coletados"
+    },
+    "steps": {
+      "type": "number",
+      "description": "Passos dados no dia"
+    },
+    "calories_burned": {
+      "type": "number",
+      "description": "Calorias queimadas registradas pelo wearable"
+    },
+    "distance_km": {
+      "type": "number",
+      "description": "Dist\u00e2ncia percorrida em km"
+    },
+    "active_minutes": {
+      "type": "number",
+      "description": "Minutos ativos no dia"
+    },
+    "heart_rate_avg": {
+      "type": "number",
+      "description": "Frequ\u00eancia card\u00edaca m\u00e9dia"
+    },
+    "heart_rate_resting": {
+      "type": "number",
+      "description": "Frequ\u00eancia card\u00edaca em repouso"
+    },
+    "sleep_hours": {
+      "type": "number",
+      "description": "Horas de sono"
+    },
+    "source": {
+      "type": "string",
+      "enum": [
+        "google_fit",
+        "apple_health",
+        "manual"
+      ],
+      "description": "Fonte dos dados"
+    },
+    "synced_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Quando foi sincronizado"
+    }
+  },
+  "required": [
+    "date"
+  ]
+}

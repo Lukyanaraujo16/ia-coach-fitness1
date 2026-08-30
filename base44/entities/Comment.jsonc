@@ -1,0 +1,26 @@
+{
+  "name": "Comment",
+  "type": "object",
+  "properties": {
+    "post_id": {
+      "type": "string",
+      "description": "ID do post"
+    },
+    "content": {
+      "type": "string",
+      "description": "Conte\u00fado do coment\u00e1rio"
+    },
+    "user_name": {
+      "type": "string",
+      "description": "Nome do usu\u00e1rio que comentou"
+    },
+    "user_image": {
+      "type": "string",
+      "description": "Imagem do usu\u00e1rio que comentou"
+    }
+  },
+  "required": [
+    "post_id",
+    "content"
+  ]
+}

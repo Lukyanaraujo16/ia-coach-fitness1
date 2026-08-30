@@ -1,0 +1,91 @@
+{
+  "name": "UserProfile",
+  "type": "object",
+  "properties": {
+    "user_email": {
+      "type": "string",
+      "format": "email",
+      "description": "Email do usu\u00e1rio (mesmo da conta User)"
+    },
+    "nome_completo": {
+      "type": "string",
+      "description": "Nome completo do usu\u00e1rio"
+    },
+    "objetivo": {
+      "type": "string",
+      "enum": [
+        "lose_weight",
+        "gain_muscle",
+        "maintain",
+        "improve_health"
+      ],
+      "description": "Objetivo fitness"
+    },
+    "nivel_fitness": {
+      "type": "string",
+      "enum": [
+        "beginner",
+        "intermediate",
+        "advanced"
+      ],
+      "description": "N\u00edvel de condicionamento"
+    },
+    "peso_atual": {
+      "type": "number",
+      "description": "Peso atual em kg"
+    },
+    "peso_meta": {
+      "type": "number",
+      "description": "Peso meta em kg"
+    },
+    "altura": {
+      "type": "number",
+      "description": "Altura em cm"
+    },
+    "meta_calorica_diaria": {
+      "type": "number",
+      "description": "Meta de calorias di\u00e1rias"
+    },
+    "meta_proteina": {
+      "type": "number",
+      "description": "Meta de prote\u00edna em gramas"
+    },
+    "meta_treinos_semana": {
+      "type": "number",
+      "description": "Quantos treinos por semana"
+    },
+    "restricoes_alimentares": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Alergias e restri\u00e7\u00f5es alimentares"
+    },
+    "preferencias_dieta": {
+      "type": "string",
+      "description": "Tipo de dieta preferida"
+    },
+    "local_treino": {
+      "type": "string",
+      "enum": [
+        "gym",
+        "home",
+        "both"
+      ],
+      "description": "Onde treina"
+    },
+    "subscription_status": {
+      "type": "string",
+      "enum": [
+        "free",
+        "trial",
+        "premium",
+        "lifetime"
+      ],
+      "description": "Status da assinatura"
+    }
+  },
+  "required": [
+    "user_email"
+  ]
+}

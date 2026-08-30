@@ -1,0 +1,81 @@
+{
+  "name": "NutritionPlan",
+  "type": "object",
+  "properties": {
+    "title": {
+      "type": "string",
+      "description": "T\u00edtulo do plano alimentar"
+    },
+    "description": {
+      "type": "string",
+      "description": "Descri\u00e7\u00e3o do plano"
+    },
+    "goal": {
+      "type": "string",
+      "enum": [
+        "lose_weight",
+        "gain_muscle",
+        "maintain",
+        "performance"
+      ],
+      "description": "Objetivo do plano"
+    },
+    "daily_calories": {
+      "type": "number",
+      "description": "Meta de calorias di\u00e1rias"
+    },
+    "macros_distribution": {
+      "type": "object",
+      "properties": {
+        "protein_percentage": {
+          "type": "number"
+        },
+        "carbs_percentage": {
+          "type": "number"
+        },
+        "fat_percentage": {
+          "type": "number"
+        }
+      },
+      "description": "Distribui\u00e7\u00e3o de macronutrientes em %"
+    },
+    "meals": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "meal_type": {
+            "type": "string"
+          },
+          "time": {
+            "type": "string"
+          },
+          "suggestions": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "description": "Sugest\u00f5es de refei\u00e7\u00f5es"
+    },
+    "is_premium": {
+      "type": "boolean",
+      "default": false,
+      "description": "Se o plano \u00e9 exclusivo premium"
+    },
+    "tips": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Dicas nutricionais"
+    }
+  },
+  "required": [
+    "title",
+    "goal",
+    "daily_calories"
+  ]
+}

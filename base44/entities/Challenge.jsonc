@@ -1,0 +1,42 @@
+{
+  "name": "Challenge",
+  "type": "object",
+  "properties": {
+    "title": {
+      "type": "string",
+      "description": "T\u00edtulo do desafio"
+    },
+    "description": {
+      "type": "string",
+      "description": "Descri\u00e7\u00e3o do desafio"
+    },
+    "target": {
+      "type": "number",
+      "description": "Meta total (ex: 100 flex\u00f5es)"
+    },
+    "unit": {
+      "type": "string",
+      "description": "Unidade (ex: flex\u00f5es, km, minutos)"
+    },
+    "start_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Data de in\u00edcio"
+    },
+    "end_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Data de t\u00e9rmino"
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": true,
+      "description": "Se o desafio est\u00e1 ativo"
+    }
+  },
+  "required": [
+    "title",
+    "target",
+    "unit"
+  ]
+}

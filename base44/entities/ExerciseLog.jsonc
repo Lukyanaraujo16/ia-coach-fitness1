@@ -1,0 +1,35 @@
+{
+  "name": "ExerciseLog",
+  "type": "object",
+  "properties": {
+    "exercise_id": {
+      "type": "string",
+      "description": "ID do exerc\u00edcio"
+    },
+    "exercise_name": {
+      "type": "string",
+      "description": "Nome do exerc\u00edcio"
+    },
+    "date": {
+      "type": "string",
+      "format": "date",
+      "description": "Data do registro"
+    },
+    "weight_used": {
+      "type": "number",
+      "description": "Carga utilizada em kg"
+    },
+    "reps_completed": {
+      "type": "number",
+      "description": "Repeti\u00e7\u00f5es completadas"
+    },
+    "sets_completed": {
+      "type": "number",
+      "description": "S\u00e9ries completadas"
+    }
+  },
+  "required": [
+    "exercise_name",
+    "date"
+  ]
+}

@@ -1,0 +1,75 @@
+{
+  "name": "Exercise",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Nome do exerc\u00edcio"
+    },
+    "description": {
+      "type": "string",
+      "description": "Descri\u00e7\u00e3o e como executar"
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "chest",
+        "back",
+        "legs",
+        "shoulders",
+        "arms",
+        "core",
+        "cardio",
+        "full_body"
+      ],
+      "description": "Categoria do exerc\u00edcio"
+    },
+    "difficulty": {
+      "type": "string",
+      "enum": [
+        "beginner",
+        "intermediate",
+        "advanced"
+      ],
+      "description": "N\u00edvel de dificuldade"
+    },
+    "equipment": {
+      "type": "string",
+      "enum": [
+        "bodyweight",
+        "dumbbells",
+        "barbell",
+        "machine",
+        "resistance_band",
+        "kettlebell",
+        "none"
+      ],
+      "description": "Equipamento necess\u00e1rio"
+    },
+    "image_url": {
+      "type": "string",
+      "description": "URL da imagem demonstrativa"
+    },
+    "video_url": {
+      "type": "string",
+      "description": "URL do v\u00eddeo demonstrativo"
+    },
+    "muscle_groups": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Grupos musculares trabalhados"
+    },
+    "is_premium": {
+      "type": "boolean",
+      "default": false,
+      "description": "Se o exerc\u00edcio \u00e9 exclusivo para assinantes premium"
+    }
+  },
+  "required": [
+    "name",
+    "category",
+    "difficulty"
+  ]
+}
